@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'inventory',
     'portal',
     'core',
+    'labeling',
+    'reporting',
 ]
 
 MIDDLEWARE = [

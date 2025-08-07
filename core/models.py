@@ -27,3 +27,30 @@ class BaseModel(models.Model):
         """Marks the instance as active."""
         self.is_active = True
         self.save()
+
+class ServicePackage(BaseModel):
+    """
+    Defines a collection of services that a client can request.
+    This model is crucial for enabling the modularity of the system, allowing different workflows based on selected services.
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="A descriptive name for the service package (e.g., \"Slaughter Only\")."
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="A detailed description of what the service package includes."
+    )
+    includes_disassembly = models.BooleanField(
+        default=False,
+        help_text="Indicates if this package includes the disassembly process."
+    )
+    includes_delivery = models.BooleanField(
+        default=False,
+        help_text="Indicates if this package includes delivery services."
+    )
+    # Add other boolean fields for specific services as needed
+
+    def __str__(self):
+        return self.name

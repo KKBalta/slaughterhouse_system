@@ -1,42 +1,38 @@
-# App: reception
+# Reception App - Detailed Design
 
-## Purpose
-This app manages the entire client intake process. Its primary responsibility is to create and manage "Slaughter Orders," which act as the main container for a client's batch of animals. It is designed with flexibility to handle both pre-registered clients and on-the-fly "walk-in" clients.
+This document details the design of the `reception` Django app, which is responsible for client intake, creating and managing slaughter orders, and defining the service packages associated with these orders.
 
 ## Core Models
 
-### `SlaughterOrder`
-This is the central model for the app. It inherits from `core.BaseModel`.
+### 1. `SlaughterOrder` Model
 
--   **Key Fields**:
-    -   `client` (ForeignKey to `users.ClientProfile`, optional): This links the order to a **registered client**. If this field is set, the client is a known entity with a user account.
-    -   `client_name` (CharField): If the order is for a **walk-in client**, their name is stored here. This field should be empty for registered clients.
-    -   `client_phone` (CharField): The phone number for a **walk-in client**.
-    -   `order_date` (DateField): The date the order was created.
-    -   `status` (CharField with choices): Tracks the current state of the order (Pending, In-Progress, Completed, Billed).
+Represents a client's request for slaughter services. It serves as the central hub for an order, linking to the client, service package, and all associated animals.
 
--   **Logic**: The model's design allows a clerk to either select a registered client from a search-as-you-type list or simply type in the name and phone number for a new, unregistered client.
+*   **Purpose:** To capture and manage the details of a client's slaughter request.
+*   **Key Fields:**
+    *   `client` (ForeignKey to `users.ClientProfile`, nullable): Links to an existing client profile for loyal customers.
+    *   `client_name` (CharField, blank): For walk-in or one-time clients, their name can be recorded here.
+    *   `client_phone` (CharField, blank): For walk-in or one-time clients, their phone number.
+    *   `service_package` (ForeignKey to `ServicePackage`): Defines the set of services requested for this order.
+    *   `order_date` (DateField): The date the order was placed.
+    *   `status` (CharField with choices): Tracks the current status of the order (e.g., PENDING, IN_PROGRESS, COMPLETED, BILLED).
 
-## Admin Interface (`admin.py`)
+### 2. `ServicePackage` Model
 
-The `SlaughterOrder` model is registered with the Django admin, providing a powerful interface for clerks.
+Defines a collection of services that a client can request. This model is crucial for enabling the modularity of the system, allowing different workflows based on selected services.
 
--   **`SlaughterOrderAdmin`**:
-    -   **Search & Filter**: Allows clerks to easily find orders by status, date, or client name/company.
-    -   **Autocomplete for Clients**: When creating or editing an order, the `client` field is an autocomplete widget that allows for efficient searching of all registered `ClientProfile` records.
+*   **Purpose:** To define and manage predefined sets of services offered by the slaughterhouse.
+*   **Key Fields:**
+    *   `name` (CharField, unique): A descriptive name for the service package (e.g., "Slaughter Only", "Slaughter + Disassembly", "Full Service").
+    *   `description` (TextField, optional): A detailed description of what the service package includes.
+    *   `includes_disassembly` (BooleanField): Indicates if this package includes the disassembly process.
+    *   `includes_delivery` (BooleanField): Indicates if this package includes delivery services.
+    *   `is_active` (BooleanField): Whether the service package is currently available.
+    *   *(Additional boolean fields for other specific services as needed)*
 
-### **Custom Admin Action: `convert_to_registered_client`**
+## App Functionality
 
-This is a key feature for improving operational workflow.
-
--   **Purpose**: To seamlessly convert a walk-in client into a registered client with a user account, preserving their order history.
--   **How to Use**:
-    1.  In the `SlaughterOrder` admin list view, select one or more orders belonging to the *same* walk-in client.
-    2.  From the "Actions" dropdown menu, select "Convert to Registered Client".
-    3.  Click "Go".
--   **What it Does**:
-    1.  It checks that the selected order is indeed for a walk-in (i.e., `client` is not set).
-    2.  It creates a new `User` with a unique username (based on name + phone) and a secure, randomly generated password.
-    3.  It creates a new `ClientProfile` linked to the new `User`, populating it with the name and phone number from the order.
-    4.  It finds **all** past and present orders matching the walk-in client's name and phone number and links them to the newly created `ClientProfile`.
-    5.  It displays a success message to the clerk containing the new **username and temporary password**, which can then be given to the client.
+*   **Order Creation & Management:** Allows clerks to create new slaughter orders, link them to existing clients or create new temporary client entries, and assign a `ServicePackage`.
+*   **Service Package Definition:** Provides a mechanism to define and manage the various service packages offered.
+*   **Client Intake:** Serves as the primary point of entry for client and order information into the system.
+*   **Order Status Tracking:** Manages the high-level status of each slaughter order throughout its lifecycle.
