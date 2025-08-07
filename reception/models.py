@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import BaseModel
+from core.models import BaseModel, ServicePackage
 from users.models import ClientProfile
 
 class SlaughterOrder(BaseModel):
@@ -16,10 +16,17 @@ class SlaughterOrder(BaseModel):
     client_name = models.CharField(max_length=255, blank=True)
     client_phone = models.CharField(max_length=20, blank=True)
 
+    service_package = models.ForeignKey(
+        ServicePackage,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='slaughter_orders',
+        help_text="The service package selected for this order."
+    )
+
     order_date = models.DateField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name
         return f"Order for {client_display} on {self.order_date}"
-

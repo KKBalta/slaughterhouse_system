@@ -6,15 +6,16 @@ This document details the design of the `processing` Django app, which is respon
 
 ### 1. `Animal` Model
 
-Represents an individual animal within a `SlaughterOrder`. It tracks common attributes across all animal types and links to specific detail models for unique characteristics.
+Represents an individual animal within a `SlaughterOrder`. It tracks common attributes across all animal types and links to specific detail models for unique characteristics. The workflow for each animal will be managed using `django-fsm` to ensure proper state transitions.
 
-*   **Purpose:** To uniquely identify and track each animal from intake through slaughter.
+*   **Purpose:** To uniquely identify and track each animal from intake through slaughter, enforcing valid workflow progression.
 *   **Key Fields:**
     *   `slaughter_order` (ForeignKey to `reception.SlaughterOrder`): Links the animal to its parent order.
     *   `animal_type` (CharField with choices): Specifies the species (e.g., 'cattle', 'sheep', 'goat', 'lamb', 'oglak').
     *   `identification_tag` (CharField, unique): A unique identifier for the animal (e.g., ear tag number).
     *   `received_date` (DateTimeField): Timestamp of when the animal was received.
     *   `slaughter_date` (DateTimeField, nullable): Timestamp of when the animal was slaughtered.
+    *   `status` (CharField): Tracks the current state of the animal in the processing workflow (e.g., 'RECEIVED', 'SLAUGHTERED', 'CARCASS_READY'). Managed by `django-fsm`.
 
 ### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`)
 
@@ -47,6 +48,6 @@ Records various weight measurements throughout the animal's processing, supporti
 ## App Functionality
 
 *   **Animal Tracking:** Manages the lifecycle of individual animals from intake to final processing.
-*   **Workflow Orchestration:** Based on the `ServicePackage` selected in the `SlaughterOrder`, the `processing` app determines and executes the relevant workflow steps (e.g., triggering disassembly, skipping certain stages).
+*   **Workflow Orchestration with `django-fsm`:** The `processing` app will leverage `django-fsm` to define and enforce state transitions for the `Animal` model. This ensures a controlled and valid progression through the slaughter workflow. Transitions can be conditional based on the `ServicePackage` selected in the `SlaughterOrder`.
 *   **Weight Management:** Records and manages all weight data, accommodating both precise individual measurements and efficient group weighings with average calculations.
 *   **Data Enrichment:** Stores animal-specific details through dedicated related models, allowing for tailored data capture based on species.

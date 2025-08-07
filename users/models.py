@@ -5,7 +5,8 @@ from core.models import BaseModel
 class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = "ADMIN", 'Admin'
-        CLERK = "CLERK", 'Clerk'
+        MANAGER = "MANAGER", 'Manager'
+        OPERATOR = "OPERATOR", 'Operator'
         CLIENT = "CLIENT", 'Client'
 
     base_role = Role.ADMIN
@@ -22,7 +23,7 @@ class ClientProfile(BaseModel):
         INDIVIDUAL = "INDIVIDUAL", 'Individual'
         ENTERPRISE = "ENTERPRISE", 'Enterprise'
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='client_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='client_profile', null=True, blank=True) # Made nullable for one-time clients
     account_type = models.CharField(max_length=20, choices=AccountType.choices)
     
     # Fields for all account types
