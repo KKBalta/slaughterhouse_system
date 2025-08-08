@@ -11,13 +11,13 @@ Represents an individual animal within a `SlaughterOrder`. It tracks common attr
 *   **Purpose:** To uniquely identify and track each animal from intake through slaughter, enforcing valid workflow progression.
 *   **Key Fields:**
     *   `slaughter_order` (ForeignKey to `reception.SlaughterOrder`): Links the animal to its parent order.
-    *   `animal_type` (CharField with choices): Specifies the species (e.g., 'cattle', 'sheep', 'goat', 'lamb', 'oglak').
-    *   `identification_tag` (CharField, unique): A unique identifier for the animal (e.g., ear tag number).
-    *   `received_date` (DateTimeField): Timestamp of when the animal was received.
+    *   `animal_type` (CharField with choices): Specifies the species (e.g., 'cattle', 'sheep', 'goat', 'lamb', 'oglak', 'calf', 'heifer', 'beef').
+    *   `identification_tag` (CharField, nullable): A unique identifier for the animal. If not provided, the system will generate one. This field is not unique at the database level to allow for system-generated tags.
+    *   `received_date` (DateTimeField): Date and time the animal was received. This field is editable to accommodate edge cases like night slaughter entries.
     *   `slaughter_date` (DateTimeField, nullable): Timestamp of when the animal was slaughtered.
     *   `status` (CharField): Tracks the current state of the animal in the processing workflow (e.g., 'RECEIVED', 'SLAUGHTERED', 'CARCASS_READY'). Managed by `django-fsm`.
 
-### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`)
+### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`, `CalfDetails`, `HeiferDetails`, `BeefDetails`)
 
 These models store attributes specific to each animal type, linked via a `OneToOneField` to the `Animal` model. This approach ensures a clean and scalable design for diverse animal characteristics.
 
@@ -28,6 +28,9 @@ These models store attributes specific to each animal type, linked via a `OneToO
     *   `horn_status` (CharField, for CattleDetails): Status of horns (e.g., horned, polled, dehorned).
     *   `wool_type` (CharField, for SheepDetails): Type of wool (e.g., fine, medium, coarse).
     *   `flock_id` (CharField, for SheepDetails): ID of the flock the sheep belongs to.
+    *   `liver_status` (DecimalField, for CattleDetails): Score reflecting the usability of the liver (0: Not Usable, 0.5: Not Bad, 1: Good).
+    *   `head_status` (DecimalField, for CattleDetails): Score reflecting the usability of the head (0: Not Usable, 0.5: Not Bad, 1: Good).
+    *   `bowels_status` (DecimalField, for CattleDetails): Score reflecting the usability of the bowels (0: Not Usable, 0.5: Not Bad, 1: Good).
 
 ### 3. `WeightLog` Model
 

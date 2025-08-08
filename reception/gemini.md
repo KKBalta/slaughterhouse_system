@@ -16,6 +16,7 @@ Represents a client's request for slaughter services. It serves as the central h
     *   `service_package` (ForeignKey to `ServicePackage`): Defines the set of services requested for this order.
     *   `order_date` (DateField): The date the order was placed.
     *   `status` (CharField with choices): Tracks the current status of the order (e.g., PENDING, IN_PROGRESS, COMPLETED, BILLED).
+    *   `destination` (CharField, optional): Specifies the final destination or market for the animals/products in this order.
 
 ### 2. `ServicePackage` Model
 

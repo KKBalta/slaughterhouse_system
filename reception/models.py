@@ -26,7 +26,12 @@ class SlaughterOrder(BaseModel):
 
     order_date = models.DateField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    destination = models.CharField(
+        max_length=255,
+        blank=True, null=True,
+        help_text="Specifies the final destination or market for the animals/products in this order."
+    )
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name
-        return f"Order for {client_display} on {self.order_date}"
+        return f"Order for {client_display} on {self.order_date} to {self.destination or 'Unknown Destination'} - Status: {self.status}"
