@@ -16,6 +16,8 @@ Represents an individual animal within a `SlaughterOrder`. It tracks common attr
     *   `received_date` (DateTimeField): Date and time the animal was received. This field is editable to accommodate edge cases like night slaughter entries.
     *   `slaughter_date` (DateTimeField, nullable): Timestamp of when the animal was slaughtered.
     *   `status` (CharField): Tracks the current state of the animal in the processing workflow (e.g., 'RECEIVED', 'SLAUGHTERED', 'CARCASS_READY'). Managed by `django-fsm`.
+    *   `picture` (ImageField, optional): An image of the animal.
+    *   `leather_weight_kg` (DecimalField, optional): The weight of the leather in kilograms. Applicable to all animal types.
 
 ### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`, `CalfDetails`, `HeiferDetails`, `BeefDetails`)
 

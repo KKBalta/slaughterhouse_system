@@ -61,6 +61,16 @@ class Animal(BaseModel):
         protected=True,
         help_text="Current status of the animal in the processing workflow."
     )
+    picture = models.ImageField(
+        upload_to='animal_pictures/',
+        blank=True, null=True,
+        help_text="Picture of the animal."
+    )
+    leather_weight_kg = models.DecimalField(
+        max_digits=6, decimal_places=2,
+        null=True, blank=True,
+        help_text="The weight of the leather in kilograms."
+    )
 
     # FSM Transitions
     @transition(field=status, source='received', target='slaughtered')
@@ -148,7 +158,7 @@ class CattleDetails(BaseModel):
         choices=SCORE_CHOICES, default=0.5,
         help_text="Score reflecting the usability of the bowels."
     )
-    # Add other cattle-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Cattle: {self.animal.identification_tag}"
@@ -176,7 +186,7 @@ class SheepDetails(BaseModel):
         blank=True,
         help_text="ID of the flock the sheep belongs to."
     )
-    # Add other sheep-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Sheep: {self.animal.identification_tag}"
@@ -194,7 +204,7 @@ class GoatDetails(BaseModel):
         blank=True,
         help_text="Breed of the goat."
     )
-    # Add other goat-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Goat: {self.animal.identification_tag}"
@@ -207,7 +217,7 @@ class LambDetails(BaseModel):
         limit_choices_to={'animal_type': 'lamb'},
         help_text="The associated lamb animal."
     )
-    # Add other lamb-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Lamb: {self.animal.identification_tag}"
@@ -220,7 +230,7 @@ class OglakDetails(BaseModel):
         limit_choices_to={'animal_type': 'oglak'},
         help_text="The associated oglak animal."
     )
-    # Add other oglak-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Oglak: {self.animal.identification_tag}"
@@ -234,7 +244,7 @@ class CalfDetails(BaseModel):
         limit_choices_to={'animal_type': 'calf'},
         help_text="The associated calf animal."
     )
-    # Add calf-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Calf: {self.animal.identification_tag}"
@@ -247,7 +257,7 @@ class HeiferDetails(BaseModel):
         limit_choices_to={'animal_type': 'heifer'},
         help_text="The associated heifer animal."
     )
-    # Add heifer-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Heifer: {self.animal.identification_tag}"
@@ -260,7 +270,7 @@ class BeefDetails(BaseModel):
         limit_choices_to={'animal_type': 'beef'},
         help_text="The associated beef animal."
     )
-    # Add beef-specific fields
+    # Removed leather_weight_kg from here
 
     def __str__(self):
         return f"Details for Beef: {self.animal.identification_tag}"

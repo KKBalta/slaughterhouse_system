@@ -10,6 +10,7 @@ Represents a client's request for slaughter services. It serves as the central h
 
 *   **Purpose:** To capture and manage the details of a client's slaughter request.
 *   **Key Fields:**
+    *   `slaughter_order_no` (CharField, unique, optional): A human-readable, unique order number. Automatically generated if not provided.
     *   `client` (ForeignKey to `users.ClientProfile`, nullable): Links to an existing client profile for loyal customers.
     *   `client_name` (CharField, blank): For walk-in or one-time clients, their name can be recorded here.
     *   `client_phone` (CharField, blank): For walk-in or one-time clients, their phone number.
