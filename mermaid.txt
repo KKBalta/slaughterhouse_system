@@ -1,0 +1,71 @@
+
+graph TD;
+    subgraph users
+        User["User (AbstractUser)"]
+        ClientProfile
+    end
+
+    subgraph core
+        ServicePackage
+    end
+
+    subgraph reception
+        SlaughterOrder
+    end
+
+    subgraph processing
+        Animal
+        WeightLog
+        CattleDetails
+        SheepDetails
+        GoatDetails
+        LambDetails
+        OglakDetails
+        CalfDetails
+        HeiferDetails
+        BeefDetails
+    end
+
+    subgraph inventory
+        StorageLocation
+        Carcass
+        MeatCut
+        Offal
+        ByProduct
+    end
+
+    subgraph reporting
+        Report
+        GeneratedReport
+    end
+
+    %% Relationships
+    User -- "client_profile (OneToOne, optional)" --o ClientProfile;
+    ClientProfile -- "slaughter_orders (ForeignKey)" --> SlaughterOrder;
+    ServicePackage -- "slaughter_orders (ForeignKey)" --> SlaughterOrder;
+
+    SlaughterOrder -- "animals (ForeignKey)" --> Animal;
+    SlaughterOrder -- "group_weight_logs (ForeignKey)" --> WeightLog;
+
+    Animal -- "cattle_details (OneToOne)" --o CattleDetails;
+    Animal -- "sheep_details (OneToOne)" --o SheepDetails;
+    Animal -- "goat_details (OneToOne)" --o GoatDetails;
+    Animal -- "lamb_details (OneToOne)" --o LambDetails;
+    Animal -- "oglak_details (OneToOne)" --o OglakDetails;
+    Animal -- "calf_details (OneToOne)" --o CalfDetails;
+    Animal -- "heifer_details (OneToOne)" --o HeiferDetails;
+    Animal -- "beef_details (OneToOne)" --o BeefDetails;
+    Animal -- "individual_weight_logs (ForeignKey)" --> WeightLog;
+    Animal -- "carcass (OneToOne)" --o Carcass;
+    Animal -- "offals (ForeignKey)" --> Offal;
+    Animal -- "by_products (ForeignKey)" --> ByProduct;
+
+    Carcass -- "meat_cuts (ForeignKey)" --> MeatCut;
+
+    StorageLocation -- "carcasses (ForeignKey)" --> Carcass;
+    StorageLocation -- "meat_cuts (ForeignKey)" --> MeatCut;
+    StorageLocation -- "offals (ForeignKey)" --> Offal;
+    StorageLocation -- "by_products (ForeignKey)" --> ByProduct;
+
+    User -- "generated_by (ForeignKey)" --> GeneratedReport;
+    Report -- "generated_reports (ForeignKey)" -- "generated_reports (ForeignKey)" --> GeneratedReport;

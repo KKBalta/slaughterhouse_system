@@ -19,7 +19,7 @@ Represents an individual animal within a `SlaughterOrder`. It tracks common attr
     *   `picture` (ImageField, optional): An image of the animal.
     *   `leather_weight_kg` (DecimalField, optional): The weight of the leather in kilograms. Applicable to all animal types.
 
-### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`, `CalfDetails`, `HeiferDetails`, `BeefDetails`)
+### 2. Animal Detail Models (`CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`, `CalfDetails`, `HeiferDetails`)
 
 These models store attributes specific to each animal type, linked via a `OneToOneField` to the `Animal` model. This approach ensures a clean and scalable design for diverse animal characteristics.
 

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from reception.models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
-from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from datetime import date
 from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -158,9 +158,7 @@ class ProcessingModelTest(TestCase):
         HeiferDetails.objects.create(animal=animal_heifer)
         self.assertIsNotNone(animal_heifer.heifer_details)
 
-        animal_beef = Animal.objects.create(slaughter_order=self.order, animal_type='beef')
-        BeefDetails.objects.create(animal=animal_beef)
-        self.assertIsNotNone(animal_beef.beef_details)
+        
 
         animal_goat = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
         GoatDetails.objects.create(animal=animal_goat)

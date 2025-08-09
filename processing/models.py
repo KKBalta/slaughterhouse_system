@@ -119,13 +119,13 @@ class Animal(BaseModel):
     def __str__(self):
         return f"{self.animal_type.capitalize()} - {self.identification_tag}"
 
-class CattleDetails(BaseModel):
-    SCORE_CHOICES = (
-        (0.0, 'Not Usable'),
-        (0.5, 'Not Bad'),
-        (1.0, 'Good'),
-    )
+SCORE_CHOICES = (
+    (0.0, 'Not Usable'),
+    (0.5, 'Not Bad'),
+    (1.0, 'Good'),
+)
 
+class CattleDetails(BaseModel):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -239,7 +239,31 @@ class CalfDetails(BaseModel):
         limit_choices_to={'animal_type': 'calf'},
         help_text="The associated calf animal."
     )
-    # Removed leather_weight_kg from here
+    breed = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Breed of the calf."
+    )
+    horn_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Status of horns (e.g., horned, polled, dehorned)."
+    )
+    liver_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the liver."
+    )
+    head_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the head."
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the bowels."
+    )
 
     def __str__(self):
         return f"Details for Calf: {self.animal.identification_tag}"
@@ -252,23 +276,36 @@ class HeiferDetails(BaseModel):
         limit_choices_to={'animal_type': 'heifer'},
         help_text="The associated heifer animal."
     )
-    # Removed leather_weight_kg from here
+    breed = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Breed of the heifer."
+    )
+    horn_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Status of horns (e.g., horned, polled, dehorned)."
+    )
+    liver_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the liver."
+    )
+    head_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the head."
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text="Score reflecting the usability of the bowels."
+    )
 
     def __str__(self):
         return f"Details for Heifer: {self.animal.identification_tag}"
 
-class BeefDetails(BaseModel):
-    animal = models.OneToOneField(
-        Animal,
-        on_delete=models.CASCADE,
-        related_name='beef_details',
-        limit_choices_to={'animal_type': 'beef'},
-        help_text="The associated beef animal."
-    )
-    # Removed leather_weight_kg from here
 
-    def __str__(self):
-        return f"Details for Beef: {self.animal.identification_tag}"
 
 class WeightLog(BaseModel):
     animal = models.ForeignKey(

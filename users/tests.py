@@ -1,79 +1,81 @@
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.db.utils import IntegrityError
 from .models import ClientProfile
 
 User = get_user_model()
 
-class UserModelTest(TestCase):
-    def test_create_user(self):
-        """Test creating a new user."""
+class UsersModelTest(TestCase):
+
+    def test_create_user_with_default_role(self):
         user = User.objects.create_user(
             username='testuser',
-            password='password123',
-            email='test@example.com',
-            first_name='Test',
-            last_name='User'
+            password='password123'
         )
-        self.assertEqual(user.username, 'testuser')
-        self.assertEqual(user.email, 'test@example.com')
-        self.assertEqual(user.first_name, 'Test')
-        self.assertEqual(user.last_name, 'User')
-        self.assertTrue(user.check_password('password123'))
         self.assertEqual(user.role, User.Role.ADMIN)
 
-    def test_create_superuser(self):
-        """Test creating a new superuser."""
-        superuser = User.objects.create_superuser(
-            username='superuser',
-            password='password123',
-            email='superuser@example.com'
-        )
-        self.assertTrue(superuser.is_superuser)
-        self.assertTrue(superuser.is_staff)
-        self.assertEqual(superuser.role, User.Role.ADMIN)
-
-class ClientProfileModelTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
+    def test_create_user_with_specific_role(self):
+        user = User.objects.create_user(
             username='clientuser',
             password='password123',
-            email='client@example.com',
-            first_name='Client',
-            last_name='User',
             role=User.Role.CLIENT
         )
+        self.assertEqual(user.role, User.Role.CLIENT)
 
     def test_create_individual_client_profile(self):
-        """Test creating a client profile for an individual."""
-        profile = ClientProfile.objects.create(
-            user=self.user,
-            account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number='1234567890',
-            address='123 Main St'
+        user = User.objects.create_user(
+            username='individual_client',
+            password='password123',
+            role=User.Role.CLIENT
         )
-        self.assertEqual(profile.user, self.user)
-        self.assertEqual(profile.account_type, ClientProfile.AccountType.INDIVIDUAL)
-        self.assertEqual(str(profile), f"{self.user.get_full_name()} (Individual)")
+        profile = ClientProfile.objects.create(
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number='111-222-3333',
+            address='1 Individual Lane'
+        )
+        self.assertEqual(profile.user, user)
+        self.assertEqual(user.client_profile, profile)
+        self.assertEqual(profile.account_type, 'INDIVIDUAL')
+        self.assertEqual(str(profile), f"{user.get_full_name()} (Individual)")
 
     def test_create_enterprise_client_profile(self):
-        """Test creating a client profile for an enterprise."""
+        user = User.objects.create_user(
+            username='enterprise_client',
+            password='password123',
+            role=User.Role.CLIENT
+        )
         profile = ClientProfile.objects.create(
-            user=self.user,
+            user=user,
             account_type=ClientProfile.AccountType.ENTERPRISE,
-            company_name='Test Corp',
-            phone_number='0987654321',
-            address='456 Business Ave'
+            company_name='Big Farm Inc.',
+            contact_person='John Farmer',
+            phone_number='444-555-6666',
+            address='2 Enterprise Drive',
+            tax_id='ENT-12345'
         )
-        self.assertEqual(profile.account_type, ClientProfile.AccountType.ENTERPRISE)
-        self.assertEqual(profile.company_name, 'Test Corp')
-        self.assertEqual(str(profile), "Test Corp (Enterprise)")
+        self.assertEqual(profile.company_name, 'Big Farm Inc.')
+        self.assertEqual(profile.tax_id, 'ENT-12345')
+        self.assertEqual(str(profile), "Big Farm Inc. (Enterprise)")
 
-    def test_client_profile_user_relationship(self):
-        """Test the one-to-one relationship between User and ClientProfile."""
-        profile = ClientProfile.objects.create(
-            user=self.user,
-            account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number='1234567890',
-            address='123 Main St'
+    def test_user_deletion_cascades_to_client_profile(self):
+        user = User.objects.create_user(
+            username='todelete',
+            password='password123',
+            role=User.Role.CLIENT
         )
-        self.assertEqual(self.user.client_profile, profile)
+        ClientProfile.objects.create(
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number='999-999-9999',
+            address='Delete Street'
+        )
+        self.assertEqual(ClientProfile.objects.count(), 1)
+        user.delete()
+        self.assertEqual(ClientProfile.objects.count(), 0)
+
+    def test_username_uniqueness(self):
+        User.objects.create_user(username='unique_user', password='password123')
+        with self.assertRaises(IntegrityError):
+            User.objects.create_user(username='unique_user', password='password456')
