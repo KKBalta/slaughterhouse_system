@@ -181,11 +181,6 @@ class SheepDetails(BaseModel):
         blank=True,
         help_text="Type of wool (e.g., fine, medium, coarse)."
     )
-    flock_id = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="ID of the flock the sheep belongs to."
-    )
     # Removed leather_weight_kg from here
 
     def __str__(self):

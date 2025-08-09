@@ -29,6 +29,18 @@ Records details of each label printing request.
     *   `printed_by` (ForeignKey to `users.User`): The user who initiated the print job.
     *   `status` (CharField with choices): Status of the print job (e.g., 'PENDING', 'COMPLETED', 'FAILED').
 
+### 3. `Label` Model
+
+Represents a physical label generated for a carcass, meat cut, offal, or by-product.
+
+*   **Purpose:** To store information about printed labels and their association with inventory items.
+*   **Key Fields:**
+    *   `label_code` (CharField, unique): A unique code printed on the label (e.g., QR code, barcode).
+    *   `item_type` (CharField with choices): Specifies what the label is for (e.g., 'Carcass', 'MeatCut', 'Offal', 'ByProduct').
+    *   `item_id` (UUIDField): The ID of the associated inventory item (e.g., Carcass.id, MeatCut.id). Changed from PositiveIntegerField to UUIDField to match BaseModel IDs.
+    *   `print_date` (DateTimeField): When the label was printed.
+    *   `printed_by` (ForeignKey to `users.User`): The user who printed the label.
+
 ## App Functionality
 
 *   **Label Generation:** Dynamically generates label content based on `LabelTemplate` and data from associated inventory items.

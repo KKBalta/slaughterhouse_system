@@ -29,7 +29,6 @@ These models store attributes specific to each animal type, linked via a `OneToO
     *   `breed` (CharField): The breed of the animal.
     *   `horn_status` (CharField, for CattleDetails): Status of horns (e.g., horned, polled, dehorned).
     *   `wool_type` (CharField, for SheepDetails): Type of wool (e.g., fine, medium, coarse).
-    *   `flock_id` (CharField, for SheepDetails): ID of the flock the sheep belongs to.
     *   `liver_status` (DecimalField, for CattleDetails): Score reflecting the usability of the liver (0: Not Usable, 0.5: Not Bad, 1: Good).
     *   `head_status` (DecimalField, for CattleDetails): Score reflecting the usability of the head (0: Not Usable, 0.5: Not Bad, 1: Good).
     *   `bowels_status` (DecimalField, for CattleDetails): Score reflecting the usability of the bowels (0: Not Usable, 0.5: Not Bad, 1: Good).

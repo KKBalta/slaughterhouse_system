@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import BaseModel
 from users.models import User
+import uuid # Import uuid for UUIDField
 
 class LabelTemplate(BaseModel):
     TARGET_ITEM_TYPE_CHOICES = (
@@ -78,3 +79,38 @@ class PrintJob(BaseModel):
 
     def __str__(self):
         return f"Print Job for {self.item_type} ID: {self.item_id} - {self.status}"
+
+class Label(BaseModel):
+    ITEM_TYPE_CHOICES = (
+        ('carcass', 'Carcass'),
+        ('meat_cut', 'Meat Cut'),
+        ('offal', 'Offal'),
+        ('by_product', 'By-Product'),
+    )
+
+    label_code = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="A unique code printed on the label (e.g., QR code, barcode)."
+    )
+    item_type = models.CharField(
+        max_length=50,
+        choices=ITEM_TYPE_CHOICES,
+        help_text="Specifies what the label is for."
+    )
+    item_id = models.UUIDField(
+        help_text="The ID of the associated inventory item (e.g., Carcass.id, MeatCut.id)."
+    )
+    print_date = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the label was printed."
+    )
+    printed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        help_text="The user who printed the label."
+    )
+
+    def __str__(self):
+        return f"Label {self.label_code} for {self.item_type} ID: {self.item_id}"
