@@ -16,7 +16,7 @@ Represents a client's request for slaughter services. It serves as the central h
     *   `client_phone` (CharField, blank): For walk-in or one-time clients, their phone number.
     *   `service_package` (ForeignKey to `ServicePackage`): Defines the set of services requested for this order.
     *   `order_date` (DateField): The date the order was placed.
-    *   `status` (CharField with choices): Tracks the current status of the order (e.g., PENDING, IN_PROGRESS, COMPLETED, BILLED).
+    *   `status` (CharField with choices): Tracks the current status of the order (e.g., PENDING, IN_PROGRESS, COMPLETED, BILLED, CANCELLED).
     *   `destination` (CharField, optional): Specifies the final destination or market for the animals/products in this order.
 
 ### 2. `ServicePackage` Model
@@ -38,3 +38,36 @@ Defines a collection of services that a client can request. This model is crucia
 *   **Service Package Definition:** Provides a mechanism to define and manage the various service packages offered.
 *   **Client Intake:** Serves as the primary point of entry for client and order information into the system.
 *   **Order Status Tracking:** Manages the high-level status of each slaughter order throughout its lifecycle.
+
+## Service Layer
+
+To encapsulate business logic, the `reception` app will have a `services.py` file.
+
+### Planned Services
+
+#### `create_slaughter_order(...) -> SlaughterOrder`
+*   **Purpose:** Orchestrates the creation of a new `SlaughterOrder` and its associated `Animal` records.
+
+#### `update_slaughter_order(order: SlaughterOrder, **update_data) -> SlaughterOrder`
+*   **Purpose:** To handle changes to an existing order, such as modifying the `service_package` or `destination`.
+*   **Logic:** Will contain checks to prevent invalid updates (e.g., changing the package after processing has begun).
+
+#### `cancel_slaughter_order(order: SlaughterOrder, reason: str) -> SlaughterOrder`
+*   **Purpose:** To safely cancel an order.
+*   **Logic:** Will check if the order can be cancelled, change its status to `CANCELLED`, and handle the associated `Animal` records.
+
+#### `update_order_status_from_animals(order: SlaughterOrder) -> SlaughterOrder`
+*   **Purpose:** To automatically update the order's status based on the status of all animals within it.
+*   **Logic:** Can be called when an animal's status changes to progress the order's status from `PENDING` to `IN_PROGRESS` to `COMPLETED`.
+
+#### `bill_order(order: SlaughterOrder) -> SlaughterOrder`
+*   **Purpose:** To mark an order as billed.
+*   **Logic:** Changes the order's status to `BILLED` and can be expanded later for financial integrations.
+
+#### `add_animal_to_order(order: SlaughterOrder, animal_data: dict) -> Animal`
+*   **Purpose:** To add a new animal to a `PENDING` order.
+*   **Logic:** Checks if the order status is `PENDING` before calling the `processing.services.create_animal` service.
+
+#### `remove_animal_from_order(order: SlaughterOrder, animal: Animal)`
+*   **Purpose:** To remove an animal from a `PENDING` order.
+*   **Logic:** Checks if the order status is `PENDING` before deleting the `Animal` object.

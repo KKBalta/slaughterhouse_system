@@ -10,6 +10,7 @@ class SlaughterOrder(BaseModel):
         IN_PROGRESS = "IN_PROGRESS", 'In Progress'
         COMPLETED = "COMPLETED", 'Completed'
         BILLED = "BILLED", 'Billed'
+        CANCELLED = "CANCELLED", 'Cancelled'
 
     slaughter_order_no = models.CharField(
         max_length=50,
