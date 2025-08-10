@@ -55,3 +55,57 @@ Records various weight measurements throughout the animal's processing, supporti
 *   **Workflow Orchestration with `django-fsm`:** The `processing` app will leverage `django-fsm` to define and enforce state transitions for the `Animal` model. This ensures a controlled and valid progression through the slaughter workflow. Transitions can be conditional based on the `ServicePackage` selected in the `SlaughterOrder`.
 *   **Weight Management:** Records and manages all weight data, accommodating both precise individual measurements and efficient group weighings with average calculations.
 *   **Data Enrichment:** Stores animal-specific details through dedicated related models, allowing for tailored data capture based on species.
+
+## Service Layer
+
+To encapsulate business logic, the `processing` app will have a `services.py` file.
+
+### Planned Services
+
+#### `create_animal(...) -> Animal`
+*   **Purpose:** Orchestrates the creation of a new `Animal` and its associated detail model.
+
+#### `mark_animal_slaughtered(animal: Animal) -> Animal`
+*   **Purpose:** To transition the animal's status to 'slaughtered'.
+*   **Logic:** Calls the `animal.perform_slaughter()` FSM transition.
+
+#### `create_carcass_from_slaughter(animal: Animal, hot_carcass_weight: float, disposition: str) -> Carcass`
+*   **Purpose:** To create a `Carcass` record in the inventory after an animal has been slaughtered.
+*   **Logic:** Creates a `Carcass` object linked to the `Animal` with the provided hot carcass weight and disposition. This service should be called after `mark_animal_slaughtered`.
+
+#### `log_individual_weight(animal: Animal, weight_type: str, weight: float) -> WeightLog`
+*   **Purpose:** Logs an individual weight measurement for an animal.
+
+#### `disassemble_carcass(animal: Animal, meat_cuts_data: list, offal_data: list, by_products_data: list)`
+*   **Purpose:** Handles the disassembly of a carcass, creating all resulting inventory items.
+*   **Logic:** Creates `MeatCut` records. For `cattle`, `calf`, and `heifer` types, it also creates `Offal` and `ByProduct` records based on provided data. Raises `ValidationError` if offal/byproduct data is provided for animal types that do not track them.
+
+#### `record_initial_byproducts(animal: Animal, offal_data: list, by_products_data: list) -> dict`
+
+*   **Purpose:** To record the initial removal of offal and by-products that occur immediately after slaughter, before the main carcass disassembly.
+*   **Logic:** For `cattle`, `calf`, and `heifer` types, it creates `Offal` and `ByProduct` records. It does NOT change the `Animal`'s status to `disassembled` or the `Carcass`'s status to `disassembly_ready`. Raises `ValidationError` if offal/byproduct data is provided for animal types that do not track them.
+
+#### `update_animal_details(animal: Animal, details_data: dict) -> Animal`
+
+*   **Purpose:** To update the specific details (e.g., breed, horn status) of an animal.
+*   **Logic:** Identifies the correct detail model (e.g., `CattleDetails`) associated with the `Animal` and updates its fields.
+
+#### `log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type: str, group_quantity: int, group_total_weight: float) -> WeightLog`
+
+*   **Purpose:** To record weight measurements for a batch of animals associated with a `SlaughterOrder`.
+*   **Logic:** Creates a `WeightLog` entry, ensuring `is_group_weight` is `True` and all group-related fields are populated.
+
+#### `package_animal_products(animal: Animal) -> Animal`
+
+*   **Purpose:** To mark an animal's products as packaged.
+*   **Logic:** Calls the `animal.perform_packaging()` FSM transition.
+
+#### `deliver_animal_products(animal: Animal) -> Animal`
+
+*   **Purpose:** To mark an animal's products as delivered to the client.
+*   **Logic:** Calls the `animal.deliver_product()` FSM transition.
+
+#### `return_animal_to_owner(animal: Animal) -> Animal`
+
+*   **Purpose:** To mark an animal or its products as returned to the owner.
+*   **Logic:** Calls the `animal.return_to_owner()` FSM transition.
