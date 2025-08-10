@@ -1,50 +1,45 @@
-# Labeling App - Detailed Design
+# Labeling App – Design Plan
 
-This document details the design of the `labeling` Django app, which is responsible for generating and printing labels for various assets within the Slaughterhouse System, including carcasses, meat cuts, offal, and by-products. It will support different label formats, including wristband-style labels.
+This document outlines the design and functionality of the `labeling` app within the Slaughterhouse Management System. The primary responsibility of this app is to generate and manage various types of labels required throughout the animal processing workflow.
 
-## Core Models
+## 1. Project Principles (Specific to Labeling)
 
-### 1. `LabelTemplate` Model
+*   **Automation:** Maximize automated label generation and printing.
+*   **Accuracy:** Ensure labels accurately reflect product information and compliance requirements.
+*   **Integration:** Seamless integration with barcode/RFID systems and other apps.
+*   **Flexibility:** Support various label formats and content based on product type and destination.
 
-Defines the structure and content of different label types.
+## 2. App Architecture Overview
 
-*   **Purpose:** To allow for flexible and configurable label designs.
-*   **Key Fields:**
-    *   `name` (CharField, unique): A descriptive name for the template (e.g., "Carcass Label", "Meat Cut Wristband").
-    *   `template_data` (JSONField): Stores the layout and content variables for the label (e.g., position of text, barcodes, images).
-    *   `target_item_type` (CharField with choices): Specifies which type of inventory item this template is for (e.g., 'Carcass', 'MeatCut', 'Offal', 'ByProduct').
-    *   `is_active` (BooleanField): Whether the template is currently active and usable.
+| App Name | Responsibility | Key Entities / Concepts |
+| :--- | :--- | :--- |
+| `labeling` | Generates and prints labels for assets, integrated with barcode/RFID systems. | `Barcode`, `RFID`, `LabelTemplate` |
 
-### 2. `PrintJob` Model
+## 3. Key Functionalities
 
-Records details of each label printing request.
+*   **Label Generation:** Create labels for:
+    *   Individual animals (wristbands)
+    *   Carcasses
+    *   Meat cuts
+    *   Offal and by-products
+    *   Packaged products
+    *   Shipping containers
+*   **Template Management:** Define and manage various label templates to ensure consistency and compliance.
+*   **Barcode/RFID Integration:** Generate and encode barcodes (e.g., EAN-13, QR codes) or RFID tags.
+*   **Printing:** Interface with label printers for automated printing.
+*   **History & Audit:** Maintain a history of generated labels for traceability and auditing purposes.
 
-*   **Purpose:** To log printing activities, track print status, and facilitate reprinting if needed.
-*   **Key Fields:**
-    *   `label_template` (ForeignKey to `LabelTemplate`): The template used for this print job.
-    *   `item_type` (CharField with choices): The type of item being labeled (e.g., 'Carcass', 'MeatCut').
-    *   `item_id` (PositiveIntegerField): The ID of the specific inventory item being labeled.
-    *   `quantity` (IntegerField): Number of labels printed for this job.
-    *   `print_date` (DateTimeField): When the print job was initiated.
-    *   `printed_by` (ForeignKey to `users.User`): The user who initiated the print job.
-    *   `status` (CharField with choices): Status of the print job (e.g., 'PENDING', 'COMPLETED', 'FAILED').
+## 4. Enhanced Traceability: QR Code Wristbands
 
-### 3. `Label` Model
+To further enhance traceability and client transparency, the `labeling` app will support the generation of QR code wristbands for individual animals.
 
-Represents a physical label generated for a carcass, meat cut, offal, or by-product.
-
-*   **Purpose:** To store information about printed labels and their association with inventory items.
-*   **Key Fields:**
-    *   `label_code` (CharField, unique): A unique code printed on the label (e.g., QR code, barcode).
-    *   `item_type` (CharField with choices): Specifies what the label is for (e.g., 'Carcass', 'MeatCut', 'Offal', 'ByProduct').
-    *   `item_id` (UUIDField): The ID of the associated inventory item (e.g., Carcass.id, MeatCut.id). Changed from PositiveIntegerField to UUIDField to match BaseModel IDs.
-    *   `print_date` (DateTimeField): When the label was printed.
-    *   `printed_by` (ForeignKey to `users.User`): The user who printed the label.
-
-## App Functionality
-
-*   **Label Generation:** Dynamically generates label content based on `LabelTemplate` and data from associated inventory items.
-*   **Printing Interface:** Provides an interface for users to select items and print labels.
-*   **Template Management:** Allows administrators to create, edit, and manage label templates.
-*   **Print Job Logging:** Records all printing activities for auditing and troubleshooting.
-*   **Integration with Inventory:** Fetches necessary data from the `inventory` app to populate labels.
+*   **Purpose:** These wristbands will serve as a primary, scannable identifier for each animal throughout its processing journey. Scanning the QR code will provide real-time access to the animal's processing status and history.
+*   **Generation:**
+    *   A unique QR code will be generated for each `Animal` record created in the `processing` app, ideally at the point of reception/intake.
+    *   The QR code will encode a unique URL (e.g., `https://yourdomain.com/portal/track_animal/<animal_id>/`). The `<animal_id>` will typically be the `Animal`'s primary key (`pk`) or a stable `identification_tag`.
+    *   The `labeling` app will manage the generation of the QR code image and its association with the specific `Animal` record.
+*   **Integration with Portal App:**
+    *   The encoded URL will direct users to a dedicated page within the `portal` app.
+    *   This `portal` page will dynamically retrieve and display the animal's current processing status (e.g., `received`, `slaughtered`, `disassembled`, `packaged`), along with relevant historical data (e.g., weight logs, dates of key transitions).
+    *   This provides a read-only, real-time view of the animal's progress, enhancing transparency for clients and internal tracking.
+*   **Physical Implementation:** The QR codes will be printed on durable, animal-friendly wristbands designed to withstand the conditions of the slaughterhouse environment.
