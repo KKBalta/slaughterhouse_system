@@ -1,29 +1,49 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login - {{ block.super }}{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Login</h1>
-        <form method="post">
-            {% csrf_token %}
-            {% if form.errors %}
-                <ul class="messages error">
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                </div>
-            {% endfor %}
-            <button type="submit">Login</button>
-        </form>
-        <p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
-    </div>
+<div class="max-w-md mx-auto">
+    <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-8">
+      Sign in to your account
+    </h2>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                Username
+            </label>
+            <div class="mt-1">
+                {% render_field form.username class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                Password
+            </label>
+            <div class="mt-1">
+                {% render_field form.password class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %}
+            </div>
+        </div>
+
+        <div>
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Sign in
+            </button>
+        </div>
+    </form>
+    <p class="mt-4 text-center text-sm">
+        Don't have an account? <a href="{% url 'register' %}" class="font-medium text-indigo-600 hover:text-indigo-500">Register here.</a>
+    </p>
+</div>
 {% endblock %}

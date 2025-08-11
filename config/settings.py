@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-u#q0_7(ub$qmsysa$^ylfs6t8il_jsh#hgmpms8#s-1x)%&$k&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['a5f3818f2831.ngrok-free.app', 'localhost', '127.0.0.1']
+
+CSRF_TRUSTED_ORIGINS = ['https://a5f3818f2831.ngrok-free.app']
 
 
 # Application definition
@@ -38,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_fsm',
+    'tailwind', # Add django-tailwind here
+    'widget_tweaks',  # For form tweaks in templates
 
     # Local Apps
     'users',
@@ -48,6 +52,7 @@ INSTALLED_APPS = [
     'core',
     'labeling',
     'reporting',
+    'theme',  # Tailwind theme app
 ]
 
 MIDDLEWARE = [
@@ -126,6 +131,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -137,4 +143,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
+
+TAILWIND_APP_NAME = 'theme'
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 

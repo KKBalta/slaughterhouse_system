@@ -4,6 +4,15 @@ from django.views.generic.edit import CreateView
 from .forms import UserRegistrationForm
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+
+# New home view for the landing page
+def home_view(request):
+    return render(request, 'users/home.html')
+
+# New view for the logged out confirmation page
+def logged_out_view(request):
+    return render(request, 'users/logged_out.html')
 
 class RegisterView(CreateView):
     form_class = UserRegistrationForm
@@ -24,7 +33,8 @@ class CustomLoginView(LoginView):
         return reverse_lazy('dashboard') # Redirect to dashboard page after login
 
 class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy('login') # Redirect to login page after logout
+    next_page = reverse_lazy('logged_out') # Redirect to logged_out page after logout
 
+@login_required
 def dashboard_view(request):
     return render(request, 'users/dashboard.html')

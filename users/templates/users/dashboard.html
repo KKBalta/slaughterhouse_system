@@ -1,15 +1,47 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - {{ block.super }}{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Welcome to your Dashboard, {{ user.username }}!</h1>
-        <p>This is your main page after logging in.</p>
-        <p>From here, you can navigate to different parts of the system:</p>
-        <ul>
-            <li><a href="{% url 'reception:create_slaughter_order' %}">Create New Slaughter Order</a></li>
-            {# Add more links to other app functionalities here #}
-        </ul>
+    <header class="mb-8">
+        <h1 class="text-4xl font-extrabold text-gray-900">Welcome, {{ user.username }}!</h1>
+        <p class="mt-2 text-lg text-gray-600">This is your dashboard. Here are the actions you can perform.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        {% if user.role != 'CLIENT' %}
+        <!-- Card 1: Create Order -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-800">Reception</h3>
+                <p class="mt-2 text-gray-600">Create and manage slaughter orders for clients.</p>
+                <a href="{% url 'reception:create_slaughter_order' %}" class="mt-4 inline-block text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Create New Order</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user.role == 'CLIENT' %}
+        <!-- Card 2: View Orders (For Clients) -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-800">Client Portal</h3>
+                <p class="mt-2 text-gray-600">Track the status of your existing orders and view reports.</p>
+                <a href="#" class="mt-4 inline-block text-gray-500 bg-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center cursor-not-allowed" title="Coming Soon">View My Orders</a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if user.role == 'MANAGER' or user.role == 'ADMIN' %}
+        <!-- Card 3: Reporting (For Managers) -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-800">Reporting</h3>
+                <p class="mt-2 text-gray-600">View operational and financial reports.</p>
+                <a href="#" class="mt-4 inline-block text-gray-500 bg-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center cursor-not-allowed" title="Coming Soon">View Reports</a>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 {% endblock %}
