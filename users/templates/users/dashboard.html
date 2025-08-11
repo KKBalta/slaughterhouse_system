@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Welcome to your Dashboard, {{ user.username }}!</h1>
+        <p>This is your main page after logging in.</p>
+        <p>From here, you can navigate to different parts of the system:</p>
+        <ul>
+            <li><a href="{% url 'reception:create_slaughter_order' %}">Create New Slaughter Order</a></li>
+            {# Add more links to other app functionalities here #}
+        </ul>
+    </div>
+{% endblock %}
