@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Slaughter Orders</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order No.</th>
+                <th>Client</th>
+                <th>Order Date</th>
+                <th>Status</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.slaughter_order_no }}</td>
+                <td>{{ order.client.get_full_name|default:order.client_name }}</td>
+                <td>{{ order.order_date }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td><a href="{% url 'reception:slaughter_order_detail' order.pk %}">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

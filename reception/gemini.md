@@ -39,6 +39,36 @@ Defines a collection of services that a client can request. This model is crucia
 *   **Client Intake:** Serves as the primary point of entry for client and order information into the system.
 *   **Order Status Tracking:** Manages the high-level status of each slaughter order throughout its lifecycle.
 
+## URLs and Views
+
+The `reception` app will provide the following user-facing pages:
+
+### 1. Create Slaughter Order
+
+*   **URL:** `/reception/create_order/`
+*   **View:** `CreateSlaughterOrderView` (Class-Based View)
+    *   **Template:** `reception/create_order.html`
+    *   **HTTP Methods:**
+        *   `GET`: Renders the `SlaughterOrderForm` for creating a new order.
+        *   `POST`: Processes the submitted form. On successful validation, it calls the `create_slaughter_order` service and redirects to a success page or back to the form.
+*   **Permissions:** `LoginRequiredMixin`
+
+### 2. Slaughter Order List
+
+*   **URL:** `/reception/orders/`
+*   **View:** `SlaughterOrderListView` (ListView)
+    *   **Template:** `reception/order_list.html`
+    *   **Functionality:** Displays a paginated list of all slaughter orders, showing key information like Order No., Client, Date, and Status.
+*   **Permissions:** `LoginRequiredMixin`
+
+### 3. Slaughter Order Detail
+
+*   **URL:** `/reception/orders/<int:pk>/`
+*   **View:** `SlaughterOrderDetailView` (DetailView)
+    *   **Template:** `reception/order_detail.html`
+    *   **Functionality:** Shows all details for a specific slaughter order, including the service package, all associated animals, and their current statuses.
+*   **Permissions:** `LoginRequiredMixin`
+
 ## Service Layer
 
 To encapsulate business logic, the `reception` app will have a `services.py` file.
