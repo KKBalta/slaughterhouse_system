@@ -31,7 +31,7 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
                 order = create_slaughter_order(
                     client_id=form.cleaned_data['client'].id if form.cleaned_data.get('client') else None,
                     service_package_id=form.cleaned_data['service_package'].id,
-                    order_date=form.cleaned_data['order_date'],
+                    order_datetime=form.cleaned_data['order_datetime'],
                     destination=form.cleaned_data['destination'],
                     client_name=form.cleaned_data.get('client_name', ''),
                     client_phone=form.cleaned_data.get('client_phone', ''),
@@ -55,7 +55,7 @@ class SlaughterOrderListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return SlaughterOrder.objects.all().order_by('-order_date')
+        return SlaughterOrder.objects.all().order_by('-order_datetime')
 
 
 class SlaughterOrderDetailView(LoginRequiredMixin, DetailView):
@@ -77,7 +77,7 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
             update_data = {
                 'service_package': form.cleaned_data['service_package'],
                 'destination': form.cleaned_data['destination'],
-                'order_date': form.cleaned_data['order_date'],
+                'order_datetime': form.cleaned_data['order_datetime'],
             }
             update_slaughter_order(order=self.get_object(), **update_data)
             messages.success(self.request, "Order updated successfully!")

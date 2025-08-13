@@ -14,7 +14,7 @@
 
     <p><strong>Order No:</strong> {{ order.slaughter_order_no }}</p>
     <p><strong>Client:</strong> {{ order.client.get_full_name|default:order.client_name }}</p>
-    <p><strong>Order Date:</strong> {{ order.order_date }}</p>
+    <p><strong>Order Date:</strong> {{ order.order_datetime|date:"Y-m-d H:i" }}</p>                           
     <p><strong>Status:</strong> {{ order.get_status_display }}</p>
     <p><strong>Service Package:</strong> {{ order.service_package.name }}</p>
     <p><strong>Destination:</strong> {{ order.destination }}</p>

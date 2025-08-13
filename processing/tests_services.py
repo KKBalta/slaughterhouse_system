@@ -7,6 +7,7 @@ from processing.models import Animal, WeightLog, CattleDetails, SheepDetails, Go
 from inventory.models import Carcass, MeatCut, Offal, ByProduct
 from processing.services import create_animal, mark_animal_slaughtered, create_carcass_from_slaughter, log_individual_weight, disassemble_carcass, update_animal_details, log_group_weight, package_animal_products, deliver_animal_products, return_animal_to_owner, update_animal_metadata, record_cold_carcass_weight, record_initial_byproducts
 from datetime import date
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -17,7 +18,7 @@ class ProcessingServiceTest(TestCase):
         self.user = User.objects.create_user(username='testclient', role=User.Role.CLIENT)
         self.client_profile = ClientProfile.objects.create(user=self.user, account_type='INDIVIDUAL', phone_number='123', address='abc')
         self.service_package = ServicePackage.objects.create(name='Full Service', includes_disassembly=True, includes_delivery=True)
-        self.order = SlaughterOrder.objects.create(client=self.client_profile, service_package=self.service_package, order_date=date.today())
+        self.order = SlaughterOrder.objects.create(client=self.client_profile, service_package=self.service_package, order_datetime=timezone.now())
         self.animal = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
 
     def test_mark_animal_slaughtered_and_create_carcass_service(self):

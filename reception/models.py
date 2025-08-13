@@ -33,7 +33,7 @@ class SlaughterOrder(BaseModel):
         help_text="The service package selected for this order."
     )
 
-    order_date = models.DateField()
+    order_datetime = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     destination = models.CharField(
         max_length=255,
@@ -47,10 +47,14 @@ class SlaughterOrder(BaseModel):
             # Get the count of orders for today to make it unique
             # This approach is simple but might have race conditions in high-concurrency
             # For production, consider a more robust sequence generator or database sequence
-            count = SlaughterOrder.objects.filter(order_date=self.order_date).count() + 1
+            if hasattr(self.order_datetime, 'date'):
+                order_date = self.order_datetime.date()
+            else:
+                order_date = self.order_datetime
+            count = SlaughterOrder.objects.filter(order_datetime__date=order_date).count() + 1
             self.slaughter_order_no = f"ORD-{today}-{count:04d}"
         super().save(*args, **kwargs)
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name
-        return f"Order {self.slaughter_order_no} for {client_display} on {self.order_date}"
+        return f"Order {self.slaughter_order_no} for {client_display} on {self.order_datetime.date()}"

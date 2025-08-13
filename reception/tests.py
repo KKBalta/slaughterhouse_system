@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from .models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
-from datetime import date
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -27,7 +27,7 @@ class ReceptionModelTest(TestCase):
     def test_create_order_with_registered_client(self):
         order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=timezone.now(),
             service_package=self.service_package
         )
         self.assertEqual(order.client, self.client_profile)
@@ -38,7 +38,7 @@ class ReceptionModelTest(TestCase):
         order = SlaughterOrder.objects.create(
             client_name='John Doe',
             client_phone='555-1234',
-            order_date=date.today(),
+            order_datetime=timezone.now(),
             service_package=self.service_package
         )
         self.assertIsNone(order.client)
@@ -48,7 +48,7 @@ class ReceptionModelTest(TestCase):
     def test_client_profile_deletion(self):
         order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=timezone.now(),                                                          
             service_package=self.service_package
         )
         self.client_profile.delete()
@@ -58,7 +58,7 @@ class ReceptionModelTest(TestCase):
     def test_service_package_deletion(self):
         order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=timezone.now(),                                                          
             service_package=self.service_package
         )
         self.service_package.delete()
@@ -68,7 +68,7 @@ class ReceptionModelTest(TestCase):
     def test_create_order_with_no_client_info(self):
         # This might be a valid scenario for some internal processes
         order = SlaughterOrder.objects.create(
-            order_date=date.today(),
+            order_datetime=timezone.now(),                                                          
             service_package=self.service_package
         )
         self.assertIsNone(order.client)

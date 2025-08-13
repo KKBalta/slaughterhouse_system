@@ -66,7 +66,7 @@ class UsersServiceTest(TestCase):
         walk_in_phone = '888-777-6666'
         SlaughterOrder.objects.create(
             client_name='Walk-in Joe', client_phone=walk_in_phone, 
-            order_date=date.today(), service_package=self.service_package
+            order_datetime=date.today(), service_package=self.service_package
         )
         user_data = {'username': 'walkinjoe', 'password': 'newpassword', 'role': User.Role.CLIENT}
         profile_data = {'account_type': 'INDIVIDUAL', 'phone_number': walk_in_phone, 'address': '123 Converted St'}

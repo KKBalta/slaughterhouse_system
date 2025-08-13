@@ -30,7 +30,7 @@ class InventoryModelTest(TestCase):
         )
         self.order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=date.today(),
             service_package=self.service_package
         )
         self.animal = Animal.objects.create(

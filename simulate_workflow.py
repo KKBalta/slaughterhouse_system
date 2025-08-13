@@ -47,7 +47,7 @@ print("ClientProfile: {} (Created: {})".format(client_profile.company_name, crea
 # 4. Create a SlaughterOrder
 slaughter_order, created = SlaughterOrder.objects.get_or_create(
     client=client_profile,
-    order_date=timezone.now().date(),
+    order_datetime=timezone.now(),
     defaults={
         "service_package": service_package,
         "status": SlaughterOrder.Status.PENDING

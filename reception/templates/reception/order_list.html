@@ -18,7 +18,7 @@
             <tr>
                 <td>{{ order.slaughter_order_no }}</td>
                 <td>{{ order.client.get_full_name|default:order.client_name }}</td>
-                <td>{{ order.order_date }}</td>
+                <td>{{ order.order_datetime|date:"Y-m-d H:i" }}</td> 
                 <td>{{ order.get_status_display }}</td>
                 <td><a href="{% url 'reception:slaughter_order_detail' order.pk %}">View</a></td>
             </tr>

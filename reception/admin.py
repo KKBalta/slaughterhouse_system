@@ -4,8 +4,8 @@ from users.models import User, ClientProfile
 
 @admin.register(SlaughterOrder)
 class SlaughterOrderAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'status', 'order_date')
-    list_filter = ('status', 'order_date')
+    list_display = ('__str__', 'status', 'order_datetime')
+    list_filter = ('status', 'order_datetime')
     search_fields = ('client__company_name', 'client_name', 'client_phone')
     autocomplete_fields = ('client',)
     actions = ['convert_to_registered_client']

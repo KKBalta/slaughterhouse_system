@@ -35,7 +35,7 @@ class ProcessingModelTest(TestCase):
         )
         self.order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=timezone.now(),
             service_package=self.service_package_full
         )
 
@@ -115,7 +115,7 @@ class ProcessingModelTest(TestCase):
     def test_animal_fsm_conditional_transition_fail(self):
         simple_order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_date=date.today(),
+            order_datetime=timezone.now(),
             service_package=self.service_package_simple
         )
         animal = Animal.objects.create(

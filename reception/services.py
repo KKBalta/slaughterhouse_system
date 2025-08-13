@@ -4,11 +4,11 @@ from .models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
 from processing.models import Animal # Add Animal import
 from processing.services import create_animal
-from datetime import date
+from datetime import date, datetime
 from django.core.exceptions import ValidationError
 
 @transaction.atomic
-def create_slaughter_order(client_id: str, service_package_id: str, order_date: date, animals_data: list, client_name: str = None, client_phone: str = None, destination: str = None) -> SlaughterOrder:
+def create_slaughter_order(client_id: str, service_package_id: str, order_datetime: datetime, animals_data: list, client_name: str = None, client_phone: str = None, destination: str = None) -> SlaughterOrder:
     """
     Creates a new SlaughterOrder and all its associated animals.
     Handles both registered and walk-in clients.
@@ -22,7 +22,7 @@ def create_slaughter_order(client_id: str, service_package_id: str, order_date: 
     order = SlaughterOrder.objects.create(
         client=client_profile,
         service_package=service_package,
-        order_date=order_date,
+        order_datetime=order_datetime,
         client_name=client_name if not client_profile else '',
         client_phone=client_phone if not client_profile else '',
         destination=destination
@@ -43,7 +43,7 @@ def update_slaughter_order(order: SlaughterOrder, **data) -> SlaughterOrder:
     if order.status != SlaughterOrder.Status.PENDING:
         raise ValidationError(f"Cannot update an order that is already in progress, completed, or cancelled.")
 
-    allowed_fields = ['service_package', 'destination', 'order_date']
+    allowed_fields = ['service_package', 'destination', 'order_datetime']
     for field, value in data.items():
         if field in allowed_fields:
             setattr(order, field, value)

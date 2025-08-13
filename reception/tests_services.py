@@ -10,7 +10,8 @@ from reception.services import (
     update_order_status_from_animals, bill_order,
     add_animal_to_order, remove_animal_from_order
 )
-from datetime import date
+from datetime import date, datetime
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -40,14 +41,14 @@ class ReceptionServiceTest(TestCase):
         order = create_slaughter_order(
             client_id=self.client_profile.id,
             service_package_id=self.service_package.id,
-            order_date=date.today(),
+            order_datetime=timezone.now(),
             animals_data=animals_data
         )
         self.assertEqual(SlaughterOrder.objects.count(), 1)
         self.assertEqual(order.animals.count(), 2)
 
     def test_update_slaughter_order_service(self):
-        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_date=date.today(), animals_data=[])
+        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_datetime=timezone.now(), animals_data=[])
         self.assertEqual(order.destination, None)
 
         updated_order = update_slaughter_order(order=order, destination='New Market', service_package=self.service_package_simple)
@@ -61,7 +62,7 @@ class ReceptionServiceTest(TestCase):
             update_slaughter_order(order=order, destination='Another Market')
 
     def test_cancel_slaughter_order_service(self):
-        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_date=date.today(), animals_data=[{'animal_type': 'cattle'}])
+        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_datetime=timezone.now(), animals_data=[{'animal_type': 'cattle'}])
         self.assertEqual(order.status, SlaughterOrder.Status.PENDING)
         
         cancelled_order = cancel_slaughter_order(order=order)
@@ -78,7 +79,7 @@ class ReceptionServiceTest(TestCase):
         order = create_slaughter_order(
             client_id=self.client_profile.id, 
             service_package_id=self.service_package.id, 
-            order_date=date.today(), 
+            order_datetime=timezone.now(),
             animals_data=[
                 {'animal_type': 'cattle'}, {'animal_type': 'sheep'}
             ]
@@ -109,7 +110,7 @@ class ReceptionServiceTest(TestCase):
         self.assertEqual(order.status, SlaughterOrder.Status.COMPLETED)
 
     def test_bill_order_service(self):
-        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_date=date.today(), animals_data=[])
+        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_datetime=timezone.now(), animals_data=[])
         order.status = SlaughterOrder.Status.COMPLETED
         order.save()
 
@@ -123,7 +124,7 @@ class ReceptionServiceTest(TestCase):
             bill_order(order=order)
 
     def test_add_animal_to_order_service(self):
-        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_date=date.today(), animals_data=[])
+        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_datetime=timezone.now(), animals_data=[])
         self.assertEqual(order.animals.count(), 0)
 
         animal_data = {'animal_type': 'goat', 'identification_tag': 'GOAT-001'}
@@ -140,7 +141,7 @@ class ReceptionServiceTest(TestCase):
             add_animal_to_order(order=order, animal_data={'animal_type': 'lamb'})
 
     def test_remove_animal_from_order_service(self):
-        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_date=date.today(), animals_data=[
+        order = create_slaughter_order(client_id=self.client_profile.id, service_package_id=self.service_package.id, order_datetime=timezone.now(), animals_data=[
             {'animal_type': 'cattle', 'identification_tag': 'CATTLE-001'},
             {'animal_type': 'sheep', 'identification_tag': 'SHEEP-001'}
         ])

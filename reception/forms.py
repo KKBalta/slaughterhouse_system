@@ -9,9 +9,9 @@ class SlaughterOrderForm(forms.ModelForm):
 
     class Meta:
         model = SlaughterOrder
-        fields = ['client', 'client_name', 'client_phone', 'service_package', 'order_date', 'destination']
+        fields = ['client', 'client_name', 'client_phone', 'service_package', 'order_datetime', 'destination']
         widgets = {
-            'order_date': forms.DateInput(attrs={'type': 'date'}),
+            'order_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
     def __init__(self, *args, **kwargs):

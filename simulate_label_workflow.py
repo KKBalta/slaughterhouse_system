@@ -14,7 +14,7 @@ user.set_password('testpassword')
 user.save()
 client_profile, _ = ClientProfile.objects.get_or_create(user=user, defaults={'account_type': ClientProfile.AccountType.INDIVIDUAL, 'phone_number': '1234567890', 'address': 'Test Address'})
 service_package, _ = ServicePackage.objects.get_or_create(name='Full Processing', defaults={'includes_disassembly': True, 'includes_delivery': True})
-order, _ = SlaughterOrder.objects.get_or_create(client=client_profile, order_date=date.today(), defaults={'service_package': service_package})
+order, _ = SlaughterOrder.objects.get_or_create(client=client_profile, order_datetime=timezone.now().date(), defaults={'service_package': service_package})
 storage_location, _ = StorageLocation.objects.get_or_create(name='Freezer 1', defaults={'location_type': 'freezer'})
 
 # Create an Animal and Carcass
