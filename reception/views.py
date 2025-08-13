@@ -160,7 +160,7 @@ class AddAnimalToOrderView(LoginRequiredMixin, View):
 
     def post(self, request, order_pk):
         order = get_object_or_404(SlaughterOrder, pk=order_pk)
-        form = AnimalForm(request.POST)
+        form = AnimalForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 add_animal_to_order(order=order, animal_data=form.cleaned_data)
@@ -182,7 +182,7 @@ class EditAnimalInOrderView(LoginRequiredMixin, View):
     def post(self, request, order_pk, animal_pk):
         order = get_object_or_404(SlaughterOrder, pk=order_pk)
         animal = get_object_or_404(Animal, pk=animal_pk)
-        form = AnimalForm(request.POST, instance=animal)
+        form = AnimalForm(request.POST, request.FILES, instance=animal)
         if form.is_valid():
             try:
                 # A service function `update_animal_in_order` would be better.

@@ -56,7 +56,7 @@
                 </div>
             {% endif %}
 
-            <form method="post" class="space-y-4">
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="form-group">
@@ -64,7 +64,14 @@
                             {{ field.label }}
                         </label>
                         
-                        {{ field }}
+                        {% if field.name == 'picture' or field.name == 'passport_picture' %}
+                            {{ field }}
+                            {% if field.value %}
+                                <p class="mt-1 text-xs text-gray-600">Current: {{ field.value.name }}</p>
+                            {% endif %}
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
                         
                         {% if field.help_text %}
                             <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>

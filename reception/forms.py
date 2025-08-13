@@ -108,7 +108,13 @@ class SlaughterOrderForm(forms.ModelForm):
 class AnimalForm(forms.ModelForm):
     class Meta:
         model = Animal
-        fields = ['animal_type', 'identification_tag']
+        fields = [
+            'animal_type', 
+            'identification_tag', 
+            'received_date',
+            'picture', 
+            'passport_picture'
+        ]
         widgets = {
             'animal_type': forms.Select(attrs={
                 'class': 'modern-select-full'
@@ -117,9 +123,29 @@ class AnimalForm(forms.ModelForm):
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
                 'placeholder': 'Enter identification tag (optional - auto-generated if empty)'
             }),
+            'received_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white'
+            }),
+            'picture': forms.FileInput(attrs={
+                'accept': 'image/*',
+                'class': 'block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+            }),
+            'passport_picture': forms.FileInput(attrs={
+                'accept': 'image/*',
+                'class': 'block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['animal_type'].empty_label = "Select animal type"
         self.fields['identification_tag'].required = False
+        
+        # Set custom labels
+        self.fields['picture'].label = "Animal Photo"
+        self.fields['passport_picture'].label = "Passport/Document Photo"
+        
+        # Make both pictures required during registration
+        self.fields['picture'].required = True
+        self.fields['passport_picture'].required = True

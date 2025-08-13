@@ -66,6 +66,11 @@ class Animal(BaseModel):
         blank=True, null=True,
         help_text="Picture of the animal."
     )
+    passport_picture = models.ImageField(
+        upload_to='animal_passports/',
+        blank=True, null=True,
+        help_text="Picture of the animal's passport/documentation."
+    )
     leather_weight_kg = models.DecimalField(
         max_digits=6, decimal_places=2,
         null=True, blank=True,
