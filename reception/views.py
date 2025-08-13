@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
 from django.db.models import Q
-from .forms import SlaughterOrderForm, AnimalForm
+from .forms import SlaughterOrderForm, SlaughterOrderUpdateForm, AnimalForm
 from .models import SlaughterOrder
 from processing.models import Animal
 from users.models import ClientProfile
@@ -109,7 +109,7 @@ class SlaughterOrderDetailView(LoginRequiredMixin, DetailView):
 
 class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
     model = SlaughterOrder
-    form_class = SlaughterOrderForm
+    form_class = SlaughterOrderUpdateForm
     template_name = 'reception/update_order.html'
     
     def get_success_url(self):
@@ -117,6 +117,26 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
+            # Get client data from form
+            client_id = form.cleaned_data.get('client_id')
+            client_name = form.cleaned_data.get('client_name', '')
+            client_phone = form.cleaned_data.get('client_phone', '')
+            
+            # Update client information
+            if client_id:
+                try:
+                    client = ClientProfile.objects.get(id=client_id)
+                    self.object.client = client
+                    self.object.client_name = ''
+                    self.object.client_phone = ''
+                except ClientProfile.DoesNotExist:
+                    pass
+            else:
+                self.object.client = None
+                self.object.client_name = client_name
+                self.object.client_phone = client_phone
+            
+            # Update other fields
             update_data = {
                 'service_package': form.cleaned_data['service_package'],
                 'destination': form.cleaned_data['destination'],

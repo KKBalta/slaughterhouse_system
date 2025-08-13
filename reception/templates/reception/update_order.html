@@ -5,6 +5,35 @@
 {% block content %}
     <style>
         /* Modern select styling */
+        .modern-select {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem 0 0 0.375rem;
+            padding: 0.5rem 1.75rem 0.5rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #111827;
+            width: 70px;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.25rem center;
+            background-repeat: no-repeat;
+            background-size: 1em 1em;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        
+        .modern-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        }
+        
+        .modern-select:hover {
+            border-color: #9ca3af;
+        }
+        
         .modern-select-full {
             background: white;
             border: 1px solid #d1d5db;
@@ -34,6 +63,56 @@
         .modern-select-full:hover {
             border-color: #9ca3af;
         }
+        
+        /* Client search dropdown styling */
+        #client-search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        @media (max-width: 640px) {
+            #client-search-results {
+                max-height: 150px;
+            }
+        }
+        
+        .client-search-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.15s ease;
+        }
+        
+        .client-search-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .client-search-item:last-child {
+            border-bottom: none;
+        }
+        
+        .client-name {
+            font-weight: 500;
+            color: #111827;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        .client-info {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
     </style>
 
     <div class="px-4 py-6 max-w-md mx-auto">
@@ -54,29 +133,123 @@
                         </div>
                     {% endfor %}
                 </div>
-            {% endif %}            <form method="post" class="space-y-4">
+            {% endif %}
+
+            <form method="post" class="space-y-4">
                 {% csrf_token %}
-                {% for field in form %}
-                    <div class="form-group">
-                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
-                            {{ field.label }}
-                        </label>
-                        
-                        {{ field }}
-                        
-                        {% if field.help_text %}
-                            <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>
-                        {% endif %}
-                        
-                        {% if field.errors %}
-                            <div class="mt-1">
-                                {% for error in field.errors %}
-                                    <p class="text-xs text-red-600">{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                
+                <!-- Client Search Section -->
+                <div class="form-group relative">
+                    <label for="client-search" class="block text-sm font-medium text-gray-900 mb-1">
+                        Search Registered Client
+                    </label>
+                    {{ form.client_search }}
+                    {{ form.client_id }}
+                    
+                    <!-- Client search results dropdown -->
+                    <div id="client-search-results" class="hidden absolute z-10 left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg mt-1">
+                        <!-- Results will be populated by JavaScript -->
                     </div>
+                    
+                    <!-- Selected client display -->
+                    <div id="selected-client" class="{% if not form.client_id.value %}hidden{% endif %} mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="font-medium text-blue-900 truncate" id="selected-client-name">
+                                    {% if object.client %}{{ object.client.company_name|default:object.client.get_full_name }}{% endif %}
+                                </div>
+                                <div class="text-sm text-blue-600 truncate" id="selected-client-info">
+                                    {% if object.client %}{{ object.client.get_contact_info|default:"" }} • {{ object.client.phone_number|default:"" }}{% endif %}
+                                </div>
+                            </div>
+                            <button type="button" id="clear-client" class="flex-shrink-0 text-red-600 hover:text-red-800 p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OR Divider -->
+                <div class="flex items-center my-4">
+                    <div class="flex-1 border-t border-gray-300"></div>
+                    <span class="px-3 text-sm text-gray-500 bg-white">OR</span>
+                    <div class="flex-1 border-t border-gray-300"></div>
+                </div>
+
+                <!-- Walk-in Client Name -->
+                <div class="form-group">
+                    <label for="{{ form.client_name.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
+                        {{ form.client_name.label }}
+                    </label>
+                    {{ form.client_name }}
+                    {% if form.client_name.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.client_name.help_text }}</p>
+                    {% endif %}
+                    {% if form.client_name.errors %}
+                        <div class="mt-1">
+                            {% for error in form.client_name.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Walk-in Client Phone with Area Code -->
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-900 mb-1">
+                        Walk-in Client Phone
+                    </label>
+                    <div class="flex">
+                        <div class="relative">
+                            {{ form.client_phone_area_code }}
+                        </div>
+                        {{ form.client_phone }}
+                    </div>
+                    {% if form.client_phone.errors %}
+                        <div class="mt-1">
+                            {% for error in form.client_phone.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Other form fields -->
+                <!-- Other form fields -->
+                {% for field in form %}
+                    {% if field.name not in 'client_search,client_id,client_name,client_phone,client_phone_area_code' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
+                                {{ field.label }}
+                            </label>
+                            
+                            {{ field }}
+                            
+                            {% if field.help_text %}
+                                <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>
+                            {% endif %}
+                            
+                            {% if field.errors %}
+                                <div class="mt-1">
+                                    {% for error in field.errors %}
+                                        <p class="text-xs text-red-600">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 {% endfor %}
+                
+                <!-- Form validation errors -->
+                {% if form.non_field_errors %}
+                    <div class="mt-4">
+                        {% for error in form.non_field_errors %}
+                            <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' object.pk %}" 
@@ -91,4 +264,121 @@
             </form>
         </div>
     </div>
+
+    <!-- JavaScript for client search -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clientSearch = document.getElementById('client-search');
+            const clientId = document.getElementById('client-id');
+            const searchResults = document.getElementById('client-search-results');
+            const selectedClient = document.getElementById('selected-client');
+            const selectedClientName = document.getElementById('selected-client-name');
+            const selectedClientInfo = document.getElementById('selected-client-info');
+            const clearClientBtn = document.getElementById('clear-client');
+            const clientNameField = document.querySelector('input[name="client_name"]');
+            const clientPhoneField = document.querySelector('input[name="client_phone"]');
+            
+            let searchTimeout;
+
+            clientSearch.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                clearTimeout(searchTimeout);
+                
+                if (query.length < 2) {
+                    searchResults.classList.add('hidden');
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    fetch(`{% url 'reception:client_search' %}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            searchResults.innerHTML = '';
+                            
+                            if (data.clients.length === 0) {
+                                searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">No clients found</div>';
+                            } else {
+                                data.clients.forEach(client => {
+                                    const item = document.createElement('div');
+                                    item.className = 'client-search-item';
+                                    
+                                    // Truncate long names for mobile
+                                    const displayName = client.display_name.length > 30 ? 
+                                        client.display_name.substring(0, 30) + '...' : 
+                                        client.display_name;
+                                    
+                                    const contactInfo = client.contact_info.length > 20 ? 
+                                        client.contact_info.substring(0, 20) + '...' : 
+                                        client.contact_info;
+                                    
+                                    item.innerHTML = `
+                                        <div class="client-name" title="${client.display_name}">${displayName}</div>
+                                        <div class="client-info" title="${client.contact_info} • ${client.phone}">${contactInfo} • ${client.phone}</div>
+                                    `;
+                                    item.addEventListener('click', () => selectClient(client));
+                                    searchResults.appendChild(item);
+                                });
+                            }
+                            
+                            searchResults.classList.remove('hidden');
+                        })
+                        .catch(error => {
+                            console.error('Error fetching clients:', error);
+                        });
+                }, 300);
+            });
+
+            function selectClient(client) {
+                clientId.value = client.id;
+                clientSearch.value = client.display_name;
+                
+                // Set full text for selected client display (will be truncated by CSS)
+                selectedClientName.textContent = client.display_name;
+                selectedClientName.title = client.display_name; // Full text on hover
+                
+                const infoText = `${client.contact_info} • ${client.phone}`;
+                selectedClientInfo.textContent = infoText;
+                selectedClientInfo.title = infoText; // Full text on hover
+                
+                selectedClient.classList.remove('hidden');
+                searchResults.classList.add('hidden');
+                
+                // Clear walk-in client fields
+                clientNameField.value = '';
+                clientPhoneField.value = '';
+            }
+
+            clearClientBtn.addEventListener('click', function() {
+                clientId.value = '';
+                clientSearch.value = '';
+                selectedClient.classList.add('hidden');
+                searchResults.classList.add('hidden');
+            });
+
+            // Hide search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#client-search') && !e.target.closest('#client-search-results')) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+
+            // Clear registered client when typing in walk-in fields
+            clientNameField.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    clientId.value = '';
+                    clientSearch.value = '';
+                    selectedClient.classList.add('hidden');
+                }
+            });
+
+            clientPhoneField.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    clientId.value = '';
+                    clientSearch.value = '';
+                    selectedClient.classList.add('hidden');
+                }
+            });
+        });
+    </script>
 {% endblock %}

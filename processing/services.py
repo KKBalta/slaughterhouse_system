@@ -1,9 +1,11 @@
-
 from django.db import transaction
 from .models import Animal, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, WeightLog
 from inventory.models import Carcass, MeatCut, Offal, ByProduct
 from reception.models import SlaughterOrder # Added for log_group_weight
 from django.core.exceptions import ValidationError # Added for update_animal_details
+import os
+from django.core.files.storage import default_storage
+from django.conf import settings
 
 # Define animal types that track offal/byproducts
 OFFAL_BYPRODUCT_TRACKING_ANIMAL_TYPES = ['cattle', 'calf', 'heifer']
@@ -227,3 +229,51 @@ def record_initial_byproducts(animal: Animal, offal_data: list, by_products_data
         "offal_count": offal_count,
         "by_products_count": by_products_count
     }
+
+def delete_animal_files(animal):
+    """
+    Delete all files associated with an animal when it's removed.
+    """
+    files_to_delete = []
+    
+    if animal.picture:
+        files_to_delete.append(animal.picture.name)
+    
+    if animal.passport_picture:
+        files_to_delete.append(animal.passport_picture.name)
+    
+    for file_path in files_to_delete:
+        if default_storage.exists(file_path):
+            default_storage.delete(file_path)
+
+def get_animal_file_urls(animal):
+    """
+    Get URLs for all animal files for display purposes.
+    """
+    urls = {}
+    
+    if animal.picture:
+        urls['picture'] = animal.picture.url
+    
+    if animal.passport_picture:
+        urls['passport_picture'] = animal.passport_picture.url
+    
+    return urls
+
+def validate_animal_images(animal):
+    """
+    Validate that required images exist and are accessible.
+    """
+    issues = []
+    
+    if not animal.picture:
+        issues.append("Animal photo is missing")
+    elif not default_storage.exists(animal.picture.name):
+        issues.append("Animal photo file not found on disk")
+    
+    if not animal.passport_picture:
+        issues.append("Passport photo is missing")
+    elif not default_storage.exists(animal.passport_picture.name):
+        issues.append("Passport photo file not found on disk")
+    
+    return issues

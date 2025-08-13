@@ -4,6 +4,45 @@ from reception.models import SlaughterOrder
 from django_fsm import FSMField, transition
 from django.utils import timezone
 import uuid # Import uuid for unique tag generation
+import os
+
+def animal_picture_upload_path(instance, filename):
+    """
+    Generate upload path for animal pictures using identification tag.
+    """
+    # Get file extension
+    ext = filename.split('.')[-1] if '.' in filename else 'jpg'
+    
+    # Use identification_tag if available, otherwise generate one
+    if instance.identification_tag:
+        tag = instance.identification_tag
+    else:
+        # Generate a temporary tag based on animal type if not set yet
+        tag = f"{instance.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
+    
+    # Clean the tag for filename (remove special characters)
+    clean_tag = "".join(c for c in tag if c.isalnum() or c in ('-', '_')).rstrip()
+    
+    return f'animal_pictures/{clean_tag}_photo.{ext}'
+
+def animal_passport_upload_path(instance, filename):
+    """
+    Generate upload path for animal passport pictures using identification tag.
+    """
+    # Get file extension
+    ext = filename.split('.')[-1] if '.' in filename else 'jpg'
+    
+    # Use identification_tag if available, otherwise generate one
+    if instance.identification_tag:
+        tag = instance.identification_tag
+    else:
+        # Generate a temporary tag based on animal type if not set yet
+        tag = f"{instance.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
+    
+    # Clean the tag for filename (remove special characters)
+    clean_tag = "".join(c for c in tag if c.isalnum() or c in ('-', '_')).rstrip()
+    
+    return f'animal_passports/{clean_tag}_passport.{ext}'
 
 class Animal(BaseModel):
     ANIMAL_TYPES = (
@@ -62,12 +101,12 @@ class Animal(BaseModel):
         help_text="Current status of the animal in the processing workflow."
     )
     picture = models.ImageField(
-        upload_to='animal_pictures/',
+        upload_to=animal_picture_upload_path,
         blank=True, null=True,
         help_text="Picture of the animal."
     )
     passport_picture = models.ImageField(
-        upload_to='animal_passports/',
+        upload_to=animal_passport_upload_path,
         blank=True, null=True,
         help_text="Picture of the animal's passport/documentation."
     )
