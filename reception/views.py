@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.http import JsonResponse
+from django.db.models import Q
 from .forms import SlaughterOrderForm, AnimalForm
 from .models import SlaughterOrder
 from processing.models import Animal
+from users.models import ClientProfile
 from .services import (
     create_slaughter_order,
     update_slaughter_order,
@@ -18,6 +21,38 @@ from django.views.generic.edit import UpdateView
 from django.core.exceptions import ValidationError
 
 
+class ClientSearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        if len(query) < 2:
+            return JsonResponse({'clients': []})
+        
+        clients = ClientProfile.objects.filter(
+            Q(company_name__icontains=query) |
+            Q(contact_person__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query)
+        )[:10]  # Limit to 10 results
+        
+        client_list = []
+        for client in clients:
+            if client.account_type == ClientProfile.AccountType.ENTERPRISE:
+                display_name = f"{client.company_name}"
+                contact_info = client.contact_person or "No contact person"
+            else:
+                display_name = f"{client.user.get_full_name()}" if client.user else client.contact_person
+                contact_info = "Individual"
+            
+            client_list.append({
+                'id': str(client.id),
+                'display_name': display_name,
+                'contact_info': contact_info,
+                'phone': client.phone_number,
+            })
+        
+        return JsonResponse({'clients': client_list})
+
+
 class CreateSlaughterOrderView(LoginRequiredMixin, View):
     def get(self, request):
         form = SlaughterOrderForm()
@@ -28,8 +63,16 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
         form = SlaughterOrderForm(request.POST)
         if form.is_valid():
             try:
+                # Get client ID from form if provided
+                client_id = form.cleaned_data.get('client_id')
+                if client_id:
+                    try:
+                        client = ClientProfile.objects.get(id=client_id)
+                    except ClientProfile.DoesNotExist:
+                        client_id = None
+                
                 order = create_slaughter_order(
-                    client_id=form.cleaned_data['client'].id if form.cleaned_data.get('client') else None,
+                    client_id=client_id,
                     service_package_id=form.cleaned_data['service_package'].id,
                     order_datetime=form.cleaned_data['order_datetime'],
                     destination=form.cleaned_data['destination'],
@@ -162,3 +205,14 @@ class RemoveAnimalFromOrderView(LoginRequiredMixin, View):
         except ValidationError as e:
             messages.error(request, str(e))
         return redirect(reverse('reception:slaughter_order_detail', kwargs={'pk': order_pk}))
+
+
+def search_clients(request):
+    if 'term' in request.GET:
+        term = request.GET['term']
+        clients = ClientProfile.objects.filter(
+            Q(user__username__icontains=term) | Q(phone__icontains=term)
+        )[:10]
+        results = [{'id': client.pk, 'text': client.user.username} for client in clients]
+        return JsonResponse(results, safe=False)
+    return JsonResponse([], safe=False)

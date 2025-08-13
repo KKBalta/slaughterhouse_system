@@ -1,76 +1,196 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>Order Details - {{ order.slaughter_order_no }}</h1>
+<div class="px-4 py-6 max-w-4xl mx-auto">
+    <!-- Mobile-first Order Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="text-center mb-4">
+            <h1 class="text-2xl font-bold text-gray-900">{{ order.slaughter_order_no }}</h1>
+            <span class="inline-block px-3 py-1 text-sm font-medium rounded-full
+                {% if order.status == 'PENDING' %} bg-yellow-100 text-yellow-800
+                {% elif order.status == 'IN_PROGRESS' %} bg-blue-100 text-blue-800
+                {% elif order.status == 'COMPLETED' %} bg-green-100 text-green-800
+                {% elif order.status == 'BILLED' %} bg-purple-100 text-purple-800
+                {% elif order.status == 'CANCELLED' %} bg-red-100 text-red-800
+                {% endif %}">
+                {{ order.get_status_display }}
+            </span>
+        </div>
 
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+        <!-- Order Details Grid -->
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="font-medium text-gray-600">Client:</span>
+                <span class="text-gray-900">{{ order.client.get_full_name|default:order.client_name }}</span>
+            </div>
+            {% if order.client.phone_number or order.client_phone %}
+            <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="font-medium text-gray-600">Phone:</span>
+                <span class="text-gray-900">{{ order.client.phone_number|default:order.client_phone }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="font-medium text-gray-600">Order Date:</span>
+                <span class="text-gray-900">{{ order.order_datetime|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="font-medium text-gray-600">Service:</span>
+                <span class="text-gray-900">{{ order.service_package.name }}</span>
+            </div>
+            {% if order.destination %}
+            <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="font-medium text-gray-600">Destination:</span>
+                <span class="text-gray-900">{{ order.destination }}</span>
+            </div>
+            {% endif %}
+        </div>
 
-    <p><strong>Order No:</strong> {{ order.slaughter_order_no }}</p>
-    <p><strong>Client:</strong> {{ order.client.get_full_name|default:order.client_name }}</p>
-    <p><strong>Order Date:</strong> {{ order.order_datetime|date:"Y-m-d H:i" }}</p>                           
-    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-    <p><strong>Service Package:</strong> {{ order.service_package.name }}</p>
-    <p><strong>Destination:</strong> {{ order.destination }}</p>
+        <!-- Action Buttons -->
+        <div class="mt-6 space-y-3">
+            <a href="{% url 'reception:slaughter_order_update' order.pk %}" 
+               class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-center block">
+                Edit Order
+            </a>
 
-    <div class="order-actions mb-3">
-        <a href="{% url 'reception:slaughter_order_update' order.pk %}" class="btn btn-primary">Edit Order</a>
+            {% if order.status == 'PENDING' %}
+                <form action="{% url 'reception:slaughter_order_cancel' order.pk %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors"
+                            onclick="return confirm('Are you sure you want to cancel this order?');">
+                        Cancel Order
+                    </button>
+                </form>
+            {% endif %}
 
-        {% if order.status == 'PENDING' %}
-            <form action="{% url 'reception:slaughter_order_cancel' order.pk %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this order?');">Cancel Order</button>
-            </form>
-        {% endif %}
-
-        {% if order.status == 'COMPLETED' %}
-            <form action="{% url 'reception:slaughter_order_bill' order.pk %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to mark this order as billed?');">Bill Order</button>
-            </form>
-        {% endif %}
+            {% if order.status == 'COMPLETED' %}
+                <form action="{% url 'reception:slaughter_order_bill' order.pk %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors"
+                            onclick="return confirm('Are you sure you want to mark this order as billed?');">
+                        Bill Order
+                    </button>
+                </form>
+            {% endif %}
+        </div>
     </div>
 
-    <h2>Animals
-        <a href="{% url 'reception:add_animal_to_order' order.pk %}" class="btn btn-sm btn-success ml-2">Add Animal</a>
-    </h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Tag</th>
-                <th>Species</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for animal in order.animals.all %}
-            <tr>
-                <td>{{ animal.identification_tag }}</td>
-                <td>{{ animal.get_animal_type_display }}</td>
-                <td>{{ animal.get_status_display }}</td>
-                <td>
+    <!-- Animals Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Animals</h2>
+            {% if order.status == 'PENDING' %}
+                <a href="{% url 'reception:add_animal_to_order' order.pk %}" 
+                   class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                    Add Animal
+                </a>
+            {% endif %}
+        </div>
+
+        {% if order.animals.all %}
+            <!-- Mobile Animal Cards -->
+            <div class="space-y-3 sm:hidden">
+                {% for animal in order.animals.all %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-medium text-gray-900">{{ animal.identification_tag }}</h3>
+                            <p class="text-sm text-gray-600">{{ animal.get_animal_type_display }}</p>
+                        </div>
+                        <span class="inline-block px-2 py-1 text-xs font-medium rounded-full
+                            {% if animal.status == 'received' %} bg-blue-100 text-blue-800
+                            {% elif animal.status == 'slaughtered' %} bg-orange-100 text-orange-800
+                            {% elif animal.status == 'carcass_ready' %} bg-yellow-100 text-yellow-800
+                            {% elif animal.status == 'disassembled' %} bg-purple-100 text-purple-800
+                            {% elif animal.status == 'packaged' %} bg-indigo-100 text-indigo-800
+                            {% elif animal.status == 'delivered' %} bg-green-100 text-green-800
+                            {% else %} bg-gray-100 text-gray-800
+                            {% endif %}">
+                            {{ animal.get_status_display }}
+                        </span>
+                    </div>
                     {% if order.status == 'PENDING' %}
-                        <a href="{% url 'reception:edit_animal_in_order' order.pk animal.pk %}" class="btn btn-sm btn-primary mr-1">Edit</a>
-                        <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this animal?');">Remove</button>
-                        </form>
+                        <div class="flex space-x-2 mt-3">
+                            <a href="{% url 'reception:edit_animal_in_order' order.pk animal.pk %}" 
+                               class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 text-center text-sm">
+                                Edit
+                            </a>
+                            <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" class="flex-1">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 text-sm"
+                                        onclick="return confirm('Are you sure you want to remove this animal?');">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
                     {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4">No animals in this order yet.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden sm:block overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tag</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Species</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            {% if order.status == 'PENDING' %}
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for animal in order.animals.all %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ animal.identification_tag }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ animal.get_animal_type_display }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    {% if animal.status == 'received' %} bg-blue-100 text-blue-800
+                                    {% elif animal.status == 'slaughtered' %} bg-orange-100 text-orange-800
+                                    {% elif animal.status == 'carcass_ready' %} bg-yellow-100 text-yellow-800
+                                    {% elif animal.status == 'disassembled' %} bg-purple-100 text-purple-800
+                                    {% elif animal.status == 'packaged' %} bg-indigo-100 text-indigo-800
+                                    {% elif animal.status == 'delivered' %} bg-green-100 text-green-800
+                                    {% else %} bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ animal.get_status_display }}
+                                </span>
+                            </td>
+                            {% if order.status == 'PENDING' %}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                    <a href="{% url 'reception:edit_animal_in_order' order.pk animal.pk %}" 
+                                       class="text-blue-600 hover:text-blue-900">Edit</a>
+                                    <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="text-red-600 hover:text-red-900"
+                                                onclick="return confirm('Are you sure you want to remove this animal?');">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <p class="text-gray-500 mb-4">No animals in this order yet.</p>
+                {% if order.status == 'PENDING' %}
+                    <a href="{% url 'reception:add_animal_to_order' order.pk %}" 
+                       class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors">
+                        Add First Animal
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

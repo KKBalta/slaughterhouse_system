@@ -3,36 +3,93 @@
 {% block title %}Edit Animal in Order{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Edit Animal {{ animal.identification_tag }} in Order {{ order.slaughter_order_no }}</h1>
+    <style>
+        /* Modern select styling */
+        .modern-select-full {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #111827;
+            width: 100%;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-select-full:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        }
+        
+        .modern-select-full:hover {
+            border-color: #9ca3af;
+        }
+    </style>
 
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    <div class="px-4 py-6 max-w-md mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">Edit Animal</h1>
+            <p class="text-sm text-gray-600 mb-2 text-center">{{ animal.identification_tag }}</p>
+            <p class="text-xs text-gray-500 mb-6 text-center">Order {{ order.slaughter_order_no }}</p>
 
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small style="color: #000000;">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% if field.errors %}
-                        <ul style="color: red; list-style: none; padding: 0;">
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-md text-sm
+                            {% if message.tags == 'success' %} bg-green-100 border border-green-400 text-green-800
+                            {% elif message.tags == 'error' %} bg-red-100 border border-red-400 text-red-800
+                            {% else %} bg-blue-100 border border-blue-400 text-blue-800
+                            {% endif %}"
+                             role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-            <button type="submit">Update Animal</button>
-        </form>
+            {% endif %}            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
+                            {{ field.label }}
+                        </label>
+                        
+                        {{ field }}
+                        
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <div class="mt-1">
+                                {% for error in field.errors %}
+                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="pt-4 flex space-x-3">
+                    <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
+                       class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors">
+                        Update Animal
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 {% endblock %}

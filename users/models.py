@@ -35,8 +35,19 @@ class ClientProfile(BaseModel):
     company_name = models.CharField(max_length=255, blank=True, null=True)
     tax_id = models.CharField(max_length=50, blank=True, null=True)
 
+    def get_full_name(self):
+        """Return the appropriate display name for the client."""
+        if self.account_type == self.AccountType.ENTERPRISE:
+            return self.company_name or "Unknown Company"
+        else:
+            if self.user:
+                return self.user.get_full_name() or self.user.username
+            return self.contact_person or "Unknown Individual"
 
     def __str__(self):
         if self.account_type == self.AccountType.ENTERPRISE:
             return f"{self.company_name} (Enterprise)"
-        return f"{self.user.get_full_name()} (Individual)"
+        else:
+            if self.user:
+                return f"{self.user.get_full_name()} (Individual)"
+            return f"{self.contact_person} (Individual)"
