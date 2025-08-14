@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}Animal Detail - {{ animal.identification_tag }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ensure input fields have proper text visibility */
+    input[type="text"], 
+    input[type="number"], 
+    input[type="email"], 
+    input[type="tel"], 
+    input[type="search"], 
+    input[type="url"], 
+    input[type="password"], 
+    input[type="date"], 
+    input[type="time"], 
+    input[type="datetime-local"], 
+    select, 
+    textarea {
+        color: #111827 !important; /* Dark gray text */
+        background-color: #ffffff !important; /* White background */
+    }
+    
+    input::placeholder, 
+    textarea::placeholder {
+        color: #6b7280 !important; /* Gray placeholder text */
+    }
+    
+    select option {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ animal.identification_tag }}</h1>
+                <p class="text-gray-600">{{ animal.get_animal_type_display }} - {{ animal.get_status_display }}</p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'processing:animal_list' %}" 
+                   class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
+                    Back to List
+                </a>
+                {% if animal.status == 'received' %}
+                    <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
+                          class="inline" onsubmit="return confirm('Mark animal as slaughtered?')">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                            Mark Slaughtered
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-3 rounded-md text-sm mb-2
+                    {% if message.tags == 'success' %} bg-green-100 border border-green-400 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-100 border border-red-400 text-red-800
+                    {% else %} bg-blue-100 border border-blue-400 text-blue-800
+                    {% endif %}"
+                     role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Animal Information -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Basic Info Card -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Animal Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Identification Tag</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.identification_tag }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Animal Type</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.get_animal_type_display }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <span class="inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full
+                            {% if animal.status == 'received' %}bg-blue-100 text-blue-800
+                            {% elif animal.status == 'slaughtered' %}bg-yellow-100 text-yellow-800
+                            {% elif animal.status == 'carcass_ready' %}bg-green-100 text-green-800
+                            {% elif animal.status == 'disassembled' %}bg-purple-100 text-purple-800
+                            {% elif animal.status == 'packaged' %}bg-indigo-100 text-indigo-800
+                            {% elif animal.status == 'delivered' %}bg-emerald-100 text-emerald-800
+                            {% elif animal.status == 'returned' %}bg-orange-100 text-orange-800
+                            {% elif animal.status == 'disposed' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ animal.get_status_display }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Received Date</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.received_date|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% if animal.slaughter_date %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Slaughter Date</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_date|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    {% if animal.leather_weight_kg %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Leather Weight</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.leather_weight_kg }} kg</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Order Number</label>
+                        <p class="mt-1 text-sm text-gray-900">
+                            <a href="{% url 'reception:slaughter_order_detail' animal.slaughter_order.pk %}" 
+                               class="text-blue-600 hover:text-blue-800">
+                                {{ animal.slaughter_order.slaughter_order_no }}
+                            </a>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Client</label>
+                        <p class="mt-1 text-sm text-gray-900">
+                            {% if animal.slaughter_order.client %}
+                                {{ animal.slaughter_order.client.company_name|default:animal.slaughter_order.client.get_full_name }}
+                            {% else %}
+                                {{ animal.slaughter_order.client_name }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Service Package</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_order.service_package.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Order Date</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_order.order_datetime|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animal Photos -->
+            {% if animal.picture or animal.passport_picture %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Photos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% if animal.picture %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Animal Photo</label>
+                        <img src="{{ animal.picture.url }}" alt="Animal Photo" 
+                             class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                    </div>
+                    {% endif %}
+                    {% if animal.passport_picture %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Passport Photo</label>
+                        <img src="{{ animal.passport_picture.url }}" alt="Passport Photo" 
+                             class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Weight Logs -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Weight History</h2>
+                {% if weight_logs %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for log in weight_logs %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ log.log_date|date:"M d, Y H:i" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ log.get_weight_type_display }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ log.weight }} kg
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No weight records yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    {% if animal.status == 'received' %}
+                        <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
+                              onsubmit="return confirm('Mark animal as slaughtered?')">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                                Mark Slaughtered
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'reception:edit_animal_in_order' animal.slaughter_order.pk animal.pk %}" 
+                       class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-center block">
+                        Edit Animal
+                    </a>
+                </div>
+            </div>
+
+            <!-- Weight Logging -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Log Weight</h3>
+                <form method="post" action="{% url 'processing:animal_weights' animal.pk %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="weight_type" class="block text-sm font-medium text-gray-700 mb-1">Weight Type</label>
+                        <select name="weight_type" id="weight_type" required 
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select type</option>
+                            <option value="live_weight">Live Weight</option>
+                            <option value="hot_carcass_weight">Hot Carcass</option>
+                            <option value="cold_carcass_weight">Cold Carcass</option>
+                            <option value="final_weight">Final Weight</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                        <input type="number" name="weight" id="weight" step="0.01" required
+                               placeholder="Enter weight"
+                               class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" 
+                            class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors text-sm">
+                        Log Weight
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status Info -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Information</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Current Status:</span>
+                        <span class="font-medium">{{ animal.get_status_display }}</span>
+                    </div>
+                    {% if animal.status == 'received' %}
+                        <div class="text-xs text-gray-500 mt-2">
+                            <p>Next step: Slaughter processing</p>
+                        </div>
+                    {% elif animal.status == 'slaughtered' %}
+                        <div class="text-xs text-gray-500 mt-2">
+                            <p>Ready for carcass processing and weight logging</p>
+                        </div>
+                    {% elif animal.status == 'carcass_ready' %}
+                        <div class="text-xs text-gray-500 mt-2">
+                            <p>Ready for disassembly (if included in service package)</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
