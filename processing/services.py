@@ -49,10 +49,16 @@ def create_animal(order, animal_type: str, details_data: dict = None, **animal_f
 @transaction.atomic
 def mark_animal_slaughtered(animal: Animal) -> Animal:
     """
-    Transitions the animal's status to 'slaughtered'.
+    Transitions the animal's status to 'slaughtered' and updates the order status.
     """
     animal.perform_slaughter()
     animal.save()
+    
+    # Import locally to avoid circular imports
+    from reception.services import update_order_status_from_animals
+    # Update the slaughter order status based on animal statuses
+    update_order_status_from_animals(animal.slaughter_order)
+    
     return animal
 
 @transaction.atomic
@@ -155,28 +161,46 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
 @transaction.atomic
 def package_animal_products(animal: Animal) -> Animal:
     """
-    To mark an animal's products as packaged.
+    To mark an animal's products as packaged and updates order status.
     """
     animal.perform_packaging()
     animal.save()
+    
+    # Import locally to avoid circular imports
+    from reception.services import update_order_status_from_animals
+    # Update the slaughter order status based on animal statuses
+    update_order_status_from_animals(animal.slaughter_order)
+    
     return animal
 
 @transaction.atomic
 def deliver_animal_products(animal: Animal) -> Animal:
     """
-    To mark an animal's products as delivered to the client.
+    To mark an animal's products as delivered to the client and updates order status.
     """
     animal.deliver_product()
     animal.save()
+    
+    # Import locally to avoid circular imports
+    from reception.services import update_order_status_from_animals
+    # Update the slaughter order status based on animal statuses
+    update_order_status_from_animals(animal.slaughter_order)
+    
     return animal
 
 @transaction.atomic
 def return_animal_to_owner(animal: Animal) -> Animal:
     """
-    To mark an animal or its products as returned to the owner.
+    To mark an animal or its products as returned to the owner and updates order status.
     """
     animal.return_to_owner()
     animal.save()
+    
+    # Import locally to avoid circular imports
+    from reception.services import update_order_status_from_animals
+    # Update the slaughter order status based on animal statuses
+    update_order_status_from_animals(animal.slaughter_order)
+    
     return animal
 
 @transaction.atomic
@@ -245,6 +269,21 @@ def log_leather_weight(animal: Animal, leather_weight_kg: float) -> Animal:
         weight=leather_weight_kg,
         weight_type='leather_weight'
     )
+    
+    return animal
+
+@transaction.atomic
+def prepare_animal_carcass(animal: Animal) -> Animal:
+    """
+    Transitions the animal's status from 'slaughtered' to 'carcass_ready' and updates order status.
+    """
+    animal.prepare_carcass()
+    animal.save()
+    
+    # Import locally to avoid circular imports
+    from reception.services import update_order_status_from_animals
+    # Update the slaughter order status based on animal statuses
+    update_order_status_from_animals(animal.slaughter_order)
     
     return animal
 

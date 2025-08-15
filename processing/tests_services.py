@@ -5,7 +5,13 @@ from users.models import ClientProfile
 from reception.models import SlaughterOrder
 from processing.models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from inventory.models import Carcass, MeatCut, Offal, ByProduct
-from processing.services import create_animal, mark_animal_slaughtered, create_carcass_from_slaughter, log_individual_weight, disassemble_carcass, update_animal_details, log_group_weight, package_animal_products, deliver_animal_products, return_animal_to_owner, update_animal_metadata, record_cold_carcass_weight, record_initial_byproducts
+from processing.services import (
+    create_animal, mark_animal_slaughtered, create_carcass_from_slaughter, 
+    log_individual_weight, disassemble_carcass, update_animal_details, 
+    log_group_weight, package_animal_products, deliver_animal_products, 
+    return_animal_to_owner, update_animal_metadata, record_cold_carcass_weight, 
+    record_initial_byproducts, prepare_animal_carcass
+)
 from datetime import date
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -277,3 +283,296 @@ class ProcessingServiceTest(TestCase):
         with self.assertRaises(ValidationError) as cm:
             update_animal_details(animal=chicken_animal, details_data={'feather_color': 'brown'})
         self.assertIn("No detail model found for animal type: chicken", str(cm.exception))
+
+    # ========================================
+    # NEW TESTS FOR ORDER STATUS UPDATES
+    # ========================================
+
+    def test_mark_animal_slaughtered_updates_order_status_to_in_progress(self):
+        """Test that slaughtering one animal changes order status from PENDING to IN_PROGRESS"""
+        # Verify initial state
+        self.assertEqual(self.order.status, SlaughterOrder.Status.PENDING)
+        self.assertEqual(self.animal.status, 'received')
+        
+        # Slaughter the animal
+        slaughtered_animal = mark_animal_slaughtered(animal=self.animal)
+        
+        # Refresh order from database to get updated status
+        self.order.refresh_from_db()
+        
+        # Verify animal status changed
+        self.assertEqual(slaughtered_animal.status, 'slaughtered')
+        
+        # Verify order status changed to IN_PROGRESS
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_multiple_animals_slaughter_maintains_in_progress_status(self):
+        """Test that slaughtering multiple animals keeps order in IN_PROGRESS"""
+        # Create additional animals
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='sheep')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
+        
+        # Verify initial state
+        self.assertEqual(self.order.status, SlaughterOrder.Status.PENDING)
+        
+        # Slaughter first animal
+        mark_animal_slaughtered(animal=self.animal)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+        
+        # Slaughter second animal
+        mark_animal_slaughtered(animal=animal2)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+        
+        # Slaughter third animal
+        mark_animal_slaughtered(animal=animal3)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_prepare_animal_carcass_updates_order_status(self):
+        """Test that preparing carcass updates order status correctly"""
+        # First slaughter the animal
+        mark_animal_slaughtered(animal=self.animal)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+        
+        # Prepare carcass
+        prepared_animal = prepare_animal_carcass(animal=self.animal)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify animal status changed
+        self.assertEqual(prepared_animal.status, 'carcass_ready')
+        
+        # Verify order status remains IN_PROGRESS
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_package_animal_products_updates_order_status(self):
+        """Test that packaging animal products updates order status"""
+        # Setup animal to carcass_ready state
+        mark_animal_slaughtered(animal=self.animal)
+        prepare_animal_carcass(animal=self.animal)
+        
+        # Package the animal products
+        packaged_animal = package_animal_products(animal=self.animal)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify animal status changed
+        self.assertEqual(packaged_animal.status, 'packaged')
+        
+        # Verify order status remains IN_PROGRESS
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_deliver_single_animal_completes_order(self):
+        """Test that delivering the only animal in an order changes status to COMPLETED"""
+        # Setup animal to packaged state
+        mark_animal_slaughtered(animal=self.animal)
+        prepare_animal_carcass(animal=self.animal)
+        package_animal_products(animal=self.animal)
+        
+        # Deliver the animal products
+        delivered_animal = deliver_animal_products(animal=self.animal)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify animal status changed
+        self.assertEqual(delivered_animal.status, 'delivered')
+        
+        # Verify order status changed to COMPLETED
+        self.assertEqual(self.order.status, SlaughterOrder.Status.COMPLETED)
+
+    def test_deliver_all_animals_completes_order(self):
+        """Test that delivering all animals in an order changes status to COMPLETED"""
+        # Create additional animals
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='sheep')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
+        
+        # Process all animals to delivered state
+        for animal in [self.animal, animal2, animal3]:
+            mark_animal_slaughtered(animal=animal)
+            prepare_animal_carcass(animal=animal)
+            package_animal_products(animal=animal)
+            deliver_animal_products(animal=animal)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify all animals are delivered by fetching fresh instances
+        fresh_animals = Animal.objects.filter(slaughter_order=self.order)
+        for animal in fresh_animals:
+            self.assertEqual(animal.status, 'delivered')
+        
+        # Verify order status changed to COMPLETED
+        self.assertEqual(self.order.status, SlaughterOrder.Status.COMPLETED)
+
+    def test_return_animal_to_owner_updates_order_status(self):
+        """Test that returning animal to owner updates order status correctly"""
+        # Slaughter the animal first
+        mark_animal_slaughtered(animal=self.animal)
+        
+        # Return animal to owner
+        returned_animal = return_animal_to_owner(animal=self.animal)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify animal status changed
+        self.assertEqual(returned_animal.status, 'returned')
+        
+        # Verify order status changed to COMPLETED (since all animals are final state)
+        self.assertEqual(self.order.status, SlaughterOrder.Status.COMPLETED)
+
+    def test_mixed_animal_statuses_order_completion(self):
+        """Test order completion with mixed final animal statuses (delivered/returned/disposed)"""
+        # Create additional animals
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='sheep')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
+        
+        # Process animals to different final states
+        # Animal 1: delivered
+        mark_animal_slaughtered(animal=self.animal)
+        prepare_animal_carcass(animal=self.animal)
+        package_animal_products(animal=self.animal)
+        deliver_animal_products(animal=self.animal)
+        
+        # Animal 2: returned to owner
+        mark_animal_slaughtered(animal=animal2)
+        return_animal_to_owner(animal=animal2)
+        
+        # Animal 3: disposed (from received state)
+        animal3.dispose_animal()
+        animal3.save()
+        
+        # Manually trigger order status update for the last animal
+        from reception.services import update_order_status_from_animals
+        update_order_status_from_animals(self.order)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify all animals are in final states by fetching fresh instances
+        fresh_animal1 = Animal.objects.get(id=self.animal.id)
+        fresh_animal2 = Animal.objects.get(id=animal2.id)
+        fresh_animal3 = Animal.objects.get(id=animal3.id)
+        
+        self.assertEqual(fresh_animal1.status, 'delivered')
+        self.assertEqual(fresh_animal2.status, 'returned')
+        self.assertEqual(fresh_animal3.status, 'disposed')
+        
+        # Verify order status changed to COMPLETED
+        self.assertEqual(self.order.status, SlaughterOrder.Status.COMPLETED)
+
+    def test_partial_completion_maintains_in_progress(self):
+        """Test that partial completion keeps order in IN_PROGRESS status"""
+        # Create additional animals
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='sheep')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
+        
+        # Process only first animal to completion
+        mark_animal_slaughtered(animal=self.animal)
+        prepare_animal_carcass(animal=self.animal)
+        package_animal_products(animal=self.animal)
+        deliver_animal_products(animal=self.animal)
+        
+        # Process second animal partially
+        mark_animal_slaughtered(animal=animal2)
+        
+        # Leave third animal in received state
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify order status is still IN_PROGRESS
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_order_status_update_with_no_animals(self):
+        """Test order status update when order has no animals"""
+        # Create order with no animals
+        empty_order = SlaughterOrder.objects.create(
+            client=self.client_profile, 
+            service_package=self.service_package, 
+            order_datetime=timezone.now()
+        )
+        
+        # Manually trigger order status update
+        from reception.services import update_order_status_from_animals
+        updated_order = update_order_status_from_animals(empty_order)
+        
+        # Verify order status remains PENDING
+        self.assertEqual(updated_order.status, SlaughterOrder.Status.PENDING)
+
+    def test_batch_slaughter_order_status_update(self):
+        """Test order status update during batch slaughter operations"""
+        # Create multiple animals for batch processing
+        animals = []
+        for i in range(5):
+            animal = Animal.objects.create(
+                slaughter_order=self.order, 
+                animal_type='sheep',
+                identification_tag=f'SHEEP-{i+1:03d}'
+            )
+            animals.append(animal)
+        
+        # Verify initial order status
+        self.assertEqual(self.order.status, SlaughterOrder.Status.PENDING)
+        
+        # Simulate batch slaughter (like in BatchSlaughterView)
+        success_count = 0
+        slaughtered_animals = []
+        for animal in animals:
+            try:
+                slaughtered_animal = mark_animal_slaughtered(animal=animal)
+                slaughtered_animals.append(slaughtered_animal)
+                success_count += 1
+            except Exception as e:
+                # Print exception details for debugging
+                print(f"Failed to slaughter animal {animal.identification_tag}: {e}")
+        
+        # Verify all animals were slaughtered
+        self.assertEqual(success_count, 5)
+        
+        # Refresh order from database
+        self.order.refresh_from_db()
+        
+        # Verify order status changed to IN_PROGRESS
+        self.assertEqual(self.order.status, SlaughterOrder.Status.IN_PROGRESS)
+        
+        # Verify all animals are slaughtered by checking the returned animals
+        for slaughtered_animal in slaughtered_animals:
+            self.assertEqual(slaughtered_animal.status, 'slaughtered')
+
+    def test_service_without_delivery_completion(self):
+        """Test order completion for service packages without delivery"""
+        # Create service package without delivery
+        simple_service = ServicePackage.objects.create(
+            name='Simple Service', 
+            includes_disassembly=False, 
+            includes_delivery=False
+        )
+        
+        # Create order with simple service
+        simple_order = SlaughterOrder.objects.create(
+            client=self.client_profile, 
+            service_package=simple_service, 
+            order_datetime=timezone.now()
+        )
+        
+        # Create animal for this order
+        simple_animal = Animal.objects.create(slaughter_order=simple_order, animal_type='sheep')
+        
+        # Process animal through slaughter and packaging only
+        mark_animal_slaughtered(animal=simple_animal)
+        prepare_animal_carcass(animal=simple_animal)
+        package_animal_products(animal=simple_animal)
+        
+        # For simple service, packaged might be final state
+        # Refresh order from database
+        simple_order.refresh_from_db()
+        
+        # Verify order status is IN_PROGRESS (since animal is in packaged, not final state)
+        self.assertEqual(simple_order.status, SlaughterOrder.Status.IN_PROGRESS)
