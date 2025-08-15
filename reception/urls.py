@@ -10,6 +10,7 @@ from .views import (
     EditAnimalInOrderView,
     RemoveAnimalFromOrderView,
     ClientSearchView,
+    BatchAddAnimalsToOrderView,
 )
 
 app_name = 'reception'
@@ -23,6 +24,7 @@ urlpatterns = [
     path('orders/<uuid:pk>/cancel/', CancelSlaughterOrderView.as_view(), name='slaughter_order_cancel'),
     path('orders/<uuid:pk>/bill/', BillOrderView.as_view(), name='slaughter_order_bill'),
     path('orders/<uuid:order_pk>/add_animal/', AddAnimalToOrderView.as_view(), name='add_animal_to_order'),
+    path('orders/<uuid:order_pk>/batch_add_animals/', BatchAddAnimalsToOrderView.as_view(), name='batch_add_animals_to_order'),
     path('orders/<uuid:order_pk>/edit_animal/<uuid:animal_pk>/', EditAnimalInOrderView.as_view(), name='edit_animal_in_order'),
     path('orders/<uuid:order_pk>/remove_animal/<uuid:animal_pk>/', RemoveAnimalFromOrderView.as_view(), name='remove_animal_from_order'),
 ]

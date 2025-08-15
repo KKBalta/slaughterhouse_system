@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
 from django.db.models import Q
-from .forms import SlaughterOrderForm, SlaughterOrderUpdateForm, AnimalForm
+from .forms import SlaughterOrderForm, SlaughterOrderUpdateForm, AnimalForm, BatchAnimalForm
 from .models import SlaughterOrder
 from processing.models import Animal
 from users.models import ClientProfile
@@ -12,7 +12,8 @@ from .services import (
     cancel_slaughter_order,
     bill_order,
     add_animal_to_order,
-    remove_animal_from_order
+    remove_animal_from_order,
+    create_batch_animals
 )
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -225,6 +226,45 @@ class RemoveAnimalFromOrderView(LoginRequiredMixin, View):
         except ValidationError as e:
             messages.error(request, str(e))
         return redirect(reverse('reception:slaughter_order_detail', kwargs={'pk': order_pk}))
+
+
+class BatchAddAnimalsToOrderView(LoginRequiredMixin, View):
+    def get(self, request, order_pk):
+        order = get_object_or_404(SlaughterOrder, pk=order_pk)
+        form = BatchAnimalForm()
+        return render(request, 'reception/batch_add_animals.html', {'form': form, 'order': order})
+
+    def post(self, request, order_pk):
+        order = get_object_or_404(SlaughterOrder, pk=order_pk)
+        form = BatchAnimalForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                animal_type = form.cleaned_data['animal_type']
+                quantity = form.cleaned_data['quantity']
+                tag_prefix = form.cleaned_data.get('tag_prefix')
+                received_date = form.cleaned_data.get('received_date')
+                skip_photos = form.cleaned_data.get('skip_photos', False)
+                
+                created_animals = create_batch_animals(
+                    order=order,
+                    animal_type=animal_type,
+                    quantity=quantity,
+                    tag_prefix=tag_prefix,
+                    received_date=received_date,
+                    skip_photos=skip_photos
+                )
+                
+                messages.success(
+                    request, 
+                    f"Successfully created {len(created_animals)} {animal_type} animals for order {order.slaughter_order_no}."
+                )
+                return redirect(reverse('reception:slaughter_order_detail', kwargs={'pk': order_pk}))
+                
+            except ValidationError as e:
+                messages.error(request, str(e))
+        
+        return render(request, 'reception/batch_add_animals.html', {'form': form, 'order': order})
 
 
 def search_clients(request):

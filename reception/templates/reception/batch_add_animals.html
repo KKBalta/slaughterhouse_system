@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Batch Add Animals to Order{% endblock %}
+
+{% block content %}
+    <style>
+        /* Modern select styling */
+        .modern-select-full {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #111827;
+            width: 100%;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-select-full:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        }
+        
+        .modern-select-full:hover {
+            border-color: #9ca3af;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            border-left: 4px solid #0ea5e9;
+        }
+    </style>
+
+    <div class="px-4 py-6 max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">Batch Add Animals</h1>
+            <p class="text-sm text-gray-600 mb-2 text-center">Order {{ order.slaughter_order_no }}</p>
+            <p class="text-xs text-gray-500 mb-6 text-center">Create multiple animals at once with auto-generated tags</p>
+
+            <!-- Info Box -->
+            <div class="info-box p-4 rounded-lg mb-6">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="text-sm text-blue-900">
+                        <p class="font-medium mb-1">Batch Creation Features:</p>
+                        <ul class="list-disc list-inside space-y-1 text-blue-800">
+                            <li>Auto-generates unique identification tags for each animal</li>
+                            <li>Creates up to 100 animals in a single batch</li>
+                            <li>Photos can be added individually later via edit function</li>
+                            <li>All animals will have the same received date/time</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-md text-sm
+                            {% if message.tags == 'success' %} bg-green-100 border border-green-400 text-green-800
+                            {% elif message.tags == 'error' %} bg-red-100 border border-red-400 text-red-800
+                            {% else %} bg-blue-100 border border-blue-400 text-blue-800
+                            {% endif %}"
+                             role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Animal Type -->
+                <div class="form-group">
+                    <label for="{{ form.animal_type.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-2">
+                        {{ form.animal_type.label }}
+                    </label>
+                    {{ form.animal_type }}
+                    {% if form.animal_type.errors %}
+                        <div class="mt-1">
+                            {% for error in form.animal_type.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quantity -->
+                <div class="form-group">
+                    <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-2">
+                        {{ form.quantity.label }}
+                    </label>
+                    {{ form.quantity }}
+                    {% if form.quantity.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.quantity.help_text }}</p>
+                    {% endif %}
+                    {% if form.quantity.errors %}
+                        <div class="mt-1">
+                            {% for error in form.quantity.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tag Prefix -->
+                <div class="form-group">
+                    <label for="{{ form.tag_prefix.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-2">
+                        {{ form.tag_prefix.label }}
+                    </label>
+                    {{ form.tag_prefix }}
+                    {% if form.tag_prefix.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.tag_prefix.help_text }}</p>
+                    {% endif %}
+                    <div class="mt-2 p-3 bg-gray-50 rounded-md">
+                        <p class="text-xs text-gray-700">
+                            <strong>Tag Examples:</strong><br>
+                            • With prefix "FARM-A": FARM-A-001, FARM-A-002, FARM-A-003...<br>
+                            • Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02...
+                        </p>
+                    </div>
+                    {% if form.tag_prefix.errors %}
+                        <div class="mt-1">
+                            {% for error in form.tag_prefix.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Received Date -->
+                <div class="form-group">
+                    <label for="{{ form.received_date.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-2">
+                        {{ form.received_date.label }}
+                    </label>
+                    {{ form.received_date }}
+                    {% if form.received_date.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.received_date.help_text }}</p>
+                    {% endif %}
+                    {% if form.received_date.errors %}
+                        <div class="mt-1">
+                            {% for error in form.received_date.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Skip Photos Option -->
+                <div class="form-group">
+                    <div class="flex items-center">
+                        {{ form.skip_photos }}
+                        <label for="{{ form.skip_photos.id_for_label }}" class="ml-2 block text-sm font-medium text-gray-900">
+                            {{ form.skip_photos.label }}
+                        </label>
+                    </div>
+                    {% if form.skip_photos.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.skip_photos.help_text }}</p>
+                    {% endif %}
+                    {% if form.skip_photos.errors %}
+                        <div class="mt-1">
+                            {% for error in form.skip_photos.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-4 flex space-x-3">
+                    <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
+                       class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors"
+                            onclick="return confirm('Are you sure you want to create these animals? This action cannot be undone.');">
+                        Create Batch Animals
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityInput = document.getElementById('{{ form.quantity.id_for_label }}');
+            const animalTypeSelect = document.getElementById('{{ form.animal_type.id_for_label }}');
+            const tagPrefixInput = document.getElementById('{{ form.tag_prefix.id_for_label }}');
+            
+            function updatePreview() {
+                const quantity = parseInt(quantityInput.value) || 0;
+                const animalType = animalTypeSelect.value;
+                const tagPrefix = tagPrefixInput.value.trim();
+                
+                if (quantity > 0 && animalType) {
+                    console.log(`Will create ${quantity} ${animalType} animals`);
+                }
+            }
+            
+            if (quantityInput) quantityInput.addEventListener('input', updatePreview);
+            if (animalTypeSelect) animalTypeSelect.addEventListener('change', updatePreview);
+            if (tagPrefixInput) tagPrefixInput.addEventListener('input', updatePreview);
+        });
+    </script>
+{% endblock %}

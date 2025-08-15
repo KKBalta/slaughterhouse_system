@@ -1,4 +1,3 @@
-
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from core.models import ServicePackage
@@ -8,7 +7,7 @@ from processing.models import Animal, CattleDetails, SheepDetails
 from reception.services import (
     create_slaughter_order, update_slaughter_order, cancel_slaughter_order,
     update_order_status_from_animals, bill_order,
-    add_animal_to_order, remove_animal_from_order
+    add_animal_to_order, remove_animal_from_order, create_batch_animals
 )
 from datetime import date, datetime
 from django.utils import timezone
@@ -159,3 +158,211 @@ class ReceptionServiceTest(TestCase):
         animal_to_remove_2 = order.animals.get(identification_tag='CATTLE-001')
         with self.assertRaises(ValidationError):
             remove_animal_from_order(order=order, animal=animal_to_remove_2)
+
+    def test_create_batch_animals_service(self):
+        """Test creating multiple animals at once with auto-generated tags"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+        self.assertEqual(order.animals.count(), 0)
+
+        # Test batch creation with custom prefix
+        created_animals = create_batch_animals(
+            order=order,
+            animal_type='cattle',
+            quantity=5,
+            tag_prefix='FARM-A',
+            received_date=timezone.now(),
+            skip_photos=True
+        )
+
+        self.assertEqual(len(created_animals), 5)
+        self.assertEqual(order.animals.count(), 5)
+        
+        # Check tag generation with custom prefix
+        tags = [animal.identification_tag for animal in created_animals]
+        expected_tags = ['FARM-A-001', 'FARM-A-002', 'FARM-A-003', 'FARM-A-004', 'FARM-A-005']
+        self.assertEqual(sorted(tags), sorted(expected_tags))
+        
+        # Check all animals have the same type and status
+        for animal in created_animals:
+            self.assertEqual(animal.animal_type, 'cattle')
+            self.assertEqual(animal.status, 'received')
+            self.assertEqual(animal.slaughter_order, order)
+
+    def test_create_batch_animals_auto_generated_tags(self):
+        """Test batch creation with auto-generated tags"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        # Test batch creation without custom prefix
+        created_animals = create_batch_animals(
+            order=order,
+            animal_type='sheep',
+            quantity=3,
+            skip_photos=True
+        )
+
+        self.assertEqual(len(created_animals), 3)
+        
+        # Check auto-generated tag format
+        for animal in created_animals:
+            self.assertTrue(animal.identification_tag.startswith('SHEEP-BATCH-'))
+            self.assertTrue(animal.identification_tag.endswith(('-01', '-02', '-03')))
+
+    def test_create_batch_animals_validation_errors(self):
+        """Test batch creation validation errors"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        # Test maximum quantity validation
+        with self.assertRaises(ValidationError) as context:
+            create_batch_animals(
+                order=order,
+                animal_type='cattle',
+                quantity=101,  # Exceeds maximum
+                skip_photos=True
+            )
+        self.assertIn("Maximum 100 animals", str(context.exception))
+
+        # Test non-pending order validation
+        order.status = SlaughterOrder.Status.IN_PROGRESS
+        order.save()
+        
+        with self.assertRaises(ValidationError) as context:
+            create_batch_animals(
+                order=order,
+                animal_type='cattle',
+                quantity=5,
+                skip_photos=True
+            )
+        self.assertIn("Can only add animals to a PENDING order", str(context.exception))
+
+    def test_create_batch_animals_different_types(self):
+        """Test batch creation with different animal types"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        # Test with different animal types
+        animal_types = ['cattle', 'sheep', 'goat', 'lamb']
+        
+        for animal_type in animal_types:
+            created_animals = create_batch_animals(
+                order=order,
+                animal_type=animal_type,
+                quantity=2,
+                tag_prefix=f'TEST-{animal_type.upper()}',
+                skip_photos=True
+            )
+            
+            for animal in created_animals:
+                self.assertEqual(animal.animal_type, animal_type)
+
+        # Should have 8 animals total (2 of each type)
+        self.assertEqual(order.animals.count(), 8)
+
+    def test_create_batch_animals_with_received_date(self):
+        """Test batch creation with custom received date"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        custom_date = timezone.now() - timezone.timedelta(days=1)
+        
+        created_animals = create_batch_animals(
+            order=order,
+            animal_type='cattle',
+            quantity=3,
+            received_date=custom_date,
+            skip_photos=True
+        )
+
+        # All animals should have the same custom received date
+        for animal in created_animals:
+            self.assertEqual(animal.received_date.date(), custom_date.date())
+
+    def test_create_batch_animals_atomic_transaction(self):
+        """Test that batch creation is atomic - all or nothing"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        initial_count = order.animals.count()
+
+        # Test with invalid quantity to trigger exception
+        with self.assertRaises(ValidationError):
+            create_batch_animals(
+                order=order,
+                animal_type='cattle',
+                quantity=101,  # Invalid quantity
+                skip_photos=True
+            )
+
+        # Should still have the same count (no partial creation)
+        self.assertEqual(order.animals.count(), initial_count)
+
+    def test_create_batch_animals_edge_cases(self):
+        """Test edge cases for batch creation"""
+        order = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        # Test minimum quantity (1)
+        created_animals = create_batch_animals(
+            order=order,
+            animal_type='cattle',
+            quantity=1,
+            tag_prefix='SINGLE',
+            skip_photos=True
+        )
+        
+        self.assertEqual(len(created_animals), 1)
+        self.assertEqual(created_animals[0].identification_tag, 'SINGLE-001')
+
+        # Test maximum valid quantity (100)
+        order_2 = create_slaughter_order(
+            client_id=self.client_profile.id,
+            service_package_id=self.service_package.id,
+            order_datetime=timezone.now(),
+            animals_data=[]
+        )
+
+        created_animals = create_batch_animals(
+            order=order_2,
+            animal_type='sheep',
+            quantity=100,
+            tag_prefix='MAX',
+            skip_photos=True
+        )
+        
+        self.assertEqual(len(created_animals), 100)
+        self.assertEqual(order_2.animals.count(), 100)
+        
+        # Check first and last tags
+        tags = [animal.identification_tag for animal in created_animals]
+        self.assertIn('MAX-001', tags)
+        self.assertIn('MAX-100', tags)

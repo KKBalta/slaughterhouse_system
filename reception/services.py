@@ -1,4 +1,3 @@
-
 from django.db import transaction
 from .models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
@@ -6,6 +5,8 @@ from processing.models import Animal # Add Animal import
 from processing.services import create_animal
 from datetime import date, datetime
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+import uuid
 
 @transaction.atomic
 def create_slaughter_order(client_id: str, service_package_id: str, order_datetime: datetime, animals_data: list, client_name: str = None, client_phone: str = None, destination: str = None) -> SlaughterOrder:
@@ -122,3 +123,51 @@ def remove_animal_from_order(order: SlaughterOrder, animal: Animal):
         raise ValidationError(f"Animal does not belong to the specified order.")
 
     animal.delete()
+
+@transaction.atomic
+def create_batch_animals(order: SlaughterOrder, animal_type: str, quantity: int, tag_prefix: str = None, received_date: datetime = None, skip_photos: bool = False) -> list:
+    """
+    Creates multiple animals at once for a PENDING order with auto-generated tags.
+    
+    Args:
+        order: The SlaughterOrder to add animals to
+        animal_type: Type of animals to create
+        quantity: Number of animals to create
+        tag_prefix: Optional custom prefix for tags
+        received_date: Optional custom received date, defaults to now
+        skip_photos: Whether to skip photo requirements for batch creation
+        
+    Returns:
+        List of created Animal objects
+    """
+    if order.status != SlaughterOrder.Status.PENDING:
+        raise ValidationError(f"Can only add animals to a PENDING order.")
+    
+    if quantity > 100:
+        raise ValidationError(f"Maximum 100 animals can be created in a single batch.")
+    
+    created_animals = []
+    current_time = received_date or timezone.now()
+    
+    # Generate unique tags for the batch
+    for i in range(1, quantity + 1):
+        if tag_prefix:
+            # Use custom prefix with sequential numbering
+            identification_tag = f"{tag_prefix}-{i:03d}"
+        else:
+            # Use auto-generated tags with batch identifier
+            batch_id = uuid.uuid4().hex[:6].upper()
+            identification_tag = f"{animal_type.upper()}-BATCH-{batch_id}-{i:02d}"
+        
+        animal_data = {
+            'animal_type': animal_type,
+            'identification_tag': identification_tag,
+            'received_date': current_time,
+        }
+        
+        # Create animal without photos if skip_photos is True
+        # Photos can be added later via edit functionality
+        animal = create_animal(order=order, **animal_data)
+        created_animals.append(animal)
+    
+    return created_animals
