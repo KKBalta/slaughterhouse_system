@@ -81,10 +81,12 @@ class ProcessingModelTest(TestCase):
         animal = Animal.objects.create(
             slaughter_order=self.order,
             animal_type='cattle',
+            identification_tag='TEST-CATTLE-001',  # Set a specific identification tag
             picture=image_file
         )
         self.assertIsNotNone(animal.picture)
-        self.assertTrue(animal.picture.name.startswith('animal_pictures/test_image'))
+        # Check that the filename uses the upload path function correctly
+        self.assertTrue(animal.picture.name.startswith('animal_pictures/TEST-CATTLE-001_photo'))
         self.assertTrue(animal.picture.name.endswith('.gif'))
 
     def test_animal_fsm_transitions(self):
