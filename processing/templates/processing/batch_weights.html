@@ -133,43 +133,25 @@
                     </div>
                 </div>
 
-                <!-- Hidden order ID -->
-                <input type="hidden" name="order_id" id="order_id">
-
-                <!-- Weight Type -->
-                <div>
-                    <label for="weight_type" class="block text-sm font-medium text-gray-700 mb-1">
-                        Weight Type
-                    </label>
-                    <select name="weight_type" id="weight_type" required 
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-purple-500 focus:border-purple-500">
-                        <option value="">Select weight type</option>
-                        <option value="live_weight">Live Weight</option>
-                        <option value="hot_carcass_weight">Hot Carcass Weight</option>
-                        <option value="cold_carcass_weight">Cold Carcass Weight</option>
-                        <option value="final_weight">Final Weight</option>
-                    </select>
-                </div>
-
-                <!-- Total Weight -->
-                <div>
-                    <label for="total_weight" class="block text-sm font-medium text-gray-700 mb-1">
-                        Total Weight (kg)
-                    </label>
-                    <input type="number" name="total_weight" id="total_weight" step="0.01" required
-                           placeholder="Enter total weight in kilograms"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500">
-                </div>
-
-                <!-- Animal Count -->
-                <div>
-                    <label for="animal_count" class="block text-sm font-medium text-gray-700 mb-1">
-                        Number of Animals
-                    </label>
-                    <input type="number" name="animal_count" id="animal_count" min="1" required
-                           placeholder="Number of animals weighed together"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500">
-                </div>
+                <!-- Form fields -->
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="mt-1">
+                                {% for error in field.errors %}
+                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
 
                 <!-- Average Weight Display -->
                 <div id="average-weight-display" class="hidden p-3 bg-green-50 border border-green-200 rounded-md">

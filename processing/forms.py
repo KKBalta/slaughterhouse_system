@@ -1,5 +1,6 @@
 from django import forms
-from .models import Animal
+from .models import Animal, WeightLog
+from django.core.exceptions import ValidationError
 
 class AnimalFilterForm(forms.Form):
     # Status filter
@@ -49,3 +50,179 @@ class AnimalFilterForm(forms.Form):
                 self.fields['status'].initial = data.get('status', '')
                 self.fields['animal_type'].initial = data.get('animal_type', '')
                 self.fields['search'].initial = data.get('search', '')
+
+
+class WeightLogForm(forms.ModelForm):
+    """Form for logging individual animal weights including leather weight"""
+    
+    WEIGHT_TYPE_CHOICES = [
+        ('', 'Select weight type'),
+        ('live_weight', 'Live Weight'),
+        ('hot_carcass_weight', 'Hot Carcass Weight'),
+        ('cold_carcass_weight', 'Cold Carcass Weight'),
+        ('final_weight', 'Final Weight'),
+        ('leather_weight', 'Leather Weight'),
+    ]
+    
+    weight_type = forms.ChoiceField(
+        choices=WEIGHT_TYPE_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500',
+            'id': 'weight_type'
+        })
+    )
+    
+    weight = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Enter weight in kg',
+            'step': '0.01',
+            'id': 'weight'
+        })
+    )
+    
+    class Meta:
+        model = WeightLog
+        fields = ['weight_type', 'weight']
+    
+    def __init__(self, *args, animal=None, **kwargs):
+        self.animal = animal
+        super().__init__(*args, **kwargs)
+    
+    def clean_weight(self):
+        weight = self.cleaned_data.get('weight')
+        weight_type = self.cleaned_data.get('weight_type')
+        
+        if weight and weight_type:
+            # Basic validation - adjust limits based on animal type if needed
+            if weight > 2000:  # 2000kg seems like a reasonable upper limit
+                raise ValidationError("Weight seems unusually high. Please verify.")
+            if weight < 0.01:
+                raise ValidationError("Weight must be greater than 0.")
+        
+        return weight
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        weight_type = cleaned_data.get('weight_type')
+        weight = cleaned_data.get('weight')
+        
+        if weight_type and weight and self.animal:
+            # Check for duplicate leather weight entries
+            if weight_type == 'leather_weight':
+                if self.animal.leather_weight_kg is not None:
+                    raise ValidationError({
+                        'weight_type': 'Leather weight has already been recorded for this animal.'
+                    })
+            
+            # Check for duplicate weight type entries
+            existing_log = WeightLog.objects.filter(
+                animal=self.animal,
+                weight_type=weight_type
+            ).first()
+            
+            if existing_log:
+                raise ValidationError({
+                    'weight_type': f'A {weight_type} entry already exists for this animal.'
+                })
+        
+        return cleaned_data
+
+
+class LeatherWeightForm(forms.ModelForm):
+    """Dedicated form for logging leather weight directly to Animal model"""
+    
+    leather_weight_kg = forms.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=0.01,
+        label="Leather Weight (kg)",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'Enter leather weight in kg',
+            'step': '0.01'
+        })
+    )
+    
+    class Meta:
+        model = Animal
+        fields = ['leather_weight_kg']
+    
+    def clean_leather_weight_kg(self):
+        weight = self.cleaned_data.get('leather_weight_kg')
+        
+        if weight:
+            if weight > 200:  # Reasonable upper limit for leather weight
+                raise ValidationError("Leather weight seems unusually high. Please verify.")
+            if weight < 0.01:
+                raise ValidationError("Weight must be greater than 0.")
+        
+        return weight
+
+
+class BatchWeightLogForm(forms.Form):
+    """Form for logging batch weights"""
+    
+    BATCH_WEIGHT_TYPE_CHOICES = [
+        ('', 'Select weight type'),
+        ('live_weight', 'Live Weight'),
+        ('hot_carcass_weight', 'Hot Carcass Weight'),
+        ('cold_carcass_weight', 'Cold Carcass Weight'),
+        ('final_weight', 'Final Weight'),
+    ]
+    
+    order_id = forms.UUIDField(
+        widget=forms.HiddenInput()
+    )
+    
+    weight_type = forms.ChoiceField(
+        choices=BATCH_WEIGHT_TYPE_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-purple-500 focus:border-purple-500',
+            'id': 'weight_type'
+        })
+    )
+    
+    total_weight = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        label="Total Weight (kg)",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
+            'placeholder': 'Enter total weight in kilograms',
+            'step': '0.01',
+            'id': 'total_weight'
+        })
+    )
+    
+    animal_count = forms.IntegerField(
+        min_value=1,
+        label="Number of Animals",
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
+            'placeholder': 'Number of animals weighed together',
+            'id': 'animal_count'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        total_weight = cleaned_data.get('total_weight')
+        animal_count = cleaned_data.get('animal_count')
+        
+        if total_weight and animal_count:
+            average_weight = total_weight / animal_count
+            
+            # Sanity check for average weight
+            if average_weight > 1000:  # 1000kg average seems high
+                raise ValidationError("Average weight per animal seems unusually high. Please verify.")
+            if average_weight < 1:  # 1kg average seems low
+                raise ValidationError("Average weight per animal seems unusually low. Please verify.")
+        
+        return cleaned_data

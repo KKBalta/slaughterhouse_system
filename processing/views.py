@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from .models import Animal, WeightLog
 from reception.models import SlaughterOrder
-from .forms import AnimalFilterForm
+from .forms import AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm
 from . import services
 
 
@@ -108,6 +108,8 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['weight_logs'] = self.object.individual_weight_logs.order_by('-log_date')
+        context['weight_form'] = WeightLogForm(animal=self.object)
+        context['leather_form'] = LeatherWeightForm(instance=self.object)
         return context
 
 
@@ -127,20 +129,28 @@ class MarkAnimalSlaughteredView(LoginRequiredMixin, View):
 class AnimalWeightLogView(LoginRequiredMixin, View):
     def post(self, request, pk):
         animal = get_object_or_404(Animal, pk=pk)
+        form = WeightLogForm(request.POST, animal=animal)
         
-        weight_type = request.POST.get('weight_type')
-        weight = request.POST.get('weight')
-        
-        if not weight_type or not weight:
-            messages.error(request, 'Weight type and weight value are required.')
-            return redirect('processing:animal_detail', pk=animal.pk)
-        
-        try:
-            weight_float = float(weight)
-            services.log_individual_weight(animal, weight_type, weight_float)
-            messages.success(request, f'{weight_type} weight logged for {animal.identification_tag}.')
-        except (ValueError, Exception) as e:
-            messages.error(request, f'Error logging weight: {str(e)}')
+        if form.is_valid():
+            weight_type = form.cleaned_data['weight_type']
+            weight = form.cleaned_data['weight']
+            
+            try:
+                if weight_type == 'leather_weight':
+                    # Handle leather weight specially
+                    services.log_leather_weight(animal, weight)
+                    messages.success(request, f'Leather weight ({weight} kg) logged for {animal.identification_tag}.')
+                else:
+                    # Handle regular weight logging
+                    services.log_individual_weight(animal, weight_type, weight)
+                    messages.success(request, f'{weight_type.replace("_", " ").title()} ({weight} kg) logged for {animal.identification_tag}.')
+            except Exception as e:
+                messages.error(request, f'Error logging weight: {str(e)}')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
         
         return redirect('processing:animal_detail', pk=animal.pk)
 
@@ -202,30 +212,33 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
         ).filter(slaughtered_count__gt=0).order_by('-order_datetime')
         
         context['orders'] = orders
+        context['form'] = BatchWeightLogForm()
         return context
     
     def post(self, request):
-        order_id = request.POST.get('order_id')
-        weight_type = request.POST.get('weight_type')
-        total_weight = request.POST.get('total_weight')
-        animal_count = request.POST.get('animal_count')
+        form = BatchWeightLogForm(request.POST)
         
-        if not all([order_id, weight_type, total_weight, animal_count]):
-            messages.error(request, 'All fields are required for batch weight logging.')
-            return redirect('processing:batch_weights')
-        
-        try:
-            order = get_object_or_404(SlaughterOrder, pk=order_id)
-            total_weight_float = float(total_weight)
-            animal_count_int = int(animal_count)
-            
-            services.log_group_weight(
-                order, total_weight_float, weight_type, animal_count_int, total_weight_float
-            )
-            
-            messages.success(request, f'Batch weight logged for {animal_count_int} animals.')
-        except (ValueError, Exception) as e:
-            messages.error(request, f'Error logging batch weight: {str(e)}')
+        if form.is_valid():
+            try:
+                order_id = form.cleaned_data['order_id']
+                weight_type = form.cleaned_data['weight_type']
+                total_weight = form.cleaned_data['total_weight']
+                animal_count = form.cleaned_data['animal_count']
+                
+                order = get_object_or_404(SlaughterOrder, pk=order_id)
+                
+                services.log_group_weight(
+                    order, total_weight, weight_type, animal_count, total_weight
+                )
+                
+                messages.success(request, f'Batch weight logged for {animal_count} animals.')
+            except Exception as e:
+                messages.error(request, f'Error logging batch weight: {str(e)}')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
         
         return redirect('processing:batch_weights')
 
@@ -281,3 +294,24 @@ class AnimalSearchView(LoginRequiredMixin, View):
             })
         
         return JsonResponse({'animals': animals_data})
+
+
+class LeatherWeightLogView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        form = LeatherWeightForm(request.POST, instance=animal)
+        
+        if form.is_valid():
+            try:
+                leather_weight = form.cleaned_data['leather_weight_kg']
+                services.log_leather_weight(animal, leather_weight)
+                messages.success(request, f'Leather weight ({leather_weight} kg) logged for {animal.identification_tag}.')
+            except Exception as e:
+                messages.error(request, f'Error logging leather weight: {str(e)}')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+        
+        return redirect('processing:animal_detail', pk=animal.pk)

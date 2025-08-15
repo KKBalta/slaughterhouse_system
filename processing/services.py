@@ -230,6 +230,24 @@ def record_initial_byproducts(animal: Animal, offal_data: list, by_products_data
         "by_products_count": by_products_count
     }
 
+@transaction.atomic
+def log_leather_weight(animal: Animal, leather_weight_kg: float) -> Animal:
+    """
+    Logs leather weight directly to the Animal model and creates a WeightLog entry.
+    """
+    # Update the animal's leather weight
+    animal.leather_weight_kg = leather_weight_kg
+    animal.save()
+    
+    # Also create a weight log entry for consistency
+    weight_log = WeightLog.objects.create(
+        animal=animal,
+        weight=leather_weight_kg,
+        weight_type='leather_weight'
+    )
+    
+    return animal
+
 def delete_animal_files(animal):
     """
     Delete all files associated with an animal when it's removed.

@@ -15,6 +15,7 @@ urlpatterns = [
     # Workflow Operations
     path('animals/<uuid:pk>/slaughter/', views.MarkAnimalSlaughteredView.as_view(), name='mark_slaughtered'),
     path('animals/<uuid:pk>/weights/', views.AnimalWeightLogView.as_view(), name='animal_weights'),
+    path('animals/<uuid:pk>/leather-weight/', views.LeatherWeightLogView.as_view(), name='leather_weight'),
     
     # Batch Operations
     path('batch/slaughter/', views.BatchSlaughterView.as_view(), name='batch_slaughter'),
