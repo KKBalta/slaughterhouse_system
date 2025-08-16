@@ -226,10 +226,12 @@ class BatchWeightLogForm(forms.Form):
             if average_weight < 1:  # 1kg average seems low
                 raise ValidationError("Average weight per animal seems unusually low. Please verify.")
             
-            # Validate that we don't exceed the actual number of slaughtered animals in this specific batch
-            if order_id:
+            # Validate that we don't exceed the actual number of slaughtered animals
+            if order_id and weight_type:
                 try:
                     from reception.models import SlaughterOrder
+                    from .models import WeightLog
+                    
                     order = SlaughterOrder.objects.get(pk=order_id)
                     slaughtered_count = order.animals.filter(status='slaughtered').count()
                     
@@ -238,6 +240,28 @@ class BatchWeightLogForm(forms.Form):
                         raise ValidationError(
                             f"Cannot log weight for {animal_count} animals. "
                             f"Only {slaughtered_count} animals are available for weighing in this order."
+                        )
+                    
+                    # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
+                    group_weight_type = f"{weight_type} Group"
+                    existing_logs = WeightLog.objects.filter(
+                        slaughter_order=order,
+                        weight_type=group_weight_type,
+                        is_group_weight=True
+                    )
+                    
+                    # Calculate total animals already weighed for this weight type
+                    total_animals_already_weighed = sum(log.group_quantity for log in existing_logs)
+                    
+                    # Check if adding this batch would exceed available animals
+                    total_after_this_batch = total_animals_already_weighed + animal_count
+                    
+                    if total_after_this_batch > slaughtered_count:
+                        remaining_available = slaughtered_count - total_animals_already_weighed
+                        raise ValidationError(
+                            f"Cannot log weight for {animal_count} animals. "
+                            f"Only {remaining_available} animals remain available for {weight_type.replace('_', ' ').title()} weighing "
+                            f"({total_animals_already_weighed} already weighed out of {slaughtered_count} total)."
                         )
                         
                 except SlaughterOrder.DoesNotExist:

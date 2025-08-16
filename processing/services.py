@@ -172,6 +172,27 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
             f"Only {slaughtered_count} animals are available for weighing in this order."
         )
     
+    # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
+    existing_logs = WeightLog.objects.filter(
+        slaughter_order=slaughter_order,
+        weight_type=weight_type,
+        is_group_weight=True
+    )
+    
+    # Calculate total animals already weighed for this weight type
+    total_animals_already_weighed = sum(log.group_quantity for log in existing_logs)
+    
+    # Check if adding this batch would exceed available animals
+    total_after_this_batch = total_animals_already_weighed + group_quantity
+    
+    if total_after_this_batch > slaughtered_count:
+        remaining_available = slaughtered_count - total_animals_already_weighed
+        raise ValueError(
+            f"Cannot log weight for {group_quantity} animals. "
+            f"Only {remaining_available} animals remain available for {weight_type} weighing "
+            f"({total_animals_already_weighed} already weighed out of {slaughtered_count} total)."
+        )
+    
     # Create the batch weight log
     weight_log = WeightLog.objects.create(
         slaughter_order=slaughter_order,
@@ -183,16 +204,13 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
     )
     
     # Check if we've now weighed all animals for this weight type
-    existing_logs = WeightLog.objects.filter(
-        slaughter_order=slaughter_order,
-        weight_type=weight_type,
-        is_group_weight=True
-    )
-    total_animals_weighed = sum(log.group_quantity for log in existing_logs)
+    # We can reuse the existing_logs and add the new log
+    all_logs = list(existing_logs) + [weight_log]
+    total_animals_weighed = sum(log.group_quantity for log in all_logs)
     
     # If all animals are now weighed, create individual weight logs automatically
     if total_animals_weighed >= slaughtered_count:
-        _create_individual_weight_logs_from_batches(slaughter_order, weight_type, existing_logs)
+        _create_individual_weight_logs_from_batches(slaughter_order, weight_type, all_logs)
     
     return weight_log
 
@@ -202,10 +220,12 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
     Internal function to create individual weight logs when all animals are weighed.
     Calculates the overall average weight and assigns it to each animal.
     """
+    from decimal import Decimal
+    
     # Calculate overall statistics
-    total_weight = sum(log.group_total_weight for log in batch_logs)
+    total_weight = sum(Decimal(str(log.group_total_weight)) for log in batch_logs)
     total_animals = sum(log.group_quantity for log in batch_logs)
-    overall_average_weight = total_weight / total_animals if total_animals > 0 else 0
+    overall_average_weight = total_weight / total_animals if total_animals > 0 else Decimal('0')
     
     # Get the base weight type (remove " Group" suffix)
     individual_weight_type = weight_type.replace(' Group', '')
@@ -229,9 +249,9 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
             )
     
     return {
-        'total_weight': total_weight,
+        'total_weight': float(total_weight),
         'total_animals': total_animals,
-        'average_weight': overall_average_weight,
+        'average_weight': float(overall_average_weight),
         'individual_logs_created': animals.count()
     }
 

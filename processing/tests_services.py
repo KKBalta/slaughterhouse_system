@@ -115,6 +115,21 @@ class ProcessingServiceTest(TestCase):
         
 
     def test_log_group_weight_service(self):
+        # First, mark the animal as slaughtered and create additional animals
+        mark_animal_slaughtered(self.animal)
+        
+        # Create additional animals and mark them as slaughtered
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='sheep')
+        animal4 = Animal.objects.create(slaughter_order=self.order, animal_type='goat')
+        animal5 = Animal.objects.create(slaughter_order=self.order, animal_type='lamb')
+        
+        mark_animal_slaughtered(animal2)
+        mark_animal_slaughtered(animal3)
+        mark_animal_slaughtered(animal4)
+        mark_animal_slaughtered(animal5)
+        
+        # Now test group weight logging
         group_weight_log = log_group_weight(
             slaughter_order=self.order,
             weight=1000.0,
@@ -124,7 +139,7 @@ class ProcessingServiceTest(TestCase):
         )
 
         self.assertIsInstance(group_weight_log, WeightLog)
-        self.assertEqual(WeightLog.objects.count(), 1)
+        self.assertEqual(WeightLog.objects.filter(is_group_weight=True).count(), 1)
         self.assertEqual(group_weight_log.slaughter_order, self.order)
         self.assertTrue(group_weight_log.is_group_weight)
         self.assertEqual(group_weight_log.group_quantity, 5)
@@ -772,3 +787,61 @@ class ProcessingServiceTest(TestCase):
         self.assertEqual(live_weight_stats['count'], 2)
         self.assertEqual(live_weight_stats['total_animals'], 2)
         self.assertEqual(live_weight_stats['total_weight'], 195.0)
+
+    def test_log_group_weight_cumulative_validation(self):
+        """Test that log_group_weight service prevents cumulative animal count from exceeding available animals"""
+        # Mark 3 animals as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        
+        # Total slaughtered animals = 3
+        
+        # First batch: 2 animals
+        first_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='Live Weight Group',
+            group_quantity=2,
+            group_total_weight=300.0
+        )
+        self.assertIsNotNone(first_log)
+        
+        # Try to add batch with 2 more animals (would exceed total of 3)
+        with self.assertRaises(ValueError) as context:
+            log_group_weight(
+                slaughter_order=self.order,
+                weight=155.0,
+                weight_type='Live Weight Group',
+                group_quantity=2,  # 2 + 2 = 4, but only 3 available
+                group_total_weight=310.0
+            )
+        
+        self.assertIn("Only 1 animals remain available", str(context.exception))
+        self.assertIn("2 already weighed out of 3 total", str(context.exception))
+        
+        # Try valid batch with exact remaining animals (1 animal)
+        second_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=155.0,
+            weight_type='Live Weight Group',
+            group_quantity=1,  # 2 + 1 = 3, exactly the available amount
+            group_total_weight=155.0
+        )
+        self.assertIsNotNone(second_log)
+        
+        # Now try to add any more animals - should fail
+        with self.assertRaises(ValueError) as context:
+            log_group_weight(
+                slaughter_order=self.order,
+                weight=160.0,
+                weight_type='Live Weight Group',
+                group_quantity=1,  # All 3 animals already weighed
+                group_total_weight=160.0
+            )
+        
+        self.assertIn("Only 0 animals remain available", str(context.exception))
+        self.assertIn("3 already weighed out of 3 total", str(context.exception))

@@ -287,11 +287,11 @@ class ProcessingModelTest(TestCase):
         self.assertIn('Average weight per animal seems unusually low', str(form.errors))
 
     def test_batch_weight_log_form_multiple_batches_validation(self):
-        """Test that BatchWeightLogForm allows multiple batches of the same weight type"""
+        """Test that BatchWeightLogForm properly handles cumulative validation across multiple batches"""
         from .forms import BatchWeightLogForm
         from .models import WeightLog
         
-        # Create and mark animals as slaughtered (4 total)
+        # Create and mark animals as slaughtered (3 total)
         animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
         animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
         animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
@@ -312,24 +312,147 @@ class ProcessingModelTest(TestCase):
             group_total_weight=300.0
         )
         
-        # Try to create another batch for same weight type - should succeed now
+        # Try to create another batch for remaining animals (1 animal) - should succeed
         valid_data = {
             'order_id': str(self.order.id),
             'weight_type': 'live_weight',  # This will become 'live_weight Group'
-            'total_weight': 310.0,
-            'animal_count': 2  # Can weigh same animals multiple times
+            'total_weight': 155.0,
+            'animal_count': 1  # Only 1 animal remains available (3 total - 2 already weighed)
         }
         form = BatchWeightLogForm(data=valid_data)
         self.assertTrue(form.is_valid(), f"Form should be valid but got errors: {form.errors}")
+        
+        # Try to create another batch for 2 animals when only 1 remains - should fail
+        invalid_cumulative_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 310.0,
+            'animal_count': 2  # Would exceed cumulative limit (2 already + 2 new = 4, but only 3 total)
+        }
+        form = BatchWeightLogForm(data=invalid_cumulative_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Only 1 animals remain available', str(form.errors))
+        self.assertIn('2 already weighed out of 3 total', str(form.errors))
         
         # Try to log more animals than exist in the order - should fail
         invalid_data = {
             'order_id': str(self.order.id),
             'weight_type': 'live_weight',
             'total_weight': 160.0,
-            'animal_count': 10  # More than the 4 total animals in the order
+            'animal_count': 10  # More than the 3 total animals in the order
         }
         form = BatchWeightLogForm(data=invalid_data)
         self.assertFalse(form.is_valid())
         self.assertIn('Cannot log weight for 10 animals', str(form.errors))
         self.assertIn('Only 3 animals are available for weighing', str(form.errors))
+
+    def test_batch_weight_log_cumulative_validation(self):
+        """Test that BatchWeightLogForm prevents cumulative animal count from exceeding available animals"""
+        from .forms import BatchWeightLogForm
+        from .models import WeightLog
+        
+        # Create and mark animals as slaughtered (4 total)
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal4 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        # Mark all animals as slaughtered
+        for animal in [animal1, animal2, animal3, animal4]:
+            animal.perform_slaughter()
+            animal.save()
+        
+        # Total slaughtered animals is now 4
+        
+        # Create first batch weight log for 3 animals
+        WeightLog.objects.create(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='live_weight Group',
+            is_group_weight=True,
+            group_quantity=3,
+            group_total_weight=450.0
+        )
+        
+        # Try to create another batch for 2 animals (would exceed total of 4)
+        invalid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',  # This will become 'live_weight Group'
+            'total_weight': 310.0,
+            'animal_count': 2  # 3 + 2 = 5, but only 4 available
+        }
+        form = BatchWeightLogForm(data=invalid_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Only 1 animals remain available', str(form.errors))
+        self.assertIn('3 already weighed out of 4 total', str(form.errors))
+        
+        # Try valid batch with exact remaining animals (1 animal)
+        valid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 155.0,
+            'animal_count': 1  # 3 + 1 = 4, exactly the available amount
+        }
+        form = BatchWeightLogForm(data=valid_data)
+        self.assertTrue(form.is_valid(), f"Form should be valid but got errors: {form.errors}")
+        
+        # After adding the valid batch, try to add more - should fail
+        WeightLog.objects.create(
+            slaughter_order=self.order,
+            weight=155.0,
+            weight_type='live_weight Group',
+            is_group_weight=True,
+            group_quantity=1,
+            group_total_weight=155.0
+        )
+        
+        # Now try to add any more animals - should fail
+        invalid_data_final = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 160.0,
+            'animal_count': 1  # All 4 animals already weighed
+        }
+        form = BatchWeightLogForm(data=invalid_data_final)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Only 0 animals remain available', str(form.errors))
+        self.assertIn('4 already weighed out of 4 total', str(form.errors))
+
+    def test_batch_weight_log_decimal_handling(self):
+        """Test BatchWeightLogForm handles Decimal inputs properly"""
+        from .forms import BatchWeightLogForm
+        from decimal import Decimal
+        
+        # Create animals and mark them as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal1.perform_slaughter()
+        animal2.perform_slaughter()
+        animal1.save()
+        animal2.save()
+        
+        # Test form with Decimal values
+        valid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': Decimal('300.50'),  # Using Decimal
+            'animal_count': 2
+        }
+        form = BatchWeightLogForm(data=valid_data)
+        self.assertTrue(form.is_valid(), f"Form should handle Decimal inputs but got errors: {form.errors}")
+        
+        # Test very precise decimal values
+        precise_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'hot_carcass_weight',
+            'total_weight': Decimal('275.75'),  # Using precise Decimal
+            'animal_count': 2
+        }
+        form = BatchWeightLogForm(data=precise_data)
+        self.assertTrue(form.is_valid(), f"Form should handle precise Decimal inputs but got errors: {form.errors}")
+        
+        # Ensure average calculation works with Decimals
+        cleaned_data = form.clean()
+        expected_average = Decimal('275.75') / 2
+        actual_average = cleaned_data['total_weight'] / cleaned_data['animal_count']
+        self.assertEqual(actual_average, expected_average)
