@@ -30,6 +30,27 @@
         color: #111827 !important;
         background-color: #ffffff !important;
     }
+
+    /* Fix gray text visibility - make it darker */
+    .text-gray-500 {
+        color: #374151 !important; /* Darker gray for better readability */
+    }
+    
+    .text-gray-600 {
+        color: #4b5563 !important; /* Ensure good contrast */
+    }
+
+    /* Fix form labels and paragraphs */
+    p, label {
+        color: #111827 !important;
+    }
+
+    /* Specific fixes for various gray text elements */
+    .text-gray-500.text-sm,
+    .text-gray-600.text-sm,
+    .text-xs.text-gray-500 {
+        color: #374151 !important;
+    }
 </style>
 {% endblock %}
 
@@ -253,21 +274,6 @@
                     </button>
                 </form>
             </div>
-
-            <!-- Leather Weight Logging -->
-            {% if not animal.leather_weight_kg %}
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Log Leather Weight</h3>
-                <form method="post" action="{% url 'processing:leather_weight' animal.pk %}" class="space-y-4">
-                    {% csrf_token %}
-                    {{ leather_form.as_p }}
-                    <button type="submit" 
-                            class="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors text-sm">
-                        Log Leather Weight
-                    </button>
-                </form>
-            </div>
-            {% endif %}
 
             <!-- Status Info -->
             <div class="bg-white rounded-lg shadow-md p-6">

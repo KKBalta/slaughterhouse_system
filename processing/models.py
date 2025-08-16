@@ -352,6 +352,19 @@ class HeiferDetails(BaseModel):
 
 
 class WeightLog(BaseModel):
+    # Weight type choices for display
+    WEIGHT_TYPE_CHOICES = [
+        ('live_weight', 'Live Weight'),
+        ('hot_carcass_weight', 'Hot Carcass Weight'),
+        ('cold_carcass_weight', 'Cold Carcass Weight'),
+        ('final_weight', 'Final Weight'),
+        ('leather_weight', 'Leather Weight'),
+        ('live_weight Group', 'Live Weight Group'),
+        ('hot_carcass_weight Group', 'Hot Carcass Weight Group'),
+        ('cold_carcass_weight Group', 'Cold Carcass Weight Group'),
+        ('final_weight Group', 'Final Weight Group'),
+    ]
+
     animal = models.ForeignKey(
         Animal,
         on_delete=models.CASCADE,
@@ -373,6 +386,7 @@ class WeightLog(BaseModel):
     )
     weight_type = models.CharField(
         max_length=100,
+        choices=WEIGHT_TYPE_CHOICES,
         help_text="Type of weight (e.g., 'Live', 'Hot Carcass', 'Cold Carcass', 'Live Group')."
     )
     is_group_weight = models.BooleanField(
@@ -393,6 +407,18 @@ class WeightLog(BaseModel):
         auto_now_add=True,
         help_text="Date and time the weight was logged."
     )
+
+    def __str__(self):
+        if self.is_group_weight:
+            return f"{self.get_weight_type_display()} - {self.group_quantity} animals ({self.group_total_weight}kg total)"
+        else:
+            return f"{self.get_weight_type_display()} - {self.animal.identification_tag} ({self.weight}kg)"
+
+    def get_formatted_weight_type(self):
+        """Return a clean, formatted version of the weight type for display"""
+        weight_type = self.get_weight_type_display()
+        # Remove 'Group' suffix for cleaner display in some contexts
+        return weight_type.replace(' Group', '')
 
     class Meta:
         constraints = [
