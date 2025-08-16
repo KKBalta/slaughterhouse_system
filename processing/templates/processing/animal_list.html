@@ -291,9 +291,9 @@
                         <select id="page-size" 
                                 name="page_size" 
                                 onchange="updatePageSize(this.value)"
-                                class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="25" {% if request.GET.page_size == "25" %}selected{% endif %}>25</option>
-                            <option value="50" {% if request.GET.page_size == "50" or not request.GET.page_size %}selected{% endif %}>50</option>
+                                class="text-sm border border-green-600 rounded-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="25" {% if request.GET.page_size == "25" or not request.GET.page_size %}selected{% endif %}>25</option>
+                            <option value="50" {% if request.GET.page_size == "50" %}selected{% endif %}>50</option>
                             <option value="100" {% if request.GET.page_size == "100" %}selected{% endif %}>100</option>
                             <option value="200" {% if request.GET.page_size == "200" %}selected{% endif %}>200</option>
                         </select>
