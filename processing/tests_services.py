@@ -10,7 +10,7 @@ from processing.services import (
     log_individual_weight, disassemble_carcass, update_animal_details, 
     log_group_weight, package_animal_products, deliver_animal_products, 
     return_animal_to_owner, update_animal_metadata, record_cold_carcass_weight, 
-    record_initial_byproducts, prepare_animal_carcass
+    record_initial_byproducts, prepare_animal_carcass, batch_transition_animals_to_carcass_ready
 )
 from datetime import date
 from django.utils import timezone
@@ -845,3 +845,186 @@ class ProcessingServiceTest(TestCase):
         
         self.assertIn("Only 0 animals remain available", str(context.exception))
         self.assertIn("3 already weighed out of 3 total", str(context.exception))
+
+    def test_individual_hot_carcass_weight_auto_transition(self):
+        """Test that logging individual hot carcass weight automatically transitions animal to carcass_ready"""
+        # Mark animal as slaughtered first
+        slaughtered_animal = mark_animal_slaughtered(animal=self.animal)
+        self.assertEqual(slaughtered_animal.status, 'slaughtered')
+        
+        # Log hot carcass weight
+        weight_log = log_individual_weight(
+            animal=slaughtered_animal,
+            weight_type='hot_carcass_weight',
+            weight=200.5
+        )
+        
+        # Verify weight log was created
+        self.assertIsInstance(weight_log, WeightLog)
+        self.assertEqual(weight_log.weight_type, 'hot_carcass_weight')
+        self.assertEqual(weight_log.weight, 200.5)
+        
+        # Verify animal status changed to carcass_ready
+        # Use fresh query instead of refresh_from_db to avoid FSM issues
+        updated_animal = Animal.objects.get(pk=slaughtered_animal.pk)
+        self.assertEqual(updated_animal.status, 'carcass_ready')
+        self.assertEqual(updated_animal.status, 'carcass_ready')
+
+    def test_batch_hot_carcass_weight_auto_transition(self):
+        """Test that batch hot carcass weight logging automatically transitions animals to carcass_ready"""
+        # Create and slaughter 3 animals
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        
+        # All animals should be in 'slaughtered' status
+        slaughtered_count = self.order.animals.filter(status='slaughtered').count()
+        self.assertEqual(slaughtered_count, 3)
+        
+        # Log batch hot carcass weight for 2 animals
+        batch_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=180.0,  # Average weight per animal
+            weight_type='hot_carcass_weight Group',
+            group_quantity=2,
+            group_total_weight=360.0
+        )
+        
+        # Verify batch log was created
+        self.assertIsInstance(batch_log, WeightLog)
+        self.assertTrue(batch_log.is_group_weight)
+        self.assertEqual(batch_log.group_quantity, 2)
+        
+        # Verify that 2 animals were transitioned to carcass_ready
+        carcass_ready_count = self.order.animals.filter(status='carcass_ready').count()
+        slaughtered_remaining = self.order.animals.filter(status='slaughtered').count()
+        
+        self.assertEqual(carcass_ready_count, 2)
+        self.assertEqual(slaughtered_remaining, 1)
+
+    def test_batch_hot_carcass_weight_complete_auto_transition(self):
+        """Test batch hot carcass weight logging with complete auto-transition when all animals are weighed"""
+        # Create and slaughter 3 animals
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        
+        # Log batch hot carcass weight for all 3 animals at once
+        batch_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=185.0,  # Average weight per animal
+            weight_type='hot_carcass_weight Group',
+            group_quantity=3,
+            group_total_weight=555.0
+        )
+        
+        # Verify batch log was created
+        self.assertIsInstance(batch_log, WeightLog)
+        
+        # Verify that all animals were transitioned to carcass_ready
+        carcass_ready_count = self.order.animals.filter(status='carcass_ready').count()
+        slaughtered_remaining = self.order.animals.filter(status='slaughtered').count()
+        
+        self.assertEqual(carcass_ready_count, 3)
+        self.assertEqual(slaughtered_remaining, 0)
+        
+        # Verify individual weight logs were also created
+        individual_logs = WeightLog.objects.filter(
+            animal__slaughter_order=self.order,
+            weight_type='hot_carcass_weight',
+            is_group_weight=False
+        )
+        self.assertEqual(individual_logs.count(), 3)
+        
+        # All individual logs should have the average weight
+        for log in individual_logs:
+            self.assertEqual(log.weight, 185.0)
+
+    def test_batch_transition_animals_to_carcass_ready_service(self):
+        """Test the dedicated batch transition service function"""
+        # Create and slaughter 4 animals
+        animals = []
+        for i in range(3):
+            animal = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+            mark_animal_slaughtered(animal)
+            animals.append(animal)
+        
+        mark_animal_slaughtered(self.animal)
+        animals.append(self.animal)
+        
+        # All animals should be in 'slaughtered' status
+        slaughtered_count = self.order.animals.filter(status='slaughtered').count()
+        self.assertEqual(slaughtered_count, 4)
+        
+        # Transition 2 animals to carcass_ready using the service
+        result = batch_transition_animals_to_carcass_ready(
+            slaughter_order=self.order,
+            animal_count=2
+        )
+        
+        # Verify the result
+        self.assertEqual(result['animals_transitioned'], 2)
+        self.assertEqual(result['order_id'], str(self.order.id))
+        self.assertTrue(result['order_status_updated'])
+        
+        # Verify the database state
+        carcass_ready_count = self.order.animals.filter(status='carcass_ready').count()
+        slaughtered_remaining = self.order.animals.filter(status='slaughtered').count()
+        
+        self.assertEqual(carcass_ready_count, 2)
+        self.assertEqual(slaughtered_remaining, 2)
+
+    def test_non_hot_carcass_weight_no_auto_transition(self):
+        """Test that other weight types don't trigger auto-transition to carcass_ready"""
+        # Mark animal as slaughtered
+        slaughtered_animal = mark_animal_slaughtered(animal=self.animal)
+        self.assertEqual(slaughtered_animal.status, 'slaughtered')
+        
+        # Log live weight (should not trigger transition)
+        weight_log = log_individual_weight(
+            animal=slaughtered_animal,
+            weight_type='live_weight',
+            weight=450.0
+        )
+        
+        # Verify weight log was created but status didn't change
+        self.assertIsInstance(weight_log, WeightLog)
+        self.assertEqual(weight_log.weight_type, 'live_weight')
+        
+        # Verify animal status remained slaughtered (no auto-transition)
+        # Use fresh query instead of refresh_from_db to avoid FSM issues
+        updated_animal = Animal.objects.get(pk=slaughtered_animal.pk)
+        self.assertEqual(updated_animal.status, 'slaughtered')  # Should remain slaughtered
+
+    def test_batch_non_hot_carcass_weight_no_auto_transition(self):
+        """Test that batch logging of non-hot carcass weights doesn't trigger auto-transition"""
+        # Create and slaughter 2 animals
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        
+        # Log batch live weight (should not trigger transition)
+        batch_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=420.0,
+            weight_type='live_weight Group',
+            group_quantity=2,
+            group_total_weight=840.0
+        )
+        
+        # Verify batch log was created
+        self.assertIsInstance(batch_log, WeightLog)
+        
+        # Verify animals remained in slaughtered status
+        slaughtered_count = self.order.animals.filter(status='slaughtered').count()
+        carcass_ready_count = self.order.animals.filter(status='carcass_ready').count()
+        
+        self.assertEqual(slaughtered_count, 2)
+        self.assertEqual(carcass_ready_count, 0)

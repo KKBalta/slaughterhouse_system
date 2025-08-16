@@ -92,6 +92,31 @@ class WeightLogForm(forms.ModelForm):
     def __init__(self, *args, animal=None, **kwargs):
         self.animal = animal
         super().__init__(*args, **kwargs)
+        
+        # Filter weight type choices based on animal status
+        if self.animal:
+            available_choices = [('', 'Select weight type')]
+            
+            # Live weight is always available
+            available_choices.append(('live_weight', 'Live Weight'))
+            
+            # Hot carcass weight only for slaughtered animals
+            if self.animal.status in ['slaughtered', 'carcass_ready']:
+                available_choices.append(('hot_carcass_weight', 'Hot Carcass Weight'))
+            
+            # Cold carcass weight only for carcass_ready or later
+            if self.animal.status in ['carcass_ready', 'disassembled', 'packaged', 'delivered']:
+                available_choices.append(('cold_carcass_weight', 'Cold Carcass Weight'))
+            
+            # Final weight only for disassembled or later
+            if self.animal.status in ['disassembled', 'packaged', 'delivered']:
+                available_choices.append(('final_weight', 'Final Weight'))
+            
+            # Leather weight for any status except received
+            if self.animal.status != 'received':
+                available_choices.append(('leather_weight', 'Leather Weight'))
+            
+            self.fields['weight_type'].choices = available_choices
     
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
@@ -112,6 +137,35 @@ class WeightLogForm(forms.ModelForm):
         weight = cleaned_data.get('weight')
         
         if weight_type and weight and self.animal:
+            # Validate weight type based on animal status
+            weight_type_lower = weight_type.lower()
+            
+            if weight_type_lower in ['hot_carcass_weight']:
+                if self.animal.status not in ['slaughtered', 'carcass_ready']:
+                    raise ValidationError({
+                        'weight_type': f'Hot carcass weight can only be logged for slaughtered animals. '
+                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                    })
+            elif weight_type_lower in ['cold_carcass_weight']:
+                if self.animal.status not in ['carcass_ready', 'disassembled', 'packaged', 'delivered']:
+                    raise ValidationError({
+                        'weight_type': f'Cold carcass weight can only be logged for animals with carcass ready or later status. '
+                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                    })
+            elif weight_type_lower in ['final_weight']:
+                if self.animal.status not in ['disassembled', 'packaged', 'delivered']:
+                    raise ValidationError({
+                        'weight_type': f'Final weight can only be logged for disassembled animals. '
+                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                    })
+            elif weight_type_lower in ['leather_weight']:
+                if self.animal.status == 'received':
+                    raise ValidationError({
+                        'weight_type': f'Leather weight should be logged after slaughter. '
+                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                    })
+            # live_weight can be logged for any status - no validation needed
+            
             # Check for duplicate leather weight entries
             if weight_type == 'leather_weight':
                 if self.animal.leather_weight_kg is not None:
@@ -233,13 +287,29 @@ class BatchWeightLogForm(forms.Form):
                     from .models import WeightLog
                     
                     order = SlaughterOrder.objects.get(pk=order_id)
-                    slaughtered_count = order.animals.filter(status='slaughtered').count()
                     
-                    # Basic validation: ensure this batch doesn't exceed total slaughtered animals
-                    if animal_count > slaughtered_count:
+                    # Determine available animal count based on weight type
+                    if weight_type == 'live_weight':
+                        # For live weight, count all relevant statuses
+                        available_count = order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                    elif weight_type == 'hot_carcass_weight':
+                        # For hot carcass weight, count slaughtered/carcass_ready+ animals
+                        available_count = order.animals.filter(status__in=['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                    elif weight_type == 'cold_carcass_weight':
+                        # For cold carcass weight, count carcass_ready+ animals
+                        available_count = order.animals.filter(status__in=['carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                    elif weight_type == 'final_weight':
+                        # For final weight, count disassembled+ animals
+                        available_count = order.animals.filter(status__in=['disassembled', 'packaged', 'delivered']).count()
+                    else:
+                        # Default fallback for any other weight types
+                        available_count = order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                    
+                    # Basic validation: ensure this batch doesn't exceed available animals
+                    if animal_count > available_count:
                         raise ValidationError(
                             f"Cannot log weight for {animal_count} animals. "
-                            f"Only {slaughtered_count} animals are available for weighing in this order."
+                            f"Only {available_count} animals are available for {weight_type.replace('_', ' ').title()} weighing in this order."
                         )
                     
                     # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
@@ -256,12 +326,12 @@ class BatchWeightLogForm(forms.Form):
                     # Check if adding this batch would exceed available animals
                     total_after_this_batch = total_animals_already_weighed + animal_count
                     
-                    if total_after_this_batch > slaughtered_count:
-                        remaining_available = slaughtered_count - total_animals_already_weighed
+                    if total_after_this_batch > available_count:
+                        remaining_available = available_count - total_animals_already_weighed
                         raise ValidationError(
                             f"Cannot log weight for {animal_count} animals. "
                             f"Only {remaining_available} animals remain available for {weight_type.replace('_', ' ').title()} weighing "
-                            f"({total_animals_already_weighed} already weighed out of {slaughtered_count} total)."
+                            f"({total_animals_already_weighed} already weighed out of {available_count} total)."
                         )
                         
                 except SlaughterOrder.DoesNotExist:

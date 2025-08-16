@@ -238,12 +238,21 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get orders with slaughtered animals (ready for weight logging)
+        # Get orders with animals ready for weight logging (any status that allows weight logging)
+        relevant_statuses = ['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']
         orders = SlaughterOrder.objects.filter(
-            animals__status='slaughtered'
+            animals__status__in=relevant_statuses
         ).annotate(
-            slaughtered_count=Count('animals', filter=Q(animals__status='slaughtered'))
-        ).filter(slaughtered_count__gt=0).order_by('-order_datetime')
+            received_count=Count('animals', filter=Q(animals__status='received')),
+            slaughtered_count=Count('animals', filter=Q(animals__status='slaughtered')),
+            carcass_ready_count=Count('animals', filter=Q(animals__status='carcass_ready')),
+            disassembled_count=Count('animals', filter=Q(animals__status='disassembled')),
+            packaged_count=Count('animals', filter=Q(animals__status='packaged')),
+            delivered_count=Count('animals', filter=Q(animals__status='delivered'))
+        ).filter(
+            Q(received_count__gt=0) | Q(slaughtered_count__gt=0) | Q(carcass_ready_count__gt=0) | 
+            Q(disassembled_count__gt=0) | Q(packaged_count__gt=0) | Q(delivered_count__gt=0)
+        ).order_by('-order_datetime')
         
         # Add batch weight progress information for each order
         orders_with_progress = []
@@ -260,9 +269,27 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                     is_group_weight=True
                 ).order_by('-log_date')
                 
-                # Calculate progress
+                # Calculate progress - use correct count based on weight type and status rules
                 total_weighed = sum(log.group_quantity for log in existing_logs)
-                remaining = order.slaughtered_count - total_weighed
+                
+                # Weight type rules based on animal status:
+                if weight_type == 'live_weight':
+                    # Live weight: Can be logged for ANY status (including received animals)
+                    available_count = order.animals.filter(status__in=relevant_statuses).count()
+                elif weight_type == 'hot_carcass_weight':
+                    # Hot carcass weight: Only for slaughtered/carcass_ready animals
+                    available_count = order.animals.filter(status__in=['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                elif weight_type == 'cold_carcass_weight':
+                    # Cold carcass weight: Only for carcass_ready+ animals
+                    available_count = order.animals.filter(status__in=['carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+                elif weight_type == 'final_weight':
+                    # Final weight: Only for disassembled+ animals
+                    available_count = order.animals.filter(status__in=['disassembled', 'packaged', 'delivered']).count()
+                else:
+                    # Default fallback
+                    available_count = order.animals.filter(status__in=relevant_statuses).count()
+                
+                remaining = available_count - total_weighed
                 
                 # Check if individual weights were auto-generated (completion)
                 individual_logs_exist = WeightLog.objects.filter(
@@ -275,13 +302,17 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                     'total_weighed': total_weighed,
                     'remaining': max(0, remaining),
                     'logs_count': existing_logs.count(),
-                    'completed': individual_logs_exist or total_weighed >= order.slaughtered_count,
-                    'latest_log': existing_logs.first()
+                    'completed': individual_logs_exist or total_weighed >= available_count,
+                    'latest_log': existing_logs.first(),
+                    'available_count': available_count  # Add this for debugging
                 }
             
             orders_with_progress.append({
                 'order': order,
-                'weight_progress': weight_progress
+                'weight_progress': weight_progress,
+                'total_animal_count': (order.received_count + order.slaughtered_count + 
+                                     order.carcass_ready_count + order.disassembled_count + 
+                                     order.packaged_count + order.delivered_count)
             })
         
         context['orders_with_progress'] = orders_with_progress
@@ -332,17 +363,22 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 
                 # Check if this completed the weight type
                 new_total = current_total + animal_count
-                slaughtered_count = order.animals.filter(status='slaughtered').count()
                 
-                if new_total >= slaughtered_count:
+                # For hot carcass weight, count both slaughtered and carcass_ready animals
+                if weight_type == 'hot_carcass_weight':
+                    available_count = order.animals.filter(status__in=['slaughtered', 'carcass_ready']).count()
+                else:
+                    available_count = order.animals.filter(status='slaughtered').count()
+                
+                if new_total >= available_count:
                     messages.success(
                         request, 
-                        f"✅ Batch weight logged successfully! All {slaughtered_count} animals for {weight_type.replace('_', ' ').title()} "
+                        f"✅ Batch weight logged successfully! All {available_count} animals for {weight_type.replace('_', ' ').title()} "
                         f"are now weighed. Individual weight logs have been automatically created with "
                         f"average weight of {average_weight:.2f}kg per animal."
                     )
                 else:
-                    remaining = slaughtered_count - new_total
+                    remaining = available_count - new_total
                     messages.success(
                         request, 
                         f"Batch weight logged: {animal_count} animals weighed ({total_weight}kg total, "

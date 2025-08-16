@@ -78,8 +78,10 @@
             <div>
                 <h3 class="text-sm font-medium text-purple-800 mb-1">Real-Time Batch Weight Logging</h3>
                 <p class="text-sm text-purple-800">
-                    <strong>Live Weight:</strong> Weigh all animals at once when truck arrives.<br>
-                    <strong>Post-Slaughter:</strong> Weigh animals in batches (5-6 at a time) as they're processed.<br>
+                    <strong>Live Weight:</strong> Can be logged for any animal status - received animals when truck arrives OR slaughtered animals if forgotten.<br>
+                    <strong>Hot Carcass Weight:</strong> Only for slaughtered/carcass ready animals - weigh in batches after processing.<br>
+                    <strong>Cold Carcass Weight:</strong> Only for carcass ready+ animals - after chilling process.<br>
+                    <strong>Final Weight:</strong> Only for disassembled+ animals - after butchering process.<br>
                     <strong>Auto-Complete:</strong> When all animals are weighed, individual weights are automatically calculated and saved.
                 </p>
             </div>
@@ -96,7 +98,7 @@
                     {% for order_info in orders_with_progress %}
                         {% with order=order_info.order progress=order_info.weight_progress %}
                         <div class="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
-                             onclick="selectOrder('{{ order.pk }}', '{{ order.slaughter_order_no }}', {{ order.slaughtered_count }})">
+                             onclick="selectOrder('{{ order.pk }}', '{{ order.slaughter_order_no }}', {{ order_info.total_animal_count }})">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ order.slaughter_order_no }}</div>
@@ -107,10 +109,37 @@
                                             {{ order.client_name }}
                                         {% endif %}
                                     </div>
-                                    <div class="text-sm text-gray-500 mt-1">
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            {{ order.slaughtered_count }} animals slaughtered
-                                        </span>
+                                    <div class="text-sm text-gray-500 mt-1 flex flex-wrap gap-1">
+                                        {% if order.received_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ order.received_count }} received
+                                            </span>
+                                        {% endif %}
+                                        {% if order.slaughtered_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                {{ order.slaughtered_count }} slaughtered
+                                            </span>
+                                        {% endif %}
+                                        {% if order.carcass_ready_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                {{ order.carcass_ready_count }} carcass ready
+                                            </span>
+                                        {% endif %}
+                                        {% if order.disassembled_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                {{ order.disassembled_count }} disassembled
+                                            </span>
+                                        {% endif %}
+                                        {% if order.packaged_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                {{ order.packaged_count }} packaged
+                                            </span>
+                                        {% endif %}
+                                        {% if order.delivered_count > 0 %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                {{ order.delivered_count }} delivered
+                                            </span>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -124,20 +153,7 @@
                                     {% if info.total_weighed > 0 or info.logs_count > 0 %}
                                         <div class="flex justify-between text-xs">
                                             <span class="text-gray-600">{{ weight_type|title|cut:"_" }}:</span>
-                                            <span class="flex items-center">
-                                                {% if info.completed %}
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                        ✓ Complete ({{ info.total_weighed }} weighed)
-                                                    </span>
-                                                {% else %}
-                                                    <span class="text-blue-600">
-                                                        {{ info.total_weighed }}/{{ order.slaughtered_count }} weighed
-                                                        {% if info.remaining > 0 %}
-                                                            <span class="text-gray-500">({{ info.remaining }} remaining)</span>
-                                                        {% endif %}
-                                                    </span>
-                                                {% endif %}
-                                            </span>
+                                            <span class="text-gray-500">{{ info.total_weighed }}/{{ info.available_count }} animals</span>
                                         </div>
                                     {% endif %}
                                 {% endfor %}

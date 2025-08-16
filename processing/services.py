@@ -78,12 +78,59 @@ def create_carcass_from_slaughter(animal: Animal, hot_carcass_weight: float, dis
 def log_individual_weight(animal: Animal, weight_type: str, weight: float) -> WeightLog:
     """
     Logs an individual weight measurement for an animal.
+    Automatically transitions animal to 'carcass_ready' when hot carcass weight is logged.
+    
+    Weight type restrictions:
+    - live_weight: Can be logged for animals in any status
+    - hot_carcass_weight: Only for slaughtered animals
+    - cold_carcass_weight: Only for carcass_ready animals
+    - final_weight: Only for disassembled animals
+    - leather_weight: Can be logged for animals in any status after received
     """
+    # Validate weight type based on animal status
+    weight_type_lower = weight_type.lower()
+    
+    if weight_type_lower in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass']:
+        if animal.status not in ['slaughtered', 'carcass_ready']:
+            raise ValidationError(
+                f"Hot carcass weight can only be logged for slaughtered animals. "
+                f"Animal {animal.identification_tag} is currently {animal.get_status_display()}."
+            )
+    elif weight_type_lower in ['cold_carcass_weight', 'cold carcass weight', 'cold_carcass']:
+        if animal.status not in ['carcass_ready', 'disassembled', 'packaged', 'delivered']:
+            raise ValidationError(
+                f"Cold carcass weight can only be logged for animals with carcass ready or later status. "
+                f"Animal {animal.identification_tag} is currently {animal.get_status_display()}."
+            )
+    elif weight_type_lower in ['final_weight', 'final weight']:
+        if animal.status not in ['disassembled', 'packaged', 'delivered']:
+            raise ValidationError(
+                f"Final weight can only be logged for disassembled animals. "
+                f"Animal {animal.identification_tag} is currently {animal.get_status_display()}."
+            )
+    elif weight_type_lower in ['leather_weight', 'leather weight']:
+        if animal.status == 'received':
+            raise ValidationError(
+                f"Leather weight should be logged after slaughter. "
+                f"Animal {animal.identification_tag} is currently {animal.get_status_display()}."
+            )
+    # live_weight can be logged for any status - no validation needed
+    
     weight_log = WeightLog.objects.create(
         animal=animal,
         weight=weight,
         weight_type=weight_type
     )
+    
+    # Auto-transition to carcass_ready when hot carcass weight is logged
+    if weight_type_lower in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass'] and animal.status == 'slaughtered':
+        animal.prepare_carcass()
+        animal.save()
+        
+        # Update order status
+        from reception.services import update_order_status_from_animals
+        update_order_status_from_animals(animal.slaughter_order)
+    
     return weight_log
 
 @transaction.atomic
@@ -163,13 +210,34 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
     Returns:
         WeightLog: The created weight log entry
     """
-    # Basic validation: ensure this batch doesn't exceed total slaughtered animals
-    slaughtered_count = slaughter_order.animals.filter(status='slaughtered').count()
+    # Basic validation: ensure this batch doesn't exceed total available animals
+    # For different weight types, count appropriate animal statuses
+    individual_weight_type = weight_type.replace(' Group', '')
+    is_hot_carcass_weight = individual_weight_type.lower() in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass']
+    is_live_weight = individual_weight_type.lower() in ['live_weight', 'live weight']
+    is_cold_carcass_weight = individual_weight_type.lower() in ['cold_carcass_weight', 'cold carcass weight', 'cold_carcass']
+    is_final_weight = individual_weight_type.lower() in ['final_weight', 'final weight']
     
-    if group_quantity > slaughtered_count:
+    if is_live_weight:
+        # For live weight, count all relevant statuses
+        available_count = slaughter_order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+    elif is_hot_carcass_weight:
+        # For hot carcass weight, count slaughtered/carcass_ready+ animals
+        available_count = slaughter_order.animals.filter(status__in=['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+    elif is_cold_carcass_weight:
+        # For cold carcass weight, count carcass_ready+ animals
+        available_count = slaughter_order.animals.filter(status__in=['carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+    elif is_final_weight:
+        # For final weight, count disassembled+ animals
+        available_count = slaughter_order.animals.filter(status__in=['disassembled', 'packaged', 'delivered']).count()
+    else:
+        # Default fallback for any other weight types
+        available_count = slaughter_order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']).count()
+    
+    if group_quantity > available_count:
         raise ValueError(
             f"Cannot log weight for {group_quantity} animals. "
-            f"Only {slaughtered_count} animals are available for weighing in this order."
+            f"Only {available_count} animals are available for weighing in this order."
         )
     
     # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
@@ -185,12 +253,12 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
     # Check if adding this batch would exceed available animals
     total_after_this_batch = total_animals_already_weighed + group_quantity
     
-    if total_after_this_batch > slaughtered_count:
-        remaining_available = slaughtered_count - total_animals_already_weighed
+    if total_after_this_batch > available_count:
+        remaining_available = available_count - total_animals_already_weighed
         raise ValueError(
             f"Cannot log weight for {group_quantity} animals. "
             f"Only {remaining_available} animals remain available for {weight_type} weighing "
-            f"({total_animals_already_weighed} already weighed out of {slaughtered_count} total)."
+            f"({total_animals_already_weighed} already weighed out of {available_count} total)."
         )
     
     # Create the batch weight log
@@ -203,13 +271,33 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
         group_total_weight=group_total_weight
     )
     
+    # BATCH STATUS TRANSITION: Handle immediate status transitions for hot carcass weight
+    # Check if this is hot carcass weight logging for immediate status transition  
+    individual_weight_type = weight_type.replace(' Group', '')
+    is_hot_carcass_weight = individual_weight_type.lower() in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass']
+    
+    if is_hot_carcass_weight:
+        # Transition a batch of slaughtered animals to carcass_ready based on the group_quantity
+        animals_to_transition = slaughter_order.animals.filter(status='slaughtered')[:group_quantity]
+        animals_transitioned = 0
+        
+        for animal in animals_to_transition:
+            animal.prepare_carcass()
+            animal.save()
+            animals_transitioned += 1
+        
+        # Update order status if any animals were transitioned
+        if animals_transitioned > 0:
+            from reception.services import update_order_status_from_animals
+            update_order_status_from_animals(slaughter_order)
+    
     # Check if we've now weighed all animals for this weight type
     # We can reuse the existing_logs and add the new log
     all_logs = list(existing_logs) + [weight_log]
     total_animals_weighed = sum(log.group_quantity for log in all_logs)
     
     # If all animals are now weighed, create individual weight logs automatically
-    if total_animals_weighed >= slaughtered_count:
+    if total_animals_weighed >= available_count:
         _create_individual_weight_logs_from_batches(slaughter_order, weight_type, all_logs)
     
     return weight_log
@@ -219,6 +307,7 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
     """
     Internal function to create individual weight logs when all animals are weighed.
     Calculates the overall average weight and assigns it to each animal.
+    Automatically transitions animals to 'carcass_ready' when hot carcass weight is logged.
     """
     from decimal import Decimal
     
@@ -230,8 +319,34 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
     # Get the base weight type (remove " Group" suffix)
     individual_weight_type = weight_type.replace(' Group', '')
     
-    # Create individual weight logs for all slaughtered animals
-    animals = slaughter_order.animals.filter(status='slaughtered')
+    # Check if this is hot carcass weight logging for status transition
+    is_hot_carcass_weight = individual_weight_type.lower() in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass']
+    
+    # Create individual weight logs for all animals that were part of the batch weights
+    # Select animals based on weight type requirements
+    if is_hot_carcass_weight:
+        # For hot carcass weight, get animals that are either slaughtered or carcass_ready
+        animals = slaughter_order.animals.filter(status__in=['slaughtered', 'carcass_ready'])
+    else:
+        # For other weight types, get animals based on the weight type requirements
+        is_cold_carcass_weight = individual_weight_type.lower() in ['cold_carcass_weight', 'cold carcass weight', 'cold_carcass']
+        is_final_weight = individual_weight_type.lower() in ['final_weight', 'final weight']
+        is_live_weight = individual_weight_type.lower() in ['live_weight', 'live weight']
+        
+        if is_live_weight:
+            # For live weight, include all relevant statuses
+            animals = slaughter_order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered'])
+        elif is_cold_carcass_weight:
+            # For cold carcass weight, include carcass_ready+ animals
+            animals = slaughter_order.animals.filter(status__in=['carcass_ready', 'disassembled', 'packaged', 'delivered'])
+        elif is_final_weight:
+            # For final weight, include disassembled+ animals
+            animals = slaughter_order.animals.filter(status__in=['disassembled', 'packaged', 'delivered'])
+        else:
+            # Default fallback - include all relevant statuses
+            animals = slaughter_order.animals.filter(status__in=['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered'])
+    
+    animals_transitioned = 0
     
     for animal in animals:
         # Check if individual weight log already exists
@@ -247,12 +362,24 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
                 weight_type=individual_weight_type,
                 is_group_weight=False
             )
+            
+            # Auto-transition to carcass_ready when hot carcass weight is logged
+            if is_hot_carcass_weight and animal.status == 'slaughtered':
+                animal.prepare_carcass()
+                animal.save()
+                animals_transitioned += 1
+    
+    # Update order status if any animals were transitioned
+    if animals_transitioned > 0:
+        from reception.services import update_order_status_from_animals
+        update_order_status_from_animals(slaughter_order)
     
     return {
         'total_weight': float(total_weight),
         'total_animals': total_animals,
         'average_weight': float(overall_average_weight),
-        'individual_logs_created': animals.count()
+        'individual_logs_created': animals.count(),
+        'animals_transitioned_to_carcass_ready': animals_transitioned
     }
 
 @transaction.atomic
@@ -273,7 +400,7 @@ def get_batch_weight_summary(slaughter_order: SlaughterOrder) -> dict:
     
     summary = {
         'order': slaughter_order,
-        'total_animals': slaughter_order.animals.filter(status='slaughtered').count(),
+        'total_animals': slaughter_order.animals.exclude(status__in=['pending', 'received']).count(),
         'weight_logs': list(batch_logs),
         'weight_types_logged': list(batch_logs.values_list('weight_type', flat=True)),
         'total_logs_count': batch_logs.count(),
@@ -485,6 +612,38 @@ def prepare_animal_carcass(animal: Animal) -> Animal:
     update_order_status_from_animals(animal.slaughter_order)
     
     return animal
+
+@transaction.atomic
+def batch_transition_animals_to_carcass_ready(slaughter_order: SlaughterOrder, animal_count: int) -> dict:
+    """
+    Transitions a specified number of 'slaughtered' animals to 'carcass_ready' status in batch.
+    
+    Args:
+        slaughter_order: The order containing the animals
+        animal_count: Number of animals to transition
+        
+    Returns:
+        dict: Summary of the batch transition operation
+    """
+    # Get animals in slaughtered status
+    animals_to_transition = slaughter_order.animals.filter(status='slaughtered')[:animal_count]
+    animals_transitioned = 0
+    
+    for animal in animals_to_transition:
+        animal.prepare_carcass()
+        animal.save()
+        animals_transitioned += 1
+    
+    # Update order status
+    if animals_transitioned > 0:
+        from reception.services import update_order_status_from_animals
+        update_order_status_from_animals(slaughter_order)
+    
+    return {
+        'animals_transitioned': animals_transitioned,
+        'order_id': str(slaughter_order.id),
+        'order_status_updated': animals_transitioned > 0
+    }
 
 def delete_animal_files(animal):
     """
