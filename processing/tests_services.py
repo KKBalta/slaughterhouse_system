@@ -576,3 +576,199 @@ class ProcessingServiceTest(TestCase):
         
         # Verify order status is IN_PROGRESS (since animal is in packaged, not final state)
         self.assertEqual(simple_order.status, SlaughterOrder.Status.IN_PROGRESS)
+
+    def test_log_group_weight_service_enhanced(self):
+        """Test the enhanced log_group_weight service with validation"""
+        # First, mark some animals as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        # Mark them as slaughtered
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        mark_animal_slaughtered(animal3)
+        
+        # Test successful group weight logging
+        group_weight_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=150.0,  # Average weight per animal
+            weight_type='Live Weight Group',
+            group_quantity=3,
+            group_total_weight=450.0  # Total weight
+        )
+
+        self.assertIsInstance(group_weight_log, WeightLog)
+        self.assertEqual(group_weight_log.slaughter_order, self.order)
+        self.assertTrue(group_weight_log.is_group_weight)
+        self.assertEqual(group_weight_log.group_quantity, 3)
+        self.assertEqual(group_weight_log.group_total_weight, 450.0)
+        self.assertEqual(group_weight_log.weight, 150.0)  # Average per animal
+        self.assertEqual(group_weight_log.weight_type, 'Live Weight Group')
+
+    def test_log_group_weight_validation_insufficient_animals(self):
+        """Test that logging group weight fails when there aren't enough animals in the order"""
+        # Only mark one animal as slaughtered
+        mark_animal_slaughtered(self.animal)
+        
+        # Try to log weight for 3 animals when only 1 is slaughtered
+        with self.assertRaises(ValueError) as context:
+            log_group_weight(
+                slaughter_order=self.order,
+                weight=150.0,
+                weight_type='Live Weight Group',
+                group_quantity=3,
+                group_total_weight=450.0
+            )
+        
+        self.assertIn("Cannot log weight for 3 animals", str(context.exception))
+        self.assertIn("Only 1 animals are available", str(context.exception))
+
+    def test_log_group_weight_auto_individual_creation(self):
+        """Test that individual weight logs are created when all animals are weighed"""
+        # Mark 4 animals as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        mark_animal_slaughtered(animal3)
+        
+        # First batch: 2 animals
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='Live Weight Group',
+            group_quantity=2,
+            group_total_weight=300.0
+        )
+        
+        # Check that no individual logs exist yet
+        individual_logs = WeightLog.objects.filter(
+            animal__slaughter_order=self.order,
+            weight_type='Live Weight',
+            is_group_weight=False
+        )
+        self.assertEqual(individual_logs.count(), 0)
+        
+        # Second batch: remaining 2 animals (completes all)
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=155.0,
+            weight_type='Live Weight Group',
+            group_quantity=2,
+            group_total_weight=310.0
+        )
+        
+        # Check that individual logs were created automatically
+        individual_logs = WeightLog.objects.filter(
+            animal__slaughter_order=self.order,
+            weight_type='Live Weight',
+            is_group_weight=False
+        )
+        self.assertEqual(individual_logs.count(), 4)  # One for each animal
+        
+        # Check that the average weight was calculated correctly
+        # Total: 300 + 310 = 610kg, Total animals: 4, Average: 152.5kg
+        for log in individual_logs:
+            self.assertEqual(log.weight, 152.5)
+
+    def test_get_batch_weight_summary_service(self):
+        """Test the batch weight summary service"""
+        from processing.services import get_batch_weight_summary
+        
+        # Mark animals as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal1)
+        mark_animal_slaughtered(animal2)
+        
+        # Log different types of group weights
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='Live Weight Group',
+            group_quantity=3,
+            group_total_weight=450.0
+        )
+        
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=120.0,
+            weight_type='Hot Carcass Weight Group',
+            group_quantity=3,
+            group_total_weight=360.0
+        )
+        
+        # Get summary
+        summary = get_batch_weight_summary(self.order)
+        
+        self.assertEqual(summary['order'], self.order)
+        self.assertEqual(summary['total_animals'], 3)
+        self.assertEqual(summary['total_logs_count'], 2)
+        self.assertEqual(len(summary['weight_logs']), 2)
+        self.assertEqual(len(summary['weight_progression']), 2)
+        
+        # Check weight progression data
+        progression = summary['weight_progression']
+        self.assertEqual(progression[0]['weight_type'], 'Live Weight Group')
+        self.assertEqual(progression[0]['total_weight'], 450.0)
+        self.assertEqual(progression[0]['average_weight'], 150.0)
+
+    def test_get_batch_weight_reports_service(self):
+        """Test the comprehensive batch weight reports service"""
+        from processing.services import get_batch_weight_reports
+        
+        # Create another order for testing
+        order2 = SlaughterOrder.objects.create(
+            client=self.client_profile, 
+            service_package=self.service_package, 
+            order_datetime=timezone.now()
+        )
+        animal_order2 = Animal.objects.create(slaughter_order=order2, animal_type='sheep')
+        
+        # Mark animals as slaughtered
+        mark_animal_slaughtered(self.animal)
+        mark_animal_slaughtered(animal_order2)
+        
+        # Log group weights for both orders
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='Live Weight Group',
+            group_quantity=1,
+            group_total_weight=150.0
+        )
+        
+        log_group_weight(
+            slaughter_order=order2,
+            weight=45.0,
+            weight_type='Live Weight Group',
+            group_quantity=1,
+            group_total_weight=45.0
+        )
+        
+        # Test general report
+        report = get_batch_weight_reports()
+        
+        self.assertEqual(report['stats']['total_logs'], 2)
+        self.assertEqual(report['stats']['total_animals_weighed'], 2)
+        self.assertEqual(report['stats']['total_weight_logged'], 195.0)
+        self.assertAlmostEqual(report['stats']['average_weight_per_animal'], 97.5)
+        
+        # Test filtered report by order
+        filtered_report = get_batch_weight_reports(order_id=self.order.id)
+        
+        self.assertEqual(filtered_report['stats']['total_logs'], 1)
+        self.assertEqual(filtered_report['stats']['total_animals_weighed'], 1)
+        self.assertEqual(filtered_report['stats']['total_weight_logged'], 150.0)
+        
+        # Test weight type statistics
+        self.assertIn('Live Weight Group', report['weight_type_stats'])
+        live_weight_stats = report['weight_type_stats']['Live Weight Group']
+        self.assertEqual(live_weight_stats['count'], 2)
+        self.assertEqual(live_weight_stats['total_animals'], 2)
+        self.assertEqual(live_weight_stats['total_weight'], 195.0)

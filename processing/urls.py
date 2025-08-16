@@ -20,6 +20,7 @@ urlpatterns = [
     # Batch Operations
     path('batch/slaughter/', views.BatchSlaughterView.as_view(), name='batch_slaughter'),
     path('batch/weights/', views.BatchWeightLogView.as_view(), name='batch_weights'),
+    path('batch/weights/reports/', views.BatchWeightReportsView.as_view(), name='batch_weight_reports'),
     
     # Status Updates
     path('orders/<uuid:order_pk>/status/', views.OrderStatusUpdateView.as_view(), name='order_status_update'),

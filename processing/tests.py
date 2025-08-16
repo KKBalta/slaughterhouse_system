@@ -241,3 +241,95 @@ class ProcessingModelTest(TestCase):
                 weight_type='Test',
                 is_group_weight=True
             )
+
+    def test_batch_weight_log_form_validation(self):
+        """Test BatchWeightLogForm validation"""
+        from .forms import BatchWeightLogForm
+        
+        # Create animals and mark them as slaughtered
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal1.perform_slaughter()
+        animal2.perform_slaughter()
+        animal1.save()
+        animal2.save()
+        
+        # Test valid form data
+        valid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 300.0,
+            'animal_count': 2
+        }
+        form = BatchWeightLogForm(data=valid_data)
+        self.assertTrue(form.is_valid())
+        
+        # Test invalid - too many animals
+        invalid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 300.0,
+            'animal_count': 5  # More than available slaughtered animals
+        }
+        form = BatchWeightLogForm(data=invalid_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Cannot log weight for 5 animals', str(form.errors))
+        
+        # Test invalid - average weight too low
+        invalid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 1.0,  # Very low total weight
+            'animal_count': 2
+        }
+        form = BatchWeightLogForm(data=invalid_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Average weight per animal seems unusually low', str(form.errors))
+
+    def test_batch_weight_log_form_multiple_batches_validation(self):
+        """Test that BatchWeightLogForm allows multiple batches of the same weight type"""
+        from .forms import BatchWeightLogForm
+        from .models import WeightLog
+        
+        # Create and mark animals as slaughtered (4 total)
+        animal1 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal2 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal3 = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
+        animal1.perform_slaughter()
+        animal2.perform_slaughter()
+        animal3.perform_slaughter()
+        animal1.save()
+        animal2.save()
+        animal3.save()
+        
+        # Create existing weight log for 2 animals
+        WeightLog.objects.create(
+            slaughter_order=self.order,
+            weight=150.0,
+            weight_type='live_weight Group',
+            is_group_weight=True,
+            group_quantity=2,
+            group_total_weight=300.0
+        )
+        
+        # Try to create another batch for same weight type - should succeed now
+        valid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',  # This will become 'live_weight Group'
+            'total_weight': 310.0,
+            'animal_count': 2  # Can weigh same animals multiple times
+        }
+        form = BatchWeightLogForm(data=valid_data)
+        self.assertTrue(form.is_valid(), f"Form should be valid but got errors: {form.errors}")
+        
+        # Try to log more animals than exist in the order - should fail
+        invalid_data = {
+            'order_id': str(self.order.id),
+            'weight_type': 'live_weight',
+            'total_weight': 160.0,
+            'animal_count': 10  # More than the 4 total animals in the order
+        }
+        form = BatchWeightLogForm(data=invalid_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Cannot log weight for 10 animals', str(form.errors))
+        self.assertIn('Only 3 animals are available for weighing', str(form.errors))

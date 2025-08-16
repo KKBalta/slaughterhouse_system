@@ -183,8 +183,7 @@ class BatchWeightLogForm(forms.Form):
         choices=BATCH_WEIGHT_TYPE_CHOICES,
         required=True,
         widget=forms.Select(attrs={
-            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-purple-500 focus:border-purple-500',
-            'id': 'weight_type'
+            'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-purple-500 focus:border-purple-500'
         })
     )
     
@@ -193,21 +192,21 @@ class BatchWeightLogForm(forms.Form):
         decimal_places=2,
         min_value=0.01,
         label="Total Weight (kg)",
+        help_text="Enter the combined weight of all animals in the batch",
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
             'placeholder': 'Enter total weight in kilograms',
-            'step': '0.01',
-            'id': 'total_weight'
+            'step': '0.01'
         })
     )
     
     animal_count = forms.IntegerField(
         min_value=1,
         label="Number of Animals",
+        help_text="Number of animals included in this batch weight",
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
-            'placeholder': 'Number of animals weighed together',
-            'id': 'animal_count'
+            'placeholder': 'Number of animals weighed together'
         })
     )
     
@@ -215,6 +214,8 @@ class BatchWeightLogForm(forms.Form):
         cleaned_data = super().clean()
         total_weight = cleaned_data.get('total_weight')
         animal_count = cleaned_data.get('animal_count')
+        order_id = cleaned_data.get('order_id')
+        weight_type = cleaned_data.get('weight_type')
         
         if total_weight and animal_count:
             average_weight = total_weight / animal_count
@@ -224,5 +225,22 @@ class BatchWeightLogForm(forms.Form):
                 raise ValidationError("Average weight per animal seems unusually high. Please verify.")
             if average_weight < 1:  # 1kg average seems low
                 raise ValidationError("Average weight per animal seems unusually low. Please verify.")
+            
+            # Validate that we don't exceed the actual number of slaughtered animals in this specific batch
+            if order_id:
+                try:
+                    from reception.models import SlaughterOrder
+                    order = SlaughterOrder.objects.get(pk=order_id)
+                    slaughtered_count = order.animals.filter(status='slaughtered').count()
+                    
+                    # Basic validation: ensure this batch doesn't exceed total slaughtered animals
+                    if animal_count > slaughtered_count:
+                        raise ValidationError(
+                            f"Cannot log weight for {animal_count} animals. "
+                            f"Only {slaughtered_count} animals are available for weighing in this order."
+                        )
+                        
+                except SlaughterOrder.DoesNotExist:
+                    raise ValidationError("Invalid order selected.")
         
         return cleaned_data

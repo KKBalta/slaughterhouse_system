@@ -147,7 +147,32 @@ def update_animal_details(animal: Animal, details_data: dict) -> Animal:
 def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type: str, group_quantity: int, group_total_weight: float) -> WeightLog:
     """
     To record weight measurements for a batch of animals associated with a `SlaughterOrder`.
+    
+    This function supports real-time slaughterhouse workflow:
+    1. Live weight: Weigh all animals at once when truck arrives
+    2. Post-slaughter: Weigh animals in smaller batches (5-6 at a time)
+    3. Auto-completion: When all animals are weighed, create individual weight logs
+    
+    Args:
+        slaughter_order: The order containing the animals
+        weight: Average weight per animal (calculated from total/quantity)
+        weight_type: Type of weight being logged (e.g., 'Live Weight Group')
+        group_quantity: Number of animals in the batch
+        group_total_weight: Total combined weight of all animals in the batch
+        
+    Returns:
+        WeightLog: The created weight log entry
     """
+    # Basic validation: ensure this batch doesn't exceed total slaughtered animals
+    slaughtered_count = slaughter_order.animals.filter(status='slaughtered').count()
+    
+    if group_quantity > slaughtered_count:
+        raise ValueError(
+            f"Cannot log weight for {group_quantity} animals. "
+            f"Only {slaughtered_count} animals are available for weighing in this order."
+        )
+    
+    # Create the batch weight log
     weight_log = WeightLog.objects.create(
         slaughter_order=slaughter_order,
         weight=weight,
@@ -156,7 +181,161 @@ def log_group_weight(slaughter_order: SlaughterOrder, weight: float, weight_type
         group_quantity=group_quantity,
         group_total_weight=group_total_weight
     )
+    
+    # Check if we've now weighed all animals for this weight type
+    existing_logs = WeightLog.objects.filter(
+        slaughter_order=slaughter_order,
+        weight_type=weight_type,
+        is_group_weight=True
+    )
+    total_animals_weighed = sum(log.group_quantity for log in existing_logs)
+    
+    # If all animals are now weighed, create individual weight logs automatically
+    if total_animals_weighed >= slaughtered_count:
+        _create_individual_weight_logs_from_batches(slaughter_order, weight_type, existing_logs)
+    
     return weight_log
+
+
+def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder, weight_type: str, batch_logs):
+    """
+    Internal function to create individual weight logs when all animals are weighed.
+    Calculates the overall average weight and assigns it to each animal.
+    """
+    # Calculate overall statistics
+    total_weight = sum(log.group_total_weight for log in batch_logs)
+    total_animals = sum(log.group_quantity for log in batch_logs)
+    overall_average_weight = total_weight / total_animals if total_animals > 0 else 0
+    
+    # Get the base weight type (remove " Group" suffix)
+    individual_weight_type = weight_type.replace(' Group', '')
+    
+    # Create individual weight logs for all slaughtered animals
+    animals = slaughter_order.animals.filter(status='slaughtered')
+    
+    for animal in animals:
+        # Check if individual weight log already exists
+        existing_individual_log = WeightLog.objects.filter(
+            animal=animal,
+            weight_type=individual_weight_type
+        ).first()
+        
+        if not existing_individual_log:
+            WeightLog.objects.create(
+                animal=animal,
+                weight=overall_average_weight,
+                weight_type=individual_weight_type,
+                is_group_weight=False
+            )
+    
+    return {
+        'total_weight': total_weight,
+        'total_animals': total_animals,
+        'average_weight': overall_average_weight,
+        'individual_logs_created': animals.count()
+    }
+
+@transaction.atomic
+def get_batch_weight_summary(slaughter_order: SlaughterOrder) -> dict:
+    """
+    Get a summary of all batch weights logged for a specific order.
+    
+    Args:
+        slaughter_order: The order to get batch weight summary for
+        
+    Returns:
+        dict: Summary containing weight logs and calculated statistics
+    """
+    batch_logs = WeightLog.objects.filter(
+        slaughter_order=slaughter_order,
+        is_group_weight=True
+    ).order_by('log_date')
+    
+    summary = {
+        'order': slaughter_order,
+        'total_animals': slaughter_order.animals.filter(status='slaughtered').count(),
+        'weight_logs': list(batch_logs),
+        'weight_types_logged': list(batch_logs.values_list('weight_type', flat=True)),
+        'total_logs_count': batch_logs.count(),
+        'weight_progression': []
+    }
+    
+    # Calculate weight progression if multiple weight types exist
+    for log in batch_logs:
+        summary['weight_progression'].append({
+            'weight_type': log.weight_type,
+            'total_weight': log.group_total_weight,
+            'average_weight': log.weight,
+            'animal_count': log.group_quantity,
+            'log_date': log.log_date
+        })
+    
+    return summary
+
+def get_batch_weight_reports(date_from=None, date_to=None, order_id=None) -> dict:
+    """
+    Generate comprehensive batch weight reports with filtering options.
+    
+    Args:
+        date_from: Start date for filtering (optional)
+        date_to: End date for filtering (optional)
+        order_id: Specific order ID to filter by (optional)
+        
+    Returns:
+        dict: Comprehensive report data for batch weights
+    """
+    from django.db.models import Avg, Sum, Count
+    from datetime import datetime, timedelta
+    
+    # Base queryset
+    queryset = WeightLog.objects.filter(is_group_weight=True)
+    
+    # Apply filters
+    if date_from:
+        queryset = queryset.filter(log_date__gte=date_from)
+    if date_to:
+        queryset = queryset.filter(log_date__lte=date_to)
+    if order_id:
+        queryset = queryset.filter(slaughter_order_id=order_id)
+    
+    # Get logs with related data
+    logs = queryset.select_related('slaughter_order').order_by('-log_date')
+    
+    # Calculate statistics
+    stats = queryset.aggregate(
+        total_logs=Count('id'),
+        total_animals_weighed=Sum('group_quantity'),
+        total_weight_logged=Sum('group_total_weight'),
+        average_weight_per_animal=Avg('weight'),
+        average_animals_per_batch=Avg('group_quantity')
+    )
+    
+    # Group by weight type
+    weight_type_stats = {}
+    for weight_type in queryset.values_list('weight_type', flat=True).distinct():
+        type_logs = queryset.filter(weight_type=weight_type)
+        weight_type_stats[weight_type] = {
+            'count': type_logs.count(),
+            'total_animals': type_logs.aggregate(Sum('group_quantity'))['group_quantity__sum'] or 0,
+            'total_weight': type_logs.aggregate(Sum('group_total_weight'))['group_total_weight__sum'] or 0,
+            'avg_weight_per_animal': type_logs.aggregate(Avg('weight'))['weight__avg'] or 0,
+        }
+    
+    # Recent activity (last 7 days)
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    recent_activity = queryset.filter(log_date__gte=seven_days_ago).count()
+    
+    return {
+        'logs': logs,
+        'stats': stats,
+        'weight_type_stats': weight_type_stats,
+        'recent_activity': recent_activity,
+        'filters': {
+            'date_from': date_from,
+            'date_to': date_to,
+            'order_id': order_id
+        }
+    }
 
 @transaction.atomic
 def package_animal_products(animal: Animal) -> Animal:
