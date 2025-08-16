@@ -34,7 +34,7 @@ class AnimalFilterForm(forms.Form):
         label="Search Animals",
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Tag, Order Number, or Animal Type',
+            'placeholder': 'Search by Tag, Order Number, Client Name, or Animal Type',
             'id': 'animal-search',
             'autocomplete': 'off',
             'style': 'color: #111827 !important; background-color: #ffffff !important;'

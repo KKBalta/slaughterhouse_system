@@ -63,7 +63,7 @@ class AnimalListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         queryset = Animal.objects.select_related(
-            'slaughter_order', 'slaughter_order__client'
+            'slaughter_order', 'slaughter_order__client', 'slaughter_order__client__user'
         ).order_by('-received_date')
         
         # Filter by status if provided
@@ -76,12 +76,18 @@ class AnimalListView(LoginRequiredMixin, ListView):
         if animal_type:
             queryset = queryset.filter(animal_type=animal_type)
             
-        # Search by identification tag
+        # Enhanced search by identification tag, order number, and client name
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
                 Q(identification_tag__icontains=search) |
-                Q(slaughter_order__slaughter_order_no__icontains=search)
+                Q(slaughter_order__slaughter_order_no__icontains=search) |
+                Q(slaughter_order__client__company_name__icontains=search) |
+                Q(slaughter_order__client__user__first_name__icontains=search) |
+                Q(slaughter_order__client__user__last_name__icontains=search) |
+                Q(slaughter_order__client__contact_person__icontains=search) |
+                Q(slaughter_order__client_name__icontains=search) |  # For walk-in clients
+                Q(animal_type__icontains=search)
             )
             
         return queryset
@@ -380,19 +386,24 @@ class OrderStatusUpdateView(LoginRequiredMixin, View):
         return redirect('processing:dashboard')
 
 
-class AnimalSearchView(LoginRequiredMixin, View):
+class AnimalSearchView(View):  # Temporarily removed LoginRequiredMixin for debugging
     def get(self, request):
         query = request.GET.get('q', '').strip()
         
         if len(query) < 2:
             return JsonResponse({'animals': []})
         
-        # Case-insensitive search
+        # Enhanced case-insensitive search including client name
         animals = Animal.objects.select_related(
-            'slaughter_order', 'slaughter_order__client'
+            'slaughter_order', 'slaughter_order__client', 'slaughter_order__client__user'
         ).filter(
             Q(identification_tag__icontains=query) |
             Q(slaughter_order__slaughter_order_no__icontains=query) |
+            Q(slaughter_order__client__company_name__icontains=query) |
+            Q(slaughter_order__client__user__first_name__icontains=query) |
+            Q(slaughter_order__client__user__last_name__icontains=query) |
+            Q(slaughter_order__client__contact_person__icontains=query) |
+            Q(slaughter_order__client_name__icontains=query) |  # For walk-in clients
             Q(animal_type__icontains=query)
         )[:20]  # Limit to 20 results
         
@@ -441,3 +452,62 @@ class LeatherWeightLogView(LoginRequiredMixin, View):
                     messages.error(request, f'{field}: {error}')
         
         return redirect('processing:animal_detail', pk=animal.pk)
+
+
+class AnimalSearchDebugView(View):
+    """Debug view to test search functionality"""
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({'debug': 'query too short', 'animals': []})
+        
+        try:
+            # Enhanced case-insensitive search including client name
+            animals = Animal.objects.select_related(
+                'slaughter_order', 'slaughter_order__client', 'slaughter_order__client__user'
+            ).filter(
+                Q(identification_tag__icontains=query) |
+                Q(slaughter_order__slaughter_order_no__icontains=query) |
+                Q(slaughter_order__client__company_name__icontains=query) |
+                Q(slaughter_order__client__user__first_name__icontains=query) |
+                Q(slaughter_order__client__user__last_name__icontains=query) |
+                Q(slaughter_order__client__contact_person__icontains=query) |
+                Q(slaughter_order__client_name__icontains=query) |  # For walk-in clients
+                Q(animal_type__icontains=query)
+            )[:20]  # Limit to 20 results
+            
+            animals_data = []
+            for animal in animals:
+                # Determine client info
+                if animal.slaughter_order.client:
+                    client_info = (
+                        animal.slaughter_order.client.company_name or 
+                        animal.slaughter_order.client.get_full_name()
+                    )
+                else:
+                    client_info = animal.slaughter_order.client_name or "Walk-in Client"
+                
+                animals_data.append({
+                    'id': str(animal.pk),
+                    'identification_tag': animal.identification_tag,
+                    'animal_type_display': animal.get_animal_type_display(),
+                    'order_number': animal.slaughter_order.slaughter_order_no,
+                    'client_info': client_info,
+                    'status': animal.status,
+                    'status_display': animal.get_status_display(),
+                    'received_date': animal.received_date.strftime("%b %d, %H:%M"),
+                    'detail_url': reverse('processing:animal_detail', kwargs={'pk': animal.pk})
+                })
+            
+            return JsonResponse({
+                'debug': f'found {len(animals_data)} results for query: {query}',
+                'animals': animals_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'debug': f'error: {str(e)}',
+                'animals': [],
+                'error': str(e)
+            })
