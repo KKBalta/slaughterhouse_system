@@ -61,6 +61,20 @@ class AnimalListView(LoginRequiredMixin, ListView):
     context_object_name = 'animals'
     paginate_by = 50
     
+    def get_paginate_by(self, queryset):
+        """Allow configurable page size via URL parameter"""
+        page_size = self.request.GET.get('page_size', self.paginate_by)
+        try:
+            page_size = int(page_size)
+            # Limit page size to reasonable bounds
+            if page_size < 10:
+                page_size = 10
+            elif page_size > 200:
+                page_size = 200
+            return page_size
+        except (ValueError, TypeError):
+            return self.paginate_by
+    
     def get_queryset(self):
         queryset = Animal.objects.select_related(
             'slaughter_order', 'slaughter_order__client', 'slaughter_order__client__user'
@@ -105,6 +119,18 @@ class AnimalListView(LoginRequiredMixin, ListView):
         context['current_status'] = self.request.GET.get('status', '')
         context['current_animal_type'] = self.request.GET.get('animal_type', '')
         context['current_search'] = self.request.GET.get('search', '')
+        
+        # Add pagination context
+        context['current_page_size'] = self.get_paginate_by(self.get_queryset())
+        context['available_page_sizes'] = [25, 50, 100, 200]
+        
+        # Add filter status
+        context['has_filters'] = bool(
+            self.request.GET.get('status') or 
+            self.request.GET.get('animal_type') or 
+            self.request.GET.get('search')
+        )
+        
         return context
 
 

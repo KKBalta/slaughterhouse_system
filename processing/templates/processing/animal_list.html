@@ -267,6 +267,41 @@
     <!-- Animals List -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         {% if animals %}
+            <!-- Results Summary and Page Size Selector -->
+            <div class="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <p class="text-sm text-gray-700">
+                            <span class="font-semibold">{{ paginator.count }}</span> 
+                            animal{{ paginator.count|pluralize }} found
+                            {% if request.GET.status or request.GET.animal_type or request.GET.search %}
+                                <span class="text-gray-500">(filtered results)</span>
+                            {% endif %}
+                        </p>
+                        {% if is_paginated %}
+                            <div class="text-sm text-gray-500">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Page Size Selector -->
+                    <div class="flex items-center space-x-2">
+                        <label for="page-size" class="text-sm text-gray-600">Show:</label>
+                        <select id="page-size" 
+                                name="page_size" 
+                                onchange="updatePageSize(this.value)"
+                                class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="25" {% if request.GET.page_size == "25" %}selected{% endif %}>25</option>
+                            <option value="50" {% if request.GET.page_size == "50" or not request.GET.page_size %}selected{% endif %}>50</option>
+                            <option value="100" {% if request.GET.page_size == "100" %}selected{% endif %}>100</option>
+                            <option value="200" {% if request.GET.page_size == "200" %}selected{% endif %}>200</option>
+                        </select>
+                        <span class="text-sm text-gray-600">per page</span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -351,47 +386,173 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
+            <!-- Enhanced Pagination -->
             {% if is_paginated %}
                 <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                    <!-- Mobile Pagination -->
                     <div class="flex-1 flex justify-between sm:hidden">
                         {% if page_obj.has_previous %}
-                            <a href="?page={{ page_obj.previous_page_number }}" 
-                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ page_obj.previous_page_number }}" 
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
                                 Previous
                             </a>
+                        {% else %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                                Previous
+                            </span>
                         {% endif %}
+                        
                         {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}" 
-                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ page_obj.next_page_number }}" 
+                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                                 Next
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
                             </a>
+                        {% else %}
+                            <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+                                Next
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </span>
                         {% endif %}
                     </div>
+                    
+                    <!-- Desktop Pagination -->
                     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                         <div>
                             <p class="text-sm text-gray-700">
-                                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} animals
+                                Showing 
+                                <span class="font-semibold">{{ page_obj.start_index }}</span> 
+                                to 
+                                <span class="font-semibold">{{ page_obj.end_index }}</span> 
+                                of 
+                                <span class="font-semibold">{{ page_obj.paginator.count }}</span> 
+                                animals
+                                {% if request.GET.status or request.GET.animal_type or request.GET.search %}
+                                    <span class="text-gray-500">(filtered)</span>
+                                {% endif %}
                             </p>
                         </div>
                         <div>
-                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <!-- Previous Button -->
                                 {% if page_obj.has_previous %}
-                                    <a href="?page={{ page_obj.previous_page_number }}" 
-                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        Previous
+                                    <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ page_obj.previous_page_number }}" 
+                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors duration-200"
+                                       aria-label="Previous page">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
                                     </a>
+                                {% else %}
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                    </span>
                                 {% endif %}
+
+                                <!-- Page Numbers -->
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <span aria-current="page" class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-semibold text-blue-600 cursor-default">
+                                            {{ num }}
+                                        </span>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ num }}" 
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                                           aria-label="Go to page {{ num }}">
+                                            {{ num }}
+                                        </a>
+                                    {% elif num == 1 and page_obj.number > 4 %}
+                                        <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page=1" 
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                                            1
+                                        </a>
+                                        {% if page_obj.number > 5 %}
+                                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-default">
+                                                ...
+                                            </span>
+                                        {% endif %}
+                                    {% elif num == page_obj.paginator.num_pages and page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+                                        {% if page_obj.number < page_obj.paginator.num_pages|add:'-4' %}
+                                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-default">
+                                                ...
+                                            </span>
+                                        {% endif %}
+                                        <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ page_obj.paginator.num_pages }}" 
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                                            {{ page_obj.paginator.num_pages }}
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <!-- Next Button -->
                                 {% if page_obj.has_next %}
-                                    <a href="?page={{ page_obj.next_page_number }}" 
-                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        Next
+                                    <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.animal_type %}animal_type={{ request.GET.animal_type }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.page_size %}page_size={{ request.GET.page_size }}&{% endif %}page={{ page_obj.next_page_number }}" 
+                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors duration-200"
+                                       aria-label="Next page">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
                                     </a>
+                                {% else %}
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </span>
                                 {% endif %}
                             </nav>
                         </div>
                     </div>
                 </div>
+
+                <!-- Quick Page Jump (optional - for large datasets) -->
+                {% if page_obj.paginator.num_pages > 10 %}
+                    <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                        <div class="flex items-center justify-center">
+                            <form method="get" class="flex items-center space-x-2">
+                                <!-- Preserve current filters -->
+                                {% if request.GET.status %}
+                                    <input type="hidden" name="status" value="{{ request.GET.status }}">
+                                {% endif %}
+                                {% if request.GET.animal_type %}
+                                    <input type="hidden" name="animal_type" value="{{ request.GET.animal_type }}">
+                                {% endif %}
+                                {% if request.GET.search %}
+                                    <input type="hidden" name="search" value="{{ request.GET.search }}">
+                                {% endif %}
+                                {% if request.GET.page_size %}
+                                    <input type="hidden" name="page_size" value="{{ request.GET.page_size }}">
+                                {% endif %}
+                                
+                                <label for="page-jump" class="text-sm text-gray-600">Jump to page:</label>
+                                <input type="number" 
+                                       id="page-jump"
+                                       name="page" 
+                                       min="1" 
+                                       max="{{ page_obj.paginator.num_pages }}" 
+                                       value="{{ page_obj.number }}"
+                                       class="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <button type="submit" 
+                                        class="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
+                                    Go
+                                </button>
+                                <span class="text-sm text-gray-500">of {{ page_obj.paginator.num_pages }}</span>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
             {% endif %}
         {% else %}
             <div class="text-center py-12">
@@ -424,7 +585,7 @@
             }
             
             searchTimeout = setTimeout(() => {
-                const searchUrl = `{% url 'processing:animal_search_debug' %}?q=${encodeURIComponent(query)}`;
+                const searchUrl = `{% url 'processing:animal_search' %}?q=${encodeURIComponent(query)}`;
                 console.log('Fetching:', searchUrl); // Debug log
                 
                 fetch(searchUrl, {
@@ -593,5 +754,13 @@
             initializeSelect(animalTypeSelect);
         }, 100);
     });
+
+    // Function to handle page size changes
+    function updatePageSize(pageSize) {
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('page_size', pageSize);
+        currentUrl.searchParams.delete('page'); // Reset to first page when changing page size
+        window.location.href = currentUrl.toString();
+    }
 </script>
 {% endblock %}
