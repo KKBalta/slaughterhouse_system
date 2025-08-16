@@ -266,17 +266,12 @@ class AnimalForm(forms.ModelForm):
         self.fields['identification_tag'].required = False
         
         # Set custom labels
-        self.fields['picture'].label = "Animal Photo"
-        self.fields['passport_picture'].label = "Passport/Document Photo"
+        self.fields['picture'].label = "Animal Photo (Optional)"
+        self.fields['passport_picture'].label = "Passport/Document Photo (Optional)"
         
-        # Make photos optional if skip_photos is True (for batch creation)
-        if self.skip_photos:
-            self.fields['picture'].required = False
-            self.fields['passport_picture'].required = False
-        else:
-            # Make both pictures required during individual registration
-            self.fields['picture'].required = True
-            self.fields['passport_picture'].required = True
+        # Make photos optional for both individual and batch creation
+        self.fields['picture'].required = False
+        self.fields['passport_picture'].required = False
 
 class BatchAnimalForm(forms.Form):
     """Form for creating multiple animals at once with automatic tag generation"""

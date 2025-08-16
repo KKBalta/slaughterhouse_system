@@ -65,7 +65,16 @@
                         </label>
                         
                         {% if field.name == 'picture' or field.name == 'passport_picture' %}
-                            {{ field }}
+                            <div class="mt-1">
+                                {{ field }}
+                                <p class="mt-1 text-xs text-gray-500">
+                                    {% if field.name == 'picture' %}
+                                        Animal photo can be added now or later
+                                    {% else %}
+                                        Passport/document photo can be added now or later
+                                    {% endif %}
+                                </p>
+                            </div>
                             {% if field.value %}
                                 <p class="mt-1 text-xs text-gray-600">Current: {{ field.value.name }}</p>
                             {% endif %}
