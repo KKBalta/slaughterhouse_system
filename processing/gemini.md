@@ -398,3 +398,155 @@ The auto-transition functionality has been thoroughly tested with a comprehensiv
 - **User Interface**: Form validation and error handling tested
 
 The comprehensive testing validates that the auto-transition system is production-ready and handles real-world slaughterhouse operational scenarios effectively.
+
+---
+---
+# Processing App Architectural Documentation
+
+This document provides a detailed overview of the `processing` app, which is responsible for tracking animals through the slaughter workflow, managing species-specific data, and handling complex weight logging operations.
+
+## 1. Core Concepts
+
+The `processing` app is built around several key concepts that enable a flexible and efficient workflow.
+
+### 1.1. Animal Lifecycle (Finite State Machine)
+
+The core of the app is the `Animal` model, which uses a Finite State Machine (FSM) via `django-fsm` to manage its lifecycle. This ensures that an animal can only move through a valid sequence of statuses.
+
+-   **States:** `received`, `slaughtered`, `carcass_ready`, `disassembled`, `packaged`, `delivered`, `returned`, `disposed`.
+-   **Transitions:** Logic is encapsulated in `Animal` model methods (e.g., `perform_slaughter`, `prepare_carcass`).
+-   **Automation:** Key transitions are triggered automatically by services. For example, logging a `hot_carcass_weight` via `log_individual_weight` service will automatically transition the animal's status from `slaughtered` to `carcass_ready`.
+
+### 1.2. Individual vs. Batch Processing
+
+The app supports two primary modes of operation to maximize efficiency:
+
+-   **Individual Processing:** Every animal can be managed individually through the `AnimalDetailView`. This allows for precise data entry for weights, species-specific details, and status changes.
+-   **Batch Processing:** For high-volume scenarios (especially with smaller animals), the app provides batch operations for slaughter (`BatchSlaughterView`) and weighing (`BatchWeightLogView`).
+
+### 1.3. Species-Specific Details
+
+To avoid a cluttered `Animal` model, species-specific attributes are stored in separate models linked by a `OneToOneField`.
+
+-   **Models:** `CattleDetails`, `SheepDetails`, `GoatDetails`, `LambDetails`, `OglakDetails`, `CalfDetails`, `HeiferDetails`.
+-   **Functionality:** These models hold data like `breed`, `horn_status`, or `wool_type`. The UI in `AnimalDetailView` dynamically displays the correct form based on the `animal_type`.
+
+### 1.4. Weight Logging System
+
+The weight logging system is robust, handling multiple weight types for both individual animals and groups.
+
+-   **Weight Types:** `live_weight`, `hot_carcass_weight`, `cold_carcass_weight`, `final_weight`, `leather_weight`.
+-   **Individual Logging:** `WeightLogForm` allows precise weight entry for a single animal. The available `weight_type` choices are dynamically filtered based on the animal's current `status`.
+-   **Group (Batch) Logging:** `BatchWeightLogForm` and the `log_group_weight` service manage weighing multiple animals at once.
+    -   **Cumulative Validation:** The form prevents logging weight for more animals than are available in the order for a specific stage.
+    -   **Auto-Completion:** When the total number of animals in batch logs equals the number of available animals in the order, the system automatically creates an individual `WeightLog` for each animal with the calculated average weight.
+
+### 1.5. Data-Driven UI Alerts
+
+The UI actively guides users by displaying alerts for missing critical information.
+
+-   **Missing Details:** The `AnimalListView` and `AnimalDetailView` will show a warning if an animal has been slaughtered but its species-specific details have not been filled out.
+-   **Missing Weights:** Alerts are shown for slaughtered animals that are missing a `hot_carcass_weight` or `leather_weight_kg`.
+
+## 2. Data Models
+
+### 2.1. `Animal`
+
+The central model representing a single animal in a `SlaughterOrder`.
+
+-   **Key Fields:**
+    -   `slaughter_order`: ForeignKey to `reception.SlaughterOrder`.
+    -   `animal_type`: CharField with choices (e.g., `cattle`, `sheep`).
+    -   `identification_tag`: A unique tag, which can be auto-generated.
+    -   `status`: An `FSMField` tracking the animal's current stage in the workflow.
+    -   `picture`, `passport_picture`: Optional `ImageField`s for documentation.
+    -   `leather_weight_kg`: A `DecimalField` to store the leather weight directly.
+
+### 2.2. `WeightLog`
+
+Records all weight measurements.
+
+-   **Key Fields:**
+    -   `animal`: ForeignKey to `Animal` (for individual logs).
+    -   `slaughter_order`: ForeignKey to `SlaughterOrder` (for group logs).
+    -   `weight`: The weight value. For group logs, this is the *average* weight.
+    -   `weight_type`: CharField with choices (e.g., `live_weight`, `hot_carcass_weight Group`).
+    -   `is_group_weight`: Boolean indicating a batch log.
+    -   `group_quantity`: The number of animals in the batch.
+    -   `group_total_weight`: The total weight of the batch.
+
+### 2.3. Species-Specific Detail Models
+
+(e.g., `CattleDetails`, `SheepDetails`, etc.)
+These models use a `OneToOneField` to link to an `Animal` and contain fields relevant only to that species. `CattleDetails`, `CalfDetails`, and `HeiferDetails` include `DecimalField`s with `SCORE_CHOICES` to rate the quality of offal like liver, head, and bowels.
+
+## 3. Key Services & Business Logic (`services.py`)
+
+The `services.py` file encapsulates all business logic, ensuring views remain thin and logic is reusable and testable.
+
+### 3.1. Workflow & Status Transitions
+
+-   `mark_animal_slaughtered(animal)`: Transitions status to `slaughtered` and updates the parent `SlaughterOrder` status.
+-   `prepare_animal_carcass(animal)`: Transitions status from `slaughtered` to `carcass_ready`.
+-   `disassemble_carcass(...)`: Transitions status to `disassembled` and creates related inventory items (`MeatCut`, `Offal`, `ByProduct`).
+-   `package_animal_products(animal)`, `deliver_animal_products(animal)`, `return_animal_to_owner(animal)`: Manage final status transitions.
+
+### 3.2. Data Logging & Management
+
+-   `create_animal(...)`: Creates an `Animal` and its associated detail model.
+-   `update_animal_details(animal, details_data)`: Updates the species-specific details for an animal.
+-   `log_individual_weight(animal, weight_type, weight)`: Logs a single weight entry. **Crucially, if `weight_type` is `hot_carcass_weight`, it automatically calls `prepare_animal_carcass`**.
+-   `log_leather_weight(animal, weight)`: A dedicated service to record leather weight on the `Animal` model and create a corresponding `WeightLog`.
+
+### 3.3. Batch Operations
+
+-   `log_group_weight(...)`: The core of batch weighing. It validates that the number of animals doesn't exceed the available count for that stage and triggers the auto-completion logic.
+-   `batch_transition_animals_to_carcass_ready(...)`: A utility service to efficiently transition a given number of slaughtered animals to `carcass_ready`.
+
+### 3.4. File Management
+
+-   `delete_animal_files(animal)`: Deletes associated picture and passport files from storage.
+-   `get_animal_file_urls(animal)`: Retrieves URLs for display.
+-   `validate_animal_images(animal)`: Checks for the existence of required image files.
+
+## 4. Views & UI Workflow
+
+-   **`ProcessingDashboardView`**: The main hub, providing a high-level overview of the processing pipeline with counts for each status (`received`, `slaughtered`, etc.). It features tabbed sections to show orders that are "Ready for Slaughter" and "Ready for Weighing", guiding users to the next action.
+-   **`AnimalListView`**: A filterable list of all animals. It uses icons to provide at-a-glance alerts for animals that require attention (e.g., missing details or weights).
+-   **`AnimalDetailView`**: The central view for managing one animal. It displays all data, related logs, and dynamically renders the correct forms for logging weights and updating species-specific details based on the animal's type and status.
+-   **`BatchSlaughterView`**: Presents a list of orders with animals in the `received` state, allowing a user to select an order and mark all its animals as `slaughtered` in a single action.
+-   **`BatchWeightLogView`**: A sophisticated UI for efficient group weighing. It lists eligible orders and shows their current weight-logging progress. The form includes client-side validation and calculation of the average weight.
+-   **`BatchWeightReportsView`**: Displays analytics and filterable reports on all historical batch weight data.
+
+## 5. Workflow Diagram
+
+```mermaid
+graph TD;
+    subgraph Reception
+        A[Order Created] --> B{Animal Received};
+    end
+
+    subgraph Processing
+        B -- Slaughter Action --> C{Slaughtered};
+        C -- Log Hot Carcass Weight --> D[Carcass Ready];
+        D -- Disassembly Action --> E[Disassembled];
+        E -- Packaging Action --> F[Packaged];
+        F -- Delivery Action --> G[Delivered];
+    end
+
+    subgraph Off-Ramps
+        C -- Return/Dispose --> H[Final State];
+        D -- Return/Dispose --> H;
+        E -- Return/Dispose --> H;
+        F -- Return/Dispose --> H;
+        G -- Return/Dispose --> H;
+    end
+
+    style B fill:#cce5ff,stroke:#333,stroke-width:2px
+    style C fill:#fff3cd,stroke:#333,stroke-width:2px
+    style D fill:#d4edda,stroke:#333,stroke-width:2px
+    style E fill:#e2d9f3,stroke:#333,stroke-width:2px
+    style F fill:#d1e7f3,stroke:#333,stroke-width:2px
+    style G fill:#c3e6cb,stroke:#333,stroke-width:2px
+    style H fill:#f5c6cb,stroke:#333,stroke-width:2px
+```
