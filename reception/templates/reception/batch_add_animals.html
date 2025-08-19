@@ -159,26 +159,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Skip Photos Option -->
-                <div class="form-group">
-                    <div class="flex items-center">
-                        {{ form.skip_photos }}
-                        <label for="{{ form.skip_photos.id_for_label }}" class="ml-2 block text-sm font-medium text-gray-900">
-                            {{ form.skip_photos.label }}
-                        </label>
-                    </div>
-                    {% if form.skip_photos.help_text %}
-                        <p class="mt-1 text-xs text-gray-600">{{ form.skip_photos.help_text }}</p>
-                    {% endif %}
-                    {% if form.skip_photos.errors %}
-                        <div class="mt-1">
-                            {% for error in form.skip_photos.errors %}
-                                <p class="text-xs text-red-600">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-
                 <!-- Action Buttons -->
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
