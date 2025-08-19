@@ -19,11 +19,13 @@
     textarea {
         color: #111827 !important; /* Dark gray text */
         background-color: #ffffff !important; /* White background */
+        border: 1px solid #d1d5db !important; /* Light gray border */
     }
     
     input::placeholder, 
     textarea::placeholder {
         color: #6b7280 !important; /* Gray placeholder text */
+        opacity: 1 !important;
     }
     
     select option {
@@ -31,7 +33,7 @@
         background-color: #ffffff !important;
     }
 
-    /* Fix gray text visibility - make it darker */
+    /* Fix all gray text elements to be darker and more visible */
     .text-gray-500 {
         color: #374151 !important; /* Darker gray for better readability */
     }
@@ -41,14 +43,58 @@
     }
 
     /* Fix form labels and paragraphs */
-    p, label {
+    p, label, span {
         color: #111827 !important;
     }
 
     /* Specific fixes for various gray text elements */
     .text-gray-500.text-sm,
     .text-gray-600.text-sm,
-    .text-xs.text-gray-500 {
+    .text-xs.text-gray-500,
+    .text-xs.text-gray-600 {
+        color: #374151 !important;
+    }
+    
+    /* Ensure form field text is always visible */
+    form input, form select, form textarea {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Make sure labels are always dark */
+    .block.text-sm.font-medium.text-gray-700 {
+        color: #111827 !important;
+    }
+    
+    /* Ensure table text is visible */
+    td.text-gray-900, th.text-gray-500 {
+        color: #111827 !important;
+    }
+    
+    /* Fix status badge readability */
+    .bg-gray-50 {
+        background-color: #f9fafb !important;
+    }
+    
+    /* Ensure alert text is always visible */
+    .text-amber-800, .text-amber-700, 
+    .text-orange-800, .text-orange-700,
+    .text-red-800, .text-red-700,
+    .text-green-800, .text-green-700,
+    .text-blue-800, .text-blue-700 {
+        color: inherit !important;
+    }
+    
+    /* Fix any remaining Tailwind color classes */
+    .text-gray-900 {
+        color: #111827 !important;
+    }
+    
+    .text-gray-800 {
+        color: #1f2937 !important;
+    }
+    
+    .text-gray-700 {
         color: #374151 !important;
     }
 </style>
@@ -93,6 +139,91 @@
                     {{ message }}
                 </div>
             {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Alert for missing animal details -->
+    {% if detail_form_title and not has_details and can_fill_details %}
+        <div class="mb-6">
+            <div class="p-4 rounded-md border border-amber-400 bg-amber-50" role="alert">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-amber-800">Action Required: {{ detail_form_title }}</h3>
+                        <p class="text-sm text-amber-700 mt-1">
+                            This {{ animal.get_animal_type_display|lower }} does not have its specific details filled in yet. 
+                            Please complete the {{ detail_form_title|lower }} form below to ensure proper processing and record keeping.
+                        </p>
+                        <div class="mt-3">
+                            <button onclick="scrollToDetailsForm()" 
+                                    class="text-sm bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors">
+                                Fill Details Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Alert for animals missing leather weight (if slaughtered) -->
+    {% if animal.status != 'received' and not animal.leather_weight_kg %}
+        <div class="mb-6">
+            <div class="p-4 rounded-md border border-orange-400 bg-orange-50" role="alert">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-orange-800">Leather Weight Missing</h3>
+                        <p class="text-sm text-orange-700 mt-1">
+                            This animal has been processed but the leather weight has not been recorded yet. 
+                            Please log the leather weight for complete records.
+                        </p>
+                        <div class="mt-3">
+                            <button onclick="scrollToWeightForm(); this.style.transform='scale(0.95)'; setTimeout(() => this.style.transform='', 150);" 
+                                    class="text-sm bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                                Log Weight Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Alert for missing hot carcass weight (if slaughtered but no weight logged) -->
+    {% if missing_hot_carcass_weight %}
+        <div class="mb-6">
+            <div class="p-4 rounded-md border border-red-400 bg-red-50" role="alert">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-red-800">Hot Carcass Weight Missing</h3>
+                        <p class="text-sm text-red-700 mt-1">
+                            This animal has been slaughtered but the hot carcass weight has not been recorded yet. 
+                            This is a critical weight measurement required immediately after slaughter.
+                        </p>
+                        <div class="mt-3">
+                            <button onclick="scrollToWeightForm(); this.style.transform='scale(0.95)'; setTimeout(() => this.style.transform='', 150);" 
+                                    class="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                                Log Hot Carcass Weight
+                            </button>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     {% endif %}
 
@@ -144,6 +275,135 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Animal Details -->
+            {% if detail_form_title %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ detail_form_title }}</h2>
+                
+                {% if not can_fill_details %}
+                    <!-- Status restriction message -->
+                    <div class="p-4 rounded-md border border-red-400 bg-red-50" role="alert">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-semibold text-red-800">Details Not Available</h3>
+                                <p class="text-sm text-red-700 mt-1">
+                                    Animal details can only be filled after the animal has been slaughtered. 
+                                    Current status: <strong>{{ animal.get_status_display }}</strong>. 
+                                    Please slaughter the animal first before filling in the specific {{ animal.get_animal_type_display|lower }} details.
+                                </p>
+                                {% if animal.status == 'received' %}
+                                    <div class="mt-3">
+                                        <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
+                                              class="inline" onsubmit="return confirm('Mark animal as slaughtered?')">
+                                            {% csrf_token %}
+                                            <button type="submit" 
+                                                    class="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors">
+                                                Slaughter Animal
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if existing_details %}
+                        <!-- Display existing details (read-only) -->
+                        <div class="mt-6">
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">Existing Details (Read-Only)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+                                <!-- Display existing details here if needed -->
+                                <p class="text-sm text-gray-600">Details were filled previously and are preserved.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                {% else %}
+                    {% if has_details %}
+                        <!-- Display existing details -->
+                        <div class="mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for field in detail_form %}
+                                    {% if field.value %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                                        <p class="mt-1 text-sm text-gray-900">
+                                            {% if field.field.widget.input_type == 'select' %}
+                                                {{ field.value|floatformat:1 }}
+                                                {% if field.name|slice:"-7:" == "_status" %}
+                                                    {% if field.value == 0.0 %}(Not Usable)
+                                                    {% elif field.value == 0.5 %}(Not Bad)
+                                                    {% elif field.value == 1.0 %}(Good)
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ field.value }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Edit button -->
+                            <div class="mt-4">
+                                <button onclick="toggleDetailsForm()" 
+                                        class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                    Edit Details
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Details form (hidden by default if details exist) -->
+                    <div id="details-form" {% if has_details %}class="hidden"{% endif %}>
+                        <form method="post" action="{% url 'processing:animal_details' animal.pk %}" class="space-y-4">
+                            {% csrf_token %}
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for field in detail_form %}
+                                    <div>
+                                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                            {{ field.label }}
+                                        </label>
+                                        {{ field }}
+                                        {% if field.help_text %}
+                                            <p class="mt-1 text-xs text-gray-600">{{ field.help_text }}</p>
+                                        {% endif %}
+                                        {% if field.errors %}
+                                            <div class="mt-1">
+                                                {% for error in field.errors %}
+                                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="flex space-x-3 pt-4">
+                                {% if has_details %}
+                                    <button type="button" onclick="toggleDetailsForm()" 
+                                            class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors text-sm">
+                                        Cancel
+                                    </button>
+                                {% endif %}
+                                <button type="submit" 
+                                        class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors text-sm">
+                                    {% if has_details %}Update Details{% else %}Save Details{% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <!-- Order Information -->
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -263,42 +523,160 @@
             </div>
 
             <!-- Weight Logging -->
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div id="weight-logging-section" class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Log Weight</h3>
                 <form method="post" action="{% url 'processing:animal_weights' animal.pk %}" class="space-y-4">
                     {% csrf_token %}
-                    {{ weight_form.as_p }}
+                    
+                    <!-- Weight Type Field -->
+                    <div>
+                        <label for="{{ weight_form.weight_type.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
+                            {{ weight_form.weight_type.label }}
+                        </label>
+                        {{ weight_form.weight_type }}
+                        {% if weight_form.weight_type.help_text %}
+                            <p class="mt-1 text-xs text-gray-900">{{ weight_form.weight_type.help_text }}</p>
+                        {% endif %}
+                        {% if weight_form.weight_type.errors %}
+                            <div class="mt-1">
+                                {% for error in weight_form.weight_type.errors %}
+                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Weight Field -->
+                    <div>
+                        <label for="{{ weight_form.weight.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
+                            {{ weight_form.weight.label }}
+                        </label>
+                        {{ weight_form.weight }}
+                        {% if weight_form.weight.help_text %}
+                            <p class="mt-1 text-xs text-gray-900">{{ weight_form.weight.help_text }}</p>
+                        {% endif %}
+                        {% if weight_form.weight.errors %}
+                            <div class="mt-1">
+                                {% for error in weight_form.weight.errors %}
+                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Non-field errors -->
+                    {% if weight_form.non_field_errors %}
+                        <div class="mt-1">
+                            {% for error in weight_form.non_field_errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <button type="submit" 
                             class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors text-sm">
                         Log Weight
                     </button>
                 </form>
             </div>
-
-            <!-- Status Info -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Information</h3>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Current Status:</span>
-                        <span class="font-medium">{{ animal.get_status_display }}</span>
-                    </div>
-                    {% if animal.status == 'received' %}
-                        <div class="text-xs text-gray-500 mt-2">
-                            <p>Next step: Slaughter processing</p>
-                        </div>
-                    {% elif animal.status == 'slaughtered' %}
-                        <div class="text-xs text-gray-500 mt-2">
-                            <p>Ready for carcass processing and weight logging</p>
-                        </div>
-                    {% elif animal.status == 'carcass_ready' %}
-                        <div class="text-xs text-gray-500 mt-2">
-                            <p>Ready for disassembly (if included in service package)</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
         </div>
     </div>
 </div>
+
+<script>
+    function toggleDetailsForm() {
+        const form = document.getElementById('details-form');
+        if (form.classList.contains('hidden')) {
+            form.classList.remove('hidden');
+        } else {
+            form.classList.add('hidden');
+        }
+    }
+    
+    function scrollToDetailsForm() {
+        const detailsSection = document.querySelector('#details-form');
+        if (detailsSection) {
+            // Show the form if it's hidden
+            detailsSection.classList.remove('hidden');
+            // Scroll to it
+            detailsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Focus on the first input field if available
+            const firstInput = detailsSection.querySelector('input, select, textarea');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 500);
+            }
+        } else {
+            // If no details-form found, scroll to the details section
+            const detailsCard = document.querySelector('h2:contains("Details")');
+            if (detailsCard) {
+                detailsCard.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+    
+    function scrollToWeightForm() {
+        // Find the weight logging form section using the ID
+        const weightSection = document.getElementById('weight-logging-section');
+        
+        if (weightSection) {
+            // Scroll to the weight logging form section with smooth animation
+            weightSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Add visual emphasis to the section
+            weightSection.style.transition = 'all 0.3s ease';
+            weightSection.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.5)';
+            weightSection.style.borderColor = '#3b82f6';
+            weightSection.style.border = '2px solid #3b82f6';
+            
+            // Remove the emphasis after 2.5 seconds
+            setTimeout(() => {
+                weightSection.style.boxShadow = '';
+                weightSection.style.borderColor = '';
+                weightSection.style.border = '';
+            }, 2500);
+            
+            // Focus on the weight type dropdown after scroll animation completes
+            const weightTypeSelect = document.querySelector('#id_weight_type');
+            if (weightTypeSelect) {
+                setTimeout(() => {
+                    weightTypeSelect.focus();
+                    // Also highlight the dropdown
+                    weightTypeSelect.style.borderColor = '#3b82f6';
+                    weightTypeSelect.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    
+                    // Remove dropdown highlight after user interaction
+                    const removeHighlight = function() {
+                        weightTypeSelect.style.borderColor = '';
+                        weightTypeSelect.style.boxShadow = '';
+                        weightTypeSelect.removeEventListener('change', removeHighlight);
+                        weightTypeSelect.removeEventListener('blur', removeHighlight);
+                    };
+                    
+                    weightTypeSelect.addEventListener('change', removeHighlight);
+                    weightTypeSelect.addEventListener('blur', removeHighlight);
+                }, 600);
+            }
+        } else {
+            // Fallback: try to find by heading text
+            const weightHeadings = document.querySelectorAll('h3');
+            let weightHeading = null;
+            
+            weightHeadings.forEach(heading => {
+                if (heading.textContent.trim() === 'Log Weight') {
+                    weightHeading = heading;
+                }
+            });
+            
+            if (weightHeading) {
+                weightHeading.closest('.bg-white').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }
+        }
+    }
+</script>
 {% endblock %}

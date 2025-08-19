@@ -8,10 +8,12 @@ from django.http import JsonResponse
 from django.urls import reverse
 from datetime import datetime
 
-from .models import Animal, WeightLog
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from reception.models import SlaughterOrder
-from .forms import AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm
-from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports
+from .forms import (AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
+                   ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
+                   LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm)
+from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports, ANIMAL_DETAIL_MODELS
 from . import services
 
 
@@ -163,6 +165,10 @@ class AnimalListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = Animal.objects.select_related(
             'slaughter_order', 'slaughter_order__client', 'slaughter_order__client__user'
+        ).prefetch_related(
+            'cattle_details', 'sheep_details', 'goat_details', 'lamb_details', 
+            'oglak_details', 'calf_details', 'heifer_details',
+            'individual_weight_logs'
         ).order_by('-received_date')
         
         # Filter by status if provided
@@ -198,6 +204,61 @@ class AnimalListView(LoginRequiredMixin, ListView):
         form = AnimalFilterForm(self.request.GET)
         context['form'] = form
         
+        # Add alert information for each animal
+        animals_with_alerts = []
+        for animal in context['animals']:
+            alert_info = {
+                'animal': animal,
+                'missing_details': False,
+                'missing_leather_weight': False,
+                'missing_hot_carcass_weight': False,
+            }
+            
+            # Check for missing details based on animal type - only for animals with appropriate status
+            allowed_statuses = ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered', 'returned', 'disposed']
+            if animal.status in allowed_statuses:
+                detail_model_mapping = {
+                    'cattle': 'cattle_details',
+                    'sheep': 'sheep_details', 
+                    'goat': 'goat_details',
+                    'lamb': 'lamb_details',
+                    'oglak': 'oglak_details',
+                    'calf': 'calf_details',
+                    'heifer': 'heifer_details',
+                }
+                
+                detail_attr = detail_model_mapping.get(animal.animal_type)
+                if detail_attr:
+                    # Check if related detail objects exist
+                    # For OneToOneField, we use hasattr to check if the related object exists
+                    if hasattr(animal, detail_attr):
+                        try:
+                            related_object = getattr(animal, detail_attr)
+                            # If we get the object without exception, it exists
+                            alert_info['missing_details'] = False
+                        except:
+                            # If there's any exception accessing it, it doesn't exist
+                            alert_info['missing_details'] = True
+                    else:
+                        # If the attribute itself doesn't exist
+                        alert_info['missing_details'] = True
+            
+            # Check for missing leather weight
+            if animal.status != 'received' and not animal.leather_weight_kg:
+                alert_info['missing_leather_weight'] = True
+                
+            # Check for missing hot carcass weight
+            if animal.status in ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']:
+                has_hot_carcass = animal.individual_weight_logs.filter(
+                    weight_type='hot_carcass_weight'
+                ).exists()
+                if not has_hot_carcass:
+                    alert_info['missing_hot_carcass_weight'] = True
+            
+            animals_with_alerts.append(alert_info)
+        
+        context['animals_with_alerts'] = animals_with_alerts
+        
         # Keep the old context for backward compatibility
         context['status_choices'] = Animal.STATUS_CHOICES
         context['animal_type_choices'] = Animal.ANIMAL_TYPES
@@ -229,6 +290,48 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
         context['weight_logs'] = self.object.individual_weight_logs.order_by('-log_date')
         context['weight_form'] = WeightLogForm(animal=self.object)
         context['leather_form'] = LeatherWeightForm(instance=self.object)
+        
+        # Check for missing hot carcass weight for slaughtered animals
+        if self.object.status in ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']:
+            hot_carcass_logged = self.object.individual_weight_logs.filter(
+                weight_type='hot_carcass_weight'
+            ).exists()
+            context['missing_hot_carcass_weight'] = not hot_carcass_logged
+        else:
+            context['missing_hot_carcass_weight'] = False
+        
+        # Add animal detail form based on animal type - only if animal is slaughtered or beyond
+        animal_type = self.object.animal_type
+        form_class = ANIMAL_DETAIL_FORMS.get(animal_type)
+        detail_model = ANIMAL_DETAIL_MODELS.get(animal_type)
+        
+        # Check if animal status allows details to be filled
+        allowed_statuses = ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered', 'returned', 'disposed']
+        context['can_fill_details'] = self.object.status in allowed_statuses
+        
+        if form_class and detail_model and context['can_fill_details']:
+            try:
+                # Try to get existing details
+                detail_instance = detail_model.objects.get(animal=self.object)
+                context['detail_form'] = form_class(instance=detail_instance)
+                context['has_details'] = True
+            except detail_model.DoesNotExist:
+                # Create new form for creating details
+                context['detail_form'] = form_class()
+                context['has_details'] = False
+            
+            context['detail_form_title'] = f"{self.object.get_animal_type_display()} Details"
+        elif form_class and detail_model:
+            # Animal exists but status doesn't allow details yet
+            context['detail_form_title'] = f"{self.object.get_animal_type_display()} Details"
+            context['has_details'] = False
+            try:
+                # Check if details already exist (for display only)
+                detail_instance = detail_model.objects.get(animal=self.object)
+                context['existing_details'] = detail_instance
+            except detail_model.DoesNotExist:
+                context['existing_details'] = None
+        
         return context
 
 
@@ -671,3 +774,56 @@ class AnimalSearchDebugView(View):
                 'animals': [],
                 'error': str(e)
             })
+
+
+class AnimalDetailsUpdateView(LoginRequiredMixin, View):
+    """View for updating animal-specific details"""
+    
+    def post(self, request, pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        
+        # Check if animal status allows details to be filled
+        allowed_statuses = ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered', 'returned', 'disposed']
+        if animal.status not in allowed_statuses:
+            messages.error(
+                request, 
+                f'Animal details can only be filled after the animal has been slaughtered. '
+                f'Current status: {animal.get_status_display()}. Please slaughter the animal first.'
+            )
+            return redirect('processing:animal_detail', pk=animal.pk)
+        
+        # Get the appropriate form class and model for this animal type
+        form_class = ANIMAL_DETAIL_FORMS.get(animal.animal_type)
+        detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
+        
+        if not form_class or not detail_model:
+            messages.error(request, f'No detail form available for {animal.get_animal_type_display()}.')
+            return redirect('processing:animal_detail', pk=animal.pk)
+        
+        try:
+            # Try to get existing details
+            detail_instance = detail_model.objects.get(animal=animal)
+            form = form_class(request.POST, instance=detail_instance)
+            action = 'updated'
+        except detail_model.DoesNotExist:
+            # Create new details
+            form = form_class(request.POST)
+            action = 'created'
+        
+        if form.is_valid():
+            detail_instance = form.save(commit=False)
+            detail_instance.animal = animal
+            detail_instance.save()
+            
+            messages.success(
+                request, 
+                f'{animal.get_animal_type_display()} details {action} successfully for {animal.identification_tag}.'
+            )
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                field_label = form.fields[field].label or field.replace('_', ' ').title()
+                for error in errors:
+                    messages.error(request, f'{field_label}: {error}')
+        
+        return redirect('processing:animal_detail', pk=animal.pk)

@@ -324,13 +324,38 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        {% for animal in animals %}
+                        {% for item in animals_with_alerts %}
+                        {% with animal=item.animal %}
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ animal.identification_tag }}
+                                    <div class="flex-grow">
+                                        <div class="flex items-center">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ animal.identification_tag }}
+                                            </div>
+                                            <!-- Alert indicators -->
+                                            <div class="ml-2 flex space-x-1">
+                                                <!-- Missing Details Alert -->
+                                                {% if item.missing_details %}
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800" title="Missing {{ animal.animal_type }} details">
+                                                        ⚠️
+                                                    </span>
+                                                {% endif %}
+                                                <!-- Missing Leather Weight Alert -->
+                                                {% if item.missing_leather_weight %}
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Missing leather weight">
+                                                        🏷️
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                <!-- Missing Hot Carcass Weight Alert -->
+                                                {% if item.missing_hot_carcass_weight %}
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Missing hot carcass weight">
+                                                        🔥
+                                                    </span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                         <div class="text-sm text-gray-500">
                                             {{ animal.get_animal_type_display }}
@@ -381,6 +406,7 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% endwith %}
                         {% endfor %}
                     </tbody>
                 </table>

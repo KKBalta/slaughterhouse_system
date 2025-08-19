@@ -1,5 +1,5 @@
 from django import forms
-from .models import Animal, WeightLog
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from django.core.exceptions import ValidationError
 
 class AnimalFilterForm(forms.Form):
@@ -69,7 +69,8 @@ class WeightLogForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500',
-            'id': 'weight_type'
+            'id': 'weight_type',
+            'style': 'color: #111827 !important; background-color: #ffffff !important;'
         })
     )
     
@@ -81,7 +82,8 @@ class WeightLogForm(forms.ModelForm):
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
             'placeholder': 'Enter weight in kg',
             'step': '0.01',
-            'id': 'weight'
+            'id': 'weight',
+            'style': 'color: #111827 !important; background-color: #ffffff !important;'
         })
     )
     
@@ -338,3 +340,138 @@ class BatchWeightLogForm(forms.Form):
                     raise ValidationError("Invalid order selected.")
         
         return cleaned_data
+
+
+class CattleDetailsForm(forms.ModelForm):
+    """Form for cattle-specific details"""
+    
+    class Meta:
+        model = CattleDetails
+        fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter breed (e.g., Holstein, Angus, Hereford)'
+            }),
+            'horn_status': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'e.g., horned, polled, dehorned'
+            }),
+            'liver_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'head_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'bowels_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+        }
+
+class SheepDetailsForm(forms.ModelForm):
+    """Form for sheep-specific details"""
+    
+    class Meta:
+        model = SheepDetails
+        fields = ['breed', 'wool_type']
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter breed (e.g., Merino, Suffolk, Dorper)'
+            }),
+            'wool_type': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'e.g., fine, medium, coarse'
+            }),
+        }
+
+class GoatDetailsForm(forms.ModelForm):
+    """Form for goat-specific details"""
+    
+    class Meta:
+        model = GoatDetails
+        fields = ['breed']
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter breed (e.g., Boer, Nubian, Angora)'
+            }),
+        }
+
+class LambDetailsForm(forms.ModelForm):
+    """Form for lamb-specific details (minimal fields)"""
+    
+    class Meta:
+        model = LambDetails
+        fields = []  # No specific fields for lamb
+
+class OglakDetailsForm(forms.ModelForm):
+    """Form for oglak-specific details (minimal fields)"""
+    
+    class Meta:
+        model = OglakDetails
+        fields = []  # No specific fields for oglak
+
+class CalfDetailsForm(forms.ModelForm):
+    """Form for calf-specific details"""
+    
+    class Meta:
+        model = CalfDetails
+        fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter breed (e.g., Holstein, Jersey, Brahman)'
+            }),
+            'horn_status': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'e.g., horned, polled, dehorned'
+            }),
+            'liver_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'head_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'bowels_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+        }
+
+class HeiferDetailsForm(forms.ModelForm):
+    """Form for heifer-specific details"""
+    
+    class Meta:
+        model = HeiferDetails
+        fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'Enter breed (e.g., Holstein, Angus, Charolais)'
+            }),
+            'horn_status': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': 'e.g., horned, polled, dehorned'
+            }),
+            'liver_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'head_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'bowels_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+        }
+
+# Mapping of animal types to their detail forms
+ANIMAL_DETAIL_FORMS = {
+    'cattle': CattleDetailsForm,
+    'sheep': SheepDetailsForm,
+    'goat': GoatDetailsForm,
+    'lamb': LambDetailsForm,
+    'oglak': OglakDetailsForm,
+    'calf': CalfDetailsForm,
+    'heifer': HeiferDetailsForm,
+    'beef': CattleDetailsForm,  # Use cattle form for beef
+}
