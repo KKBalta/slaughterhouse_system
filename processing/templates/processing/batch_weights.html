@@ -69,6 +69,20 @@
         </div>
     {% endif %}
 
+    <!-- Auto-selected order message -->
+    {% if selected_order %}
+        <div class="mb-6">
+            <div class="p-3 rounded-md text-sm bg-blue-100 border border-blue-400 text-blue-600" role="alert">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span><strong>Order Auto-Selected:</strong> {{ selected_order.slaughter_order_no }} is pre-selected below. You can change selection if needed.</span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
     <!-- Instructions -->
     <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
         <div class="flex">
@@ -97,13 +111,14 @@
                 <div class="space-y-4 max-h-96 overflow-y-auto">
                     {% for order_info in orders_with_progress %}
                         {% with order=order_info.order progress=order_info.weight_progress %}
-                        <div class="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
-                             onclick="selectOrder('{{ order.pk }}', '{{ order.slaughter_order_no }}', {{ order_info.total_animal_count }})">
+                        <div class="order-card border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer 
+                             {% if selected_order and order.pk == selected_order.pk %}border-blue-500 bg-blue-50{% endif %}" 
+                             onclick="selectOrder('{{ order.pk }}', '{{ order.slaughter_order_no }}', {{ order_info.total_animal_count }}, this)">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ order.slaughter_order_no }}</div>
                                     <div class="text-sm text-gray-600">
-                                        {% if order.client %}
+                                        {% if order.client %}32
                                             {{ order.client.company_name|default:order.client.get_full_name }}
                                         {% else %}
                                             {{ order.client_name }}
@@ -279,7 +294,7 @@
 </div>
 
 <script>
-function selectOrder(orderId, orderNo, animalCount) {
+function selectOrder(orderId, orderNo, animalCount, clickedElement = null) {
     // Set form values using Django form field IDs
     const orderIdField = document.getElementById('id_order_id');
     const animalCountField = document.getElementById('id_animal_count');
@@ -295,13 +310,29 @@ function selectOrder(orderId, orderNo, animalCount) {
     // Enable submit button validation
     checkFormValidity();
     
-    // Highlight selected order
-    document.querySelectorAll('.border-blue-500').forEach(el => {
+    // Clear previous selection highlighting
+    document.querySelectorAll('.order-card').forEach(el => {
         el.classList.remove('border-blue-500', 'bg-blue-50');
         el.classList.add('border-gray-200');
     });
-    event.currentTarget.classList.remove('border-gray-200');
-    event.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+    
+    // Highlight selected order
+    let targetElement = clickedElement;
+    if (!targetElement) {
+        // Find the order card by data attribute or onclick attribute
+        const orderCards = document.querySelectorAll('.order-card');
+        orderCards.forEach(card => {
+            const onclickAttr = card.getAttribute('onclick');
+            if (onclickAttr && onclickAttr.includes(`'${orderId}'`)) {
+                targetElement = card;
+            }
+        });
+    }
+    
+    if (targetElement) {
+        targetElement.classList.remove('border-gray-200');
+        targetElement.classList.add('border-blue-500', 'bg-blue-50');
+    }
 }
 
 function calculateAverage() {
@@ -376,6 +407,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (weightTypeField) {
         weightTypeField.addEventListener('change', checkFormValidity);
     }
+    
+    // Auto-select order if passed via URL parameter
+    {% if selected_order %}
+    selectOrder('{{ selected_order.pk }}', '{{ selected_order.slaughter_order_no }}', {{ selected_order.animals.count }});
+    {% endif %}
     
     // Initial form validation check
     checkFormValidity();

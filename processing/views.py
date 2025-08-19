@@ -31,15 +31,99 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
         ).distinct().order_by('-order_datetime')[:10]
         
         # Animals by status for quick actions
-        received_animals = Animal.objects.filter(status='received').order_by('received_date')[:20]
-        slaughtered_animals = Animal.objects.filter(status='slaughtered').order_by('-slaughter_date')[:20]
+        received_animals = Animal.objects.filter(status='received').order_by('received_date')[:10]
+        slaughtered_animals = Animal.objects.filter(status='slaughtered').order_by('-slaughter_date')[:10]
         
-        # Orders ready for batch operations
+        # Orders ready for batch slaughter
         orders_ready_for_slaughter = SlaughterOrder.objects.filter(
             animals__status='received'
         ).annotate(
             received_count=Count('animals', filter=Q(animals__status='received'))
         ).filter(received_count__gt=0).order_by('-order_datetime')[:10]
+        
+        # Orders ready for weight logging (animals in 'slaughtered' status or mixed statuses)
+        orders_ready_for_weighing = SlaughterOrder.objects.filter(
+            animals__status__in=['slaughtered', 'carcass_ready']
+        ).annotate(
+            total_animals=Count('animals'),
+            slaughtered_count=Count('animals', filter=Q(animals__status='slaughtered')),
+            carcass_ready_count=Count('animals', filter=Q(animals__status='carcass_ready'))
+        ).filter(
+            # Only include orders with animals needing weight logging
+            Q(slaughtered_count__gt=0) | Q(carcass_ready_count__gt=0)
+        ).order_by('-order_datetime')[:10]
+        
+        # Calculate additional weight progress data for each order
+        for order in orders_ready_for_weighing:
+            # Calculate accurate weight counts considering both individual and batch weights
+            
+            # Live weight count: Count unique animals that have EITHER individual logs OR are covered by batch logs
+            live_individual_animals = set(order.animals.filter(individual_weight_logs__weight_type='live_weight').values_list('id', flat=True))
+            live_batch_logs = WeightLog.objects.filter(
+                slaughter_order=order,
+                weight_type='live_weight Group',
+                is_group_weight=True
+            )
+            live_batch_count = sum(log.group_quantity for log in live_batch_logs)
+            # For batch logs, we count the total quantity since we don't know which specific animals
+            # But if individual logs exist, we prioritize the actual count
+            if live_individual_animals:
+                order.live_weight_count = len(live_individual_animals)
+            else:
+                order.live_weight_count = live_batch_count
+            
+            # Hot carcass weight count: Count unique animals that have EITHER individual logs OR are covered by batch logs
+            hot_individual_animals = set(order.animals.filter(individual_weight_logs__weight_type='hot_carcass_weight').values_list('id', flat=True))
+            hot_batch_logs = WeightLog.objects.filter(
+                slaughter_order=order,
+                weight_type='hot_carcass_weight Group',
+                is_group_weight=True
+            )
+            hot_batch_count = sum(log.group_quantity for log in hot_batch_logs)
+            if hot_individual_animals:
+                order.hot_carcass_count = len(hot_individual_animals)
+            else:
+                order.hot_carcass_count = hot_batch_count
+            
+            # Cold carcass weight count: Count unique animals that have EITHER individual logs OR are covered by batch logs
+            cold_individual_animals = set(order.animals.filter(individual_weight_logs__weight_type='cold_carcass_weight').values_list('id', flat=True))
+            cold_batch_logs = WeightLog.objects.filter(
+                slaughter_order=order,
+                weight_type='cold_carcass_weight Group',
+                is_group_weight=True
+            )
+            cold_batch_count = sum(log.group_quantity for log in cold_batch_logs)
+            if cold_individual_animals:
+                order.cold_carcass_count = len(cold_individual_animals)
+            else:
+                order.cold_carcass_count = cold_batch_count
+            
+            # Calculate weight completion percentage (use hot carcass count)
+            order.weighed_count = order.hot_carcass_count
+            if order.total_animals > 0:
+                order.weight_progress_percentage = (order.weighed_count / order.total_animals) * 100
+            else:
+                order.weight_progress_percentage = 0
+                
+            # Calculate time since slaughter for urgency
+            if order.slaughtered_count > 0:
+                latest_slaughter = order.animals.filter(
+                    status__in=['slaughtered', 'carcass_ready'],
+                    slaughter_date__isnull=False
+                ).order_by('-slaughter_date').first()
+                
+                if latest_slaughter and latest_slaughter.slaughter_date:
+                    time_diff = timezone.now() - latest_slaughter.slaughter_date
+                    hours = int(time_diff.total_seconds() / 3600)
+                    if hours < 24:
+                        order.time_since_slaughter = f"{hours}h"
+                    else:
+                        days = int(hours / 24)
+                        order.time_since_slaughter = f"{days}d"
+                else:
+                    order.time_since_slaughter = None
+            else:
+                order.time_since_slaughter = None
         
         context.update({
             'status_counts': status_dict,
@@ -47,6 +131,7 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
             'received_animals': received_animals,
             'slaughtered_animals': slaughtered_animals,
             'orders_ready_for_slaughter': orders_ready_for_slaughter,
+            'orders_ready_for_weighing': orders_ready_for_weighing,
             'total_animals_today': Animal.objects.filter(
                 received_date__date=timezone.now().date()
             ).count(),
@@ -238,6 +323,15 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Get the pre-selected order from URL parameter
+        selected_order_id = self.request.GET.get('order')
+        selected_order = None
+        if selected_order_id:
+            try:
+                selected_order = SlaughterOrder.objects.get(pk=selected_order_id)
+            except SlaughterOrder.DoesNotExist:
+                selected_order = None
+        
         # Get orders with animals ready for weight logging (any status that allows weight logging)
         relevant_statuses = ['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']
         orders = SlaughterOrder.objects.filter(
@@ -323,6 +417,10 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
             is_group_weight=True
         ).select_related('slaughter_order').order_by('-log_date')[:10]
         context['recent_logs'] = recent_logs
+        
+        # Add selected order information
+        context['selected_order'] = selected_order
+        context['selected_order_id'] = selected_order_id
         
         return context
     
