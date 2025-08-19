@@ -44,7 +44,8 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
         ).filter(received_count__gt=0).order_by('-order_datetime')[:10]
         
         # Orders ready for weight logging (animals in 'slaughtered' status or mixed statuses)
-        orders_ready_for_weighing = SlaughterOrder.objects.filter(
+        # Filter out orders where weighing is complete
+        orders_ready_for_weighing_initial = SlaughterOrder.objects.filter(
             animals__status__in=['slaughtered', 'carcass_ready']
         ).annotate(
             total_animals=Count('animals'),
@@ -53,10 +54,44 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
         ).filter(
             # Only include orders with animals needing weight logging
             Q(slaughtered_count__gt=0) | Q(carcass_ready_count__gt=0)
-        ).order_by('-order_datetime')[:10]
+        ).order_by('-order_datetime')
+        
+        # Filter out orders where all weighing is complete
+        orders_ready_for_weighing = []
+        for order in orders_ready_for_weighing_initial[:20]:  # Check more orders initially
+            # Calculate if weighing is complete by checking if all animals have hot carcass weight
+            animals_needing_weight = order.animals.filter(
+                status__in=['slaughtered', 'carcass_ready']
+            )
+            
+            # Check if all animals have either individual hot carcass weight logs OR are covered by batch logs
+            animals_with_individual_weights = animals_needing_weight.filter(
+                individual_weight_logs__weight_type='hot_carcass_weight'
+            ).distinct().count()
+            
+            batch_logs = WeightLog.objects.filter(
+                slaughter_order=order,
+                weight_type='hot_carcass_weight Group',
+                is_group_weight=True
+            )
+            batch_covered_count = sum(log.group_quantity for log in batch_logs)
+            
+            # If we have individual logs, use that count; otherwise use batch count
+            weighed_count = animals_with_individual_weights if animals_with_individual_weights > 0 else batch_covered_count
+            
+            # Only include orders where weighing is NOT complete
+            if weighed_count < animals_needing_weight.count():
+                orders_ready_for_weighing.append(order)
+                if len(orders_ready_for_weighing) >= 10:  # Limit to 10 orders
+                    break
         
         # Calculate additional weight progress data for each order
         for order in orders_ready_for_weighing:
+            # Add annotation fields that were lost due to filtering
+            order.total_animals = order.animals.count()
+            order.slaughtered_count = order.animals.filter(status='slaughtered').count()
+            order.carcass_ready_count = order.animals.filter(status='carcass_ready').count()
+            
             # Calculate accurate weight counts considering both individual and batch weights
             
             # Live weight count: Count unique animals that have EITHER individual logs OR are covered by batch logs
