@@ -206,7 +206,7 @@
                 </div>
 
                 <!-- Form fields -->
-                {% for field in form %}
+                {% for field in form.visible_fields %}
                     <div>
                         <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                             {{ field.label }}
@@ -223,6 +223,11 @@
                             </div>
                         {% endif %}
                     </div>
+                {% endfor %}
+                
+                <!-- Hidden fields -->
+                {% for field in form.hidden_fields %}
+                    {{ field }}
                 {% endfor %}
 
                 <!-- Average Weight Display -->

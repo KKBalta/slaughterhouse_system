@@ -231,7 +231,9 @@ class BatchWeightLogForm(forms.Form):
     ]
     
     order_id = forms.UUIDField(
-        widget=forms.HiddenInput()
+        widget=forms.HiddenInput(attrs={
+            'style': 'display: none;'
+        })
     )
     
     weight_type = forms.ChoiceField(
