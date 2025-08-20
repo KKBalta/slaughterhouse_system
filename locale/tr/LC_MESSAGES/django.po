@@ -179,6 +179,8 @@ msgid ""
 "Cold carcass weight can only be logged for animals with carcass ready or "
 "later status. Animal %(tag)s is currently %(status)s."
 msgstr ""
+"Soğuk karkas ağırlığı sadece karkası hazır veya daha ileri durumda olan "
+"hayvanlar için kaydedilebilir. Hayvan %(tag)s şu anda %(status)s durumundadır."
 
 #: processing/forms.py:161
 #, python-format
@@ -186,6 +188,8 @@ msgid ""
 "Final weight can only be logged for disassembled animals. Animal %(tag)s is "
 "currently %(status)s."
 msgstr ""
+"Son ağırlık sadece parçalanmış hayvanlar için kaydedilebilir. Hayvan "
+"%(tag)s şu anda %(status)s durumundadır."
 
 #: processing/forms.py:166
 #, python-format
@@ -193,10 +197,12 @@ msgid ""
 "Leather weight should be logged after slaughter. Animal %(tag)s is currently "
 "%(status)s."
 msgstr ""
+"Deri ağırlığı kesimden sonra kaydedilmelidir. Hayvan %(tag)s şu anda "
+"%(status)s durumundadır."
 
 #: processing/forms.py:174
 msgid "Leather weight has already been recorded for this animal."
-msgstr ""
+msgstr "Bu hayvan için deri ağırlığı zaten kaydedilmiş."
 
 #: processing/forms.py:185
 #, python-format
@@ -1431,7 +1437,7 @@ msgstr "Son zamanlarda alınan hayvan yok"
 
 #: processing/views.py:365 processing/views.py:368
 msgid "%(animal_type)s Details"
-msgstr "Eksik %(animal.animal_type)s detayları"
+msgstr "%(animal_type)s Detayları"
 
 #: processing/views.py:386
 msgid "Animal %(tag)s marked as slaughtered."

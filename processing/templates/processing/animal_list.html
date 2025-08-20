@@ -338,7 +338,7 @@
                                             <div class="ml-2 flex space-x-1">
                                                 <!-- Missing Details Alert -->
                                                 {% if item.missing_details %}
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800" title="{% blocktrans %}Missing {{ animal.animal_type }} details{% endblocktrans %}">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800" title="{% blocktrans with animal_type=item.animal.get_animal_type_display %}Missing {{ animal_type }} details{% endblocktrans %}">
                                                         ⚠️
                                                     </span>
                                                 {% endif %}
