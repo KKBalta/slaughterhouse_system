@@ -91,16 +91,16 @@ msgstr "Fotoğraflar"
 
 #: processing/admin.py:75
 msgid "Pictures"
-msgstr ""
+msgstr "Resimler"
 
 #: processing/admin.py:113
 #, python-format
 msgid "📋 Order #%(id)s"
-msgstr ""
+msgstr "📋 Sipariş #%(id)s"
 
 #: processing/admin.py:114
 msgid "Unknown"
-msgstr ""
+msgstr "Bilinmeyen"
 
 #: processing/admin.py:115
 #, fuzzy
@@ -198,11 +198,11 @@ msgstr "Deri Ağırlığı Eksik"
 
 #: processing/forms.py:133
 msgid "Weight seems unusually high. Please verify."
-msgstr ""
+msgstr "Ağırlık alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
 
 #: processing/forms.py:135 processing/forms.py:217
 msgid "Weight must be greater than 0."
-msgstr ""
+msgstr "Ağırlık 0'dan büyük olmalıdır."
 
 #: processing/forms.py:151
 #, python-format
@@ -210,6 +210,8 @@ msgid ""
 "Hot carcass weight can only be logged for slaughtered animals. Animal "
 "%(tag)s is currently %(status)s."
 msgstr ""
+"Sıcak karkas ağırlığı sadece kesilmiş hayvanlar için kaydedilebilir. Hayvan "
+"%(tag)s şu anda %(status)s durumundadır."
 
 #: processing/forms.py:156
 #, python-format
