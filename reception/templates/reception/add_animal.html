@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Add Animal to Order{% endblock %}
+{% block title %}{% trans "Add Animal to Order" %}{% endblock %}
 
 {% block content %}
     <style>
@@ -38,8 +39,8 @@
 
     <div class="px-4 py-6 max-w-md mx-auto">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">Add Animal</h1>
-            <p class="text-sm text-gray-600 mb-6 text-center">Order {{ order.slaughter_order_no }}</p>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">{% trans "Add Animal" %}</h1>
+            <p class="text-sm text-gray-600 mb-6 text-center">{% trans "Order" %} {{ order.slaughter_order_no }}</p>
 
             {% if messages %}
                 <div class="mb-6">
@@ -69,14 +70,14 @@
                                 {{ field }}
                                 <p class="mt-1 text-xs text-gray-500">
                                     {% if field.name == 'picture' %}
-                                        Animal photo can be added now or later
+                                        {% trans "Animal photo can be added now or later" %}
                                     {% else %}
-                                        Passport/document photo can be added now or later
+                                        {% trans "Passport/document photo can be added now or later" %}
                                     {% endif %}
                                 </p>
                             </div>
                             {% if field.value %}
-                                <p class="mt-1 text-xs text-gray-600">Current: {{ field.value.name }}</p>
+                                <p class="mt-1 text-xs text-gray-600">{% trans "Current:" %} {{ field.value.name }}</p>
                             {% endif %}
                         {% else %}
                             {{ field }}
@@ -99,11 +100,11 @@
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
                        class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
-                        Cancel
+                        {% trans "Cancel" %}
                     </a>
                     <button type="submit" 
                             class="flex-1 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors">
-                        Add Animal
+                        {% trans "Add Animal" %}
                     </button>
                 </div>
             </form>

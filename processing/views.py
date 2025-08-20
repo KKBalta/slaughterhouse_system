@@ -4,15 +4,18 @@ from django.views.generic import TemplateView, ListView, DetailView, View
 from django.contrib import messages
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.http import JsonResponse
 from django.urls import reverse
 from datetime import datetime
 
 from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from reception.models import SlaughterOrder
-from .forms import (AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
-                   ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
-                   LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm)
+from .forms import (
+    AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
+    ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
+    LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm
+)
 from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports, ANIMAL_DETAIL_MODELS
 from . import services
 
@@ -172,6 +175,10 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
             'total_animals_today': Animal.objects.filter(
                 received_date__date=timezone.now().date()
             ).count(),
+            # Add count variables for blocktrans template tags
+            'orders_ready_for_slaughter_count': len(orders_ready_for_slaughter),
+            'orders_ready_for_weighing_count': len(orders_ready_for_weighing), 
+            'received_animals_count': received_animals.count(),
         })
         
         return context
@@ -355,10 +362,10 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
                 context['detail_form'] = form_class()
                 context['has_details'] = False
             
-            context['detail_form_title'] = f"{self.object.get_animal_type_display()} Details"
+            context['detail_form_title'] = _("%(animal_type)s Details") % {'animal_type': self.object.get_animal_type_display()}
         elif form_class and detail_model:
             # Animal exists but status doesn't allow details yet
-            context['detail_form_title'] = f"{self.object.get_animal_type_display()} Details"
+            context['detail_form_title'] = _("%(animal_type)s Details") % {'animal_type': self.object.get_animal_type_display()}
             context['has_details'] = False
             try:
                 # Check if details already exist (for display only)
@@ -376,9 +383,9 @@ class MarkAnimalSlaughteredView(LoginRequiredMixin, View):
         
         try:
             mark_animal_slaughtered(animal)
-            messages.success(request, f'Animal {animal.identification_tag} marked as slaughtered.')
+            messages.success(request, _('Animal %(tag)s marked as slaughtered.') % {'tag': animal.identification_tag})
         except Exception as e:
-            messages.error(request, f'Error marking animal as slaughtered: {str(e)}')
+            messages.error(request, _('Error marking animal as slaughtered: %(error)s') % {'error': str(e)})
         
         return redirect('processing:animal_detail', pk=animal.pk)
 
@@ -396,13 +403,13 @@ class AnimalWeightLogView(LoginRequiredMixin, View):
                 if weight_type == 'leather_weight':
                     # Handle leather weight specially
                     log_leather_weight(animal, weight)
-                    messages.success(request, f'Leather weight ({weight} kg) logged for {animal.identification_tag}.')
+                    messages.success(request, _('Leather weight (%(weight)s kg) logged for %(tag)s.') % {'weight': weight, 'tag': animal.identification_tag})
                 else:
                     # Handle regular weight logging
                     log_individual_weight(animal, weight_type, weight)
-                    messages.success(request, f'{weight_type.replace("_", " ").title()} ({weight} kg) logged for {animal.identification_tag}.')
+                    messages.success(request, _('%(weight_type)s (%(weight)s kg) logged for %(tag)s.') % {'weight_type': weight_type.replace('_', ' ').title(), 'weight': weight, 'tag': animal.identification_tag})
             except Exception as e:
-                messages.error(request, f'Error logging weight: {str(e)}')
+                messages.error(request, _('Error logging weight: %(error)s') % {'error': str(e)})
         else:
             # Display form errors
             for field, errors in form.errors.items():
@@ -431,7 +438,7 @@ class BatchSlaughterView(LoginRequiredMixin, TemplateView):
     def post(self, request):
         order_id = request.POST.get('order_id')
         if not order_id:
-            messages.error(request, 'Please select an order.')
+            messages.error(request, _('Please select an order.'))
             return redirect('processing:batch_slaughter')
         
         order = get_object_or_404(SlaughterOrder, pk=order_id)
@@ -448,9 +455,9 @@ class BatchSlaughterView(LoginRequiredMixin, TemplateView):
                 error_count += 1
         
         if success_count > 0:
-            messages.success(request, f'Successfully slaughtered {success_count} animals.')
+            messages.success(request, _('Successfully slaughtered %(count)s animals.') % {'count': success_count})
         if error_count > 0:
-            messages.warning(request, f'{error_count} animals could not be processed.')
+            messages.warning(request, _('%(count)s animals could not be processed.') % {'count': error_count})
         
         return redirect('processing:batch_slaughter')
 
@@ -609,20 +616,27 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 if new_total >= available_count:
                     messages.success(
                         request, 
-                        f"✅ Batch weight logged successfully! All {available_count} animals for {weight_type.replace('_', ' ').title()} "
-                        f"are now weighed. Individual weight logs have been automatically created with "
-                        f"average weight of {average_weight:.2f}kg per animal."
+                        _("✅ Batch weight logged successfully! All %(available_count)s animals for %(weight_type)s are now weighed. Individual weight logs have been automatically created with average weight of %(average_weight).2fkg per animal.") % {
+                            'available_count': available_count,
+                            'weight_type': weight_type.replace('_', ' ').title(),
+                            'average_weight': average_weight
+                        }
                     )
                 else:
                     remaining = available_count - new_total
                     messages.success(
                         request, 
-                        f"Batch weight logged: {animal_count} animals weighed ({total_weight}kg total, "
-                        f"{average_weight:.2f}kg average). {remaining} animals remaining for {weight_type.replace('_', ' ').title()}."
+                        _("Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg total, %(average_weight).2fkg average). %(remaining)s animals remaining for %(weight_type)s.") % {
+                            'animal_count': animal_count,
+                            'total_weight': total_weight,
+                            'average_weight': average_weight,
+                            'remaining': remaining,
+                            'weight_type': weight_type.replace('_', ' ').title()
+                        }
                     )
                 
             except Exception as e:
-                messages.error(request, f'Error logging batch weight: {str(e)}')
+                messages.error(request, _('Error logging batch weight: %(error)s') % {'error': str(e)})
         else:
             # Display form errors
             for field, errors in form.errors.items():
@@ -680,7 +694,7 @@ class OrderStatusUpdateView(LoginRequiredMixin, View):
         # Update order status based on animal statuses
         # This could be expanded to handle specific status updates
         
-        messages.success(request, f'Order {order.slaughter_order_no} status updated.')
+        messages.success(request, _('Order %(order_no)s status updated.') % {'order_no': order.slaughter_order_no})
         return redirect('processing:dashboard')
 
 
@@ -714,7 +728,7 @@ class AnimalSearchView(View):  # Temporarily removed LoginRequiredMixin for debu
                     animal.slaughter_order.client.get_full_name()
                 )
             else:
-                client_info = animal.slaughter_order.client_name or "Walk-in Client"
+                client_info = animal.slaughter_order.client_name or _("Walk-in Client")
             
             animals_data.append({
                 'id': str(animal.pk),
@@ -740,9 +754,9 @@ class LeatherWeightLogView(LoginRequiredMixin, View):
             try:
                 leather_weight = form.cleaned_data['leather_weight_kg']
                 log_leather_weight(animal, leather_weight)
-                messages.success(request, f'Leather weight ({leather_weight} kg) logged for {animal.identification_tag}.')
+                messages.success(request, _('Leather weight (%(weight)s kg) logged for %(tag)s.') % {'weight': leather_weight, 'tag': animal.identification_tag})
             except Exception as e:
-                messages.error(request, f'Error logging leather weight: {str(e)}')
+                messages.error(request, _('Error logging leather weight: %(error)s') % {'error': str(e)})
         else:
             # Display form errors
             for field, errors in form.errors.items():
@@ -784,7 +798,7 @@ class AnimalSearchDebugView(View):
                         animal.slaughter_order.client.get_full_name()
                     )
                 else:
-                    client_info = animal.slaughter_order.client_name or "Walk-in Client"
+                    client_info = animal.slaughter_order.client_name or _("Walk-in Client")
                 
                 animals_data.append({
                     'id': str(animal.pk),
@@ -822,8 +836,7 @@ class AnimalDetailsUpdateView(LoginRequiredMixin, View):
         if animal.status not in allowed_statuses:
             messages.error(
                 request, 
-                f'Animal details can only be filled after the animal has been slaughtered. '
-                f'Current status: {animal.get_status_display()}. Please slaughter the animal first.'
+                _('Animal details can only be filled after the animal has been slaughtered. Current status: %(status)s. Please slaughter the animal first.') % {'status': animal.get_status_display()}
             )
             return redirect('processing:animal_detail', pk=animal.pk)
         
@@ -832,18 +845,18 @@ class AnimalDetailsUpdateView(LoginRequiredMixin, View):
         detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
         
         if not form_class or not detail_model:
-            messages.error(request, f'No detail form available for {animal.get_animal_type_display()}.')
+            messages.error(request, _('No detail form available for %(animal_type)s.') % {'animal_type': animal.get_animal_type_display()})
             return redirect('processing:animal_detail', pk=animal.pk)
         
         try:
             # Try to get existing details
             detail_instance = detail_model.objects.get(animal=animal)
             form = form_class(request.POST, instance=detail_instance)
-            action = 'updated'
+            action = _('updated')
         except detail_model.DoesNotExist:
             # Create new details
             form = form_class(request.POST)
-            action = 'created'
+            action = _('created')
         
         if form.is_valid():
             detail_instance = form.save(commit=False)
@@ -852,7 +865,11 @@ class AnimalDetailsUpdateView(LoginRequiredMixin, View):
             
             messages.success(
                 request, 
-                f'{animal.get_animal_type_display()} details {action} successfully for {animal.identification_tag}.'
+                _('%(animal_type)s details %(action)s successfully for %(tag)s.') % {
+                    'animal_type': animal.get_animal_type_display(),
+                    'action': action,
+                    'tag': animal.identification_tag
+                }
             )
         else:
             # Display form errors

@@ -15,6 +15,7 @@ import os
 from decouple import config, Csv
 import dj_database_url
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -134,13 +135,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = config('LANGUAGE_CODE', default='tr')  # Changed default to Turkish
+LANGUAGE_CODE = config('LANGUAGE_CODE', default='tr')  # Turkish as default language
 TIME_ZONE = config('TIME_ZONE', default='Europe/Istanbul')  # Changed to Turkey timezone
 USE_I18N = config('USE_I18N', default=True, cast=bool)
 USE_L10N = config('USE_L10N', default=True, cast=bool)
 USE_TZ = config('USE_TZ', default=True, cast=bool)
 
-# Language Configuration - Turkish first (default)
+# Language Configuration - Turkish as default, English as alternative
 LANGUAGES = [
     ('tr', _('Turkish')),
     ('en', _('English')),

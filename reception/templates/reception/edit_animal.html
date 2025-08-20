@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% load file_filters %}
+{% load file_filters i18n %}
 
-{% block title %}Edit Animal in Order{% endblock %}
+{% block title %}{% trans "Edit Animal in Order" %}{% endblock %}
 
 {% block content %}
     <style>
@@ -39,9 +39,9 @@
 
     <div class="px-4 py-6 max-w-md mx-auto">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">Edit Animal</h1>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">{% trans "Edit Animal" %}</h1>
             <p class="text-sm text-gray-600 mb-2 text-center">{{ animal.identification_tag }}</p>
-            <p class="text-xs text-gray-500 mb-6 text-center">Order {{ order.slaughter_order_no }}</p>
+            <p class="text-xs text-gray-500 mb-6 text-center">{% trans "Order" %} {{ order.slaughter_order_no }}</p>
 
             {% if messages %}
                 <div class="mb-6">
@@ -69,14 +69,14 @@
                         {% if field.name == 'picture' or field.name == 'passport_picture' %}
                             {% if field.value %}
                                 <div class="mb-3 p-3 bg-gray-50 rounded-lg border">
-                                    <p class="text-xs text-gray-600 mb-2 font-medium">Current Image:</p>
+                                    <p class="text-xs text-gray-600 mb-2 font-medium">{% trans "Current Image:" %}</p>
                                     <div class="flex items-center space-x-3">
                                         <img src="{{ field.value.url }}" 
                                              alt="Current {{ field.label }}" 
                                              class="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm">
                                         <div class="flex-1">
                                             <p class="text-xs text-gray-700 font-medium">{{ field.value.name|basename }}</p>
-                                            <p class="text-xs text-gray-500 mt-1">Upload a new image to replace</p>
+                                            <p class="text-xs text-gray-500 mt-1">{% trans "Upload a new image to replace" %}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -103,11 +103,11 @@
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
                        class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
-                        Cancel
+                        {% trans "Cancel" %}
                     </a>
                     <button type="submit" 
                             class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors">
-                        Update Animal
+                        {% trans "Update Animal" %}
                     </button>
                 </div>
             </form>

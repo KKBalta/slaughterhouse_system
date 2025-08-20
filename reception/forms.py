@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
 from processing.models import Animal
@@ -8,10 +9,10 @@ class SlaughterOrderForm(forms.ModelForm):
     client_search = forms.CharField(
         max_length=255,
         required=False,
-        label="Search Registered Client",
+        label=_("Search Registered Client"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Type client name to search...',
+            'placeholder': _('Type client name to search...'),
             'id': 'client-search',
             'autocomplete': 'off'
         })
@@ -26,10 +27,10 @@ class SlaughterOrderForm(forms.ModelForm):
     client_name = forms.CharField(
         max_length=255, 
         required=False, 
-        label="Walk-in Client Name",
+        label=_("Walk-in Client Name"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Enter client name for walk-in customers'
+            'placeholder': _('Enter client name for walk-in customers')
         })
     )
     
@@ -43,20 +44,20 @@ class SlaughterOrderForm(forms.ModelForm):
         choices=AREA_CODE_CHOICES,
         initial='+90',
         required=False,
-        label="Area Code",
+        label=_("Area Code"),
         widget=forms.Select(attrs={
             'class': 'modern-select',
-            'title': 'Select country code: +90 for Turkey, +1 for USA/Canada'
+            'title': _('Select country code: +90 for Turkey, +1 for USA/Canada')
         })
     )
     
     client_phone = forms.CharField(
         max_length=15, 
         required=False, 
-        label="Walk-in Client Phone",
+        label=_("Walk-in Client Phone"),
         widget=forms.TextInput(attrs={
             'class': 'flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Enter phone number'
+            'placeholder': _('Enter phone number')
         })
     )
 
@@ -70,7 +71,7 @@ class SlaughterOrderForm(forms.ModelForm):
             }),
             'destination': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-                'placeholder': 'Enter destination (optional)'
+                'placeholder': _('Enter destination (optional)')
             }),
             'service_package': forms.Select(attrs={
                 'class': 'modern-select-full'
@@ -80,7 +81,7 @@ class SlaughterOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['service_package'].queryset = ServicePackage.objects.all()
-        self.fields['service_package'].empty_label = "Select service package"
+        self.fields['service_package'].empty_label = _("Select service package")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -89,12 +90,12 @@ class SlaughterOrderForm(forms.ModelForm):
 
         if not client_id and not client_name:
             raise forms.ValidationError(
-                "An order must be linked to either a registered client or a walk-in client name."
+                _("An order must be linked to either a registered client or a walk-in client name.")
             )
         
         if client_id and client_name:
             raise forms.ValidationError(
-                "Please provide either a registered client or a walk-in client, not both."
+                _("Please provide either a registered client or a walk-in client, not both.")
             )
         
         # Combine area code with phone number
@@ -110,10 +111,10 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     client_search = forms.CharField(
         max_length=255,
         required=False,
-        label="Search Registered Client",
+        label=_("Search Registered Client"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Type client name to search...',
+            'placeholder': _('Type client name to search...'),
             'id': 'client-search',
             'autocomplete': 'off'
         })
@@ -128,10 +129,10 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     client_name = forms.CharField(
         max_length=255, 
         required=False, 
-        label="Walk-in Client Name",
+        label=_("Walk-in Client Name"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Enter client name for walk-in customers'
+            'placeholder': _('Enter client name for walk-in customers')
         })
     )
     
@@ -145,20 +146,20 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         choices=AREA_CODE_CHOICES,
         initial='+90',
         required=False,
-        label="Area Code",
+        label=_("Area Code"),
         widget=forms.Select(attrs={
             'class': 'modern-select',
-            'title': 'Select country code: +90 for Turkey, +1 for USA/Canada'
+            'title': _('Select country code: +90 for Turkey, +1 for USA/Canada')
         })
     )
     
     client_phone = forms.CharField(
         max_length=15, 
         required=False, 
-        label="Walk-in Client Phone",
+        label=_("Walk-in Client Phone"),
         widget=forms.TextInput(attrs={
             'class': 'flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Enter phone number'
+            'placeholder': _('Enter phone number')
         })
     )
 
@@ -172,7 +173,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
             }),
             'destination': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-                'placeholder': 'Enter destination (optional)'
+                'placeholder': _('Enter destination (optional)')
             }),
             'service_package': forms.Select(attrs={
                 'class': 'modern-select-full'
@@ -182,7 +183,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['service_package'].queryset = ServicePackage.objects.all()
-        self.fields['service_package'].empty_label = "Select service package"
+        self.fields['service_package'].empty_label = _("Select service package")
         
         # Pre-populate client fields if instance exists
         if self.instance and self.instance.pk:
@@ -210,12 +211,12 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
 
         if not client_id and not client_name:
             raise forms.ValidationError(
-                "An order must be linked to either a registered client or a walk-in client name."
+                _("An order must be linked to either a registered client or a walk-in client name.")
             )
         
         if client_id and client_name:
             raise forms.ValidationError(
-                "Please provide either a registered client or a walk-in client, not both."
+                _("Please provide either a registered client or a walk-in client, not both.")
             )
         
         # Combine area code with phone number
@@ -242,7 +243,7 @@ class AnimalForm(forms.ModelForm):
             }),
             'identification_tag': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-                'placeholder': 'Enter identification tag (optional - auto-generated if empty)'
+                'placeholder': _('Enter identification tag (optional - auto-generated if empty)')
             }),
             'received_date': forms.DateTimeInput(attrs={
                 'type': 'datetime-local',
@@ -262,12 +263,12 @@ class AnimalForm(forms.ModelForm):
         # Extract skip_photos parameter if provided
         self.skip_photos = kwargs.pop('skip_photos', False)
         super().__init__(*args, **kwargs)
-        self.fields['animal_type'].empty_label = "Select animal type"
+        self.fields['animal_type'].empty_label = _("Select animal type")
         self.fields['identification_tag'].required = False
         
         # Set custom labels
-        self.fields['picture'].label = "Animal Photo (Optional)"
-        self.fields['passport_picture'].label = "Passport/Document Photo (Optional)"
+        self.fields['picture'].label = _("Animal Photo (Optional)")
+        self.fields['passport_picture'].label = _("Passport/Document Photo (Optional)")
         
         # Make photos optional for both individual and batch creation
         self.fields['picture'].required = False
@@ -278,7 +279,7 @@ class BatchAnimalForm(forms.Form):
     
     animal_type = forms.ChoiceField(
         choices=Animal.ANIMAL_TYPES,
-        label="Animal Type",
+        label=_("Animal Type"),
         widget=forms.Select(attrs={
             'class': 'modern-select-full'
         })
@@ -288,50 +289,50 @@ class BatchAnimalForm(forms.Form):
         min_value=1,
         max_value=100,
         initial=1,
-        label="Number of Animals",
+        label=_("Number of Animals"),
         widget=forms.NumberInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Enter number of animals (1-100)'
+            'placeholder': _('Enter number of animals (1-100)')
         })
     )
     
     tag_prefix = forms.CharField(
         max_length=20,
         required=False,
-        label="Tag Prefix (Optional)",
+        label=_("Tag Prefix (Optional)"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'e.g., BATCH-001 (leave empty for auto-generation)'
+            'placeholder': _('e.g., BATCH-001 (leave empty for auto-generation)')
         }),
-        help_text="Custom prefix for identification tags. If empty, auto-generated tags will be used."
+        help_text=_("Custom prefix for identification tags. If empty, auto-generated tags will be used.")
     )
     
     received_date = forms.DateTimeField(
         required=False,
-        label="Received Date & Time",
+        label=_("Received Date & Time"),
         widget=forms.DateTimeInput(attrs={
             'type': 'datetime-local',
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white'
         }),
-        help_text="Leave empty to use current date/time for all animals"
+        help_text=_("Leave empty to use current date/time for all animals")
     )
     
     skip_photos = forms.BooleanField(
         required=False,
         initial=False,
-        label="Skip Photos for Batch",
+        label=_("Skip Photos for Batch"),
         widget=forms.CheckboxInput(attrs={
             'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
         }),
-        help_text="Check this to create animals without photos (photos can be added later)"
+        help_text=_("Check this to create animals without photos (photos can be added later)")
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['animal_type'].empty_label = "Select animal type"
+        self.fields['animal_type'].empty_label = _("Select animal type")
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
         if quantity and quantity > 100:
-            raise forms.ValidationError("Maximum 100 animals can be created in a single batch.")
+            raise forms.ValidationError(_("Maximum 100 animals can be created in a single batch."))
         return quantity

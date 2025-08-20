@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Batch Add Animals to Order{% endblock %}
+{% block title %}{% trans "Batch Add Animals to Order" %}{% endblock %}
 
 {% block content %}
     <style>
@@ -43,9 +44,9 @@
 
     <div class="px-4 py-6 max-w-2xl mx-auto">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">Batch Add Animals</h1>
-            <p class="text-sm text-gray-600 mb-2 text-center">Order {{ order.slaughter_order_no }}</p>
-            <p class="text-xs text-gray-500 mb-6 text-center">Create multiple animals at once with auto-generated tags</p>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">{% trans "Batch Add Animals" %}</h1>
+            <p class="text-sm text-gray-600 mb-2 text-center">{% trans "Order" %} {{ order.slaughter_order_no }}</p>
+            <p class="text-xs text-gray-500 mb-6 text-center">{% trans "Create multiple animals at once with auto-generated tags" %}</p>
 
             <!-- Info Box -->
             <div class="info-box p-4 rounded-lg mb-6">
@@ -54,12 +55,12 @@
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
                     <div class="text-sm text-blue-900">
-                        <p class="font-medium mb-1">Batch Creation Features:</p>
+                        <p class="font-medium mb-1">{% trans "Batch Creation Features:" %}</p>
                         <ul class="list-disc list-inside space-y-1 text-blue-800">
-                            <li>Auto-generates unique identification tags for each animal</li>
-                            <li>Creates up to 100 animals in a single batch</li>
-                            <li>Photos can be added individually later via edit function</li>
-                            <li>All animals will have the same received date/time</li>
+                            <li>{% trans "Auto-generates unique identification tags for each animal" %}</li>
+                            <li>{% trans "Creates up to 100 animals in a single batch" %}</li>
+                            <li>{% trans "Photos can be added individually later via edit function" %}</li>
+                            <li>{% trans "All animals will have the same received date/time" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -127,9 +128,9 @@
                     {% endif %}
                     <div class="mt-2 p-3 bg-gray-50 rounded-md">
                         <p class="text-xs text-gray-700">
-                            <strong>Tag Examples:</strong><br>
-                            • With prefix "FARM-A": FARM-A-001, FARM-A-002, FARM-A-003...<br>
-                            • Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02...
+                            <strong>{% trans "Tag Examples:" %}</strong><br>
+                            • {% trans "With prefix 'FARM-A': FARM-A-001, FARM-A-002, FARM-A-003..." %}<br>
+                            • {% trans "Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02..." %}
                         </p>
                     </div>
                     {% if form.tag_prefix.errors %}
@@ -163,12 +164,12 @@
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' order.pk %}" 
                        class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
-                        Cancel
+                        {% trans "Cancel" %}
                     </a>
                     <button type="submit" 
                             class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors"
-                            onclick="return confirm('Are you sure you want to create these animals? This action cannot be undone.');">
-                        Create Batch Animals
+                            onclick="return confirm('{% trans "Are you sure you want to create these animals? This action cannot be undone." %}');">
+                        {% trans "Create Batch Animals" %}
                     </button>
                 </div>
             </form>

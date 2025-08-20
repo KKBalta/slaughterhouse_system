@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Batch Slaughter{% endblock %}
+{% block title %}{% trans "Batch Slaughter" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -37,8 +38,8 @@
 <div class="px-4 py-6 max-w-4xl mx-auto">
     <!-- Header -->
     <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Batch Slaughter Operations</h1>
-        <p class="text-gray-600">Process multiple animals from the same order efficiently</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{% trans "Batch Slaughter Operations" %}</h1>
+        <p class="text-gray-600">{% trans "Process multiple animals from the same order efficiently" %}</p>
     </div>
 
     {% if messages %}
@@ -64,10 +65,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div>
-                <h3 class="text-sm font-medium text-blue-800 mb-1">Batch Processing Instructions</h3>
+                <h3 class="text-sm font-medium text-blue-800 mb-1">{% trans "Batch Processing Instructions" %}</h3>
                 <p class="text-sm text-blue-700">
-                    Select an order with animals in "Received" status to process them all at once. 
-                    This is especially useful for small animals like sheep, goats, and lambs.
+                    {% trans 'Select an order with animals in "Received" status to process them all at once. This is especially useful for small animals like sheep, goats, and lambs.' %}
                 </p>
             </div>
         </div>
@@ -75,7 +75,7 @@
 
     <!-- Orders Ready for Batch Slaughter -->
     <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Orders Ready for Slaughter</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Orders Ready for Slaughter" %}</h2>
         
         {% if orders %}
             <form method="post" class="space-y-4">
@@ -102,7 +102,7 @@
                                                 </div>
                                                 <div class="text-sm text-gray-500 mt-1">
                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {{ order.received_count }} animals ready
+                                                        {{ order.received_count }} {% trans "animals ready" %}
                                                     </span>
                                                 </div>
                                             </div>
@@ -132,12 +132,12 @@
                 <div class="flex justify-between pt-6">
                     <a href="{% url 'processing:dashboard' %}" 
                        class="bg-gray-200 text-gray-800 py-3 px-6 rounded-md hover:bg-gray-300 font-medium transition-colors">
-                        Back to Dashboard
+                        {% trans "Back to Dashboard" %}
                     </a>
                     <button type="submit" 
                             class="bg-red-600 text-white py-3 px-6 rounded-md hover:bg-red-700 font-medium transition-colors"
-                            onclick="return confirm('Are you sure you want to mark all animals in the selected order as slaughtered? This action cannot be undone.')">
-                        Process Selected Order
+                            onclick="return confirm('{% trans "Are you sure you want to mark all animals in the selected order as slaughtered? This action cannot be undone." %}')">
+                        {% trans "Process Selected Order" %}
                     </button>
                 </div>
             </form>
@@ -146,11 +146,11 @@
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No orders ready for batch slaughter</h3>
-                <p class="mt-1 text-sm text-gray-500">All current orders have been processed or have no animals in received status.</p>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "No orders ready for batch slaughter" %}</h3>
+                <p class="mt-1 text-sm text-gray-500">{% trans "All current orders have been processed or have no animals in received status." %}</p>
                 <a href="{% url 'processing:dashboard' %}" 
                    class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                    Back to Dashboard
+                    {% trans "Back to Dashboard" %}
                 </a>
             </div>
         {% endif %}

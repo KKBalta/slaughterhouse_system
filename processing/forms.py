@@ -1,13 +1,14 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from django.core.exceptions import ValidationError
 
 class AnimalFilterForm(forms.Form):
     # Status filter
     status = forms.ChoiceField(
-        choices=[('', 'All Statuses')] + list(Animal.STATUS_CHOICES),
+        choices=[('', _('All Statuses'))] + list(Animal.STATUS_CHOICES),
         required=False,
-        label="Status",
+        label=_("Status"),
         widget=forms.Select(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white modern-select-full',
             'id': 'status',
@@ -17,9 +18,9 @@ class AnimalFilterForm(forms.Form):
     
     # Animal type filter
     animal_type = forms.ChoiceField(
-        choices=[('', 'All Types')] + list(Animal.ANIMAL_TYPES),
+        choices=[('', _('All Types'))] + list(Animal.ANIMAL_TYPES),
         required=False,
-        label="Animal Type",
+        label=_("Animal Type"),
         widget=forms.Select(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white modern-select-full',
             'id': 'animal_type',
@@ -31,10 +32,10 @@ class AnimalFilterForm(forms.Form):
     search = forms.CharField(
         max_length=255,
         required=False,
-        label="Search Animals",
+        label=_("Search Animals"),
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white',
-            'placeholder': 'Search by Tag, Order Number, Client Name, or Animal Type',
+            'placeholder': _('Search by Tag, Order Number, Client Name, or Animal Type'),
             'id': 'animal-search',
             'autocomplete': 'off',
             'style': 'color: #111827 !important; background-color: #ffffff !important;'
@@ -56,17 +57,18 @@ class WeightLogForm(forms.ModelForm):
     """Form for logging individual animal weights including leather weight"""
     
     WEIGHT_TYPE_CHOICES = [
-        ('', 'Select weight type'),
-        ('live_weight', 'Live Weight'),
-        ('hot_carcass_weight', 'Hot Carcass Weight'),
-        ('cold_carcass_weight', 'Cold Carcass Weight'),
-        ('final_weight', 'Final Weight'),
-        ('leather_weight', 'Leather Weight'),
+        ('', _('Select weight type')),
+        ('live_weight', _('Live Weight')),
+        ('hot_carcass_weight', _('Hot Carcass Weight')),
+        ('cold_carcass_weight', _('Cold Carcass Weight')),
+        ('final_weight', _('Final Weight')),
+        ('leather_weight', _('Leather Weight')),
     ]
     
     weight_type = forms.ChoiceField(
         choices=WEIGHT_TYPE_CHOICES,
         required=True,
+        label=_("Weight Type"),
         widget=forms.Select(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500',
             'id': 'weight_type',
@@ -78,9 +80,10 @@ class WeightLogForm(forms.ModelForm):
         max_digits=10,
         decimal_places=2,
         min_value=0.01,
+        label=_("Weight (kg)"),
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-            'placeholder': 'Enter weight in kg',
+            'placeholder': _('Enter weight in kg'),
             'step': '0.01',
             'id': 'weight',
             'style': 'color: #111827 !important; background-color: #ffffff !important;'
@@ -97,26 +100,26 @@ class WeightLogForm(forms.ModelForm):
         
         # Filter weight type choices based on animal status
         if self.animal:
-            available_choices = [('', 'Select weight type')]
+            available_choices = [('', _('Select weight type'))]
             
             # Live weight is always available
-            available_choices.append(('live_weight', 'Live Weight'))
+            available_choices.append(('live_weight', _('Live Weight')))
             
             # Hot carcass weight only for slaughtered animals
             if self.animal.status in ['slaughtered', 'carcass_ready']:
-                available_choices.append(('hot_carcass_weight', 'Hot Carcass Weight'))
+                available_choices.append(('hot_carcass_weight', _('Hot Carcass Weight')))
             
             # Cold carcass weight only for carcass_ready or later
             if self.animal.status in ['carcass_ready', 'disassembled', 'packaged', 'delivered']:
-                available_choices.append(('cold_carcass_weight', 'Cold Carcass Weight'))
+                available_choices.append(('cold_carcass_weight', _('Cold Carcass Weight')))
             
             # Final weight only for disassembled or later
             if self.animal.status in ['disassembled', 'packaged', 'delivered']:
-                available_choices.append(('final_weight', 'Final Weight'))
+                available_choices.append(('final_weight', _('Final Weight')))
             
             # Leather weight for any status except received
             if self.animal.status != 'received':
-                available_choices.append(('leather_weight', 'Leather Weight'))
+                available_choices.append(('leather_weight', _('Leather Weight')))
             
             self.fields['weight_type'].choices = available_choices
     
@@ -127,9 +130,9 @@ class WeightLogForm(forms.ModelForm):
         if weight and weight_type:
             # Basic validation - adjust limits based on animal type if needed
             if weight > 2000:  # 2000kg seems like a reasonable upper limit
-                raise ValidationError("Weight seems unusually high. Please verify.")
+                raise ValidationError(_("Weight seems unusually high. Please verify."))
             if weight < 0.01:
-                raise ValidationError("Weight must be greater than 0.")
+                raise ValidationError(_("Weight must be greater than 0."))
         
         return weight
     
@@ -145,26 +148,22 @@ class WeightLogForm(forms.ModelForm):
             if weight_type_lower in ['hot_carcass_weight']:
                 if self.animal.status not in ['slaughtered', 'carcass_ready']:
                     raise ValidationError({
-                        'weight_type': f'Hot carcass weight can only be logged for slaughtered animals. '
-                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                        'weight_type': _('Hot carcass weight can only be logged for slaughtered animals. Animal %(tag)s is currently %(status)s.') % {'tag': self.animal.identification_tag, 'status': self.animal.get_status_display()}
                     })
             elif weight_type_lower in ['cold_carcass_weight']:
                 if self.animal.status not in ['carcass_ready', 'disassembled', 'packaged', 'delivered']:
                     raise ValidationError({
-                        'weight_type': f'Cold carcass weight can only be logged for animals with carcass ready or later status. '
-                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                        'weight_type': _('Cold carcass weight can only be logged for animals with carcass ready or later status. Animal %(tag)s is currently %(status)s.') % {'tag': self.animal.identification_tag, 'status': self.animal.get_status_display()}
                     })
             elif weight_type_lower in ['final_weight']:
                 if self.animal.status not in ['disassembled', 'packaged', 'delivered']:
                     raise ValidationError({
-                        'weight_type': f'Final weight can only be logged for disassembled animals. '
-                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                        'weight_type': _('Final weight can only be logged for disassembled animals. Animal %(tag)s is currently %(status)s.') % {'tag': self.animal.identification_tag, 'status': self.animal.get_status_display()}
                     })
             elif weight_type_lower in ['leather_weight']:
                 if self.animal.status == 'received':
                     raise ValidationError({
-                        'weight_type': f'Leather weight should be logged after slaughter. '
-                                     f'Animal {self.animal.identification_tag} is currently {self.animal.get_status_display()}.'
+                        'weight_type': _('Leather weight should be logged after slaughter. Animal %(tag)s is currently %(status)s.') % {'tag': self.animal.identification_tag, 'status': self.animal.get_status_display()}
                     })
             # live_weight can be logged for any status - no validation needed
             
@@ -172,7 +171,7 @@ class WeightLogForm(forms.ModelForm):
             if weight_type == 'leather_weight':
                 if self.animal.leather_weight_kg is not None:
                     raise ValidationError({
-                        'weight_type': 'Leather weight has already been recorded for this animal.'
+                        'weight_type': _('Leather weight has already been recorded for this animal.')
                     })
             
             # Check for duplicate weight type entries
@@ -183,7 +182,7 @@ class WeightLogForm(forms.ModelForm):
             
             if existing_log:
                 raise ValidationError({
-                    'weight_type': f'A {weight_type} entry already exists for this animal.'
+                    'weight_type': _('A %(weight_type)s entry already exists for this animal.') % {'weight_type': weight_type}
                 })
         
         return cleaned_data
@@ -196,10 +195,10 @@ class LeatherWeightForm(forms.ModelForm):
         max_digits=6,
         decimal_places=2,
         min_value=0.01,
-        label="Leather Weight (kg)",
+        label=_("Leather Weight (kg)"),
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-            'placeholder': 'Enter leather weight in kg',
+            'placeholder': _('Enter leather weight in kg'),
             'step': '0.01'
         })
     )
@@ -213,9 +212,9 @@ class LeatherWeightForm(forms.ModelForm):
         
         if weight:
             if weight > 200:  # Reasonable upper limit for leather weight
-                raise ValidationError("Leather weight seems unusually high. Please verify.")
+                raise ValidationError(_("Leather weight seems unusually high. Please verify."))
             if weight < 0.01:
-                raise ValidationError("Weight must be greater than 0.")
+                raise ValidationError(_("Weight must be greater than 0."))
         
         return weight
 
@@ -224,11 +223,11 @@ class BatchWeightLogForm(forms.Form):
     """Form for logging batch weights"""
     
     BATCH_WEIGHT_TYPE_CHOICES = [
-        ('', 'Select weight type'),
-        ('live_weight', 'Live Weight'),
-        ('hot_carcass_weight', 'Hot Carcass Weight'),
-        ('cold_carcass_weight', 'Cold Carcass Weight'),
-        ('final_weight', 'Final Weight'),
+        ('', _('Select weight type')),
+        ('live_weight', _('Live Weight')),
+        ('hot_carcass_weight', _('Hot Carcass Weight')),
+        ('cold_carcass_weight', _('Cold Carcass Weight')),
+        ('final_weight', _('Final Weight')),
     ]
     
     order_id = forms.UUIDField(
@@ -238,6 +237,7 @@ class BatchWeightLogForm(forms.Form):
     weight_type = forms.ChoiceField(
         choices=BATCH_WEIGHT_TYPE_CHOICES,
         required=True,
+        label=_("Weight Type"),
         widget=forms.Select(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-purple-500 focus:border-purple-500'
         })
@@ -247,22 +247,22 @@ class BatchWeightLogForm(forms.Form):
         max_digits=10,
         decimal_places=2,
         min_value=0.01,
-        label="Total Weight (kg)",
-        help_text="Enter the combined weight of all animals in the batch",
+        label=_("Total Weight (kg)"),
+        help_text=_("Enter the combined weight of all animals in the batch"),
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
-            'placeholder': 'Enter total weight in kilograms',
+            'placeholder': _('Enter total weight in kilograms'),
             'step': '0.01'
         })
     )
     
     animal_count = forms.IntegerField(
         min_value=1,
-        label="Number of Animals",
-        help_text="Number of animals included in this batch weight",
+        label=_("Number of Animals"),
+        help_text=_("Number of animals included in this batch weight"),
         widget=forms.NumberInput(attrs={
             'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500',
-            'placeholder': 'Number of animals weighed together'
+            'placeholder': _('Number of animals weighed together')
         })
     )
     
@@ -278,9 +278,9 @@ class BatchWeightLogForm(forms.Form):
             
             # Sanity check for average weight
             if average_weight > 1000:  # 1000kg average seems high
-                raise ValidationError("Average weight per animal seems unusually high. Please verify.")
+                raise ValidationError(_("Average weight per animal seems unusually high. Please verify."))
             if average_weight < 1:  # 1kg average seems low
-                raise ValidationError("Average weight per animal seems unusually low. Please verify.")
+                raise ValidationError(_("Average weight per animal seems unusually low. Please verify."))
             
             # Validate that we don't exceed the actual number of slaughtered animals
             if order_id and weight_type:
@@ -310,8 +310,11 @@ class BatchWeightLogForm(forms.Form):
                     # Basic validation: ensure this batch doesn't exceed available animals
                     if animal_count > available_count:
                         raise ValidationError(
-                            f"Cannot log weight for {animal_count} animals. "
-                            f"Only {available_count} animals are available for {weight_type.replace('_', ' ').title()} weighing in this order."
+                            _("Cannot log weight for %(animal_count)s animals. Only %(available_count)s animals are available for %(weight_type)s weighing in this order.") % {
+                                'animal_count': animal_count, 
+                                'available_count': available_count, 
+                                'weight_type': weight_type.replace('_', ' ').title()
+                            }
                         )
                     
                     # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
@@ -331,13 +334,17 @@ class BatchWeightLogForm(forms.Form):
                     if total_after_this_batch > available_count:
                         remaining_available = available_count - total_animals_already_weighed
                         raise ValidationError(
-                            f"Cannot log weight for {animal_count} animals. "
-                            f"Only {remaining_available} animals remain available for {weight_type.replace('_', ' ').title()} weighing "
-                            f"({total_animals_already_weighed} already weighed out of {available_count} total)."
+                            _("Cannot log weight for %(animal_count)s animals. Only %(remaining_available)s animals remain available for %(weight_type)s weighing (%(already_weighed)s already weighed out of %(total)s total).") % {
+                                'animal_count': animal_count, 
+                                'remaining_available': remaining_available, 
+                                'weight_type': weight_type.replace('_', ' ').title(), 
+                                'already_weighed': total_animals_already_weighed, 
+                                'total': available_count
+                            }
                         )
                         
                 except SlaughterOrder.DoesNotExist:
-                    raise ValidationError("Invalid order selected.")
+                    raise ValidationError(_("Invalid order selected."))
         
         return cleaned_data
 
@@ -348,14 +355,21 @@ class CattleDetailsForm(forms.ModelForm):
     class Meta:
         model = CattleDetails
         fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        labels = {
+            'breed': _('Breed'),
+            'horn_status': _('Horn Status'),
+            'liver_status': _('Liver Status'),
+            'head_status': _('Head Status'),
+            'bowels_status': _('Bowels Status'),
+        }
         widgets = {
             'breed': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Enter breed (e.g., Holstein, Angus, Hereford)'
+                'placeholder': _('Enter breed (e.g., Holstein, Angus, Hereford)')
             }),
             'horn_status': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'e.g., horned, polled, dehorned'
+                'placeholder': _('e.g., horned, polled, dehorned')
             }),
             'liver_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
@@ -374,14 +388,18 @@ class SheepDetailsForm(forms.ModelForm):
     class Meta:
         model = SheepDetails
         fields = ['breed', 'wool_type']
+        labels = {
+            'breed': _('Breed'),
+            'wool_type': _('Wool Type'),
+        }
         widgets = {
             'breed': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Enter breed (e.g., Merino, Suffolk, Dorper)'
+                'placeholder': _('Enter breed (e.g., Merino, Suffolk, Dorper)')
             }),
             'wool_type': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'e.g., fine, medium, coarse'
+                'placeholder': _('e.g., fine, medium, coarse')
             }),
         }
 
@@ -391,10 +409,13 @@ class GoatDetailsForm(forms.ModelForm):
     class Meta:
         model = GoatDetails
         fields = ['breed']
+        labels = {
+            'breed': _('Breed'),
+        }
         widgets = {
             'breed': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Enter breed (e.g., Boer, Nubian, Angora)'
+                'placeholder': _('Enter breed (e.g., Boer, Nubian, Angora)')
             }),
         }
 
@@ -418,14 +439,21 @@ class CalfDetailsForm(forms.ModelForm):
     class Meta:
         model = CalfDetails
         fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        labels = {
+            'breed': _('Breed'),
+            'horn_status': _('Horn Status'),
+            'liver_status': _('Liver Status'),
+            'head_status': _('Head Status'),
+            'bowels_status': _('Bowels Status'),
+        }
         widgets = {
             'breed': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Enter breed (e.g., Holstein, Jersey, Brahman)'
+                'placeholder': _('Enter breed (e.g., Holstein, Jersey, Brahman)')
             }),
             'horn_status': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'e.g., horned, polled, dehorned'
+                'placeholder': _('e.g., horned, polled, dehorned')
             }),
             'liver_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
@@ -444,14 +472,21 @@ class HeiferDetailsForm(forms.ModelForm):
     class Meta:
         model = HeiferDetails
         fields = ['breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status']
+        labels = {
+            'breed': _('Breed'),
+            'horn_status': _('Horn Status'),
+            'liver_status': _('Liver Status'),
+            'head_status': _('Head Status'),
+            'bowels_status': _('Bowels Status'),
+        }
         widgets = {
             'breed': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'Enter breed (e.g., Holstein, Angus, Charolais)'
+                'placeholder': _('Enter breed (e.g., Holstein, Angus, Charolais)')
             }),
             'horn_status': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
-                'placeholder': 'e.g., horned, polled, dehorned'
+                'placeholder': _('e.g., horned, polled, dehorned')
             }),
             'liver_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'

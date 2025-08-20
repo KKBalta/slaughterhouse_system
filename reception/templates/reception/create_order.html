@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Create Slaughter Order{% endblock %}
+{% block title %}{% trans "Create Slaughter Order" %}{% endblock %}
 
 {% block content %}
     <style>
@@ -131,7 +132,7 @@
 
     <div class="px-4 py-6 max-w-md mx-auto">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">Create New Order</h1>
+            <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{% trans "Create New Order" %}</h1>
 
             {% if messages %}
                 <div class="mb-6">
@@ -154,7 +155,7 @@
                 <!-- Client Search Section -->
                 <div class="form-group relative">
                     <label for="client-search" class="block text-sm font-medium text-gray-900 mb-1">
-                        Search Registered Client
+                        {% trans "Search Registered Client" %}
                     </label>
                     {{ form.client_search }}
                     {{ form.client_id }}
@@ -183,7 +184,7 @@
                 <!-- OR Divider -->
                 <div class="flex items-center my-4">
                     <div class="flex-1 border-t border-gray-300"></div>
-                    <span class="px-3 text-sm text-gray-500 bg-white">OR</span>
+                    <span class="px-3 text-sm text-gray-500 bg-white">{% trans "OR" %}</span>
                     <div class="flex-1 border-t border-gray-300"></div>
                 </div>
 
@@ -208,7 +209,7 @@
                 <!-- Walk-in Client Phone with Area Code -->
                 <div class="form-group">
                     <label class="block text-sm font-medium text-gray-900 mb-1">
-                        Walk-in Client Phone
+                        {% trans "Walk-in Client Phone" %}
                     </label>
                     <div class="flex">
                         <div class="relative">
@@ -262,7 +263,7 @@
                 <div class="pt-4">
                     <button type="submit" 
                             class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors">
-                        Create Order
+                        {% trans "Create Order" %}
                     </button>
                 </div>
             </form>
@@ -300,7 +301,7 @@
                             searchResults.innerHTML = '';
                             
                             if (data.clients.length === 0) {
-                                searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">No clients found</div>';
+                                searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
                             } else {
                                 data.clients.forEach(client => {
                                     const item = document.createElement('div');

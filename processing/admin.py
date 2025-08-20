@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from .models import (
     Animal, CattleDetails, SheepDetails, GoatDetails, LambDetails, 
     OglakDetails, CalfDetails, HeiferDetails, WeightLog
@@ -8,37 +9,37 @@ from .models import (
 class CattleDetailsInline(admin.StackedInline):
     model = CattleDetails
     can_delete = False
-    verbose_name_plural = 'Cattle Details'
+    verbose_name_plural = _('Cattle Details')
 
 class SheepDetailsInline(admin.StackedInline):
     model = SheepDetails
     can_delete = False
-    verbose_name_plural = 'Sheep Details'
+    verbose_name_plural = _('Sheep Details')
 
 class GoatDetailsInline(admin.StackedInline):
     model = GoatDetails
     can_delete = False
-    verbose_name_plural = 'Goat Details'
+    verbose_name_plural = _('Goat Details')
 
 class LambDetailsInline(admin.StackedInline):
     model = LambDetails
     can_delete = False
-    verbose_name_plural = 'Lamb Details'
+    verbose_name_plural = _('Lamb Details')
 
 class OglakDetailsInline(admin.StackedInline):
     model = OglakDetails
     can_delete = False
-    verbose_name_plural = 'Oglak Details'
+    verbose_name_plural = _('Oglak Details')
 
 class CalfDetailsInline(admin.StackedInline):
     model = CalfDetails
     can_delete = False
-    verbose_name_plural = 'Calf Details'
+    verbose_name_plural = _('Calf Details')
 
 class HeiferDetailsInline(admin.StackedInline):
     model = HeiferDetails
     can_delete = False
-    verbose_name_plural = 'Heifer Details'
+    verbose_name_plural = _('Heifer Details')
 
 @admin.register(Animal)
 class AnimalAdmin(admin.ModelAdmin):
@@ -61,17 +62,17 @@ class AnimalAdmin(admin.ModelAdmin):
         if obj.leather_weight_kg:
             return f"{obj.leather_weight_kg} kg"
         return "-"
-    get_leather_weight.short_description = "Leather Weight"
+    get_leather_weight.short_description = _("Leather Weight")
     
     def get_picture_status(self, obj):
         """Show if pictures are uploaded"""
         status = []
         if obj.picture:
-            status.append("📷 Photo")
+            status.append(_("📷 Photo"))
         if obj.passport_picture:
-            status.append("📋 Passport")
-        return " | ".join(status) if status else "No photos"
-    get_picture_status.short_description = "Pictures"
+            status.append(_("📋 Passport"))
+        return " | ".join(status) if status else _("No photos")
+    get_picture_status.short_description = _("Pictures")
     
     def get_inline_instances(self, request, obj=None):
         """Only show relevant inline based on animal type"""
@@ -109,9 +110,9 @@ class WeightLogAdmin(admin.ModelAdmin):
         if obj.animal:
             return f"🐄 {obj.animal.identification_tag}"
         elif obj.slaughter_order:
-            return f"📋 Order #{obj.slaughter_order.id}"
-        return "Unknown"
-    get_identifier.short_description = "Animal/Order"
+            return _("📋 Order #%(id)s") % {'id': obj.slaughter_order.id}
+        return _("Unknown")
+    get_identifier.short_description = _("Animal/Order")
     get_identifier.admin_order_field = 'animal__identification_tag'
 
 # Register individual detail models for direct access

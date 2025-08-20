@@ -3,6 +3,7 @@ from core.models import BaseModel
 from reception.models import SlaughterOrder
 from django_fsm import FSMField, transition
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 import uuid # Import uuid for unique tag generation
 import os
 
@@ -46,74 +47,74 @@ def animal_passport_upload_path(instance, filename):
 
 class Animal(BaseModel):
     ANIMAL_TYPES = (
-        ('cattle', 'Cattle'),
-        ('sheep', 'Sheep'),
-        ('goat', 'Goat'),
-        ('lamb', 'Lamb'),
-        ('oglak', 'Oglak'), # Child of Goat
-        ('calf', 'Calf'), # Dana
-        ('heifer', 'Heifer'), # Duve
-        ('beef', 'Beef'), # Sigir
+        ('cattle', _('Cattle')),
+        ('sheep', _('Sheep')),
+        ('goat', _('Goat')),
+        ('lamb', _('Lamb')),
+        ('oglak', _('Oglak')), # Child of Goat
+        ('calf', _('Calf')), # Dana
+        ('heifer', _('Heifer')), # Duve
+        ('beef', _('Beef')), # Sigir
     )
 
     # FSM Statuses for Animal Workflow
     STATUS_CHOICES = (
-        ('received', 'Received'),
-        ('slaughtered', 'Slaughtered'),
-        ('carcass_ready', 'Carcass Ready'),
-        ('disassembled', 'Disassembled'),
-        ('packaged', 'Packaged'),
-        ('delivered', 'Delivered'),
-        ('returned', 'Returned to Owner'),
-        ('disposed', 'Disposed'),
+        ('received', _('Received')),
+        ('slaughtered', _('Slaughtered')),
+        ('carcass_ready', _('Carcass Ready')),
+        ('disassembled', _('Disassembled')),
+        ('packaged', _('Packaged')),
+        ('delivered', _('Delivered')),
+        ('returned', _('Returned to Owner')),
+        ('disposed', _('Disposed')),
     )
 
     slaughter_order = models.ForeignKey(
         SlaughterOrder,
         on_delete=models.CASCADE,
         related_name='animals',
-        help_text="The slaughter order this animal belongs to."
+        help_text=_("The slaughter order this animal belongs to.")
     )
     animal_type = models.CharField(
         max_length=50,
         choices=ANIMAL_TYPES,
-        help_text="Type of animal (e.g., cattle, sheep, goat, lamb, oglak, calf, heifer, beef)."
+        help_text=_("Type of animal (e.g., cattle, sheep, goat, lamb, oglak, calf, heifer, beef).")
     )
     identification_tag = models.CharField(
         max_length=100,
         unique=False, # Not unique at DB level to allow system-generated tags
         blank=True, null=True,
-        help_text="Unique identification tag for the animal. System generates if not provided."
+        help_text=_("Unique identification tag for the animal. System generates if not provided.")
     )
     received_date = models.DateTimeField(
         default=timezone.now, # Set default to now, but allow editing
-        help_text="Date and time the animal was received."
+        help_text=_("Date and time the animal was received.")
     )
     slaughter_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Date and time the animal was slaughtered."
+        help_text=_("Date and time the animal was slaughtered.")
     )
     status = FSMField(
         default='received',
         choices=STATUS_CHOICES,
         protected=True,
-        help_text="Current status of the animal in the processing workflow."
+        help_text=_("Current status of the animal in the processing workflow.")
     )
     picture = models.ImageField(
         upload_to=animal_picture_upload_path,
         blank=True, null=True,
-        help_text="Picture of the animal."
+        help_text=_("Picture of the animal.")
     )
     passport_picture = models.ImageField(
         upload_to=animal_passport_upload_path,
         blank=True, null=True,
-        help_text="Picture of the animal's passport/documentation."
+        help_text=_("Picture of the animal's passport/documentation.")
     )
     leather_weight_kg = models.DecimalField(
         max_digits=6, decimal_places=2,
         null=True, blank=True,
-        help_text="The weight of the leather in kilograms."
+        help_text=_("The weight of the leather in kilograms.")
     )
 
     # FSM Transitions
@@ -161,12 +162,12 @@ class Animal(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.animal_type.capitalize()} - {self.identification_tag}"
+        return f"{self.get_animal_type_display()} - {self.identification_tag}"
 
 SCORE_CHOICES = (
-    (0.0, 'Not Usable'),
-    (0.5, 'Not Bad'),
-    (1.0, 'Good'),
+    (0.0, _('Not Usable')),
+    (0.5, _('Not Bad')),
+    (1.0, _('Good')),
 )
 
 class CattleDetails(BaseModel):
@@ -175,37 +176,37 @@ class CattleDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='cattle_details',
         limit_choices_to={'animal_type': 'cattle'},
-        help_text="The associated cattle animal."
+        help_text=_("The associated cattle animal.")
     )
     breed = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Breed of the cattle."
+        help_text=_("Breed of the cattle.")
     )
     horn_status = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Status of horns (e.g., horned, polled, dehorned)."
+        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
     )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the liver."
+        help_text=_("Score reflecting the usability of the liver.")
     )
     head_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the head."
+        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the bowels."
+        help_text=_("Score reflecting the usability of the bowels.")
     )
     # Removed leather_weight_kg from here
 
     def __str__(self):
-        return f"Details for Cattle: {self.animal.identification_tag}"
+        return _("Details for Cattle: %(tag)s") % {'tag': self.animal.identification_tag}
 
 class SheepDetails(BaseModel):
     animal = models.OneToOneField(
@@ -213,22 +214,22 @@ class SheepDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='sheep_details',
         limit_choices_to={'animal_type': 'sheep'},
-        help_text="The associated sheep animal."
+        help_text=_("The associated sheep animal.")
     )
     breed = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Breed of the sheep."
+        help_text=_("Breed of the sheep.")
     )
     wool_type = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Type of wool (e.g., fine, medium, coarse)."
+        help_text=_("Type of wool (e.g., fine, medium, coarse).")
     )
     # Removed leather_weight_kg from here
 
     def __str__(self):
-        return f"Details for Sheep: {self.animal.identification_tag}"
+        return _("Details for Sheep: %(tag)s") % {'tag': self.animal.identification_tag}
 
 class GoatDetails(BaseModel):
     animal = models.OneToOneField(
@@ -236,17 +237,17 @@ class GoatDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='goat_details',
         limit_choices_to={'animal_type': 'goat'},
-        help_text="The associated goat animal."
+        help_text=_("The associated goat animal.")
     )
     breed = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Breed of the goat."
+        help_text=_("Breed of the goat.")
     )
     # Removed leather_weight_kg from here
 
     def __str__(self):
-        return f"Details for Goat: {self.animal.identification_tag}"
+        return _("Details for Goat: %(tag)s") % {'tag': self.animal.identification_tag}
 
 class LambDetails(BaseModel):
     animal = models.OneToOneField(
@@ -254,12 +255,12 @@ class LambDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='lamb_details',
         limit_choices_to={'animal_type': 'lamb'},
-        help_text="The associated lamb animal."
+        help_text=_("The associated lamb animal.")
     )
     # Removed leather_weight_kg from here
 
     def __str__(self):
-        return f"Details for Lamb: {self.animal.identification_tag}"
+        return _("Details for Lamb: %(tag)s") % {'tag': self.animal.identification_tag}
 
 class OglakDetails(BaseModel):
     animal = models.OneToOneField(
@@ -267,12 +268,12 @@ class OglakDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='oglak_details',
         limit_choices_to={'animal_type': 'oglak'},
-        help_text="The associated oglak animal."
+        help_text=_("The associated oglak animal.")
     )
     # Removed leather_weight_kg from here
 
     def __str__(self):
-        return f"Details for Oglak: {self.animal.identification_tag}"
+        return _("Details for Oglak: %(tag)s") % {'tag': self.animal.identification_tag}
 
 # New Animal Detail Models
 class CalfDetails(BaseModel):
@@ -281,36 +282,36 @@ class CalfDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='calf_details',
         limit_choices_to={'animal_type': 'calf'},
-        help_text="The associated calf animal."
+        help_text=_("The associated calf animal.")
     )
     breed = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Breed of the calf."
+        help_text=_("Breed of the calf.")
     )
     horn_status = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Status of horns (e.g., horned, polled, dehorned)."
+        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
     )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the liver."
+        help_text=_("Score reflecting the usability of the liver.")
     )
     head_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the head."
+        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the bowels."
+        help_text=_("Score reflecting the usability of the bowels.")
     )
 
     def __str__(self):
-        return f"Details for Calf: {self.animal.identification_tag}"
+        return _("Details for Calf: %(tag)s") % {'tag': self.animal.identification_tag}
 
 class HeiferDetails(BaseModel):
     animal = models.OneToOneField(
@@ -318,51 +319,51 @@ class HeiferDetails(BaseModel):
         on_delete=models.CASCADE,
         related_name='heifer_details',
         limit_choices_to={'animal_type': 'heifer'},
-        help_text="The associated heifer animal."
+        help_text=_("The associated heifer animal.")
     )
     breed = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Breed of the heifer."
+        help_text=_("Breed of the heifer.")
     )
     horn_status = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Status of horns (e.g., horned, polled, dehorned)."
+        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
     )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the liver."
+        help_text=_("Score reflecting the usability of the liver.")
     )
     head_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the head."
+        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text="Score reflecting the usability of the bowels."
+        help_text=_("Score reflecting the usability of the bowels.")
     )
 
     def __str__(self):
-        return f"Details for Heifer: {self.animal.identification_tag}"
+        return _("Details for Heifer: %(tag)s") % {'tag': self.animal.identification_tag}
 
 
 
 class WeightLog(BaseModel):
     # Weight type choices for display
     WEIGHT_TYPE_CHOICES = [
-        ('live_weight', 'Live Weight'),
-        ('hot_carcass_weight', 'Hot Carcass Weight'),
-        ('cold_carcass_weight', 'Cold Carcass Weight'),
-        ('final_weight', 'Final Weight'),
-        ('leather_weight', 'Leather Weight'),
-        ('live_weight Group', 'Live Weight Group'),
-        ('hot_carcass_weight Group', 'Hot Carcass Weight Group'),
-        ('cold_carcass_weight Group', 'Cold Carcass Weight Group'),
-        ('final_weight Group', 'Final Weight Group'),
+        ('live_weight', _('Live Weight')),
+        ('hot_carcass_weight', _('Hot Carcass Weight')),
+        ('cold_carcass_weight', _('Cold Carcass Weight')),
+        ('final_weight', _('Final Weight')),
+        ('leather_weight', _('Leather Weight')),
+        ('live_weight Group', _('Live Weight Group')),
+        ('hot_carcass_weight Group', _('Hot Carcass Weight Group')),
+        ('cold_carcass_weight Group', _('Cold Carcass Weight Group')),
+        ('final_weight Group', _('Final Weight Group')),
     ]
 
     animal = models.ForeignKey(
@@ -370,49 +371,57 @@ class WeightLog(BaseModel):
         on_delete=models.CASCADE,
         related_name='individual_weight_logs',
         null=True, blank=True,
-        help_text="The animal whose weight is being logged (for individual weights)."
+        help_text=_("The animal whose weight is being logged (for individual weights).")
     )
     slaughter_order = models.ForeignKey(
         SlaughterOrder,
         on_delete=models.CASCADE,
         related_name='group_weight_logs',
         null=True, blank=True,
-        help_text="The slaughter order this group weight belongs to (for group weights)."
+        help_text=_("The slaughter order this group weight belongs to (for group weights).")
     )
     weight = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        help_text="Weight recorded (e.g., live weight, hot carcass weight). For group weights, this is the average per animal."
+        help_text=_("Weight recorded (e.g., live weight, hot carcass weight). For group weights, this is the average per animal.")
     )
     weight_type = models.CharField(
         max_length=100,
         choices=WEIGHT_TYPE_CHOICES,
-        help_text="Type of weight (e.g., 'Live', 'Hot Carcass', 'Cold Carcass', 'Live Group')."
+        help_text=_("Type of weight (e.g., 'Live', 'Hot Carcass', 'Cold Carcass', 'Live Group').")
     )
     is_group_weight = models.BooleanField(
         default=False,
-        help_text="True if this log entry represents a group weighing."
+        help_text=_("True if this log entry represents a group weighing.")
     )
     group_quantity = models.IntegerField(
         null=True, blank=True,
-        help_text="Number of animals in the group, if this is a group weight."
+        help_text=_("Number of animals in the group, if this is a group weight.")
     )
     group_total_weight = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True, blank=True,
-        help_text="Total weight of the group, if this is a group weight."
+        help_text=_("Total weight of the group, if this is a group weight.")
     )
     log_date = models.DateTimeField(
         auto_now_add=True,
-        help_text="Date and time the weight was logged."
+        help_text=_("Date and time the weight was logged.")
     )
 
     def __str__(self):
         if self.is_group_weight:
-            return f"{self.get_weight_type_display()} - {self.group_quantity} animals ({self.group_total_weight}kg total)"
+            return _("%(type)s - %(quantity)s animals (%(total_weight)skg total)") % {
+                'type': self.get_weight_type_display(),
+                'quantity': self.group_quantity,
+                'total_weight': self.group_total_weight
+            }
         else:
-            return f"{self.get_weight_type_display()} - {self.animal.identification_tag} ({self.weight}kg)"
+            return _("%(type)s - %(tag)s (%(weight)skg)") % {
+                'type': self.get_weight_type_display(),
+                'tag': self.animal.identification_tag,
+                'weight': self.weight
+            }
 
     def get_formatted_weight_type(self):
         """Return a clean, formatted version of the weight type for display"""

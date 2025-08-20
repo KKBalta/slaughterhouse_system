@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Animal Detail - {{ animal.identification_tag }}{% endblock %}
+{% block title %}{% trans "Animal Detail" %} - {{ animal.identification_tag }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -112,14 +113,14 @@
             <div class="flex space-x-3">
                 <a href="{% url 'processing:animal_list' %}" 
                    class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
-                    Back to List
+                    {% trans "Back to List" %}
                 </a>
                 {% if animal.status == 'received' %}
                     <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
-                          class="inline" onsubmit="return confirm('Mark animal as slaughtered?')">
+                          class="inline" onsubmit="return confirm('{% trans "Mark animal as slaughtered?" %}')">
                         {% csrf_token %}
                         <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
-                            Mark Slaughtered
+                            {% trans "Mark Slaughtered" %}
                         </button>
                     </form>
                 {% endif %}
@@ -153,15 +154,15 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-amber-800">Action Required: {{ detail_form_title }}</h3>
+                        <h3 class="text-sm font-semibold text-amber-800">{% blocktrans %}Action Required: {{ detail_form_title }}{% endblocktrans %}</h3>
                         <p class="text-sm text-amber-700 mt-1">
-                            This {{ animal.get_animal_type_display|lower }} does not have its specific details filled in yet. 
-                            Please complete the {{ detail_form_title|lower }} form below to ensure proper processing and record keeping.
+                            {% blocktrans with animal_type=animal.get_animal_type_display|lower detail_form_title=detail_form_title|lower %}This {{ animal_type }} does not have its specific details filled in yet. 
+                            Please complete the {{ detail_form_title }} form below to ensure proper processing and record keeping.{% endblocktrans %}
                         </p>
                         <div class="mt-3">
                             <button onclick="scrollToDetailsForm()" 
                                     class="text-sm bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors">
-                                Fill Details Now
+                                {% trans "Fill Details Now" %}
                             </button>
                         </div>
                     </div>
@@ -181,15 +182,14 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-orange-800">Leather Weight Missing</h3>
+                        <h3 class="text-sm font-semibold text-orange-800">{% trans "Leather Weight Missing" %}</h3>
                         <p class="text-sm text-orange-700 mt-1">
-                            This animal has been processed but the leather weight has not been recorded yet. 
-                            Please log the leather weight for complete records.
+                            {% trans "This animal has been processed but the leather weight has not been recorded yet. Please log the leather weight for complete records." %}
                         </p>
                         <div class="mt-3">
                             <button onclick="scrollToWeightForm(); this.style.transform='scale(0.95)'; setTimeout(() => this.style.transform='', 150);" 
                                     class="text-sm bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700 transition-all duration-200 transform hover:scale-105 active:scale-95">
-                                Log Weight Now
+                                {% trans "Log Weight Now" %}
                             </button>
                         </div>
                     </div>
@@ -209,15 +209,14 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-red-800">Hot Carcass Weight Missing</h3>
+                        <h3 class="text-sm font-semibold text-red-800">{% trans "Hot Carcass Weight Missing" %}</h3>
                         <p class="text-sm text-red-700 mt-1">
-                            This animal has been slaughtered but the hot carcass weight has not been recorded yet. 
-                            This is a critical weight measurement required immediately after slaughter.
+                            {% trans "This animal has been slaughtered but the hot carcass weight has not been recorded yet. This is a critical weight measurement required immediately after slaughter." %}
                         </p>
                         <div class="mt-3">
                             <button onclick="scrollToWeightForm(); this.style.transform='scale(0.95)'; setTimeout(() => this.style.transform='', 150);" 
                                     class="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95">
-                                Log Hot Carcass Weight
+                                {% trans "Log Hot Carcass Weight" %}
                             </button>
                             </button>
                         </div>
@@ -232,18 +231,18 @@
         <div class="lg:col-span-2 space-y-6">
             <!-- Basic Info Card -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Animal Information</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Animal Information" %}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Identification Tag</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Identification Tag" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.identification_tag }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Animal Type</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Animal Type" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.get_animal_type_display }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Status" %}</label>
                         <span class="inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full
                             {% if animal.status == 'received' %}bg-blue-100 text-blue-800
                             {% elif animal.status == 'slaughtered' %}bg-yellow-100 text-yellow-800
@@ -258,18 +257,18 @@
                         </span>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Received Date</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Received Date" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.received_date|date:"M d, Y H:i" }}</p>
                     </div>
                     {% if animal.slaughter_date %}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Slaughter Date</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Slaughter Date" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_date|date:"M d, Y H:i" }}</p>
                     </div>
                     {% endif %}
                     {% if animal.leather_weight_kg %}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Leather Weight</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Leather Weight" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.leather_weight_kg }} kg</p>
                     </div>
                     {% endif %}
@@ -291,20 +290,20 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-semibold text-red-800">Details Not Available</h3>
+                                <h3 class="text-sm font-semibold text-red-800">{% trans "Details Not Available" %}</h3>
                                 <p class="text-sm text-red-700 mt-1">
-                                    Animal details can only be filled after the animal has been slaughtered. 
-                                    Current status: <strong>{{ animal.get_status_display }}</strong>. 
-                                    Please slaughter the animal first before filling in the specific {{ animal.get_animal_type_display|lower }} details.
+                                    {% blocktrans with status=animal.get_status_display animal_type=animal.get_animal_type_display|lower %}Animal details can only be filled after the animal has been slaughtered. 
+                                    Current status: <strong>{{ status }}</strong>. 
+                                    Please slaughter the animal first before filling in the specific {{ animal_type }} details.{% endblocktrans %}
                                 </p>
                                 {% if animal.status == 'received' %}
                                     <div class="mt-3">
                                         <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
-                                              class="inline" onsubmit="return confirm('Mark animal as slaughtered?')">
+                                              class="inline" onsubmit="return confirm('{% trans "Mark animal as slaughtered?" %}')">
                                             {% csrf_token %}
                                             <button type="submit" 
                                                     class="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors">
-                                                Slaughter Animal
+                                                {% trans "Slaughter Animal" %}
                                             </button>
                                         </form>
                                     </div>
@@ -316,10 +315,10 @@
                     {% if existing_details %}
                         <!-- Display existing details (read-only) -->
                         <div class="mt-6">
-                            <h3 class="text-sm font-medium text-gray-900 mb-3">Existing Details (Read-Only)</h3>
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">{% trans "Existing Details (Read-Only)" %}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
                                 <!-- Display existing details here if needed -->
-                                <p class="text-sm text-gray-600">Details were filled previously and are preserved.</p>
+                                <p class="text-sm text-gray-600">{% trans "Details were filled previously and are preserved." %}</p>
                             </div>
                         </div>
                     {% endif %}
@@ -337,9 +336,9 @@
                                             {% if field.field.widget.input_type == 'select' %}
                                                 {{ field.value|floatformat:1 }}
                                                 {% if field.name|slice:"-7:" == "_status" %}
-                                                    {% if field.value == 0.0 %}(Not Usable)
-                                                    {% elif field.value == 0.5 %}(Not Bad)
-                                                    {% elif field.value == 1.0 %}(Good)
+                                                    {% if field.value == 0.0 %}({% trans "Not Usable" %})
+                                                    {% elif field.value == 0.5 %}({% trans "Not Bad" %})
+                                                    {% elif field.value == 1.0 %}({% trans "Good" %})
                                                     {% endif %}
                                                 {% endif %}
                                             {% else %}
@@ -355,7 +354,7 @@
                             <div class="mt-4">
                                 <button onclick="toggleDetailsForm()" 
                                         class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                    Edit Details
+                                    {% trans "Edit Details" %}
                                 </button>
                             </div>
                         </div>
@@ -391,12 +390,12 @@
                                 {% if has_details %}
                                     <button type="button" onclick="toggleDetailsForm()" 
                                             class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors text-sm">
-                                        Cancel
+                                        {% trans "Cancel" %}
                                     </button>
                                 {% endif %}
                                 <button type="submit" 
                                         class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors text-sm">
-                                    {% if has_details %}Update Details{% else %}Save Details{% endif %}
+                                    {% if has_details %}{% trans "Update Details" %}{% else %}{% trans "Save Details" %}{% endif %}
                                 </button>
                             </div>
                         </form>
@@ -407,10 +406,10 @@
 
             <!-- Order Information -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Information</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Order Information" %}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Order Number</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Order Number" %}</label>
                         <p class="mt-1 text-sm text-gray-900">
                             <a href="{% url 'reception:slaughter_order_detail' animal.slaughter_order.pk %}" 
                                class="text-blue-600 hover:text-blue-800">
@@ -419,7 +418,7 @@
                         </p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Client</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Client" %}</label>
                         <p class="mt-1 text-sm text-gray-900">
                             {% if animal.slaughter_order.client %}
                                 {{ animal.slaughter_order.client.company_name|default:animal.slaughter_order.client.get_full_name }}
@@ -429,11 +428,11 @@
                         </p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Service Package</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Service Package" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_order.service_package.name }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Order Date</label>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Order Date" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.slaughter_order.order_datetime|date:"M d, Y" }}</p>
                     </div>
                 </div>
@@ -442,18 +441,18 @@
             <!-- Animal Photos -->
             {% if animal.picture or animal.passport_picture %}
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Photos</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Photos" %}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% if animal.picture %}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Animal Photo</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{% trans "Animal Photo" %}</label>
                         <img src="{{ animal.picture.url }}" alt="Animal Photo" 
                              class="w-full h-48 object-cover rounded-lg border border-gray-200">
                     </div>
                     {% endif %}
                     {% if animal.passport_picture %}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Passport Photo</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{% trans "Passport Photo" %}</label>
                         <img src="{{ animal.passport_picture.url }}" alt="Passport Photo" 
                              class="w-full h-48 object-cover rounded-lg border border-gray-200">
                     </div>
@@ -464,15 +463,15 @@
 
             <!-- Weight Logs -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Weight History</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Weight History" %}</h2>
                 {% if weight_logs %}
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date" %}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Type" %}</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Weight" %}</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -493,7 +492,7 @@
                         </table>
                     </div>
                 {% else %}
-                    <p class="text-gray-500 text-sm">No weight records yet.</p>
+                    <p class="text-gray-500 text-sm">{% trans "No weight records yet." %}</p>
                 {% endif %}
             </div>
         </div>
@@ -502,29 +501,29 @@
         <div class="space-y-6">
             <!-- Quick Actions -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Quick Actions" %}</h3>
                 <div class="space-y-3">
                     {% if animal.status == 'received' %}
                         <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 
-                              onsubmit="return confirm('Mark animal as slaughtered?')">
+                              onsubmit="return confirm('{% trans "Mark animal as slaughtered?" %}')">
                             {% csrf_token %}
                             <button type="submit" 
                                     class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
-                                Mark Slaughtered
+                                {% trans "Mark Slaughtered" %}
                             </button>
                         </form>
                     {% endif %}
                     
                     <a href="{% url 'reception:edit_animal_in_order' animal.slaughter_order.pk animal.pk %}" 
                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-center block">
-                        Edit Animal
+                        {% trans "Edit Animal" %}
                     </a>
                 </div>
             </div>
 
             <!-- Weight Logging -->
             <div id="weight-logging-section" class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Log Weight</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Log Weight" %}</h3>
                 <form method="post" action="{% url 'processing:animal_weights' animal.pk %}" class="space-y-4">
                     {% csrf_token %}
                     
@@ -535,7 +534,7 @@
                         </label>
                         {{ weight_form.weight_type }}
                         {% if weight_form.weight_type.help_text %}
-                            <p class="mt-1 text-xs text-gray-900">{{ weight_form.weight_type.help_text }}</p>
+                            <p class="mt-1 text-xs text-gray-600">{{ weight_form.weight_type.help_text }}</p>
                         {% endif %}
                         {% if weight_form.weight_type.errors %}
                             <div class="mt-1">
@@ -575,7 +574,7 @@
                     
                     <button type="submit" 
                             class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors text-sm">
-                        Log Weight
+                        {% trans "Log Weight" %}
                     </button>
                 </form>
             </div>
