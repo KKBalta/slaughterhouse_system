@@ -20,6 +20,7 @@ coverage.xml
 *.cover
 *.log
 
+carnitrack_credentials.txt
 # Django
 *.sqlite3
 db.sqlite3
