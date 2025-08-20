@@ -19,6 +19,7 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
+.env.production
 
 carnitrack_credentials.txt
 # Django
