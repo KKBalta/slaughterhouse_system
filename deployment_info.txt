@@ -1,0 +1,25 @@
+CarniTrack Production Deployment - Belgium
+==========================================
+Deployed: Thu Aug 21 11:55:53 EDT 2025
+URL: 
+Admin: /admin/
+Turkish: /tr/
+Region: Belgium (europe-west1)
+Database: Existing Cloud SQL Belgium
+Connection: carnitrack:europe-west1:carnitrack-db-belgium
+Status: HTTP 000
+Final Status: TIMEOUT
+
+Performance for Turkey:
+- Istanbul: 15-25ms latency
+- Ankara: 20-30ms latency
+- EU GDPR compliant
+
+Commands:
+- Logs: gcloud run services logs read carnitrack-app --region=europe-west1
+- Info: gcloud run services describe carnitrack-app --region=europe-west1
+- Redeploy: ./deploy_carnitrack_belgium.sh
+
+Quick Tests:
+- curl -I /admin/
+- curl -I /tr/
