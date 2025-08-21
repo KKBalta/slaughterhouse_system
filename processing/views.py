@@ -8,13 +8,15 @@ from django.utils.translation import gettext as _
 from django.http import JsonResponse
 from django.urls import reverse
 from datetime import datetime
+from django import forms
 
 from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
 from reception.models import SlaughterOrder
 from .forms import (
     AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
     ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
-    LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm
+    LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm,
+    ScaleReceiptUploadForm
 )
 from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports, ANIMAL_DETAIL_MODELS
 from . import services
@@ -286,7 +288,7 @@ class AnimalListView(LoginRequiredMixin, ListView):
                         alert_info['missing_details'] = True
             
             # Check for missing leather weight
-            if animal.status != 'received' and not animal.leather_weight_kg:
+            if animal.status != 'received' and not animal.leather_weight_kg and animal.animal_type not in ['lamb', 'sheep', 'oglak', 'goat']:
                 alert_info['missing_leather_weight'] = True
                 
             # Check for missing hot carcass weight
@@ -322,16 +324,43 @@ class AnimalListView(LoginRequiredMixin, ListView):
         return context
 
 
+class ScaleReceiptUploadForm(forms.ModelForm):
+    class Meta:
+        model = Animal
+        fields = ['scale_receipt_picture']
+
+
 class AnimalDetailView(LoginRequiredMixin, DetailView):
     model = Animal
     template_name = 'processing/animal_detail.html'
     context_object_name = 'animal'
     
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if 'delete_scale_receipt' in request.POST:
+            # Delete the scale receipt image
+            if self.object.scale_receipt_picture:
+                self.object.scale_receipt_picture.delete(save=True)
+                self.object.scale_receipt_picture = None
+                self.object.save()
+                messages.success(request, _("Scale receipt image deleted."))
+            else:
+                messages.error(request, _("No scale receipt image to delete."))
+        else:
+            form = ScaleReceiptUploadForm(request.POST, request.FILES, instance=self.object)
+            if form.is_valid():
+                form.save()
+                messages.success(request, _("Scale receipt image uploaded successfully."))
+            else:
+                messages.error(request, _("Failed to upload scale receipt image."))
+        return redirect('processing:animal_detail', pk=self.object.pk)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['weight_logs'] = self.object.individual_weight_logs.order_by('-log_date')
         context['weight_form'] = WeightLogForm(animal=self.object)
         context['leather_form'] = LeatherWeightForm(instance=self.object)
+        context['scale_receipt_form'] = ScaleReceiptUploadForm(instance=self.object)
         
         # Check for missing hot carcass weight for slaughtered animals
         if self.object.status in ['slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']:

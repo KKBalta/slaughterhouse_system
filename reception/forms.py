@@ -64,6 +64,15 @@ class SlaughterOrderForm(forms.ModelForm):
     class Meta:
         model = SlaughterOrder
         fields = ['service_package', 'order_datetime', 'destination']
+        labels = {
+            'service_package': _("Service package"),
+            'order_datetime': _("Order datetime"),
+            'destination': _("Destination"),
+        }
+        help_texts = {
+            'service_package': _("The service package selected for this order."),
+            'destination': _("Destination for the order."),
+        }
         widgets = {
             'order_datetime': forms.DateTimeInput(attrs={
                 'type': 'datetime-local',
@@ -166,6 +175,15 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     class Meta:
         model = SlaughterOrder
         fields = ['service_package', 'order_datetime', 'destination']
+        labels = {
+            'service_package': _("Service package"),
+            'order_datetime': _("Order datetime"),
+            'destination': _("Destination"),
+        }
+        help_texts = {
+            'service_package': _("The service package selected for this order."),
+            'destination': _("Destination for the order."),
+        }
         widgets = {
             'order_datetime': forms.DateTimeInput(attrs={
                 'type': 'datetime-local',

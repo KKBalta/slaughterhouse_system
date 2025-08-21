@@ -172,7 +172,7 @@
     {% endif %}
 
     <!-- Alert for animals missing leather weight (if slaughtered) -->
-    {% if animal.status != 'received' and not animal.leather_weight_kg %}
+    {% if animal.status != 'received' and not animal.leather_weight_kg and animal.animal_type != 'lamb' and animal.animal_type != 'sheep' and animal.animal_type != 'oglak' and animal.animal_type != 'goat' %}
         <div class="mb-6">
             <div class="p-4 rounded-md border border-orange-400 bg-orange-50" role="alert">
                 <div class="flex items-start">
@@ -270,6 +270,14 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">{% trans "Leather Weight" %}</label>
                         <p class="mt-1 text-sm text-gray-900">{{ animal.leather_weight_kg }} kg</p>
+                    </div>
+                    {% endif %}
+                    {% if animal.get_performance %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">{% trans "Performance" %}</label>
+                        <p class="mt-1 text-sm text-gray-900">
+                            {{ animal.get_performance|floatformat:2 }}%
+                        </p>
                     </div>
                     {% endif %}
                 </div>
@@ -495,7 +503,85 @@
                     <p class="text-gray-500 text-sm">{% trans "No weight records yet." %}</p>
                 {% endif %}
             </div>
+
+            <!-- Scale Receipt Image Upload -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Scale Receipt" %}</h2>
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_scale_receipt_picture" class="block text-sm font-medium text-gray-900 mb-1">
+                            {% trans "Scale Receipt Image" %}
+                        </label>
+                        {% if animal.scale_receipt_picture %}
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg border">
+                                <p class="text-xs text-gray-900 mb-2 font-medium">{% trans "Current Image:" %}</p>
+                                <div class="flex items-center space-x-3">
+                                    <img src="{{ animal.scale_receipt_picture.url }}" 
+                                         alt="Scale Receipt" 
+                                         class="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm">
+                                    <div class="flex-1">
+                                        <p class="text-xs text-gray-700 font-medium">{{ animal.scale_receipt_picture.name|cut:"/" }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">{% trans "Upload a new image to replace" %}</p>
+                                    </div>
+                                    <form method="post" action="" class="ml-2">
+                                        {% csrf_token %}
+                                        <button type="submit" name="delete_scale_receipt" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors text-xs">{% trans "Delete" %}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="relative">
+                                <input type="file" name="scale_receipt_picture" id="id_scale_receipt_picture" class="sr-only" accept="image/*">
+                                <label for="id_scale_receipt_picture" class="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm font-semibold shadow-md">
+                                    {% trans "Choose Scale Receipt Image" %}
+                                </label>
+                                <span id="selected-scale-receipt-filename" class="ml-2 text-xs text-gray-700"></span>
+                            </div>
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var input = document.getElementById('id_scale_receipt_picture');
+                                var label = document.querySelector('label[for="id_scale_receipt_picture"]');
+                                var filenameSpan = document.getElementById('selected-scale-receipt-filename');
+                                if (input && label && filenameSpan) {
+                                    input.addEventListener('change', function(e) {
+                                        if (input.files.length > 0) {
+                                            filenameSpan.textContent = input.files[0].name;
+                                        } else {
+                                            filenameSpan.textContent = '';
+                                        }
+                                    });
+                                }
+                            });
+                            </script>
+                        {% endif %}
+                        {% if scale_receipt_form.scale_receipt_picture.errors %}
+                            <div class="mt-1">
+                                {% for error in scale_receipt_form.scale_receipt_picture.errors %}
+                                    <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button id="scale-receipt-upload-btn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm" disabled>{% trans "Upload" %}</button>
+                </form>
+            </div>
         </div>
+
+<script>
+// Enable upload button only when a file is selected
+(function() {
+    var input = document.getElementById('id_scale_receipt_picture');
+    var uploadBtn = document.getElementById('scale-receipt-upload-btn');
+    if (input && uploadBtn) {
+        input.addEventListener('change', function() {
+            uploadBtn.disabled = input.files.length === 0;
+        });
+        // If the form is rendered with a file already selected (e.g. after validation error)
+        uploadBtn.disabled = input.files.length === 0;
+    }
+})();
+</script>
 
         <!-- Actions Sidebar -->
         <div class="space-y-6">

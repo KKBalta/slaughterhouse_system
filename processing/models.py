@@ -45,6 +45,15 @@ def animal_passport_upload_path(instance, filename):
     
     return f'animal_passports/{clean_tag}_passport.{ext}'
 
+def scale_receipt_upload_path(instance, filename):
+    """
+    Generate upload path for scale receipt images using identification tag.
+    """
+    ext = filename.split('.')[-1] if '.' in filename else 'jpg'
+    tag = instance.identification_tag if instance.identification_tag else f"{instance.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
+    clean_tag = "".join(c for c in tag if c.isalnum() or c in ('-', '_')).rstrip()
+    return f'scale_receipts/{clean_tag}_scale_receipt.{ext}'
+
 class Animal(BaseModel):
     ANIMAL_TYPES = (
         ('cattle', _('Cattle')),
@@ -111,6 +120,11 @@ class Animal(BaseModel):
         blank=True, null=True,
         help_text=_("Picture of the animal's passport/documentation.")
     )
+    scale_receipt_picture = models.ImageField(
+        upload_to=scale_receipt_upload_path,
+        blank=True, null=True,
+        help_text=_("Picture of the scale receipt for the animal's weights.")
+    )
     leather_weight_kg = models.DecimalField(
         max_digits=6, decimal_places=2,
         null=True, blank=True,
@@ -161,6 +175,17 @@ class Animal(BaseModel):
             self.identification_tag = f"{self.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 
+    def get_performance(self):
+        """Return the performance ratio: live weight / hot carcass weight (if available)"""
+        live_weight_log = self.individual_weight_logs.filter(weight_type='live_weight').order_by('-log_date').first()
+        hot_carcass_log = self.individual_weight_logs.filter(weight_type='hot_carcass_weight').order_by('-log_date').first()
+        if live_weight_log and hot_carcass_log and hot_carcass_log.weight:
+            try:
+                return round(float(hot_carcass_log.weight) / float(live_weight_log.weight)*100, 2)
+            except (ZeroDivisionError, ValueError):
+                return None
+        return None
+
     def __str__(self):
         return f"{self.get_animal_type_display()} - {self.identification_tag}"
 
@@ -183,20 +208,10 @@ class CattleDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the cattle.")
     )
-    horn_status = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
-    )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
         help_text=_("Score reflecting the usability of the liver.")
-    )
-    head_status = models.DecimalField(
-        max_digits=2, decimal_places=1,
-        choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
@@ -221,10 +236,15 @@ class SheepDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the sheep.")
     )
-    wool_type = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text=_("Type of wool (e.g., fine, medium, coarse).")
+    sakatat_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the bowels.")
     )
     # Removed leather_weight_kg from here
 
@@ -244,7 +264,16 @@ class GoatDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the goat.")
     )
-    # Removed leather_weight_kg from here
+    sakatat_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the bowels.")
+    )
 
     def __str__(self):
         return _("Details for Goat: %(tag)s") % {'tag': self.animal.identification_tag}
@@ -257,7 +286,16 @@ class LambDetails(BaseModel):
         limit_choices_to={'animal_type': 'lamb'},
         help_text=_("The associated lamb animal.")
     )
-    # Removed leather_weight_kg from here
+    sakatat_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the bowels.")
+    )
 
     def __str__(self):
         return _("Details for Lamb: %(tag)s") % {'tag': self.animal.identification_tag}
@@ -270,7 +308,16 @@ class OglakDetails(BaseModel):
         limit_choices_to={'animal_type': 'oglak'},
         help_text=_("The associated oglak animal.")
     )
-    # Removed leather_weight_kg from here
+    sakatat_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the bowels.")
+    )
 
     def __str__(self):
         return _("Details for Oglak: %(tag)s") % {'tag': self.animal.identification_tag}
@@ -289,20 +336,10 @@ class CalfDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the calf.")
     )
-    horn_status = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
-    )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
         help_text=_("Score reflecting the usability of the liver.")
-    )
-    head_status = models.DecimalField(
-        max_digits=2, decimal_places=1,
-        choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
@@ -326,20 +363,10 @@ class HeiferDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the heifer.")
     )
-    horn_status = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text=_("Status of horns (e.g., horned, polled, dehorned).")
-    )
     liver_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
         help_text=_("Score reflecting the usability of the liver.")
-    )
-    head_status = models.DecimalField(
-        max_digits=2, decimal_places=1,
-        choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the head.")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,

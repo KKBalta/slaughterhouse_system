@@ -45,7 +45,7 @@ class HeiferDetailsInline(admin.StackedInline):
 class AnimalAdmin(admin.ModelAdmin):
     list_display = (
         'identification_tag', 'animal_type', 'slaughter_order', 'status', 
-        'received_date', 'slaughter_date', 'get_leather_weight', 'get_picture_status'
+        'received_date', 'slaughter_date', 'get_leather_weight', 'get_picture_status', 'get_scale_receipt_picture'
     )
     list_filter = ('animal_type', 'status', 'slaughter_order__service_package', 'received_date')
     search_fields = ('identification_tag', 'slaughter_order__id', 'slaughter_order__customer__name')
@@ -54,7 +54,7 @@ class AnimalAdmin(admin.ModelAdmin):
         LambDetailsInline, OglakDetailsInline, CalfDetailsInline, HeiferDetailsInline
     ]
     raw_id_fields = ('slaughter_order',)
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at', 'scale_receipt_picture_preview')
     date_hierarchy = 'received_date'
     
     def get_leather_weight(self, obj):
@@ -73,6 +73,19 @@ class AnimalAdmin(admin.ModelAdmin):
             status.append(_("📋 Passport"))
         return " | ".join(status) if status else _("No photos")
     get_picture_status.short_description = _("Pictures")
+    
+    def get_scale_receipt_picture(self, obj):
+        if obj.scale_receipt_picture:
+            return format_html('<a href="{}" target="_blank"><img src="{}" style="max-height:40px;max-width:60px;border-radius:4px;"/></a>', obj.scale_receipt_picture.url, obj.scale_receipt_picture.url)
+        return "-"
+    get_scale_receipt_picture.short_description = _("Scale Receipt")
+    get_scale_receipt_picture.allow_tags = True
+
+    def scale_receipt_picture_preview(self, obj):
+        if obj.scale_receipt_picture:
+            return format_html('<img src="{}" style="max-width:300px;max-height:300px;border-radius:8px;"/>', obj.scale_receipt_picture.url)
+        return "-"
+    scale_receipt_picture_preview.short_description = _("Scale Receipt Preview")
     
     def get_inline_instances(self, request, obj=None):
         """Only show relevant inline based on animal type"""
@@ -118,47 +131,49 @@ class WeightLogAdmin(admin.ModelAdmin):
 # Register individual detail models for direct access
 @admin.register(CattleDetails)
 class CattleDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
-    list_filter = ('breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
+    list_filter = ('breed', 'liver_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
 @admin.register(SheepDetails)
 class SheepDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'wool_type')
-    list_filter = ('breed', 'wool_type')
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
 @admin.register(GoatDetails)
 class GoatDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed')
-    list_filter = ('breed',)
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
 @admin.register(LambDetails)
 class LambDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal',)
+    list_display = ('animal', 'sakatat_status', 'bowels_status')
+    list_filter = ('sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag',)
     raw_id_fields = ('animal',)
 
 @admin.register(OglakDetails)
 class OglakDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal',)
+    list_display = ('animal', 'sakatat_status', 'bowels_status')
+    list_filter = ('sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag',)
     raw_id_fields = ('animal',)
 
 @admin.register(CalfDetails)
 class CalfDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
-    list_filter = ('breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
+    list_filter = ('breed', 'liver_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
 @admin.register(HeiferDetails)
 class HeiferDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
-    list_filter = ('breed', 'horn_status', 'liver_status', 'head_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
+    list_filter = ('breed', 'liver_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
