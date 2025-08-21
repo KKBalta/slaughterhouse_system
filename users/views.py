@@ -19,10 +19,15 @@ class RegisterView(CreateView):
     success_url = reverse_lazy('login') # Redirect to login page after successful registration
     template_name = 'users/register.html'
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return redirect(reverse_lazy('dashboard')) # Redirect to dashboard if already logged in
-        return super().dispatch(request, *args, **kwargs)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    # def dispatch(self, request, *args, **kwargs):
+    #     if request.user.is_authenticated:
+    #         return redirect(reverse_lazy('dashboard')) # Redirect to dashboard if already logged in
+    #     return super().dispatch(request, *args, **kwargs)
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
