@@ -32,10 +32,10 @@ RUN mkdir -p staticfiles media
 
 # Set default environment variables for build
 ENV DEBUG=False
-ENV SECRET_KEY=docker-build-secret-key
 ENV ALLOWED_HOSTS=localhost
 ENV CSRF_TRUSTED_ORIGINS=https://localhost
 ENV USE_CLOUD_SQL=False
+ENV SECRET_KEY=dummy-build-secret
 
 # Install Tailwind dependencies (with better error handling)
 RUN python manage.py tailwind install --no-input 2>/dev/null || echo "Tailwind install skipped - theme app not configured"
@@ -59,4 +59,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/ || exit 1
 
 # Start command
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 config.wsgi:application
+CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "8", "--timeout", "0", "config.wsgi:application"]
