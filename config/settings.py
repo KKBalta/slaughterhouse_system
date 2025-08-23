@@ -102,12 +102,10 @@ if config('USE_CLOUD_SQL', default=False, cast=bool):
         'NAME': config('DB_NAME'),
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
-        'HOST': f'/cloudsql/{config("CLOUD_SQL_CONNECTION_NAME")}',
+        'HOST': f'/cloudsql/{config("CLOUD_SQL_CONNECTION_NAME")}',  # socket path
         'PORT': '',
-        'OPTIONS': {
-            'sslmode': 'disable',
-        },
     }
+    
 elif config('USE_LOCAL_POSTGRES', default=False, cast=bool):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.postgresql',
