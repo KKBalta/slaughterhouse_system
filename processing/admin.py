@@ -71,7 +71,8 @@ class AnimalAdmin(admin.ModelAdmin):
             status.append(_("📷 Photo"))
         if obj.passport_picture:
             status.append(_("📋 Passport"))
-        return " | ".join(status) if status else _("No photos")
+        # Convert each item to string before joining
+        return " | ".join([str(s) for s in status]) if status else str(_("No photos"))
     get_picture_status.short_description = _("Pictures")
     
     def get_scale_receipt_picture(self, obj):
