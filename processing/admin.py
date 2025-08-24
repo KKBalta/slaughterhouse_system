@@ -48,13 +48,13 @@ class AnimalAdmin(admin.ModelAdmin):
         'received_date', 'slaughter_date', 'get_leather_weight', 'get_picture_status', 'get_scale_receipt_picture'
     )
     list_filter = ('animal_type', 'status', 'slaughter_order__service_package', 'received_date')
-    search_fields = ('identification_tag', 'slaughter_order__id', 'slaughter_order__customer__name')
+    search_fields = ('identification_tag', 'slaughter_order__id')
     inlines = [
         CattleDetailsInline, SheepDetailsInline, GoatDetailsInline, 
         LambDetailsInline, OglakDetailsInline, CalfDetailsInline, HeiferDetailsInline
     ]
     raw_id_fields = ('slaughter_order',)
-    readonly_fields = ('created_at', 'updated_at', 'scale_receipt_picture_preview')
+    readonly_fields = ('created_at', 'updated_at', 'scale_receipt_picture_preview', 'status')
     date_hierarchy = 'received_date'
     
     def get_leather_weight(self, obj):

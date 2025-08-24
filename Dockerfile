@@ -22,7 +22,9 @@ RUN apt-get update \
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip show django-storages \
+    && pip show google-cloud-storage
 
 # Copy project files
 COPY . .
