@@ -15,6 +15,7 @@ urlpatterns = [
 urlpatterns += i18n_patterns(
     path('reception/', include('reception.urls')),
     path('processing/', include('processing.urls')),
+    path('labeling/', include('labeling.urls')),
     path('', include('users.urls')), # Include user authentication URLs at the root
     prefix_default_language=True,  # Add language prefix for all languages for consistency
 )

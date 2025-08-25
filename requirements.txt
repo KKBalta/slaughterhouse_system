@@ -39,3 +39,7 @@ cloud-sql-python-connector[pg8000]>=1.4.0
 
 # Storage backend (correct extras!)
 django-storages[google]==1.14.4
+
+# Label generation dependencies
+reportlab>=4.4.0
+qrcode>=8.0.0

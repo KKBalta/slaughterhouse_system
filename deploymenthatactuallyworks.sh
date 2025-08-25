@@ -1,5 +1,4 @@
 docker build --platform=linux/amd64 \
-  --no-cache \
   -t europe-west1-docker.pkg.dev/carnitrack/carnitrack-repo/carnitrack-app .
 
 docker push europe-west1-docker.pkg.dev/carnitrack/carnitrack-repo/carnitrack-app

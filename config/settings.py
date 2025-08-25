@@ -260,7 +260,7 @@ elif config('USE_LOCAL_POSTGRES', default=False, cast=bool):
         'USER': config('DB_USER', default='postgres'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'PORT': config('DB_PORT', default='5433'),
     }
 
 # -------------------------
@@ -312,10 +312,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # -------------------------
 # Media files
 # -------------------------
-USE_GCS = config("USE_GCS", default=True, cast=bool)
+USE_GCS = config("USE_GCS", default=False, cast=bool)  # Changed default to False
 
 if USE_GCS:
-    # Use the new STORAGES setting for Django 4.2+
+    # Production: Use Google Cloud Storage
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
@@ -328,19 +328,36 @@ if USE_GCS:
     # GCS Configuration
     GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="carnitrack-bucket")
     GS_CREDENTIALS = None  # auto-detect in Cloud Run
+    GS_PROJECT_ID = None   # auto-detect in Cloud Run
+    
+    # Critical settings to prevent signing errors
+    GS_QUERYSTRING_AUTH = False  # Disable signed URLs
+    GS_DEFAULT_ACL = 'publicRead'  # Make files publicly readable
+    GS_AUTO_CREATE_BUCKET = False
+    GS_AUTO_CREATE_ACL = 'publicRead'
+    GS_FILE_OVERWRITE = False
+    GS_EXPIRATION = None  # No URL expiration
+    
     MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
     MEDIA_ROOT = ""
+    print("☁️ Using Google Cloud Storage")
+
 else:
+    # Development: Use local file storage
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
     MEDIA_URL = config("MEDIA_URL", default="/media/")
     MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+    
+    # Ensure media directory exists
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    print("🔧 Using local file storage")
 
 # Remove these deprecated settings if present:
 # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
@@ -375,19 +392,3 @@ AUTH_USER_MODEL = 'users.User'
 TAILWIND_APP_NAME = 'theme'
 
 INTERNAL_IPS = ["127.0.0.1"]
-
-# -------------------------
-# Production Security
-# -------------------------
-if not DEBUG:
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
-    SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER', default=True, cast=bool)
-    SECURE_CONTENT_TYPE_NOSNIFF = config('SECURE_CONTENT_TYPE_NOSNIFF', default=True, cast=bool)
-    SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
-    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
-
-
-
-print(">>> DEBUG: DEFAULT_FILE_STORAGE set to", DEFAULT_FILE_STORAGE)
-from django.core.files.storage import default_storage
-print(default_storage.__class__)
