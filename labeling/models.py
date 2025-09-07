@@ -30,9 +30,9 @@ class LabelTemplate(BaseModel):
     label_format = models.CharField(
         max_length=20,
         choices=[
-            ('zpl', 'ZPL (Zebra)'),
+            ('prn', 'PRN/TSPL'),
             ('pdf', 'PDF'),
-            ('both', 'Both ZPL and PDF'),
+            ('both', 'Both PRN and PDF'),
         ],
         default='both',
         help_text="The format(s) this template supports."
@@ -165,9 +165,13 @@ class AnimalLabel(BaseModel):
         null=True, blank=True,
         help_text="The user who printed the label."
     )
-    zpl_content = models.TextField(
+    prn_content = models.TextField(
         blank=True,
-        help_text="ZPL code for this label."
+        help_text="TSPL/PRN code for this label."
+    )
+    bat_content = models.TextField(
+        blank=True,
+        help_text=".bat file content for easy printing."
     )
     pdf_file = models.FileField(
         upload_to='animal_labels/pdf/',

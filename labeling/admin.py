@@ -30,11 +30,11 @@ class LabelAdmin(admin.ModelAdmin):
 class AnimalLabelAdmin(admin.ModelAdmin):
     list_display = (
         'label_code', 'animal_identification', 'label_type', 'printed_by', 
-        'print_date', 'has_pdf', 'zpl_preview'
+        'print_date', 'has_pdf', 'prn_preview'
     )
     list_filter = ('label_type', 'print_date', 'created_at')
     search_fields = ('label_code', 'animal__identification_tag', 'printed_by__username')
-    readonly_fields = ('label_code', 'print_date', 'created_at', 'updated_at', 'zpl_content_preview', 'pdf_preview')
+    readonly_fields = ('label_code', 'print_date', 'created_at', 'updated_at', 'prn_content_preview', 'bat_content_preview', 'pdf_preview')
     raw_id_fields = ('animal', 'printed_by')
     date_hierarchy = 'print_date'
     
@@ -49,21 +49,27 @@ class AnimalLabelAdmin(admin.ModelAdmin):
         return "✅" if obj.pdf_file else "❌"
     has_pdf.short_description = _("PDF")
     
-    def zpl_preview(self, obj):
-        """Show truncated ZPL content"""
-        if obj.zpl_content:
-            preview = obj.zpl_content[:50] + "..." if len(obj.zpl_content) > 50 else obj.zpl_content
+    def prn_preview(self, obj):
+        """Show truncated PRN content"""
+        if obj.prn_content:
+            preview = obj.prn_content[:50] + "..." if len(obj.prn_content) > 50 else obj.prn_content
             return format_html('<code style="font-size: 10px;">{}</code>', preview)
-        return "No ZPL content"
-    zpl_preview.short_description = _("ZPL Preview")
+        return "No PRN content"
+    prn_preview.short_description = _("PRN Preview")
     
-    def zpl_content_preview(self, obj):
-        """Show full ZPL content in readonly field"""
-        if obj.zpl_content:
-            return format_html('<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">{}</pre>', obj.zpl_content)
-        return "No ZPL content"
-    zpl_content_preview.short_description = _("ZPL Content")
-    
+    def prn_content_preview(self, obj):
+        """Show full PRN content in readonly field"""
+        if obj.prn_content:
+            return format_html('<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">{}</pre>', obj.prn_content)
+        return "No PRN content"
+    prn_content_preview.short_description = _("PRN Content")
+
+    def bat_content_preview(self, obj):
+        """Show full BAT content in readonly field"""
+        if obj.bat_content:
+            return format_html('<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">{}</pre>', obj.bat_content)
+        return "No BAT content"
+    bat_content_preview.short_description = _("BAT Content")    
     def pdf_preview(self, obj):
         """Show PDF file link"""
         if obj.pdf_file:

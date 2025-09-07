@@ -111,7 +111,7 @@ elif config('USE_LOCAL_POSTGRES', default=False, cast=bool):
         'USER': config('DB_USER', default='postgres'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'PORT': config('DB_PORT', default='5433'),
     }
 
 # -------------------------
@@ -367,6 +367,19 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
+# Site URL for QR codes and external links
+SITE_URL = config('SITE_URL', default='https://carnitrack-app-1000671720976.europe-west1.run.app')
+
+# Company Information for Labels
+COMPANY_NAME = config('COMPANY_NAME', default='POMET ET  VE')
+COMPANY_FULL_NAME = config('COMPANY_FULL_NAME', default='ET ÜRÜNLERİ LTD. ŞTİ.')
+COMPANY_ADDRESS = config('COMPANY_ADDRESS', default='Lapseki / ÇANAKKALE')
+LICENSE_NO = config('LICENSE_NO', default='17-0509')
+OPERATION_NO = config('OPERATION_NO', default='TR17 12345678')
+
+# Printer Settings
+PRINTER_TURKISH_MODE = config('PRINTER_TURKISH_MODE', default='unicode')  # 'unicode', 'ascii', or 'codepage1254'
+
 # Tailwind
 TAILWIND_APP_NAME = 'theme'
 
@@ -392,3 +405,74 @@ AUTH_USER_MODEL = 'users.User'
 TAILWIND_APP_NAME = 'theme'
 
 INTERNAL_IPS = ["127.0.0.1"]
+
+# -------------------------
+# Diagnostics Report
+# -------------------------
+def print_settings_report():
+    print("\n================ Django Settings Report ================\n")
+
+    # Debug / Environment
+    print(f"🔧 DEBUG: {DEBUG}")
+    print(f"🔑 SECRET_KEY: {'SET' if SECRET_KEY else 'MISSING!'}")
+    print(f"🌍 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    print(f"🔒 CSRF_TRUSTED_ORIGINS: {CSRF_TRUSTED_ORIGINS}")
+    print(f"🌐 SITE_URL: {SITE_URL}")
+
+    # Database
+    db_conf = DATABASES["default"]
+    print("\n📦 Database Configuration:")
+    print(f"  ENGINE: {db_conf.get('ENGINE')}")
+    print(f"  NAME:   {db_conf.get('NAME')}")
+    print(f"  USER:   {db_conf.get('USER')}")
+    print(f"  HOST:   {db_conf.get('HOST')}")
+    print(f"  PORT:   {db_conf.get('PORT')}")
+
+    if config("USE_CLOUD_SQL", default=False, cast=bool):
+        print("  ☁️ Using Google Cloud SQL")
+    elif config("USE_LOCAL_POSTGRES", default=False, cast=bool):
+        print("  🐘 Using Local PostgreSQL")
+    else:
+        print("  💾 Using SQLite (default)")
+
+    # Storage
+    print("\n🗄️ Storage Configuration:")
+    if USE_GCS:
+        print(f"  ☁️ Google Cloud Storage")
+        print(f"  Bucket: {GS_BUCKET_NAME}")
+        print(f"  Media URL: {MEDIA_URL}")
+    else:
+        print("  📂 Local File Storage")
+        print(f"  Media Root: {MEDIA_ROOT}")
+        print(f"  Media URL: {MEDIA_URL}")
+
+    # Localization
+    print("\n🌐 Localization:")
+    print(f"  LANGUAGE_CODE: {LANGUAGE_CODE}")
+    print(f"  TIME_ZONE: {TIME_ZONE}")
+    print(f"  USE_I18N: {USE_I18N}")
+    print(f"  USE_TZ: {USE_TZ}")
+
+    # Company Information
+    print("\n🏢 Company Information:")
+    print(f"  COMPANY_NAME: {COMPANY_NAME}")
+    print(f"  COMPANY_FULL_NAME: {COMPANY_FULL_NAME}")
+    print(f"  COMPANY_ADDRESS: {COMPANY_ADDRESS}")
+    print(f"  LICENSE_NO: {LICENSE_NO}")
+    print(f"  OPERATION_NO: {OPERATION_NO}")
+
+    # Printer Settings
+    print("\n🖨️ Printer Settings:")
+    print(f"  TURKISH_CHARACTER_MODE: {PRINTER_TURKISH_MODE}")
+
+    # Logging & Security
+    print("\n🔐 Security:")
+    print(f"  SESSION_COOKIE_SECURE: {config('SESSION_COOKIE_SECURE', default=False, cast=bool)}")
+    print(f"  CSRF_COOKIE_SECURE: {config('CSRF_COOKIE_SECURE', default=False, cast=bool)}")
+    print(f"  SECURE_SSL_REDIRECT: {config('SECURE_SSL_REDIRECT', default=False, cast=bool)}")
+
+    print("\n========================================================\n")
+
+
+# Call report when settings are loaded
+print_settings_report()

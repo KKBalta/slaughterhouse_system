@@ -113,16 +113,30 @@
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Download Options" %}</h2>
                 <div class="space-y-4">
-                    <!-- ZPL Download -->
+                    <!-- PRN Download -->
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900">{% trans "ZPL Format" %}</h3>
-                                <p class="text-sm text-gray-600">{% trans "Zebra Programming Language for direct printer output" %}</p>
+                                <h3 class="text-lg font-medium text-gray-900">{% trans "PRN Format" %}</h3>
+                                <p class="text-sm text-gray-600">{% trans "TSC Programming Language for direct printer output" %}</p>
                             </div>
-                            <a href="{% url 'labeling:download_animal_label' label.pk 'zpl' %}" 
+                            <a href="{% url 'labeling:download_animal_label' label.pk 'prn' %}" 
                                class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                                {% trans "Download ZPL" %}
+                                {% trans "Download PRN" %}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- BAT Download -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">{% trans "BAT Format" %}</h3>
+                                <p class="text-sm text-gray-600">{% trans "Windows batch file for easy label printing" %}</p>
+                            </div>
+                            <a href="{% url 'labeling:download_animal_label' label.pk 'bat' %}" 
+                               class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                                {% trans "Download BAT" %}
                             </a>
                         </div>
                     </div>
@@ -146,18 +160,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- ZPL Preview -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "ZPL Code Preview" %}</h2>
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <pre class="text-xs text-gray-800 overflow-x-auto whitespace-pre-wrap">{{ label.zpl_content }}</pre>
-                </div>
-                <p class="text-sm text-gray-600 mt-2">
-                    {% trans "Copy this ZPL code to your Zebra printer or save it as a .zpl file." %}
-                </p>
-            </div>
-
             <!-- Actions -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Actions" %}</h2>

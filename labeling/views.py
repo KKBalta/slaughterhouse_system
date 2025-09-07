@@ -11,7 +11,7 @@ import os
 
 from processing.models import Animal
 from .models import AnimalLabel, LabelTemplate
-from .utils import create_animal_label, get_animal_label_download_data, generate_zpl_label, generate_pdf_label
+from .utils import create_animal_label, get_animal_label_download_data, generate_tspl_prn_label, generate_pdf_label, generate_bat_file_content
 
 class AnimalLabelListView(LoginRequiredMixin, ListView):
     """List all animal labels for a specific animal."""
@@ -30,7 +30,7 @@ class AnimalLabelListView(LoginRequiredMixin, ListView):
         return context
 
 class GenerateAnimalLabelView(LoginRequiredMixin, View):
-    """Generate and create a new animal label."""
+    """Generate and create a new animal label with PRN and BAT file support."""
     
     def post(self, request, animal_id):
         animal = get_object_or_404(Animal, id=animal_id)
@@ -42,14 +42,14 @@ class GenerateAnimalLabelView(LoginRequiredMixin, View):
             return redirect('processing:animal_detail', pk=animal.pk)
         
         try:
-            # Create the label
+            # Create the label with default printer settings
             animal_label = create_animal_label(
                 animal=animal,
                 label_type=label_type,
                 user=request.user
             )
-            
-            messages.success(request, _('Label generated successfully!'))
+
+            messages.success(request, _('PRN label and BAT file generated successfully! You can now download and print the label.'))
             return redirect('labeling:animal_label_detail', pk=animal_label.pk)
             
         except Exception as e:
@@ -68,16 +68,16 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
         return context
 
 class DownloadAnimalLabelView(LoginRequiredMixin, View):
-    """Download animal label in ZPL or PDF format."""
+    """Download animal label in BAT, PRN, or PDF format."""
     
-    def get(self, request, label_id, format_type='zpl'):
+    def get(self, request, label_id, format_type='bat'):
         animal_label = get_object_or_404(AnimalLabel, id=label_id)
         
         try:
             download_data = get_animal_label_download_data(animal_label, format_type)
             
-            if format_type.lower() == 'zpl':
-                # Return ZPL content as text file
+            if format_type.lower() in ['bat', 'prn']:
+                # Return BAT or PRN content as downloadable file
                 response = HttpResponse(
                     download_data['content'],
                     content_type=download_data['content_type']
@@ -108,14 +108,14 @@ class PreviewAnimalLabelView(LoginRequiredMixin, View):
     def get(self, request, animal_id):
         animal = get_object_or_404(Animal, id=animal_id)
         label_type = request.GET.get('label_type', 'hot_carcass')
-        format_type = request.GET.get('format', 'zpl')
+        format_type = request.GET.get('format', 'prn')
         
         try:
-            if format_type.lower() == 'zpl':
-                zpl_content = generate_zpl_label(animal, label_type)
-                return HttpResponse(zpl_content, content_type='text/plain')
+            if format_type.lower() in ['bat', 'prn']:
+                prn_content = generate_tspl_prn_label(animal, label_type)
+                return HttpResponse(prn_content, content_type='text/plain')
             elif format_type.lower() == 'pdf':
-                from .utils import generate_pdf_label
+                
                 pdf_buffer = generate_pdf_label(animal, label_type)
                 response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
                 response['Content-Disposition'] = f'inline; filename="preview_{animal.identification_tag}_{label_type}.pdf"'
@@ -211,3 +211,59 @@ class LabelTemplateDetailView(LoginRequiredMixin, DetailView):
     model = LabelTemplate
     template_name = 'labeling/label_template_detail.html'
     context_object_name = 'template'
+
+class TestPRNGenerationView(LoginRequiredMixin, View):
+    """Test view for PRN generation - for development/testing purposes."""
+    
+    def get(self, request, animal_id):
+        animal = get_object_or_404(Animal, id=animal_id)
+        
+        try:
+            from .utils import generate_animal_label_data
+            
+            # Generate label data
+            label_data = generate_animal_label_data(animal)
+            
+            # Generate PRN content
+            prn_content = generate_tspl_prn_label(animal)
+            
+            # Generate BAT content
+            bat_content = generate_bat_file_content(prn_content)
+            
+            # Create response with debug info
+            debug_info = f"""
+=== PRN GENERATION TEST ===
+Animal: {animal}
+Label Data Fields: {list(label_data.keys())}
+
+Key Values:
+- bowels_status: {label_data.get('bowels_status', 'N/A')}
+- siparis_no (Process No): {label_data.get('siparis_no', 'N/A')}
+- kupe_no: {label_data.get('kupe_no', 'N/A')}
+- uretici: {label_data.get('uretici', 'N/A')}
+- kesim_tarihi: {label_data.get('kesim_tarihi', 'N/A')}
+
+PRN Content Length: {len(prn_content)} characters
+BAT Content Length: {len(bat_content)} characters
+
+Checks:
+- Contains 'Proses No': {'Proses No' in prn_content}
+- Contains 'İşletme No': {'İşletme No' in prn_content}
+- Contains bowels_status value: {str(label_data.get('bowels_status', '')) in prn_content}
+- Contains siparis_no value: {str(label_data.get('siparis_no', '')) in prn_content}
+
+=== PRN CONTENT (First 1000 chars) ===
+{prn_content[:1000]}
+...
+
+=== BAT CONTENT (First 500 chars) ===
+{bat_content[:500]}
+...
+"""
+            
+            return HttpResponse(debug_info, content_type='text/plain')
+            
+        except Exception as e:
+            import traceback
+            error_info = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            return HttpResponse(error_info, content_type='text/plain')
