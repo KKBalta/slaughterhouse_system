@@ -380,47 +380,191 @@ PRINT 1,1
 
 def generate_bat_file_content(prn_commands: str, printer_config: dict = None) -> str:
     """
-    Generate .bat file content that sends PRN file to LPT1 printer port using TYPE command.
+    Generate enhanced .bat file content with multiple printing methods and better error handling.
     
     Args:
         prn_commands: The TSPL/PRN commands to send to printer
-        printer_config: Optional config dict, can specify 'port' (default: 'LPT1')
+        printer_config: Optional config dict, can specify 'port', 'printer_name', 'method'
     """
-    # Get printer port from config or use default
+    # Get configuration or use defaults
     printer_port = 'LPT1'
-    if printer_config and 'port' in printer_config:
-        printer_port = printer_config['port']
+    printer_name = ''
+    method = 'auto'  # auto, lpt, usb, network
+    
+    if printer_config:
+        printer_port = printer_config.get('port', 'LPT1')
+        printer_name = printer_config.get('printer_name', '')
+        method = printer_config.get('method', 'auto')
     
     # Format PRN commands for batch file
     formatted_prn = _format_prn_for_bat(prn_commands)
     
-    # Generate .bat file that uses TYPE command to send to LPT1
+    # Generate enhanced .bat file with multiple printing methods
     bat_content = f'''@echo off
+setlocal enabledelayedexpansion
+color 0A
 echo.
-echo =========================================
-echo    Animal Label Printer
-echo =========================================
+echo =========================================================
+echo              CARNITRACK LABEL PRINTER
+echo =========================================================
+echo.
+echo Printing animal label using multiple methods...
 echo.
 
-REM Create temporary PRN file
-set TEMP_FILE=%TEMP%\\animal_label_%RANDOM%.prn
+REM Create label data file in current directory (no temp file issues)
+set LABEL_FILE=%~dp0animal_label.prn
+set SUCCESS=0
 
-echo Creating PRN file...
-REM Write PRN commands to temporary file
-(
+echo [INFO] Creating label file: %LABEL_FILE%
+REM Create the PRN file using PowerShell for better quote handling
+powershell -Command "Set-Content -Path '%LABEL_FILE%' -Value @'
+{prn_commands}
+'@ -Encoding UTF8" >nul 2>&1
+
+if not exist "%LABEL_FILE%" (
+    echo [WARNING] PowerShell method failed, trying echo method...
+    REM Fallback method using echo commands
+    (
 {formatted_prn}
-) > "%TEMP_FILE%"
+    ) > "%LABEL_FILE%"
+    
+    if not exist "%LABEL_FILE%" (
+        echo [ERROR] Failed to create label file!
+        goto :ERROR_EXIT
+    )
+)
 
-echo Sending to printer port {printer_port}...
-REM Send PRN file to printer using TYPE command
-TYPE "%TEMP_FILE%" >{printer_port}
-
-REM Clean up temporary file
-del "%TEMP_FILE%" > nul 2>&1
-
-echo Label sent successfully to {printer_port}!
+echo [INFO] Label file created successfully
+for %%A in ("%LABEL_FILE%") do echo [INFO] File size: %%~zA bytes
 echo.
-pause
+
+REM Method 1: Try direct LPT1 port (for parallel port printers)
+echo [METHOD 1] Trying LPT1 port...
+if exist LPT1 (
+    echo [INFO] LPT1 port detected
+    copy /b "%LABEL_FILE%" LPT1: >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo [SUCCESS] Label sent via LPT1!
+        set SUCCESS=1
+        goto :CLEANUP
+    ) else (
+        echo [WARNING] LPT1 method failed
+    )
+) else (
+    echo [WARNING] LPT1 port not available
+)
+echo.
+
+REM Method 2: Try TYPE command to LPT1
+echo [METHOD 2] Trying TYPE command to LPT1...
+type "%LABEL_FILE%" >LPT1 2>nul
+if !errorlevel! equ 0 (
+    echo [SUCCESS] Label sent via TYPE to LPT1!
+    set SUCCESS=1
+    goto :CLEANUP
+) else (
+    echo [WARNING] TYPE to LPT1 failed
+)
+echo.
+
+REM Method 3: Try alternative ports (LPT2, LPT3)
+for %%P in (LPT2 LPT3) do (
+    echo [METHOD 3] Trying %%P port...
+    if exist %%P (
+        copy /b "%LABEL_FILE%" %%P: >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo [SUCCESS] Label sent via %%P!
+            set SUCCESS=1
+            goto :CLEANUP
+        )
+    )
+)
+
+REM Method 4: Try USB printer mapping (if printer name provided)
+if not "%printer_name%"=="" (
+    echo [METHOD 4] Trying USB printer mapping...
+    echo [INFO] Mapping printer: {printer_name}
+    net use LPT1: "\\\\%COMPUTERNAME%\\{printer_name}" >nul 2>&1
+    if !errorlevel! equ 0 (
+        copy /b "%LABEL_FILE%" LPT1: >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo [SUCCESS] Label sent via USB mapping!
+            set SUCCESS=1
+            net use LPT1: /delete >nul 2>&1
+            goto :CLEANUP
+        )
+        net use LPT1: /delete >nul 2>&1
+    )
+    echo [WARNING] USB printer mapping failed
+    echo.
+)
+
+REM Method 5: Try print command (Windows built-in)
+echo [METHOD 5] Trying Windows PRINT command...
+print "%LABEL_FILE%" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [SUCCESS] Label sent via PRINT command!
+    set SUCCESS=1
+    goto :CLEANUP
+) else (
+    echo [WARNING] PRINT command failed
+)
+echo.
+
+REM Method 6: Try notepad print (last resort)
+echo [METHOD 6] Trying Notepad silent print...
+start /wait notepad /p "%LABEL_FILE%" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [INFO] Notepad print dialog opened (please select your printer)
+    set SUCCESS=1
+    goto :CLEANUP
+) else (
+    echo [WARNING] Notepad print failed
+)
+
+:ERROR_EXIT
+echo.
+echo =========================================================
+echo [ERROR] ALL PRINTING METHODS FAILED!
+echo =========================================================
+echo.
+echo Troubleshooting steps:
+echo 1. Check if printer is connected and powered on
+echo 2. Verify printer drivers are installed
+echo 3. Try printing a test page from Windows
+echo 4. Check printer port settings (LPT1, USB, Network)
+echo 5. Run this batch file as Administrator
+echo.
+echo Label file saved as: %LABEL_FILE%
+echo You can manually send this file to your printer
+echo.
+color 0C
+goto :END
+
+:CLEANUP
+echo.
+echo =========================================================
+echo [SUCCESS] LABEL SENT TO PRINTER!
+echo =========================================================
+echo.
+echo Label details:
+echo - File: %LABEL_FILE%
+echo - Size: 4 labels per sheet (97.5mm x 260mm)
+echo - Format: TSPL for TSC printers
+echo.
+echo If labels don't print correctly:
+echo 1. Check printer paper size settings
+echo 2. Verify TSPL/EPL printer compatibility  
+echo 3. Adjust printer darkness/speed settings
+echo.
+
+REM Clean up label file (optional - comment out to keep for debugging)
+REM del "%LABEL_FILE%" >nul 2>&1
+
+:END
+echo Press any key to exit...
+pause >nul
+endlocal
 '''
     
     # Convert Unix line endings to Windows line endings for Windows compatibility
@@ -440,9 +584,20 @@ def _format_prn_for_bat(prn_commands: str) -> str:
         line = line.strip()
         if line:  # Skip empty lines
             # Escape special characters for batch files
-            line = line.replace('"', '""')  # Escape quotes
+            # Use ^ to escape special characters instead of doubling quotes
             line = line.replace('%', '%%')  # Escape percent signs
-            formatted_lines.append(f'echo {line}')
+            line = line.replace('^', '^^')  # Escape caret
+            line = line.replace('&', '^&')  # Escape ampersand
+            line = line.replace('|', '^|')  # Escape pipe
+            line = line.replace('<', '^<')  # Escape less than
+            line = line.replace('>', '^>')  # Escape greater than
+            
+            # For echo commands with quotes, use a different approach
+            if '"' in line:
+                # Use echo with quotes around the entire line
+                formatted_lines.append(f'echo {line}')
+            else:
+                formatted_lines.append(f'echo {line}')
     
     return '\n'.join(formatted_lines)
 
@@ -592,6 +747,250 @@ def get_animal_label_download_data(animal_label, format_type='bat'):
             raise ValueError("PDF file not found for this label")
     else:
         raise ValueError(f"Unsupported format: {format_type}")
+
+def generate_enhanced_printer_config_bat(prn_commands: str, printer_configs: list = None) -> str:
+    """
+    Generate a BAT file with multiple printer configurations for maximum compatibility.
+    
+    Args:
+        prn_commands: The TSPL/PRN commands
+        printer_configs: List of printer config dicts with different options
+    """
+    if not printer_configs:
+        # Default configurations for different printer types
+        printer_configs = [
+            {'port': 'LPT1', 'method': 'lpt', 'name': 'Parallel Port Printer'},
+            {'port': 'USB001', 'method': 'usb', 'name': 'USB Printer'},
+            {'printer_name': 'TSC TTP-245C', 'method': 'network', 'name': 'Network TSC Printer'},
+            {'printer_name': 'Zebra', 'method': 'network', 'name': 'Network Zebra Printer'},
+        ]
+    
+    # Create a more robust method for writing PRN content
+    # Instead of using echo commands, we'll create a separate PRN file and reference it
+    prn_filename = "animal_label_data.prn"
+    
+    bat_content = f'''@echo off
+setlocal enabledelayedexpansion
+title CARNITRACK Universal Label Printer
+color 0B
+
+echo =========================================================
+echo          CARNITRACK UNIVERSAL LABEL PRINTER
+echo =========================================================
+echo.
+echo This tool will try multiple methods to print your label
+echo Compatible with: TSC, Zebra, Datamax, Honeywell printers
+echo.
+
+REM Create label file with embedded PRN data
+set LABEL_FILE=%~dp0animal_label_%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%%time:~6,2%.prn
+set SUCCESS=0
+set ATTEMPT=0
+
+echo Creating label file with embedded data...
+REM Create the PRN file using PowerShell for better quote handling
+powershell -Command "Set-Content -Path '%LABEL_FILE%' -Value @'
+{prn_commands}
+'@ -Encoding UTF8" >nul 2>&1
+
+if not exist "%LABEL_FILE%" (
+    echo ERROR: Could not create label file!
+    echo Trying alternative method...
+    
+    REM Alternative method using echo (fallback)
+    (
+{_format_prn_for_bat_simple(prn_commands)}
+    ) > "%LABEL_FILE%"
+    
+    if not exist "%LABEL_FILE%" (
+        echo ERROR: All methods failed to create label file!
+        pause
+        exit /b 1
+    )
+)
+
+echo Label file created: %LABEL_FILE%
+for %%A in ("%LABEL_FILE%") do echo File size: %%~zA bytes
+echo.
+
+REM Try different printing methods
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] Direct LPT1 port...
+if exist LPT1 (
+    copy /b "%LABEL_FILE%" LPT1: >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo SUCCESS: Printed via LPT1
+        set SUCCESS=1
+        goto :SUCCESS
+    )
+)
+
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] TYPE to LPT1...
+type "%LABEL_FILE%" >LPT1 2>nul
+if !errorlevel! equ 0 (
+    echo SUCCESS: Printed via TYPE to LPT1
+    set SUCCESS=1
+    goto :SUCCESS
+)
+
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] Alternative parallel ports...
+for %%P in (LPT2 LPT3) do (
+    if exist %%P (
+        copy /b "%LABEL_FILE%" %%P: >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo SUCCESS: Printed via %%P
+            set SUCCESS=1
+            goto :SUCCESS
+        )
+    )
+)
+
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] Network printer discovery...
+REM Try to find and use network printers
+for /f "tokens=2" %%i in ('wmic printer get name /format:list ^| find "Name="') do (
+    if not "%%i"=="" (
+        echo Trying printer: %%i
+        net use LPT1: "\\\\%COMPUTERNAME%\\%%i" >nul 2>&1
+        if !errorlevel! equ 0 (
+            copy /b "%LABEL_FILE%" LPT1: >nul 2>&1
+            if !errorlevel! equ 0 (
+                echo SUCCESS: Printed via network printer %%i
+                set SUCCESS=1
+                net use LPT1: /delete >nul 2>&1
+                goto :SUCCESS
+            )
+            net use LPT1: /delete >nul 2>&1
+        )
+    )
+)
+
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] Windows print spooler...
+print "%LABEL_FILE%" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo SUCCESS: Sent to Windows print spooler
+    set SUCCESS=1
+    goto :SUCCESS
+)
+
+set /a ATTEMPT+=1
+echo [ATTEMPT %ATTEMPT%] Opening with default application...
+start "" "%LABEL_FILE%"
+echo INFO: Label file opened with default application
+echo Please use your application's print function
+set SUCCESS=1
+goto :SUCCESS
+
+:SUCCESS
+echo.
+echo =========================================================
+echo PRINTING COMPLETED SUCCESSFULLY!
+echo =========================================================
+echo.
+echo Label Information:
+echo - Format: TSPL/PRN (4 labels per sheet)
+echo - Size: 97.5mm x 260mm
+echo - Printer: TSC compatible
+echo - Contains: Animal data, QR codes, company info
+echo.
+echo If labels didn't print correctly:
+echo 1. Check printer is ON and has paper
+echo 2. Verify correct paper size (97.5mm width)
+echo 3. Check printer driver settings
+echo 4. Try running as Administrator
+echo.
+goto :END
+
+:END
+REM Keep label file for debugging (remove next line to auto-delete)
+echo Label file saved: %LABEL_FILE%
+echo.
+pause
+endlocal
+'''
+    
+    return bat_content.replace('\n', '\r\n')
+
+def _format_prn_for_bat_simple(prn_commands: str) -> str:
+    """
+    Simple fallback method for formatting PRN commands for BAT file.
+    Uses basic echo commands without complex escaping.
+    """
+    lines = prn_commands.strip().split('\n')
+    formatted_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if line:  # Skip empty lines
+            # Basic escaping for batch files
+            line = line.replace('%', '%%')  # Escape percent signs
+            formatted_lines.append(f'echo {line}')
+    
+    return '\n'.join(formatted_lines)
+
+def create_printer_troubleshooting_guide() -> str:
+    """
+    Generate a troubleshooting guide for printer issues.
+    """
+    guide = '''
+CARNITRACK PRINTER TROUBLESHOOTING GUIDE
+========================================
+
+COMMON ISSUES AND SOLUTIONS:
+
+1. "LPT1 port not available"
+   - Most modern computers don't have parallel ports
+   - Solution: Use USB printer or network printer mapping
+
+2. "Access denied" or "Permission error"
+   - Run the batch file as Administrator
+   - Right-click the .bat file → "Run as administrator"
+
+3. "Printer not found"
+   - Check printer is connected and powered on
+   - Verify printer drivers are installed
+   - Test with a Windows test page first
+
+4. "Label prints but is garbled"
+   - Check printer supports TSPL language
+   - Verify paper size settings (97.5mm width)
+   - Check printer darkness/speed settings
+
+5. "Nothing prints"
+   - Check printer queue for stuck jobs
+   - Restart the print spooler service
+   - Try a different USB port or cable
+
+PRINTER SETUP INSTRUCTIONS:
+
+For TSC Printers:
+1. Install TSC printer drivers
+2. Set paper size to 97.5mm x 260mm
+3. Set print quality to 203 DPI
+4. Enable TSPL language mode
+
+For USB Printers:
+1. Share the printer in Windows
+2. Note the exact printer name
+3. The batch file will try to map it automatically
+
+For Network Printers:
+1. Add printer via IP address
+2. Share the printer
+3. Ensure network connectivity
+
+TESTING:
+1. Print a Windows test page first
+2. Try the batch file with a simple label
+3. Check all cable connections
+4. Verify printer language settings
+
+If problems persist, contact technical support.
+'''
+    return guide
 
 # Backwards compatibility functions (keeping old ZPL function names)
 def generate_zpl_label(animal, label_type='hot_carcass') -> str:

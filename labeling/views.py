@@ -11,7 +11,11 @@ import os
 
 from processing.models import Animal
 from .models import AnimalLabel, LabelTemplate
-from .utils import create_animal_label, get_animal_label_download_data, generate_tspl_prn_label, generate_pdf_label, generate_bat_file_content
+from .utils import (
+    create_animal_label, get_animal_label_download_data, generate_tspl_prn_label, 
+    generate_pdf_label, generate_bat_file_content, generate_enhanced_printer_config_bat,
+    create_printer_troubleshooting_guide
+)
 
 class AnimalLabelListView(LoginRequiredMixin, ListView):
     """List all animal labels for a specific animal."""
@@ -68,35 +72,54 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
         return context
 
 class DownloadAnimalLabelView(LoginRequiredMixin, View):
-    """Download animal label in BAT, PRN, or PDF format."""
+    """Download animal label in BAT, PRN, or PDF format with enhanced options."""
     
     def get(self, request, label_id, format_type='bat'):
         animal_label = get_object_or_404(AnimalLabel, id=label_id)
         
+        # Check for enhanced BAT file request
+        enhanced = request.GET.get('enhanced', 'false').lower() == 'true'
+        printer_type = request.GET.get('printer_type', 'tsc')
+        
         try:
-            download_data = get_animal_label_download_data(animal_label, format_type)
-            
-            if format_type.lower() in ['bat', 'prn']:
-                # Return BAT or PRN content as downloadable file
+            if format_type.lower() == 'bat' and enhanced:
+                # Generate enhanced BAT file with multiple printer support
+                prn_content = animal_label.prn_content
+                enhanced_bat_content = generate_enhanced_printer_config_bat(prn_content)
+                
+                filename = f"enhanced_print_label_{animal_label.animal.identification_tag}_{animal_label.label_type}.bat"
                 response = HttpResponse(
-                    download_data['content'],
-                    content_type=download_data['content_type']
+                    enhanced_bat_content,
+                    content_type='application/octet-stream'
                 )
-                response['Content-Disposition'] = f'attachment; filename="{download_data["filename"]}"'
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 return response
                 
-            elif format_type.lower() == 'pdf':
-                # Return PDF file
-                if animal_label.pdf_file and default_storage.exists(animal_label.pdf_file.name):
-                    response = FileResponse(
-                        default_storage.open(animal_label.pdf_file.name, 'rb'),
+            else:
+                # Use standard download method
+                download_data = get_animal_label_download_data(animal_label, format_type)
+                
+                if format_type.lower() in ['bat', 'prn']:
+                    # Return BAT or PRN content as downloadable file
+                    response = HttpResponse(
+                        download_data['content'],
                         content_type=download_data['content_type']
                     )
                     response['Content-Disposition'] = f'attachment; filename="{download_data["filename"]}"'
                     return response
-                else:
-                    messages.error(request, _('PDF file not found.'))
-                    return redirect('labeling:animal_label_detail', pk=label_id)
+                    
+                elif format_type.lower() == 'pdf':
+                    # Return PDF file
+                    if animal_label.pdf_file and default_storage.exists(animal_label.pdf_file.name):
+                        response = FileResponse(
+                            default_storage.open(animal_label.pdf_file.name, 'rb'),
+                            content_type=download_data['content_type']
+                        )
+                        response['Content-Disposition'] = f'attachment; filename="{download_data["filename"]}"'
+                        return response
+                    else:
+                        messages.error(request, _('PDF file not found.'))
+                        return redirect('labeling:animal_label_detail', pk=label_id)
                     
         except Exception as e:
             messages.error(request, _('Error downloading label: %(error)s') % {'error': str(e)})
@@ -266,4 +289,43 @@ Checks:
         except Exception as e:
             import traceback
             error_info = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            return HttpResponse(error_info, content_type='text/plain')
+
+class DownloadTroubleshootingGuideView(LoginRequiredMixin, View):
+    """Download printer troubleshooting guide."""
+    
+    def get(self, request):
+        guide_content = create_printer_troubleshooting_guide()
+        
+        response = HttpResponse(
+            guide_content,
+            content_type='text/plain'
+        )
+        response['Content-Disposition'] = 'attachment; filename="carnitrack_printer_troubleshooting_guide.txt"'
+        return response
+
+class TestEnhancedBatView(LoginRequiredMixin, View):
+    """Test the enhanced BAT file generation for debugging."""
+    
+    def get(self, request, animal_id):
+        animal = get_object_or_404(Animal, id=animal_id)
+        
+        try:
+            # Generate PRN content
+            prn_content = generate_tspl_prn_label(animal)
+            
+            # Generate enhanced BAT content
+            enhanced_bat_content = generate_enhanced_printer_config_bat(prn_content)
+            
+            # Return as downloadable file for testing
+            response = HttpResponse(
+                enhanced_bat_content,
+                content_type='application/octet-stream'
+            )
+            response['Content-Disposition'] = f'attachment; filename="test_enhanced_printer_{animal.identification_tag}.bat"'
+            return response
+            
+        except Exception as e:
+            import traceback
+            error_info = f"Error generating enhanced BAT: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             return HttpResponse(error_info, content_type='text/plain')
