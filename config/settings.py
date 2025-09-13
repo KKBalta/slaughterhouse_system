@@ -371,11 +371,11 @@ AUTH_USER_MODEL = 'users.User'
 SITE_URL = config('SITE_URL', default='https://carnitrack-app-1000671720976.europe-west1.run.app')
 
 # Company Information for Labels
-COMPANY_NAME = config('COMPANY_NAME', default='POMET ET  VE')
-COMPANY_FULL_NAME = config('COMPANY_FULL_NAME', default='ET ÜRÜNLERİ LTD. ŞTİ.')
-COMPANY_ADDRESS = config('COMPANY_ADDRESS', default='Lapseki / ÇANAKKALE')
-LICENSE_NO = config('LICENSE_NO', default='17-0509')
-OPERATION_NO = config('OPERATION_NO', default='TR17 12345678')
+COMPANY_NAME = "GUNDOGDULAR GIDA"
+COMPANY_FULL_NAME = "SAN VE TAR. TIC. LTD STI"
+COMPANY_ADDRESS = "BOZALAN - EZINE / ÇANAKKALE"
+LICENSE_NO = "17-0509"
+OPERATION_NO = "4290056890"
 
 # Printer Settings
 PRINTER_TURKISH_MODE = config('PRINTER_TURKISH_MODE', default='unicode')  # 'unicode', 'ascii', or 'codepage1254'

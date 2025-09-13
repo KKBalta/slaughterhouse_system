@@ -253,11 +253,8 @@ def generate_tspl_prn_label(animal, label_type='hot_carcass') -> str:
     company_logo_bitmap = get_company_logo_bitmap()
     
     # TSPL template matching your exact format (100mm x 260mm, 4 labels per sheet)
-    tspl_template = f'''SIZE 100 mm, 260 mm
-BLINE 10 mm, 0 mm
-SPEED 3
-DENSITY 12
-SET RIBBON ON
+    tspl_template = f'''SIZE 97.5 mm, 260 mm
+GAP 3 mm, 0 mm
 DIRECTION 0,0
 REFERENCE 0,0
 OFFSET 0 mm
@@ -266,121 +263,121 @@ SET CUTTER OFF
 SET PARTIAL_CUTTER OFF
 SET TEAR ON
 CLS
-{company_logo_bitmap}
+BITMAP 23,1072,92,48,1,ÿÿÿÿÿÿÿÿÿÿÿÁÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÁøÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒğÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒğÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿƒğÿÿÿÿÿÿÿÿÿÿÿÿÿÿ?€ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş ÿÿÿÿÿÿÿÿÿÿÿÿÿü€?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø ÿÿÿÿÿÿÿÿÿÿÿÿø€ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ ?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ ?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ ?ÿÿÿÿÿÿÿÿÿÿÿÿğ €ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà  ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà  ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà  ÿÿÿÿÿÿÿÿÿÿÿÿà '€ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÀ O ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÀ O ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÀ O ÿÿÿÿÿÿÿÿÿÿÿÿÀÿpÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€şàÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€şàÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€şàÿÿÿøğ ğ> €ÿ|ÿøÿÿÿÿÿÿÿÿğà à| şøÿğÿÿÿÿÿÿÿÿğà à| şøÿğÿÿÿÿÿÿÿÿğà à| şøÿğûû÷ÿöğ €ÿ~ ÿøÿÿÿÿÿÿÿÿ÷÷ïÿìà< ?şüÿğÿÿÿÿÿÿÿÿ÷÷ïÿìà< ?şüÿğÿÿÿÿÿÿÿÿ÷÷ïÿìà< ?şüÿğûû÷ÿöğ  <ÿ? ÿøÿÿÿÿÿÿÿÿ÷÷ïÿìà<  yş~ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìà<  yş~ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìà<  yş~ÿğûû÷ÿöà  |ÿ?€øÿÿÿÿÿÿÿÿ÷÷ïÿìÀ<  ùş ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ<  ùş ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ<  ùş ÿğûû÷ÿö à  üÿ?Àøÿÿÿÿÿÿÿÿ÷÷ïÿìÀ ùş€ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ ùş€ÿğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ ùş€ÿğûû÷ÿö à  ü?À?øÿÿÿÿÿÿÿÿ÷÷ïÿìÀ øş€ğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ øş€ğÿÿÿÿÿÿÿÿ÷÷ïÿìÀ øş€ğûûğö À ü?à?øÿÿÿÿÿÿÿÿ÷÷àì€ øşÀğÿÿÿÿÿÿÿÿ÷÷àì€ øşÀğÿÿÿÿÿÿÿÿ÷÷àì€ øşÀğûûÿÿ÷ À ü~?à8 ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀp ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀp ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀp ûûÿÿ÷ À ü~?à  ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀ@ ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀ@ ÿÿÿÿÿÿÿÿ÷÷ÿÿî€ øüÀ@ ûûø÷ À ü~à  ÿÿÿÿÿÿÿÿ÷÷ğî€ øü?À  ÿÿÿÿÿÿÿÿ÷÷ğî€ øü?À  ÿÿÿÿÿÿÿÿ÷÷ğî€ øü?À  ûûûÿ÷ € ø~à  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğü?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğü?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğü?À  ûûûÿ÷ €  ø~à  ÿÿÿÿÿÿÿÿ÷÷÷ÿî   ğü?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî   ğü?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî   ğü?À  ûûûÿ÷   øà  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğş?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğş?À  ÿÿÿÿÿÿÿÿ÷÷÷ÿî  ğş?À  ûûûÿ÷€  øŸà 8ÿÿÿÿÿÿÿÿ÷÷÷ÿï   ğÿ?À pÿÿÿÿÿÿÿÿ÷÷÷ÿï   ğÿ?À pÿÿÿÿÿÿÿÿ÷÷÷ÿï   ğÿ?À pûûûÿ÷€  øÿ  xÿÿÿÿÿÿÿÿ÷÷÷ÿï   ñÿ@ ğÿÿÿÿÿÿÿÿ÷÷÷ÿï   ñÿ@ ğÿÿÿÿÿÿÿÿ÷÷÷ÿï   ñÿ@ ğûûø÷€  ÿŒ øÿÿÿÿÿÿÿÿ÷÷ğï   ÿğÿÿÿÿÿÿÿÿ÷÷ğï   ÿğÿÿÿÿÿÿÿÿ÷÷ğï   ÿğøÿ÷€€  ÿÀ  xÿÿÿÿÿÿÿşğ?ÿï   ÿ€  ğÿÿÿÿÿÿÿşğ?ÿï   ÿ€  ğÿÿÿÿÿÿÿşğ?ÿï   ÿ€  ğÿĞ÷€€ÿÀ 8ÿÿÿÿÿÿÿşÿÿ ï   ÿ€ pÿÿÿÿÿÿÿşÿÿ ï   ÿ€ pÿÿÿÿÿÿÿşÿÿ ï   ÿ€ pÿ×ÿ÷€€ ÿà   ÿÿÿÿÿÿÿşÿÿ¯ÿï   ÿÀ   ÿÿÿÿÿÿÿşÿÿ¯ÿï   ÿÀ   ÿÿÿÿÿÿÿşÿÿ¯ÿï   ÿÀ   ÿ×ÿ÷ÀÀ ÿæ   ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ ÿÌ   ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ ÿÌ   ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ ÿÌ   ÿ×ÿ÷ÀÀ9ÿÿ  ÿÿÿÿÿÿÿşÿÿ¯ÿï€€sÿş  ÿÿÿÿÿÿÿşÿÿ¯ÿï€€sÿş  ÿÿÿÿÿÿÿşÿÿ¯ÿï€€sÿş  ÿ×ÿ÷ÀÀ×ÿÆ À ÿÿÿÿÿÿÿşÿÿ¯ÿï€€¯ÿŒA€ ÿÿÿÿÿÿÿşÿÿ¯ÿï€€¯ÿŒA€ ÿÿÿÿÿÿÿşÿÿ¯ÿï€€¯ÿŒA€ ÿ×ÿ÷ÀÀ€!ÿ‚ à ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ CÿÀ ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ CÿÀ ÿÿÿÿÿÿÿşÿÿ¯ÿï€€ CÿÀ    Àà€Cÿùø ÿÿÿÿÿÿÿş    €À ‡ÿòğ ÿÿÿÿÿÿÿş    €À ‡ÿòğ ÿÿÿÿÿÿÿş    €À ‡ÿòğ ÿÿÿÿÿÀàÀ ÿÁƒÿ€ÿÿÿÿÿÿÿÿÿÿÿÿÿ€ÀAÿƒÿ ÿÿÿÿÿÿÿÿÿÿÿÿÿ€ÀAÿƒÿ ÿÿÿÿÿÿÿÿÿÿÿÿÿ€ÀAÿƒÿ ÿÿÿÿÿÿÿÿÿà€ GÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÁ 8 ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÁ 8 ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÁ 8 ÿÿÿÿÿÿÿÿÿÿÿÿğ   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà   ÿÿÿÿÿÿÿÿÿÿÿÿø   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ   ?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ   ?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ   ?ÿÿÿÿÿÿÿÿÿÿÿÿü   ?ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿø   ÿÿÿÿÿÿÿÿÿÿÿÿÿ   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿş   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÀ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ€ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿğ ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿà ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ
 CODEPAGE 1254
-
-TEXT 779,80,"0",90,9,9,"Küpe No"
-TEXT 679,295,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
-TEXT 643,295,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
-TEXT 749,807,"ROMAN.TTF",90,1,10,"NET KG"
-BAR 724,807, 1, 93
-TEXT 779,1643,"0",90,14,11,"{company_info['company_name']}"
-TEXT 747,1610,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
-TEXT 715,1626,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
-TEXT 683,1649,"ROMAN.TTF",90,1,11,"Ruhsat No: {company_info['license_no']}"
-TEXT 651,1599,"ROMAN.TTF",90,1,11,"İşlem No: {label_data['siparis_no']}"
-TEXT 785,295,"0",90,10,11,"{label_data['kupe_no']}"
-TEXT 771,1028,"ROMAN.TTF",180,1,10,"{label_data['cinsi']} KOL"
-TEXT 745,80,"0",90,9,9,"Üretici Ünvanı"
-TEXT 752,295,"0",90,10,11,"{label_data['uretici']}"
-TEXT 711,80,"0",90,9,9,"Tüccar Ünvanı"
-TEXT 677,80,"0",90,9,9,"Kesim Tarihi"
-TEXT 641,80,"0",90,9,9,"Son Tüketim Tarihi"
-TEXT 718,295,"0",90,10,11,"{label_data['tuccar']}"
-TEXT 702,807,"0",90,25,14,"{label_data['weight']}"
-TEXT 771,984,"ROMAN.TTF",180,1,9,"{label_data['bowels_status']}"
-TEXT 772,958,"ROMAN.TTF",180,1,9,"{label_data['sakatat_status']}"
-QRCODE 772,617,L,5,A,90,M2,S7,"{label_data['qr_data']}"
-TEXT 779,270,"0",90,9,9,":"
-TEXT 745,270,"0",90,9,9,":"
-TEXT 711,270,"0",90,9,9,":"
-TEXT 677,270,"0",90,9,9,":"
-TEXT 641,270,"0",90,9,9,":"
-TEXT 579,80,"0",90,9,9,"Küpe No"
-TEXT 479,295,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
-TEXT 443,295,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
-TEXT 549,807,"ROMAN.TTF",90,1,10,"NET KG"
-BAR 524,807, 1, 93
-TEXT 579,1643,"0",90,14,11,"{company_info['company_name']}"
-TEXT 547,1610,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
-TEXT 515,1626,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
-TEXT 483,1649,"ROMAN.TTF",90,1,11,"Ruhsat No: {company_info['license_no']}"
-TEXT 451,1599,"ROMAN.TTF",90,1,11,"İşlem No: {label_data['siparis_no']}"
-TEXT 585,295,"0",90,10,11,"{label_data['kupe_no']}"
-TEXT 571,1028,"ROMAN.TTF",180,1,10,"{label_data['cinsi']} KOL"
-TEXT 545,80,"0",90,9,9,"Üretici Ünvanı"
-TEXT 552,295,"0",90,10,11,"{label_data['uretici']}"
-TEXT 511,80,"0",90,9,9,"Tüccar Ünvanı"
-TEXT 477,80,"0",90,9,9,"Kesim Tarihi"
-TEXT 441,80,"0",90,9,9,"Son Tüketim Tarihi"
-TEXT 518,295,"0",90,10,11,"{label_data['tuccar']}"
-TEXT 502,807,"0",90,25,14,"{label_data['weight']}"
-TEXT 571,984,"ROMAN.TTF",180,1,9,"{label_data['bowels_status']}"
-TEXT 572,958,"ROMAN.TTF",180,1,9,"{label_data['sakatat_status']}"
-QRCODE 572,617,L,5,A,90,M2,S7,"{label_data['qr_data']}"
-TEXT 579,270,"0",90,9,9,":"
-TEXT 545,270,"0",90,9,9,":"
-TEXT 511,270,"0",90,9,9,":"
-TEXT 477,270,"0",90,9,9,":"
-TEXT 441,270,"0",90,9,9,":"
-TEXT 379,80,"0",90,9,9,"Küpe No"
-TEXT 279,295,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
-TEXT 243,295,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
-TEXT 349,807,"ROMAN.TTF",90,1,10,"NET KG"
-BAR 324,807, 1, 93
-TEXT 379,1643,"0",90,14,11,"{company_info['company_name']}"
-TEXT 347,1610,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
-TEXT 315,1626,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
-TEXT 283,1649,"ROMAN.TTF",90,1,11,"Ruhsat No: {company_info['license_no']}"
-TEXT 251,1599,"ROMAN.TTF",90,1,11,"İşlem No: {label_data['siparis_no']}"
-TEXT 385,295,"0",90,10,11,"{label_data['kupe_no']}"
-TEXT 371,1028,"ROMAN.TTF",180,1,10,"{label_data['cinsi']} KOL"
-TEXT 345,80,"0",90,9,9,"Üretici Ünvanı"
-TEXT 352,295,"0",90,10,11,"{label_data['uretici']}"
-TEXT 311,80,"0",90,9,9,"Tüccar Ünvanı"
-TEXT 277,80,"0",90,9,9,"Kesim Tarihi"
-TEXT 241,80,"0",90,9,9,"Son Tüketim Tarihi"
-TEXT 318,295,"0",90,10,11,"{label_data['tuccar']}"
-TEXT 302,807,"0",90,25,14,"{label_data['weight']}"
-TEXT 371,984,"ROMAN.TTF",180,1,9,"{label_data['bowels_status']}"
-TEXT 372,958,"ROMAN.TTF",180,1,9,"{label_data['sakatat_status']}"
-QRCODE 372,617,L,5,A,90,M2,S7,"{label_data['qr_data']}"
-TEXT 379,270,"0",90,9,9,":"
-TEXT 345,270,"0",90,9,9,":"
-TEXT 311,270,"0",90,9,9,":"
-TEXT 277,270,"0",90,9,9,":"
-TEXT 241,270,"0",90,9,9,":"
-
-REM Label 4 (Bottom)
-TEXT 180,80,"0",90,9,9,"Küpe No"
-TEXT 80,295,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
-TEXT 44,295,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
-TEXT 150,807,"ROMAN.TTF",90,1,10,"NET KG"
-BAR 125,807, 1, 93
-TEXT 180,1643,"0",90,14,11,"{company_info['company_name']}"
-TEXT 148,1610,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
-TEXT 116,1626,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
-TEXT 84,1649,"ROMAN.TTF",90,1,11,"Ruhsat No: {company_info['license_no']}"
-TEXT 52,1599,"ROMAN.TTF",90,1,11,"İşlem No: {label_data['siparis_no']}"
-TEXT 186,295,"0",90,10,11,"{label_data['kupe_no']}"
-TEXT 172,1028,"ROMAN.TTF",180,1,10,"{label_data['cinsi']} KOL"
-TEXT 146,80,"0",90,9,9,"Üretici Ünvanı"
-TEXT 153,295,"0",90,10,11,"{label_data['uretici']}"
-TEXT 112,80,"0",90,9,9,"Tüccar Ünvanı"
-TEXT 78,80,"0",90,9,9,"Kesim Tarihi"
-TEXT 42,80,"0",90,9,9,"Son Tüketim Tarihi"
-TEXT 119,295,"0",90,10,11,"{label_data['tuccar']}"
-TEXT 103,807,"0",90,25,14,"{label_data['weight']}"
-TEXT 172,984,"ROMAN.TTF",180,1,9,"{label_data['bowels_status']}"
-TEXT 173,958,"ROMAN.TTF",180,1,9,"{label_data['sakatat_status']}"
-QRCODE 173,617,L,5,A,90,M2,S7,"{label_data['qr_data']}"
-TEXT 180,270,"0",90,9,9,":"
-TEXT 146,270,"0",90,9,9,":"
-TEXT 112,270,"0",90,9,9,":"
-TEXT 78,270,"0",90,9,9,":"
-TEXT 42,270,"0",90,9,9,":"
-
-PRINT 1,1'''
+TEXT 766,64,"0",90,9,9,"Küpe No"
+TEXT 666,279,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
+TEXT 630,279,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
+TEXT 739,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 714,791, 1, 93
+TEXT 768,1583,"0",90,14,11,"{company_info['company_name']}"
+TEXT 736,1602,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
+TEXT 704,1556,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
+TEXT 672,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info['license_no']}"
+TEXT 640,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info['operation_no']}"
+TEXT 773,279,"0",90,10,11,"{label_data['kupe_no']}"
+TEXT 724,1033,"ROMAN.TTF",180,1,10,"{label_data['cinsi']}"
+TEXT 732,64,"0",90,9,9,"Üretici Ünvanı"
+TEXT 739,279,"0",90,10,11,"{label_data['uretici']}"
+TEXT 698,64,"0",90,9,9,"Tüccar Ünvanı"
+TEXT 664,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 628,64,"0",90,9,9,"Son Tüketim Tar."
+TEXT 705,279,"0",90,10,11,"{label_data['tuccar']}"
+TEXT 692,791,"0",90,25,14,"{label_data['weight']}"
+TEXT 761,944,"ROMAN.TTF",180,1,9,"SAKATAT {label_data['sakatat_status']}"
+QRCODE 770,601,L,4,A,90,M2,S7,"{label_data['qr_data']}"
+TEXT 766,255,"0",90,9,9,":"
+TEXT 732,255,"0",90,9,9,":"
+TEXT 698,255,"0",90,9,9,":"
+TEXT 664,255,"0",90,9,9,":"
+TEXT 628,255,"0",90,9,9,":"
+TEXT 770,987,"0",180,9,9,"{label_data['siparis_no']}"
+TEXT 566,64,"0",90,9,9,"Küpe No"
+TEXT 466,279,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
+TEXT 430,279,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
+TEXT 539,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 514,791, 1, 93
+TEXT 568,1583,"0",90,14,11,"{company_info['company_name']}"
+TEXT 536,1602,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
+TEXT 504,1556,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
+TEXT 472,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info['license_no']}"
+TEXT 440,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info['operation_no']}"
+TEXT 573,279,"0",90,10,11,"{label_data['kupe_no']}"
+TEXT 524,1033,"ROMAN.TTF",180,1,10,"{label_data['cinsi']}"
+TEXT 532,64,"0",90,9,9,"Üretici Ünvanı"
+TEXT 539,279,"0",90,10,11,"{label_data['uretici']}"
+TEXT 498,64,"0",90,9,9,"Tüccar Ünvanı"
+TEXT 464,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 428,64,"0",90,9,9,"Son Tüketim Tar."
+TEXT 505,279,"0",90,10,11,"{label_data['tuccar']}"
+TEXT 492,791,"0",90,25,14,"{label_data['weight']}"
+TEXT 561,944,"ROMAN.TTF",180,1,9,"SAKATAT {label_data['sakatat_status']}"
+QRCODE 570,601,L,4,A,90,M2,S7,"{label_data['qr_data']}"
+TEXT 566,255,"0",90,9,9,":"
+TEXT 532,255,"0",90,9,9,":"
+TEXT 498,255,"0",90,9,9,":"
+TEXT 464,255,"0",90,9,9,":"
+TEXT 428,255,"0",90,9,9,":"
+TEXT 570,987,"0",180,9,9,"{label_data['siparis_no']}"
+TEXT 366,64,"0",90,9,9,"Küpe No"
+TEXT 266,279,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
+TEXT 230,279,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
+TEXT 339,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 314,791, 1, 93
+TEXT 368,1583,"0",90,14,11,"{company_info['company_name']}"
+TEXT 336,1602,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
+TEXT 304,1556,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
+TEXT 272,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info['license_no']}"
+TEXT 240,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info['operation_no']}"
+TEXT 373,279,"0",90,10,11,"{label_data['kupe_no']}"
+TEXT 324,1033,"ROMAN.TTF",180,1,10,"{label_data['cinsi']}"
+TEXT 332,64,"0",90,9,9,"Üretici Ünvanı"
+TEXT 339,279,"0",90,10,11,"{label_data['uretici']}"
+TEXT 298,64,"0",90,9,9,"Tüccar Ünvanı"
+TEXT 264,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 228,64,"0",90,9,9,"Son Tüketim Tar."
+TEXT 305,279,"0",90,10,11,"{label_data['tuccar']}"
+TEXT 292,791,"0",90,25,14,"{label_data['weight']}"
+TEXT 361,944,"ROMAN.TTF",180,1,9,"SAKATAT {label_data['sakatat_status']}"
+QRCODE 370,601,L,4,A,90,M2,S7,"{label_data['qr_data']}"
+TEXT 366,255,"0",90,9,9,":"
+TEXT 332,255,"0",90,9,9,":"
+TEXT 298,255,"0",90,9,9,":"
+TEXT 264,255,"0",90,9,9,":"
+TEXT 228,255,"0",90,9,9,":"
+TEXT 370,987,"0",180,9,9,"{label_data['siparis_no']}"
+TEXT 167,64,"0",90,9,9,"Küpe No"
+TEXT 67,279,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
+TEXT 31,279,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
+TEXT 140,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 115,791, 1, 93
+TEXT 169,1583,"0",90,14,11,"{company_info['company_name']}"
+TEXT 137,1602,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
+TEXT 105,1556,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
+TEXT 73,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info['license_no']}"
+TEXT 41,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info['operation_no']}"
+TEXT 174,279,"0",90,10,11,"{label_data['kupe_no']}"
+TEXT 125,1033,"ROMAN.TTF",180,1,10,"{label_data['cinsi']}"
+TEXT 133,64,"0",90,9,9,"Üretici Ünvanı"
+TEXT 140,279,"0",90,10,11,"{label_data['uretici']}"
+TEXT 99,64,"0",90,9,9,"Tüccar Ünvanı"
+TEXT 65,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 29,64,"0",90,9,9,"Son Tüketim Tar."
+TEXT 106,279,"0",90,10,11,"{label_data['tuccar']}"
+TEXT 93,791,"0",90,25,14,"{label_data['weight']}"
+TEXT 162,944,"ROMAN.TTF",180,1,9,"SAKATAT {label_data['sakatat_status']}"
+QRCODE 171,601,L,4,A,90,M2,S7,"{label_data['qr_data']}"
+TEXT 167,255,"0",90,9,9,":"
+TEXT 133,255,"0",90,9,9,":"
+TEXT 99,255,"0",90,9,9,":"
+TEXT 65,255,"0",90,9,9,":"
+TEXT 29,255,"0",90,9,9,":"
+TEXT 171,987,"0",180,9,9,"{label_data['siparis_no']}"
+PRINT 1,1
+'''
+    
+    # Convert Unix line endings to Windows line endings for TSC printer compatibility
+    tspl_template = tspl_template.replace('\n', '\r\n')
     
     return tspl_template
 
