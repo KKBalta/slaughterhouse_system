@@ -82,6 +82,9 @@ def generate_animal_label_data(animal) -> dict:
     else:
         uretici = order.client_name or "Bilinmeyen"
     
+    # Truncate uretici to first two words for label fitting
+    uretici = truncate_to_first_two_words(uretici)
+    
     # Get slaughter date
     kesim_tarihi = animal.slaughter_date.strftime("%d.%m.%Y") if animal.slaughter_date else "Bilinmiyor"
     
@@ -98,14 +101,14 @@ def generate_animal_label_data(animal) -> dict:
     
     # Get animal type with Turkish character replacement (for printer compatibility)
     animal_type_mapping = {
-        'cattle': 'DANA',
+        'cattle': 'SIGIR',
         'sheep': 'KOYUN',
         'goat': 'KECI',
         'lamb': 'KUZU',
         'oglak': 'OGLAK',
-        'calf': 'DANA',
+        'calf': 'BUZA',
         'heifer': 'DUVE',
-        'beef': 'SIGIR',
+        'beef': 'DANA',
     }
     cinsi = animal_type_mapping.get(animal.animal_type, animal.animal_type.upper())
     
@@ -114,6 +117,9 @@ def generate_animal_label_data(animal) -> dict:
     
     # Get trader (destination address from slaughter order)
     tuccar = order.destination or ""
+    
+    # Truncate tuccar to first two words for label fitting
+    tuccar = truncate_to_first_two_words(tuccar)
     
     # Get hot carcass weight from WeightLog (where weights are actually stored)
     weight = "Err"  # Default weight
@@ -187,6 +193,26 @@ def generate_animal_label_data(animal) -> dict:
         'qr_url': qr_url,
         'qr_data': qr_data,
     }
+
+def truncate_to_first_two_words(text: str) -> str:
+    """
+    Truncate text to first two words for label fitting.
+    
+    Args:
+        text: Input text to truncate
+    
+    Returns:
+        Text truncated to first two words, or original text if 2 or fewer words
+    """
+    if not text:
+        return ""
+    
+    # Split by whitespace and take first two words
+    words = text.strip().split()
+    if len(words) <= 2:
+        return text.strip()
+    
+    return ' '.join(words[:2])
 
 def format_turkish_text_for_printer(text: str, compatibility_mode: str = 'unicode') -> str:
     """
@@ -378,13 +404,14 @@ PRINT 1,1
     
     return tspl_template
 
-def generate_bat_file_content(prn_commands: str, printer_config: dict = None) -> str:
+def generate_bat_file_content(prn_commands: str, printer_config: dict = None, filename: str = None) -> str:
     """
     Generate enhanced .bat file content with multiple printing methods and better error handling.
     
     Args:
         prn_commands: The TSPL/PRN commands to send to printer
         printer_config: Optional config dict, can specify 'port', 'printer_name', 'method'
+        filename: Optional custom filename for the PRN file (default: animal_label.prn)
     """
     # Get configuration or use defaults
     printer_port = 'LPT1'
@@ -395,6 +422,9 @@ def generate_bat_file_content(prn_commands: str, printer_config: dict = None) ->
         printer_port = printer_config.get('port', 'LPT1')
         printer_name = printer_config.get('printer_name', '')
         method = printer_config.get('method', 'auto')
+    
+    # Use dynamic filename or default
+    prn_filename = filename if filename else 'animal_label.prn'
     
     # Format PRN commands for batch file
     formatted_prn = _format_prn_for_bat(prn_commands)
@@ -412,7 +442,7 @@ echo Printing animal label using multiple methods...
 echo.
 
 REM Create label data file in current directory (no temp file issues)
-set LABEL_FILE=%~dp0animal_label.prn
+set LABEL_FILE=%~dp0{prn_filename}
 set SUCCESS=0
 
 echo [INFO] Creating label file: %LABEL_FILE%
@@ -691,8 +721,11 @@ def create_animal_label(animal, label_type='hot_carcass', user=None, printer_con
     # Generate TSPL/PRN content
     prn_content = generate_tspl_prn_label(animal, label_type)
     
-    # Generate .bat file content
-    bat_content = generate_bat_file_content(prn_content, printer_config)
+    # Generate dynamic filename based on animal data
+    dynamic_filename = f"animal_label_{animal.identification_tag}_{label_type}.prn"
+    
+    # Generate .bat file content with dynamic filename
+    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
     
     # Generate PDF content
     pdf_buffer = generate_pdf_label(animal, label_type)
@@ -1009,7 +1042,7 @@ def get_company_info() -> dict:
         'company_name': format_turkish_text_for_printer(
             getattr(settings, 'COMPANY_NAME', "GUNDOGDULAR GIDA"), compat_mode),
         'company_full_name': format_turkish_text_for_printer(
-            getattr(settings, 'COMPANY_FULL_NAME', "SAN VE TAR. TIC. LTD STI"), compat_mode),
+            getattr(settings, 'COMPANY_FULL_NAME', "SAN VE TUR. TIC. LTD STI"), compat_mode),
         'company_address': format_turkish_text_for_printer(
             getattr(settings, 'COMPANY_ADDRESS', "BOZALAN - EZINE / ÇANAKKALE"), compat_mode),
         'license_no': getattr(settings, 'LICENSE_NO', '17-0509'),

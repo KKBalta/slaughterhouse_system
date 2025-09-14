@@ -250,8 +250,11 @@ class TestPRNGenerationView(LoginRequiredMixin, View):
             # Generate PRN content
             prn_content = generate_tspl_prn_label(animal)
             
+            # Generate dynamic filename for test
+            test_filename = f"test_animal_label_{animal.identification_tag}.prn"
+            
             # Generate BAT content
-            bat_content = generate_bat_file_content(prn_content)
+            bat_content = generate_bat_file_content(prn_content, filename=test_filename)
             
             # Create response with debug info
             debug_info = f"""
