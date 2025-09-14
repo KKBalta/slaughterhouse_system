@@ -610,7 +610,7 @@ msgstr "Düve"
 
 #: processing/models.py:66
 msgid "Beef"
-msgstr "Dana"
+msgstr "Sigir"
 
 #: processing/models.py:71 processing/templates/processing/animal_list.html:319
 #: processing/templates/processing/dashboard.html:116
