@@ -434,9 +434,19 @@ class AnimalWeightLogView(LoginRequiredMixin, View):
                     log_leather_weight(animal, weight)
                     messages.success(request, _('Leather weight (%(weight)s kg) logged for %(tag)s.') % {'weight': weight, 'tag': animal.identification_tag})
                 else:
+                    # Check if this weight type already exists
+                    existing_log = WeightLog.objects.filter(
+                        animal=animal,
+                        weight_type=weight_type
+                    ).first()
+                    
                     # Handle regular weight logging
                     log_individual_weight(animal, weight_type, weight)
-                    messages.success(request, _('%(weight_type)s (%(weight)s kg) logged for %(tag)s.') % {'weight_type': weight_type.replace('_', ' ').title(), 'weight': weight, 'tag': animal.identification_tag})
+                    
+                    if existing_log:
+                        messages.success(request, _('%(weight_type)s updated to %(weight)s kg for %(tag)s.') % {'weight_type': weight_type.replace('_', ' ').title(), 'weight': weight, 'tag': animal.identification_tag})
+                    else:
+                        messages.success(request, _('%(weight_type)s (%(weight)s kg) logged for %(tag)s.') % {'weight_type': weight_type.replace('_', ' ').title(), 'weight': weight, 'tag': animal.identification_tag})
             except Exception as e:
                 messages.error(request, _('Error logging weight: %(error)s') % {'error': str(e)})
         else:

@@ -116,11 +116,24 @@ def log_individual_weight(animal: Animal, weight_type: str, weight: float) -> We
             )
     # live_weight can be logged for any status - no validation needed
     
-    weight_log = WeightLog.objects.create(
+    # Check if a weight log already exists for this weight type
+    existing_log = WeightLog.objects.filter(
         animal=animal,
-        weight=weight,
         weight_type=weight_type
-    )
+    ).first()
+    
+    if existing_log:
+        # Update existing log
+        existing_log.weight = weight
+        existing_log.save()
+        weight_log = existing_log
+    else:
+        # Create new log
+        weight_log = WeightLog.objects.create(
+            animal=animal,
+            weight=weight,
+            weight_type=weight_type
+        )
     
     # Auto-transition to carcass_ready when hot carcass weight is logged
     if weight_type_lower in ['hot_carcass_weight', 'hot carcass weight', 'hot_carcass'] and animal.status == 'slaughtered':

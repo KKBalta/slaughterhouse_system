@@ -41,16 +41,24 @@ class HeiferDetailsInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = _('Heifer Details')
 
+class WeightLogInline(admin.TabularInline):
+    model = WeightLog
+    extra = 0
+    verbose_name_plural = _('Weight Logs')
+    fields = ('weight_type', 'weight', 'log_date')
+    readonly_fields = ('log_date',)
+    ordering = ('-log_date',)
+
 @admin.register(Animal)
 class AnimalAdmin(admin.ModelAdmin):
     list_display = (
         'identification_tag', 'animal_type', 'slaughter_order', 'status', 
-        'received_date', 'slaughter_date', 'get_leather_weight', 'get_picture_status', 'get_scale_receipt_picture'
+        'received_date', 'slaughter_date', 'get_leather_weight', 'get_latest_hot_carcass_weight', 'get_picture_status', 'get_scale_receipt_picture'
     )
     list_filter = ('animal_type', 'status', 'slaughter_order__service_package', 'received_date')
     search_fields = ('identification_tag', 'slaughter_order__id')
     inlines = [
-        CattleDetailsInline, SheepDetailsInline, GoatDetailsInline, 
+        WeightLogInline, CattleDetailsInline, SheepDetailsInline, GoatDetailsInline, 
         LambDetailsInline, OglakDetailsInline, CalfDetailsInline, HeiferDetailsInline
     ]
     raw_id_fields = ('slaughter_order',)
@@ -63,6 +71,17 @@ class AnimalAdmin(admin.ModelAdmin):
             return f"{obj.leather_weight_kg} kg"
         return "-"
     get_leather_weight.short_description = _("Leather Weight")
+    
+    def get_latest_hot_carcass_weight(self, obj):
+        """Display latest hot carcass weight from weight logs"""
+        hot_carcass_log = obj.individual_weight_logs.filter(
+            weight_type='hot_carcass_weight'
+        ).order_by('-log_date').first()
+        
+        if hot_carcass_log:
+            return f"{hot_carcass_log.weight} kg"
+        return "-"
+    get_latest_hot_carcass_weight.short_description = _("Hot Carcass Weight")
     
     def get_picture_status(self, obj):
         """Show if pictures are uploaded"""
@@ -118,6 +137,8 @@ class WeightLogAdmin(admin.ModelAdmin):
     raw_id_fields = ('animal', 'slaughter_order')
     readonly_fields = ('log_date',)
     date_hierarchy = 'log_date'
+    list_editable = ('weight',)
+    fields = ('animal', 'slaughter_order', 'weight_type', 'weight', 'is_group_weight', 'group_quantity', 'group_total_weight', 'log_date')
     
     def get_identifier(self, obj):
         """Show animal tag or slaughter order ID"""

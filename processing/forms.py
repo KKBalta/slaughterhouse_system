@@ -167,23 +167,7 @@ class WeightLogForm(forms.ModelForm):
                     })
             # live_weight can be logged for any status - no validation needed
             
-            # Check for duplicate leather weight entries
-            if weight_type == 'leather_weight':
-                if self.animal.leather_weight_kg is not None:
-                    raise ValidationError({
-                        'weight_type': _('Leather weight has already been recorded for this animal.')
-                    })
-            
-            # Check for duplicate weight type entries
-            existing_log = WeightLog.objects.filter(
-                animal=self.animal,
-                weight_type=weight_type
-            ).first()
-            
-            if existing_log:
-                raise ValidationError({
-                    'weight_type': _('A %(weight_type)s entry already exists for this animal.') % {'weight_type': weight_type}
-                })
+            # Note: Removed duplicate validation to allow overwriting existing weight entries
         
         return cleaned_data
 
