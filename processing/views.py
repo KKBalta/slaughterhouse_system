@@ -10,12 +10,12 @@ from django.urls import reverse
 from datetime import datetime
 from django import forms
 
-from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
 from reception.models import SlaughterOrder
 from .forms import (
     AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
     ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
-    LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm,
+    LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm, BeefDetailsForm,
     ScaleReceiptUploadForm
 )
 from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports, ANIMAL_DETAIL_MODELS

@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
 from django.core.exceptions import ValidationError
 
 class AnimalFilterForm(forms.Form):
@@ -361,10 +361,10 @@ class CattleDetailsForm(forms.ModelForm):
     """Form for cattle-specific details"""
     class Meta:
         model = CattleDetails
-        fields = ['breed', 'liver_status', 'bowels_status']
+        fields = ['breed', 'sakatat_status', 'bowels_status']
         labels = {
             'breed': _('Breed'),
-            'liver_status': _('Liver Status'),
+            'sakatat_status': _('Sakatat Status'),
             'bowels_status': _('Bowels Status'),
         }
         widgets = {
@@ -372,7 +372,7 @@ class CattleDetailsForm(forms.ModelForm):
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': _('Enter breed (e.g., Holstein, Angus, Hereford)')
             }),
-            'liver_status': forms.Select(attrs={
+            'sakatat_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
             }),
             'bowels_status': forms.Select(attrs={
@@ -466,10 +466,10 @@ class CalfDetailsForm(forms.ModelForm):
     """Form for calf-specific details"""
     class Meta:
         model = CalfDetails
-        fields = ['breed', 'liver_status', 'bowels_status']
+        fields = ['breed', 'sakatat_status', 'bowels_status']
         labels = {
             'breed': _('Breed'),
-            'liver_status': _('Liver Status'),
+            'sakatat_status': _('Sakatat Status'),
             'bowels_status': _('Bowels Status'),
         }
         widgets = {
@@ -477,7 +477,7 @@ class CalfDetailsForm(forms.ModelForm):
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': _('Enter breed (e.g., Holstein, Jersey, Brahman)')
             }),
-            'liver_status': forms.Select(attrs={
+            'sakatat_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
             }),
             'bowels_status': forms.Select(attrs={
@@ -489,10 +489,10 @@ class HeiferDetailsForm(forms.ModelForm):
     """Form for heifer-specific details"""
     class Meta:
         model = HeiferDetails
-        fields = ['breed', 'liver_status', 'bowels_status']
+        fields = ['breed', 'sakatat_status', 'bowels_status']
         labels = {
             'breed': _('Breed'),
-            'liver_status': _('Liver Status'),
+            'sakatat_status': _('Sakatat Status'),
             'bowels_status': _('Bowels Status'),
         }
         widgets = {
@@ -500,12 +500,35 @@ class HeiferDetailsForm(forms.ModelForm):
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
                 'placeholder': _('Enter breed (e.g., Holstein, Angus, Charolais)')
             }),
-            'liver_status': forms.Select(attrs={
+            'sakatat_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
             }),
             'bowels_status': forms.Select(attrs={
                 'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
             }),
+        }
+
+class BeefDetailsForm(forms.ModelForm):
+    """Form for beef-specific details"""
+    class Meta:
+        model = BeefDetails
+        fields = ['breed', 'sakatat_status', 'bowels_status']
+        labels = {
+            'breed': _('Breed'),
+            'sakatat_status': _('Sakatat Status'),
+            'bowels_status': _('Bowels Status'),
+        }
+        widgets = {
+            'breed': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': _('Enter breed (e.g., Holstein, Angus, Charolais)')
+            }),
+            'sakatat_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'bowels_status': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            })
         }
 
 # Mapping of animal types to their detail forms
@@ -517,5 +540,5 @@ ANIMAL_DETAIL_FORMS = {
     'oglak': OglakDetailsForm,
     'calf': CalfDetailsForm,
     'heifer': HeiferDetailsForm,
-    'beef': CattleDetailsForm,  # Use cattle form for beef
+    'beef': BeefDetailsForm,
 }

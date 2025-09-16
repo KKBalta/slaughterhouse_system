@@ -135,8 +135,8 @@ def generate_animal_label_data(animal) -> dict:
         weight = "Err"
     
     # Get organ status values from animal details
-    bowels_status_value = "0.5"  # Default bowels status
-    sakatat_status_value = "0.5"  # Default sakatat status
+    bowels_status_value = "0.51"  # Default bowels status
+    sakatat_status_value = "0.51"  # Default sakatat status
     
     # Check if animal has detail model with organ status scores
     try:
@@ -160,8 +160,7 @@ def generate_animal_label_data(animal) -> dict:
                 if sakatat_value == int(sakatat_value):
                     sakatat_status_value = str(int(sakatat_value))
                 else:
-                    sakatat_status_value = str(sakatat_value)
-                    
+                    sakatat_status_value = str(sakatat_value)                    
     except Exception:
         # If we can't get status, use defaults
         pass

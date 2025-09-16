@@ -208,10 +208,10 @@ class CattleDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the cattle.")
     )
-    liver_status = models.DecimalField(
+    sakatat_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the liver.")
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
@@ -336,10 +336,10 @@ class CalfDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the calf.")
     )
-    liver_status = models.DecimalField(
+    sakatat_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the liver.")
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
@@ -363,10 +363,10 @@ class HeiferDetails(BaseModel):
         blank=True,
         help_text=_("Breed of the heifer.")
     )
-    liver_status = models.DecimalField(
+    sakatat_status = models.DecimalField(
         max_digits=2, decimal_places=1,
         choices=SCORE_CHOICES, default=0.5,
-        help_text=_("Score reflecting the usability of the liver.")
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
     )
     bowels_status = models.DecimalField(
         max_digits=2, decimal_places=1,
@@ -376,6 +376,33 @@ class HeiferDetails(BaseModel):
 
     def __str__(self):
         return _("Details for Heifer: %(tag)s") % {'tag': self.animal.identification_tag}
+
+class BeefDetails(BaseModel):
+    animal = models.OneToOneField(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='beef_details',
+        limit_choices_to={'animal_type': 'beef'},
+        help_text=_("The associated beef animal.")
+    )
+    breed = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_("Breed of the beef.")
+    )
+    sakatat_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs).")
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2, decimal_places=1,
+        choices=SCORE_CHOICES, default=0.5,
+        help_text=_("Score reflecting the usability of the bowels.")
+    )
+
+    def __str__(self):
+        return _("Details for Beef: %(tag)s") % {'tag': self.animal.identification_tag}
 
 
 

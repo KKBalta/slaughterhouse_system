@@ -1,5 +1,5 @@
 from django.db import transaction
-from .models import Animal, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, WeightLog
+from .models import Animal, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails, WeightLog
 from inventory.models import Carcass, MeatCut, Offal, ByProduct
 from reception.models import SlaughterOrder # Added for log_group_weight
 from django.core.exceptions import ValidationError # Added for update_animal_details
@@ -8,7 +8,7 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 
 # Define animal types that track offal/byproducts
-OFFAL_BYPRODUCT_TRACKING_ANIMAL_TYPES = ['cattle', 'calf', 'heifer']
+OFFAL_BYPRODUCT_TRACKING_ANIMAL_TYPES = ['cattle', 'calf', 'heifer', 'beef']
 
 # A mapping from animal_type to its detail model class
 ANIMAL_DETAIL_MODELS = {
@@ -19,6 +19,7 @@ ANIMAL_DETAIL_MODELS = {
     'oglak': OglakDetails,
     'calf': CalfDetails,
     'heifer': HeiferDetails,
+    'beef': BeefDetails,
 }
 
 @transaction.atomic

@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Animal, CattleDetails, SheepDetails, GoatDetails, LambDetails, 
-    OglakDetails, CalfDetails, HeiferDetails, WeightLog
+    OglakDetails, CalfDetails, HeiferDetails, BeefDetails, WeightLog
 )
 
 class CattleDetailsInline(admin.StackedInline):
@@ -41,6 +41,11 @@ class HeiferDetailsInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = _('Heifer Details')
 
+class BeefDetailsInline(admin.StackedInline):
+    model = BeefDetails
+    can_delete = False
+    verbose_name_plural = _('Beef Details')
+
 class WeightLogInline(admin.TabularInline):
     model = WeightLog
     extra = 0
@@ -59,7 +64,7 @@ class AnimalAdmin(admin.ModelAdmin):
     search_fields = ('identification_tag', 'slaughter_order__id')
     inlines = [
         WeightLogInline, CattleDetailsInline, SheepDetailsInline, GoatDetailsInline, 
-        LambDetailsInline, OglakDetailsInline, CalfDetailsInline, HeiferDetailsInline
+        LambDetailsInline, OglakDetailsInline, CalfDetailsInline, HeiferDetailsInline, BeefDetailsInline
     ]
     raw_id_fields = ('slaughter_order',)
     readonly_fields = ('created_at', 'updated_at', 'scale_receipt_picture_preview', 'status')
@@ -120,7 +125,7 @@ class AnimalAdmin(admin.ModelAdmin):
             'oglak': [OglakDetailsInline],
             'calf': [CalfDetailsInline],
             'heifer': [HeiferDetailsInline],
-            'beef': [CattleDetailsInline],  # Use cattle details for beef
+            'beef': [BeefDetailsInline],
         }
         
         relevant_inlines = inline_mapping.get(obj.animal_type, [])
@@ -153,8 +158,8 @@ class WeightLogAdmin(admin.ModelAdmin):
 # Register individual detail models for direct access
 @admin.register(CattleDetails)
 class CattleDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
-    list_filter = ('breed', 'liver_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
@@ -188,14 +193,21 @@ class OglakDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(CalfDetails)
 class CalfDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
-    list_filter = ('breed', 'liver_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
 
 @admin.register(HeiferDetails)
 class HeiferDetailsAdmin(admin.ModelAdmin):
-    list_display = ('animal', 'breed', 'liver_status', 'bowels_status')
-    list_filter = ('breed', 'liver_status', 'bowels_status')
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
+    search_fields = ('animal__identification_tag', 'breed')
+    raw_id_fields = ('animal',)
+
+@admin.register(BeefDetails)
+class BeefDetailsAdmin(admin.ModelAdmin):
+    list_display = ('animal', 'breed', 'sakatat_status', 'bowels_status')
+    list_filter = ('breed', 'sakatat_status', 'bowels_status')
     search_fields = ('animal__identification_tag', 'breed')
     raw_id_fields = ('animal',)
