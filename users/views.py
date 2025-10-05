@@ -5,6 +5,9 @@ from .forms import UserRegistrationForm, ClientProfileRegisterForm
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+from django.core.exceptions import PermissionDenied
+from functools import wraps
 from .services import create_user_with_profile
 from django.contrib import messages
 import secrets
@@ -69,3 +72,51 @@ class ClientProfileRegisterView(CreateView):
 @login_required
 def dashboard_view(request):
     return render(request, 'users/dashboard.html')
+
+
+# RBAC Decorators using Django's built-in functionality
+
+def is_manager_or_admin(user):
+    """Check if user has MANAGER or ADMIN role"""
+    return user.is_authenticated and user.role in [user.Role.MANAGER, user.Role.ADMIN]
+
+def is_admin(user):
+    """Check if user has ADMIN role"""
+    return user.is_authenticated and user.role == user.Role.ADMIN
+
+def is_manager(user):
+    """Check if user has MANAGER role"""
+    return user.is_authenticated and user.role == user.Role.MANAGER
+
+def is_operator_or_above(user):
+    """Check if user has OPERATOR, MANAGER, or ADMIN role"""
+    return user.is_authenticated and user.role in [user.Role.OPERATOR, user.Role.MANAGER, user.Role.ADMIN]
+
+# Decorators using Django's user_passes_test
+manager_or_admin_required = user_passes_test(is_manager_or_admin, login_url='/login/')
+admin_required = user_passes_test(is_admin, login_url='/login/')
+manager_required = user_passes_test(is_manager, login_url='/login/')
+operator_or_above_required = user_passes_test(is_operator_or_above, login_url='/login/')
+
+# Custom decorator for better error handling
+def role_required(*allowed_roles):
+    """
+    Decorator that requires user to have one of the specified roles.
+    
+    Usage:
+    @role_required('ADMIN', 'MANAGER')
+    def my_view(request):
+        pass
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('/login/')
+            
+            if request.user.role not in allowed_roles:
+                raise PermissionDenied("You don't have permission to access this page.")
+            
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator

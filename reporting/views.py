@@ -14,15 +14,18 @@ from django.conf import settings
 
 from .models import Report, GeneratedReport
 from .services import ReportDataAggregator, ExcelReportGenerator, PDFReportGenerator
+from users.views import manager_or_admin_required
 
 
 @login_required
+@manager_or_admin_required
 def report_dashboard(request):
     """Simple dashboard for report generation"""
     return render(request, 'reporting/simple_dashboard.html')
 
 
 @login_required
+@manager_or_admin_required
 def generate_report(request):
     """Generate report based on form data"""
     if request.method == 'POST':
@@ -133,6 +136,7 @@ def generate_daily_reports_api(request):
 
 
 @login_required
+@manager_or_admin_required
 def test_report_generation(request):
     """Test view for report generation (for development/testing)"""
     if request.method == 'POST':
@@ -172,6 +176,7 @@ def test_report_generation(request):
 
 
 @login_required
+@manager_or_admin_required
 def report_list(request):
     """List all generated reports"""
     reports = GeneratedReport.objects.all().order_by('-generated_at')
