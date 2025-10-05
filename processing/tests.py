@@ -140,15 +140,12 @@ class ProcessingModelTest(TestCase):
         cattle_details = CattleDetails.objects.create(
             animal=animal,
             breed='Angus',
-            horn_status='Polled',
             sakatat_status=1.0,
-            head_status=0.5,
             bowels_status=0.0
         )
         self.assertEqual(cattle_details.animal, animal)
         self.assertEqual(animal.cattle_details, cattle_details)
         self.assertEqual(cattle_details.sakatat_status, 1.0)
-        self.assertEqual(cattle_details.head_status, 0.5)
         self.assertEqual(cattle_details.bowels_status, 0.0)
 
     def test_create_new_animal_details_types(self):

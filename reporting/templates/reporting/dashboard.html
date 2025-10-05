@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Reports Dashboard" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <header class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <h1 class="text-4xl font-extrabold text-gray-900">{% trans "Reports Dashboard" %}</h1>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                {% trans "Reporting System" %}
+            </span>
+        </div>
+        <p class="mt-2 text-lg text-gray-600">{% trans "Generate and manage daily, monthly, and yearly reports for your slaughterhouse operations." %}</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Daily Reports Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="ml-3 text-xl font-bold text-gray-900">{% trans "Daily Reports" %}</h2>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-6">{% trans "Generate daily slaughter reports with detailed animal processing data." %}</p>
+                    
+                    {% if daily_reports %}
+                        <div class="space-y-3">
+                            {% for report in daily_reports %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                    <h3 class="font-semibold text-gray-800">{{ report.name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">{{ report.description|truncatechars:60 }}</p>
+                                    <div class="mt-3 flex gap-2">
+                                        <button onclick="generateReport('{{ report.report_type }}', 'daily')" 
+                                                class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                                            {% trans "Generate" %}
+                                        </button>
+                                        <a href="/reporting/test/" 
+                                           class="flex-1 bg-gray-600 text-white py-2 px-3 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center">
+                                            {% trans "Test" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-gray-500">{% trans "No daily reports configured" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Reports Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="ml-3 text-xl font-bold text-gray-900">{% trans "Monthly Reports" %}</h2>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-6">{% trans "Generate monthly operational and performance reports." %}</p>
+                    
+                    {% if monthly_reports %}
+                        <div class="space-y-3">
+                            {% for report in monthly_reports %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                    <h3 class="font-semibold text-gray-800">{{ report.name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">{{ report.description|truncatechars:60 }}</p>
+                                    <div class="mt-3">
+                                        <button onclick="generateReport('{{ report.report_type }}', 'monthly')" 
+                                                class="w-full bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                                            {% trans "Generate" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <p class="text-gray-500">{% trans "No monthly reports configured" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Yearly Reports Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="ml-3 text-xl font-bold text-gray-900">{% trans "Yearly Reports" %}</h2>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-6">{% trans "Generate annual summary and trend reports." %}</p>
+                    
+                    {% if yearly_reports %}
+                        <div class="space-y-3">
+                            {% for report in yearly_reports %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                    <h3 class="font-semibold text-gray-800">{{ report.name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">{{ report.description|truncatechars:60 }}</p>
+                                    <div class="mt-3">
+                                        <button onclick="generateReport('{{ report.report_type }}', 'yearly')" 
+                                                class="w-full bg-purple-600 text-white py-2 px-3 rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                                            {% trans "Generate" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                            </svg>
+                            <p class="text-gray-500">{% trans "No yearly reports configured" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="mt-8">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">{% trans "Quick Actions" %}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Generate Today's Report -->
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-3 font-semibold text-gray-800">{% trans "Today's Report" %}</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">{% trans "Generate daily slaughter report for today" %}</p>
+                        <button onclick="generateTodayReport()" 
+                                class="w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                            {% trans "Generate Now" %}
+                        </button>
+                    </div>
+
+                    <!-- View Generated Reports -->
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-3 font-semibold text-gray-800">{% trans "View Reports" %}</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">{% trans "Browse previously generated reports" %}</p>
+                        <a href="/reporting/list/" 
+                           class="w-full bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                            {% trans "View All" %}
+                        </a>
+                    </div>
+
+                    <!-- Test Report Generation -->
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-3 font-semibold text-gray-800">{% trans "Test Generation" %}</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">{% trans "Test report generation with sample data" %}</p>
+                        <a href="/reporting/test/" 
+                           class="w-full bg-yellow-600 text-white py-2 px-3 rounded-md hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                            {% trans "Test Now" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                    <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">{% trans "Generating Report" %}</h3>
+                <p class="text-sm text-gray-600 mt-2">{% trans "Please wait while we generate your report..." %}</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loadingModal').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingModal').classList.add('hidden');
+        }
+
+        function generateReport(reportType, frequency) {
+            showLoading();
+            
+            // Simulate report generation (replace with actual API call)
+            setTimeout(() => {
+                hideLoading();
+                alert(`{% trans "Report generation started for" %} ${reportType} (${frequency})`);
+            }, 2000);
+        }
+
+        function generateTodayReport() {
+            showLoading();
+            
+            // Generate today's daily slaughter report
+            fetch('/reporting/test/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Report generation failed');
+            })
+            .then(blob => {
+                hideLoading();
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `daily_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                hideLoading();
+                alert('{% trans "Error generating report" %}: ' + error.message);
+            });
+        }
+    </script>
+{% endblock %}

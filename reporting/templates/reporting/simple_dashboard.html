@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Generate Report" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">{% trans "Generate Report" %}</h1>
+                <p class="text-gray-600 mt-2">{% trans "Select date range and download your report" %}</p>
+            </div>
+
+            <!-- Form -->
+            <form method="post" id="reportForm" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Date Range -->
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Start Date" %}
+                    </label>
+                    <input type="date" 
+                           id="start_date" 
+                           name="start_date" 
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900">
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "End Date" %}
+                    </label>
+                    <input type="date" 
+                           id="end_date" 
+                           name="end_date" 
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900">
+                </div>
+
+                <!-- Output Format -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Output Format" %}
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" 
+                                   name="output_format" 
+                                   value="excel" 
+                                   checked
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-gray-700">{% trans "Excel (.xlsx)" %}</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" 
+                                   name="output_format" 
+                                   value="pdf"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-gray-700">{% trans "PDF" %}</span>
+                        </label>
+                    </div>
+                </div>
+
+
+                <!-- Generate Button -->
+                <button type="submit" 
+                        id="generateBtn"
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-lg">
+                    {% trans "Generate Report" %}
+                </button>
+            </form>
+
+            <!-- Quick Actions -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">{% trans "Quick Actions" %}</h3>
+                <div class="space-y-2">
+                    <button onclick="setToday()" 
+                            class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                        {% trans "Today's Report" %}
+                    </button>
+                    <button onclick="setYesterday()" 
+                            class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                        {% trans "Yesterday's Report" %}
+                    </button>
+                    <button onclick="setThisWeek()" 
+                            class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                        {% trans "This Week" %}
+                    </button>
+                    <button onclick="setThisMonth()" 
+                            class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                        {% trans "This Month" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <div class="flex items-center">
+                <svg class="animate-spin h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">{% trans "Generating Report" %}</h3>
+                    <p class="text-sm text-gray-600">{% trans "Please wait..." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default dates
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            document.getElementById('start_date').value = yesterday.toISOString().split('T')[0];
+        });
+
+        // Quick action functions
+        function setToday() {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('start_date').value = dateStr;
+            document.getElementById('end_date').value = dateStr;
+            generateReport();
+        }
+
+        function setYesterday() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const dateStr = yesterday.toISOString().split('T')[0];
+            document.getElementById('start_date').value = dateStr;
+            document.getElementById('end_date').value = dateStr;
+            generateReport();
+        }
+
+        function setThisWeek() {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            
+            document.getElementById('start_date').value = startOfWeek.toISOString().split('T')[0];
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            generateReport();
+        }
+
+        function setThisMonth() {
+            const today = new Date();
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            document.getElementById('start_date').value = startOfMonth.toISOString().split('T')[0];
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            generateReport();
+        }
+
+        // Extract form submission logic into a separate function
+        function generateReport() {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            const outputFormat = document.querySelector('input[name="output_format"]:checked').value;
+            
+            if (!startDate || !endDate) {
+                alert('{% trans "Please select both start and end dates" %}');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('{% trans "Start date cannot be after end date" %}');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('generateBtn').disabled = true;
+            
+            // Submit form
+            const formData = new FormData(document.getElementById('reportForm'));
+            
+            fetch('/reporting/generate/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Report generation failed');
+            })
+            .then(blob => {
+                // Create download link for the file
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `report_${startDate}_to_${endDate}.${outputFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert('{% trans "Error generating report" %}: ' + error.message);
+            })
+            .finally(() => {
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false;
+            });
+        }
+
+        // Form submission
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateReport();
+        });
+    </script>
+{% endblock %}

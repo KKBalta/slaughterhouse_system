@@ -4,15 +4,37 @@ from users.models import User
 
 class Report(BaseModel):
     REPORT_TYPE_CHOICES = (
-        ('operational', 'Operational'),
-        ('financial', 'Financial'),
-        ('analytics', 'Analytics'),
+        ('daily_slaughter', 'Daily Slaughter'),
+        ('daily_throughput', 'Daily Throughput'),
+        ('daily_weights', 'Daily Weight Analysis'),
+        ('daily_clients', 'Daily Client Activity'),
+        ('monthly_operations', 'Monthly Operations'),
+        ('monthly_yield', 'Monthly Yield Analysis'),
+        ('monthly_financial', 'Monthly Financial'),
+        ('monthly_clients', 'Monthly Client Performance'),
+        ('yearly_operations', 'Annual Operations'),
+        ('yearly_yield', 'Annual Yield Trends'),
+        ('yearly_financial', 'Annual Financial'),
+        ('yearly_clients', 'Annual Client Analysis'),
+    )
+    
+    FREQUENCY_CHOICES = (
+        ('daily', 'Daily'),
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+        ('custom', 'Custom Date Range'),
+    )
+    
+    OUTPUT_FORMAT_CHOICES = (
+        ('pdf', 'PDF'),
+        ('excel', 'Excel'),
+        ('both', 'Both PDF and Excel'),
     )
 
     name = models.CharField(
         max_length=255,
         unique=True,
-        help_text="A descriptive name for the report (e.g., \"Daily Throughput Report\")."
+        help_text="A descriptive name for the report (e.g., \"Daily Slaughter Report\")."
     )
     description = models.TextField(
         blank=True,
@@ -23,9 +45,33 @@ class Report(BaseModel):
         choices=REPORT_TYPE_CHOICES,
         help_text="Categorizes the report."
     )
+    frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        default='daily',
+        help_text="How often this report is generated."
+    )
+    output_format = models.CharField(
+        max_length=10,
+        choices=OUTPUT_FORMAT_CHOICES,
+        default='both',
+        help_text="Output format for the report."
+    )
     configuration = models.JSONField(
         blank=True, null=True,
         help_text="Stores parameters and settings specific to how this report is generated."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether the report is currently available for generation."
+    )
+    requires_date_range = models.BooleanField(
+        default=True,
+        help_text="Whether this report requires a date range to be specified."
+    )
+    default_filters = models.JSONField(
+        blank=True, null=True,
+        help_text="Default filters for the report (animal types, clients, etc.)."
     )
 
     def __str__(self):
