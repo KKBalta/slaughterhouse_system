@@ -55,35 +55,47 @@ def generate_report(request):
             
             if output_format == 'excel':
                 # Generate Excel report
-                excel_generator = ExcelReportGenerator(report_data)
-                workbook = excel_generator.generate_daily_slaughter_excel()
-                
-                # Save to temporary file
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
-                    workbook.save(tmp_file.name)
+                try:
+                    excel_generator = ExcelReportGenerator(report_data)
+                    workbook = excel_generator.generate_daily_slaughter_excel()
                     
-                    # Read file and return as response
-                    with open(tmp_file.name, 'rb') as f:
-                        response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                        response['Content-Disposition'] = f'attachment; filename="report_{start_date}_to_{end_date}.xlsx"'
+                    # Save to temporary file
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+                        workbook.save(tmp_file.name)
                         
-                    # Clean up
-                    os.unlink(tmp_file.name)
-                    return response
+                        # Read file and return as response
+                        with open(tmp_file.name, 'rb') as f:
+                            response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                            response['Content-Disposition'] = f'attachment; filename="report_{start_date}_to_{end_date}.xlsx"'
+                            
+                        # Clean up
+                        os.unlink(tmp_file.name)
+                        return response
+                except Exception as excel_error:
+                    print(f"Excel Generation Error: {excel_error}")
+                    import traceback
+                    traceback.print_exc()
+                    return HttpResponse(f"Excel generation failed: {str(excel_error)}", status=500)
             elif output_format == 'pdf':
                 # Generate PDF report
-                pdf_generator = PDFReportGenerator(report_data)
-                pdf_path = pdf_generator.generate_daily_slaughter_pdf()
-                
-                # Read file and return as response
-                with open(pdf_path, 'rb') as f:
-                    response = HttpResponse(f.read(), content_type='application/pdf')
-                    response['Content-Disposition'] = f'attachment; filename="report_{start_date}_to_{end_date}.pdf"'
+                try:
+                    pdf_generator = PDFReportGenerator(report_data)
+                    pdf_path = pdf_generator.generate_daily_slaughter_pdf()
                     
-                # Clean up
-                os.unlink(pdf_path)
-                return response
+                    # Read file and return as response
+                    with open(pdf_path, 'rb') as f:
+                        response = HttpResponse(f.read(), content_type='application/pdf')
+                        response['Content-Disposition'] = f'attachment; filename="report_{start_date}_to_{end_date}.pdf"'
+                        
+                    # Clean up
+                    os.unlink(pdf_path)
+                    return response
+                except Exception as pdf_error:
+                    print(f"PDF Generation Error: {pdf_error}")
+                    import traceback
+                    traceback.print_exc()
+                    return HttpResponse(f"PDF generation failed: {str(pdf_error)}", status=500)
             else:
                 return HttpResponse("Invalid output format. Please select Excel or PDF.", status=400)
                 

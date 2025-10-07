@@ -42,14 +42,20 @@ class ReportDataAggregator:
             
             # Get client name
             client_name = self._get_client_name(animal)
+
+            # Determine Turkish animal type early and whether it's a small animal
+            turkish_type = self._get_turkish_animal_type(animal.animal_type)
+            is_small_animal = turkish_type in ['KUZU', 'OGLAK', 'KECI', 'KOYUN']
             
             # Debug: Print animal details
             print(f"DEBUG: Animal {animal.identification_tag} - Status: {offal_status}, Bowels: {bowels_status}")
             
             daily_data.append({
+                # For small animals, do not include the ear tag in outputs (leave blank)
+                'identification_tag': '' if is_small_animal else (animal.identification_tag or ''),
                 'client_name': client_name,
                 'quantity': 1,  # Individual animal
-                'animal_type': self._get_turkish_animal_type(animal.animal_type),
+                'animal_type': turkish_type,
                 'live_weight': live_weight,
                 'hot_carcass_weight': hot_carcass_weight,
                 'offal_status': offal_status,
@@ -245,19 +251,35 @@ class ReportDataAggregator:
         
         for record in daily_data:
             # Create a key based on ALL fields except quantity and weights
-            # This ensures separate rows for any difference
-            key = (
-                record['client_name'],
-                record['animal_type'],
-                record['live_weight'],
-                record['hot_carcass_weight'],
-                record['offal_status'],
-                record['bowels_status'],
-                record['leather_weight'],
-                record['sakatat_weight'],
-                record['destination'],
-                record['description']
-            )
+            # For small animals (KUZU/OGLAK/KECI), omit identification_tag so same rows aggregate
+            # For others, include identification_tag to keep rows unique per animal
+            if record['animal_type'] in ['KUZU', 'OGLAK', 'KECI', 'KOYUN']:
+                key = (
+                    record['client_name'],
+                    record['animal_type'],
+                    record['live_weight'],
+                    record['hot_carcass_weight'],
+                    record['offal_status'],
+                    record['bowels_status'],
+                    record['leather_weight'],
+                    record['sakatat_weight'],
+                    record['destination'],
+                    record['description']
+                )
+            else:
+                key = (
+                    record.get('identification_tag', ''),
+                    record['client_name'],
+                    record['animal_type'],
+                    record['live_weight'],
+                    record['hot_carcass_weight'],
+                    record['offal_status'],
+                    record['bowels_status'],
+                    record['leather_weight'],
+                    record['sakatat_weight'],
+                    record['destination'],
+                    record['description']
+                )
             
             if key in grouped_records:
                 # If record exists, add to quantity
@@ -290,13 +312,14 @@ class ExcelReportGenerator:
         ws.title = "Daily Slaughter Report"
         
         # Title
-        ws['A1'] = f"GÜNLÜK KESİM RAPORU - {self.report_data['date']}"
+        date_str = self.report_data.get('date', self.report_data.get('start_date', ''))
+        ws['A1'] = f"GÜNLÜK KESİM RAPORU - {date_str}"
         ws['A1'].font = Font(bold=True, size=14)
         ws.merge_cells('A1:J1')  # Updated to J1 for 10 columns
         
         # Main table headers
         headers = [
-            "FİRMA ÜNVANI", "ADET", "CİNSİ", "CANLI AĞIRLIK", "SICAK KARKAS AĞIRLIK",
+            "FİRMA ÜNVANI", "ADET", "CİNSİ", "CANLI AĞIRLIK", "HAYVAN KİMLİK NO",
             "SAKATAT", "BAĞIRSAK", "DERİ", "ALINAN MÜŞTERİ", "AÇIKLAMA"
         ]
         
@@ -322,13 +345,13 @@ class ExcelReportGenerator:
         row = 4
         for item in self.report_data['daily_data']:
             ws.cell(row=row, column=1, value=item['destination'])  # ALINAN MÜŞTERİ (first column)
-            ws.cell(row=row, column=2, value=item['quantity'])
+            ws.cell(row=row, column=2, value=float(item['quantity']))
             ws.cell(row=row, column=3, value=item['animal_type'])
-            ws.cell(row=row, column=4, value=item['live_weight'])
-            ws.cell(row=row, column=5, value=item['hot_carcass_weight'])
+            ws.cell(row=row, column=4, value=float(item['live_weight']))
+            ws.cell(row=row, column=5, value=item.get('identification_tag', ''))
             ws.cell(row=row, column=6, value=item['offal_status'])
             ws.cell(row=row, column=7, value=item['bowels_status'])
-            ws.cell(row=row, column=8, value=item['leather_weight'])
+            ws.cell(row=row, column=8, value=float(item['leather_weight']))
             ws.cell(row=row, column=9, value=item['client_name'])  # FİRMA ÜNVANI (before last column)
             ws.cell(row=row, column=10, value=item['description'])
             
@@ -342,7 +365,7 @@ class ExcelReportGenerator:
         summary_start_row = row + 2
         ws.cell(row=summary_start_row, column=1, value="ÖZET").font = Font(bold=True, size=12)
         
-        # Summary headers
+        # Summary headers (remove goat-specific note; keep columns consistent)
         summary_headers = ["", "KESİM", "DERİ", "BAĞIRSAK"]
         for col, header in enumerate(summary_headers, 1):
             cell = ws.cell(row=summary_start_row + 1, column=col, value=header)
@@ -362,15 +385,10 @@ class ExcelReportGenerator:
         summary_row = summary_start_row + 2
         for label, data in summary_data:
             ws.cell(row=summary_row, column=1, value=label).font = Font(bold=True)
-            ws.cell(row=summary_row, column=2, value=data['kesim'])
-            ws.cell(row=summary_row, column=3, value=data['deri'])
+            ws.cell(row=summary_row, column=2, value=float(data['kesim']))
+            ws.cell(row=summary_row, column=3, value=float(data['deri']))
             
-            if label == "KEÇİ":
-                ws.cell(row=summary_row, column=4, value="")
-                # Add note for Keçi
-                ws.cell(row=summary_row + 1, column=1, value="KEÇİ DE BAĞIRSAK ADEDİ LAZIM DEĞİL")
-            else:
-                ws.cell(row=summary_row, column=4, value=data['bagirsak'])
+            ws.cell(row=summary_row, column=4, value=float(data['bagirsak']))
             
             # Apply borders and styling
             for col in range(1, 5):
@@ -381,7 +399,7 @@ class ExcelReportGenerator:
             
             summary_row += 1
         
-        # Auto-adjust column widths
+        # Auto-adjust column widths with a larger cap and explicit width for ID column
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
@@ -391,14 +409,20 @@ class ExcelReportGenerator:
                         max_length = len(str(cell.value))
                 except:
                     pass
-            adjusted_width = min(max_length + 2, 20)
+            adjusted_width = min(max_length + 2, 30)
             ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Column 5 is HAYVAN KİMLİK NO explicitly widen for long tags
+        try:
+            ws.column_dimensions[get_column_letter(5)].width = max(ws.column_dimensions[get_column_letter(5)].width, 25)
+        except Exception:
+            ws.column_dimensions[get_column_letter(5)].width = 25
         
         return wb
 
 
 class PDFReportGenerator:
-    """Service for generating PDF reports using ReportLab"""
+    """Service for generating PDF reports using ReportLab with improved formatting"""
     
     def __init__(self, report_data):
         self.report_data = report_data
@@ -421,128 +445,236 @@ class PDFReportGenerator:
             text = text.replace(turkish, ascii_char)
         
         return text
+    
+    def _truncate_text(self, text, max_length=20):
+        """Truncate text to fit in table cells"""
+        if not text:
+            return ""
+        text = str(text)
+        if len(text) <= max_length:
+            return text
+        return text[:max_length-3] + "..."
+    
+    def _wrap_text(self, text, max_chars_per_line=15):
+        """Wrap long text into multiple lines"""
+        if not text:
+            return ""
+        text = str(text)
+        if len(text) <= max_chars_per_line:
+            return text
+        
+        words = text.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            if len(current_line + " " + word) <= max_chars_per_line:
+                if current_line:
+                    current_line += " " + word
+                else:
+                    current_line = word
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+                if len(current_line) > max_chars_per_line:
+                    # If single word is too long, truncate it
+                    current_line = current_line[:max_chars_per_line-3] + "..."
+        
+        if current_line:
+            lines.append(current_line)
+        
+        return "\n".join(lines)
         
     def generate_daily_slaughter_pdf(self):
-        """Generate PDF for daily slaughter reports"""
-        from reportlab.lib.pagesizes import A4
+        """Generate improved PDF for daily slaughter reports with better formatting"""
+        from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.units import inch, cm
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
         from reportlab.lib import colors
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
         import tempfile
         import os
+        from datetime import datetime
         
         # Create temporary file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
         temp_file.close()
         
-        # Create PDF document
-        doc = SimpleDocTemplate(temp_file.name, pagesize=A4)
+        # Use landscape orientation for better table layout
+        doc = SimpleDocTemplate(
+            temp_file.name, 
+            pagesize=landscape(A4),
+            rightMargin=1*cm,
+            leftMargin=1*cm,
+            topMargin=2*cm,
+            bottomMargin=1*cm
+        )
         story = []
         
         # Get styles
         styles = getSampleStyleSheet()
         
-        # Title style
-        title_style = ParagraphStyle(
-            'CustomTitle',
+        # Company header style
+        company_style = ParagraphStyle(
+            'CompanyHeader',
             parent=styles['Heading1'],
-            fontSize=16,
-            spaceAfter=30,
+            fontSize=14,
+            spaceAfter=10,
             alignment=TA_CENTER,
-            textColor=colors.darkblue
+            textColor=colors.darkblue,
+            fontName='Helvetica-Bold'
         )
         
-        # Header style
-        header_style = ParagraphStyle(
-            'CustomHeader',
+        # Title style
+        title_style = ParagraphStyle(
+            'ReportTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=15,
+            alignment=TA_CENTER,
+            textColor=colors.darkred,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Date style
+        date_style = ParagraphStyle(
+            'DateStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            textColor=colors.black,
+            fontName='Helvetica'
+        )
+        
+        # Summary title style
+        summary_style = ParagraphStyle(
+            'SummaryTitle',
             parent=styles['Heading2'],
             fontSize=12,
-            spaceAfter=12,
+            spaceAfter=10,
             alignment=TA_LEFT,
-            textColor=colors.darkblue
+            textColor=colors.darkblue,
+            fontName='Helvetica-Bold'
         )
+        
+        # Add company header
+        company_info = "GUNDOGDULAR GIDA SAN VE TUR. TIC. LTD STI - BOZALAN - EZINE / CANAKKALE"
+        company_para = Paragraph(company_info, company_style)
+        story.append(company_para)
+        story.append(Spacer(1, 10))
         
         # Add title
         title = Paragraph("GUNLUK KESIM RAPORU", title_style)
         story.append(title)
-        story.append(Spacer(1, 12))
         
         # Add date range
         start_date = self.report_data.get('start_date', '')
         end_date = self.report_data.get('end_date', '')
-        date_text = f"Tarih Araligi: {start_date} - {end_date}"
-        date_para = Paragraph(date_text, styles['Normal'])
+        current_date = datetime.now().strftime("%d.%m.%Y %H:%M")
+        date_text = f"Tarih Araligi: {start_date} - {end_date} | Rapor Tarihi: {current_date}"
+        date_para = Paragraph(date_text, date_style)
         story.append(date_para)
-        story.append(Spacer(1, 20))
+        story.append(Spacer(1, 15))
         
-        # Main data table
+        # Main data table with improved layout
         daily_data = self.report_data.get('daily_data', [])
         if daily_data:
-            # Table headers
+            # Table headers with better column names
             headers = [
-                "FIRMA UNVANI", "ADET", "CINSI", "CANLI AGIRLIK", "SICAK KARKAS AGIRLIK",
-                "SAKATAT", "BAGIRSAK", "DERI", "ALINAN MUSTERI", "ACIKLAMA"
+                "ALINAN MUSTERI", 
+                "ADET", 
+                "CINSI", 
+                "CANLI AGIRLIK", 
+                "HAYVAN KIMLIK NO",
+                "SAKATAT", 
+                "BAGIRSAK", 
+                "DERI", 
+                "FIRMA UNVANI", 
+                "ACIKLAMA"
             ]
             
-            # Prepare table data
+            # Prepare table data with text wrapping
             table_data = [headers]
             for item in daily_data:
+                # Wrap long text for better display
+                destination = self._wrap_text(self._convert_turkish_chars(item.get('destination', '')), 12)
+                client_name = self._wrap_text(self._convert_turkish_chars(item.get('client_name', '')), 12)
+                description = self._wrap_text(self._convert_turkish_chars(item.get('description', '')), 10)
+                
                 row = [
-                    self._convert_turkish_chars(item.get('destination', '')),
-                    str(item.get('quantity', 0)),
+                    destination,
+                    str(int(float(item.get('quantity', 0)))),
                     self._convert_turkish_chars(item.get('animal_type', '')),
-                    str(item.get('live_weight', 0)),
-                    str(item.get('hot_carcass_weight', 0)),
+                    f"{float(item.get('live_weight', 0)):.1f}",
+                    self._convert_turkish_chars(item.get('identification_tag', '')),
                     self._convert_turkish_chars(item.get('offal_status', '')),
                     self._convert_turkish_chars(item.get('bowels_status', '')),
-                    str(item.get('leather_weight', 0)),
-                    self._convert_turkish_chars(item.get('client_name', '')),
-                    self._convert_turkish_chars(item.get('description', ''))
+                    f"{float(item.get('leather_weight', 0)):.1f}",
+                    client_name,
+                    description
                 ]
                 table_data.append(row)
             
-            # Create table
-            table = Table(table_data, repeatRows=1)
+            # Create table with better column widths for Turkish headers
+            # Increased identification tag (HAYVAN KIMLIK NO) column width for long values
+            col_widths = [4*cm, 1.5*cm, 1.5*cm, 2.5*cm, 4*cm, 2*cm, 2*cm, 1.5*cm, 4*cm, 2.5*cm]
+            table = Table(table_data, colWidths=col_widths, repeatRows=1)
+            
+            # Enhanced table styling
             table.setStyle(TableStyle([
                 # Header styling
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
                 ('TOPPADDING', (0, 0), (-1, 0), 8),
-                ('LEFTPADDING', (0, 0), (-1, 0), 6),
-                ('RIGHTPADDING', (0, 0), (-1, 0), 6),
+                ('LEFTPADDING', (0, 0), (-1, 0), 4),
+                ('RIGHTPADDING', (0, 0), (-1, 0), 4),
                 
                 # Data styling
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
                 ('FONTSIZE', (0, 1), (-1, -1), 7),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 1), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                ('LEFTPADDING', (0, 1), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 1), (-1, -1), 4),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('TOPPADDING', (0, 1), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                ('LEFTPADDING', (0, 1), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 1), (-1, -1), 3),
                 
-                # Alternating row colors
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.beige, colors.white]),
+                # Alternating row colors for better readability
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.lightgrey, colors.white]),
+                
+                # Special alignment for numeric columns
+                ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # ADET
+                ('ALIGN', (3, 1), (4, -1), 'CENTER'),  # Weight columns
+                ('ALIGN', (7, 1), (7, -1), 'CENTER'),  # DERI
             ]))
             
             story.append(table)
             story.append(Spacer(1, 20))
         
-        # Summary section
+        # Summary section with improved layout
         summary = self.report_data.get('summary', {})
         if summary:
-            summary_title = Paragraph("OZET", header_style)
+            summary_title = Paragraph("OZET TABLOSU", summary_style)
             story.append(summary_title)
             
-            # Summary table
-            summary_headers = ["HAYVAN TURU", "KESIM", "DERI", "BAGIRSAK", "SAKATAT"]
+            # Summary table with totals
+            summary_headers = ["HAYVAN TURU", "KESIM ADEDI", "DERI (KG)", "BAGIRSAK", "SAKATAT"]
             summary_data = [summary_headers]
+            
+            # Calculate totals
+            total_kesim = 0
+            total_deri = 0
+            total_bagirsak = 0
+            total_sakatat = 0
             
             # Add summary rows
             for animal_type, data in summary.items():
@@ -555,37 +687,80 @@ class PDFReportGenerator:
                         'keci': 'KECI'
                     }.get(animal_type, animal_type.upper())
                     
+                    kesim = float(data.get('kesim', 0))
+                    deri = float(data.get('deri', 0))
+                    bagirsak = float(data.get('bagirsak', 0))
+                    sakatat = float(data.get('sakatat', 0))
+                    
+                    total_kesim += kesim
+                    total_deri += deri
+                    total_bagirsak += bagirsak
+                    total_sakatat += sakatat
+                    
                     row = [
                         turkish_name,
-                        str(data.get('kesim', 0)),
-                        str(data.get('deri', 0)),
-                        str(data.get('bagirsak', 0)),
-                        str(data.get('sakatat', 0))
+                        f"{kesim:.0f}",
+                        f"{deri:.1f}",
+                        f"{bagirsak:.0f}" if animal_type != 'keci' else "-",
+                        f"{sakatat:.0f}"
                     ]
                     summary_data.append(row)
             
+            # Add totals row
+            summary_data.append([
+                "TOPLAM",
+                f"{total_kesim:.0f}",
+                f"{total_deri:.1f}",
+                f"{total_bagirsak:.0f}",
+                f"{total_sakatat:.0f}"
+            ])
+            
             # Create summary table
-            summary_table = Table(summary_data, repeatRows=1)
+            summary_col_widths = [3*cm, 2*cm, 2*cm, 2*cm, 2*cm]
+            summary_table = Table(summary_data, colWidths=summary_col_widths, repeatRows=1)
             summary_table.setStyle(TableStyle([
                 # Header styling
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('TOPPADDING', (0, 0), (-1, 0), 8),
                 
                 # Data styling
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 
+                # Special styling for totals row
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 9),
+                
                 # Alternating row colors
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.lightblue, colors.white]),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.beige, colors.white]),
             ]))
             
             story.append(summary_table)
+
+        
+        # Add footer with generation info
+        footer_style = ParagraphStyle(
+            'FooterStyle',
+            parent=styles['Normal'],
+            fontSize=8,
+            spaceAfter=10,
+            alignment=TA_CENTER,
+            textColor=colors.grey,
+            fontName='Helvetica'
+        )
+        footer_text = f"Bu rapor {current_date} tarihinde otomatik olarak olusturulmustur."
+        footer = Paragraph(footer_text, footer_style)
+        story.append(Spacer(1, 20))
+        story.append(footer)
         
         # Build PDF
         doc.build(story)
