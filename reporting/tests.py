@@ -122,7 +122,7 @@ class ReportDataAggregatorTest(TestCase):
             animal_type='cattle',
             identification_tag='TEST-001',
             received_date=timezone.now(),
-            status='slaughtered'
+            status='carcass_ready'
         )
         
         self.animal2 = Animal.objects.create(
@@ -130,7 +130,7 @@ class ReportDataAggregatorTest(TestCase):
             animal_type='sheep',
             identification_tag='TEST-002',
             received_date=timezone.now(),
-            status='slaughtered'
+            status='carcass_ready'
         )
         
         # Create weight logs
@@ -180,7 +180,7 @@ class ReportDataAggregatorTest(TestCase):
         # Check first animal data
         animal1_data = data[0]
         self.assertEqual(animal1_data['client_name'], 'Test Client')
-        self.assertEqual(animal1_data['animal_type'], 'DANA')  # Turkish for cattle
+        self.assertEqual(animal1_data['animal_type'], 'SIGIR')  # Turkish for cattle
         self.assertEqual(animal1_data['quantity'], 1)
         self.assertEqual(animal1_data['offal_status'], 'SAĞLAM')
         self.assertEqual(animal1_data['bowels_status'], 'SAĞLAM')
@@ -212,22 +212,22 @@ class ReportDataAggregatorTest(TestCase):
         self.assertIn('daily_data', all_data)
         self.assertIn('summary', all_data)
         self.assertIn('total_animals', all_data)
-        self.assertIn('total_weight', all_data)
+        self.assertIn('total_hot_carcass_weight', all_data)
         self.assertIn('total_leather_weight', all_data)
         
-        self.assertEqual(all_data['total_animals'], 2)
+        self.assertEqual(all_data['total_animals'], 2)  # Two animals, each with quantity 1
     
     def test_turkish_animal_type_mapping(self):
         """Test Turkish animal type mapping"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         
         # Test various animal types
-        self.assertEqual(aggregator._get_turkish_animal_type('cattle'), 'DANA')
+        self.assertEqual(aggregator._get_turkish_animal_type('cattle'), 'SIGIR')
         self.assertEqual(aggregator._get_turkish_animal_type('sheep'), 'KOYUN')
-        self.assertEqual(aggregator._get_turkish_animal_type('goat'), 'KEÇİ')
+        self.assertEqual(aggregator._get_turkish_animal_type('goat'), 'KECI')
         self.assertEqual(aggregator._get_turkish_animal_type('lamb'), 'KUZU')
-        self.assertEqual(aggregator._get_turkish_animal_type('heifer'), 'DÜVE')
-        self.assertEqual(aggregator._get_turkish_animal_type('beef'), 'İNEK')
+        self.assertEqual(aggregator._get_turkish_animal_type('heifer'), 'DUVE')
+        self.assertEqual(aggregator._get_turkish_animal_type('beef'), 'DANA')
     
     def test_offal_bowels_status_mapping(self):
         """Test offal and bowels status mapping"""
@@ -265,8 +265,8 @@ class ExcelReportGeneratorTest(TestCase):
                 {
                     'client_name': 'Test Client',
                     'quantity': 1,
-                    'animal_type': 'DANA',
-                    'weight': 300.0,
+                    'animal_type': 'SIGIR',
+                    'hot_carcass_weight': 200.0,
                     'offal_status': 'SAĞLAM',
                     'bowels_status': 'SAĞLAM',
                     'leather_weight': 25.0,
@@ -282,7 +282,7 @@ class ExcelReportGeneratorTest(TestCase):
                 'keci': {'kesim': 0, 'deri': 0, 'bagirsak': 0}
             },
             'total_animals': 1,
-            'total_weight': 300.0,
+            'total_hot_carcass_weight': 200.0,
             'total_leather_weight': 25.0
         }
     
@@ -308,21 +308,23 @@ class ExcelReportGeneratorTest(TestCase):
         
         # Check headers
         headers = [
-            "FİRMA ÜNVANI", "ADET", "CİNSİ", "AĞIRLIK", 
+            "FİRMA ÜNVANI", "ADET", "CİNSİ", "SICAK KARKAS", "HAYVAN KİMLİK NO",
             "SAKATAT", "BAĞIRSAK", "DERİ", "ALINAN MÜŞTERİ", "AÇIKLAMA"
         ]
         for i, header in enumerate(headers, 1):
             self.assertEqual(ws.cell(row=3, column=i).value, header)
         
         # Check data
-        self.assertEqual(ws.cell(row=4, column=1).value, 'Test Client')
-        self.assertEqual(ws.cell(row=4, column=2).value, 1)
-        self.assertEqual(ws.cell(row=4, column=3).value, 'DANA')
-        self.assertEqual(ws.cell(row=4, column=4).value, 300.0)
-        self.assertEqual(ws.cell(row=4, column=5).value, 'SAĞLAM')
-        self.assertEqual(ws.cell(row=4, column=6).value, 'SAĞLAM')
-        self.assertEqual(ws.cell(row=4, column=7).value, 25.0)
-        self.assertEqual(ws.cell(row=4, column=8).value, 'Test Destination')
+        self.assertEqual(ws.cell(row=4, column=1).value, 'Test Destination')  # ALINAN MÜŞTERİ
+        self.assertEqual(ws.cell(row=4, column=2).value, 1)  # ADET
+        self.assertEqual(ws.cell(row=4, column=3).value, 'SIGIR')  # CİNSİ
+        self.assertEqual(ws.cell(row=4, column=4).value, 200.0)  # SICAK KARKAS
+        self.assertEqual(ws.cell(row=4, column=5).value, '')  # HAYVAN KİMLİK NO (empty in test data)
+        self.assertEqual(ws.cell(row=4, column=6).value, 'SAĞLAM')  # SAKATAT
+        self.assertEqual(ws.cell(row=4, column=7).value, 'SAĞLAM')  # BAĞIRSAK
+        self.assertEqual(ws.cell(row=4, column=8).value, 25.0)  # DERİ
+        self.assertEqual(ws.cell(row=4, column=9).value, 'Test Client')  # FİRMA ÜNVANI
+        self.assertEqual(ws.cell(row=4, column=10).value, '')  # AÇIKLAMA
         
         # Check summary section
         summary_start_row = 7  # After data and spacing
@@ -479,7 +481,7 @@ class IntegrationTest(TransactionTestCase):
                 animal_type=animal_type,
                 identification_tag=f'TEST-{i+1:03d}',
                 received_date=timezone.now(),
-                status='slaughtered',
+                status='carcass_ready',
                 slaughter_date=timezone.make_aware(datetime.combine(date.today(), datetime.min.time())),
                 leather_weight_kg=Decimal(f'{20 + i * 5}.00')
             )
@@ -571,14 +573,14 @@ class IntegrationTest(TransactionTestCase):
         aggregator = ReportDataAggregator(date.today(), date.today())
         report_data = aggregator.get_all_data()
         
-        # Check total animals
+        # Check total animals (4 animals, each with quantity 1)
         self.assertEqual(report_data['total_animals'], 4)
         
         # Check that all animals have correct data
         for animal_data in report_data['daily_data']:
             self.assertIn('client_name', animal_data)
             self.assertIn('animal_type', animal_data)
-            self.assertIn('weight', animal_data)
+            self.assertIn('hot_carcass_weight', animal_data)
             self.assertIn('offal_status', animal_data)
             self.assertIn('bowels_status', animal_data)
             self.assertIn('leather_weight', animal_data)

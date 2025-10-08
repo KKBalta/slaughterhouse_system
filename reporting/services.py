@@ -85,45 +85,48 @@ class ReportDataAggregator:
         for item in daily_data:
             animal_type = item['animal_type'].upper()  # Use uppercase Turkish type
             leather_weight = item['leather_weight'] or 0
+            live_weight = item['live_weight'] or 0
+            hot_carcass_weight = item['hot_carcass_weight'] or 0
+            quantity = item['quantity']
             
             if animal_type in ['SIGIR', 'DUVE', 'DANA']:  # Büyükbaş
-                summary['buyukbas']['kesim'] += item['quantity']
-                summary['buyukbas']['deri'] += leather_weight * item['quantity']  # Multiply by quantity for total leather weight
+                summary['buyukbas']['kesim'] += quantity
+                summary['buyukbas']['deri'] += leather_weight  # Already multiplied by quantity in aggregation
                 if item['bowels_status'] == 'SAĞLAM':
-                    summary['buyukbas']['bagirsak'] += item['quantity']
+                    summary['buyukbas']['bagirsak'] += quantity
                 # Count animals with sakatat weight 1.0
                 if item.get('sakatat_weight', 0) == 1.0:
-                    summary['buyukbas']['sakatat'] += item['quantity']
+                    summary['buyukbas']['sakatat'] += quantity
             elif animal_type == 'KUZU':
-                summary['kuzu']['kesim'] += item['quantity']
-                summary['kuzu']['deri'] += item['quantity']  # For small animals, use quantity as leather count
+                summary['kuzu']['kesim'] += quantity
+                summary['kuzu']['deri'] += leather_weight  # Already multiplied by quantity in aggregation
                 if item['bowels_status'] == 'SAĞLAM':
-                    summary['kuzu']['bagirsak'] += item['quantity']
+                    summary['kuzu']['bagirsak'] += quantity
                 # Count animals with sakatat weight 1.0
                 if item.get('sakatat_weight', 0) == 1.0:
-                    summary['kuzu']['sakatat'] += item['quantity']
+                    summary['kuzu']['sakatat'] += quantity
             elif animal_type == 'OGLAK':
-                summary['oglak']['kesim'] += item['quantity']
-                summary['oglak']['deri'] += item['quantity']  # For small animals, use quantity as leather count
+                summary['oglak']['kesim'] += quantity
+                summary['oglak']['deri'] += leather_weight  # Already multiplied by quantity in aggregation
                 if item['bowels_status'] == 'SAĞLAM':
-                    summary['oglak']['bagirsak'] += item['quantity']
+                    summary['oglak']['bagirsak'] += quantity
                 # Count animals with sakatat weight 1.0
                 if item.get('sakatat_weight', 0) == 1.0:
-                    summary['oglak']['sakatat'] += item['quantity']
+                    summary['oglak']['sakatat'] += quantity
             elif animal_type == 'KOYUN':
-                summary['koyun']['kesim'] += item['quantity']
-                summary['koyun']['deri'] += item['quantity']  # For small animals, use quantity as leather count
+                summary['koyun']['kesim'] += quantity
+                summary['koyun']['deri'] += leather_weight  # Already multiplied by quantity in aggregation
                 if item['bowels_status'] == 'SAĞLAM':
-                    summary['koyun']['bagirsak'] += item['quantity']
+                    summary['koyun']['bagirsak'] += quantity
                 # Count animals with sakatat weight 1.0
                 if item.get('sakatat_weight', 0) == 1.0:
-                    summary['koyun']['sakatat'] += item['quantity']
+                    summary['koyun']['sakatat'] += quantity
             elif animal_type == 'KECI':
-                summary['keci']['kesim'] += item['quantity']
-                summary['keci']['deri'] += item['quantity']  # For small animals, use quantity as leather count
+                summary['keci']['kesim'] += quantity
+                summary['keci']['deri'] += leather_weight  # Already multiplied by quantity in aggregation
                 # Count animals with sakatat weight 1.0
                 if item.get('sakatat_weight', 0) == 1.0:
-                    summary['keci']['sakatat'] += item['quantity']
+                    summary['keci']['sakatat'] += quantity
                 # Keçi için bağırsak sayısı gerekli değil
         
         return summary
@@ -137,10 +140,10 @@ class ReportDataAggregator:
             'end_date': self.end_date.strftime('%Y-%m-%d'),
             'daily_data': daily_data,
             'summary': self.get_daily_summary_totals(),
-            'total_animals': len(daily_data),
-            'total_live_weight': sum(item['live_weight'] for item in daily_data),
-            'total_hot_carcass_weight': sum(item['hot_carcass_weight'] for item in daily_data),
-            'total_leather_weight': sum(item['leather_weight'] for item in daily_data)
+            'total_animals': sum(item['quantity'] for item in daily_data),  # Total count of all animals
+            'total_live_weight': sum(item['live_weight'] for item in daily_data),  # Already multiplied by quantity in aggregation
+            'total_hot_carcass_weight': sum(item['hot_carcass_weight'] for item in daily_data),  # Already multiplied by quantity in aggregation
+            'total_leather_weight': sum(item['leather_weight'] for item in daily_data)  # Already multiplied by quantity in aggregation
         }
     
     def _get_weight(self, animal, weight_type):
@@ -290,6 +293,15 @@ class ReportDataAggregator:
                 # Create new record - this happens when ANY field is different
                 grouped_records[key] = record.copy()
         
+        # After grouping, multiply weights by total quantity for each record
+        for record in grouped_records.values():
+            quantity = record['quantity']
+            if quantity > 1:
+                # Multiply weights by quantity to show total weights
+                record['live_weight'] = record['live_weight'] * quantity
+                record['hot_carcass_weight'] = record['hot_carcass_weight'] * quantity
+                record['leather_weight'] = record['leather_weight'] * quantity
+        
         # Convert back to list
         return list(grouped_records.values())
 
@@ -319,7 +331,7 @@ class ExcelReportGenerator:
         
         # Main table headers
         headers = [
-            "FİRMA ÜNVANI", "ADET", "CİNSİ", "CANLI AĞIRLIK", "HAYVAN KİMLİK NO",
+            "FİRMA ÜNVANI", "ADET", "CİNSİ", "SICAK KARKAS", "HAYVAN KİMLİK NO",
             "SAKATAT", "BAĞIRSAK", "DERİ", "ALINAN MÜŞTERİ", "AÇIKLAMA"
         ]
         
@@ -347,7 +359,7 @@ class ExcelReportGenerator:
             ws.cell(row=row, column=1, value=item['destination'])  # ALINAN MÜŞTERİ (first column)
             ws.cell(row=row, column=2, value=float(item['quantity']))
             ws.cell(row=row, column=3, value=item['animal_type'])
-            ws.cell(row=row, column=4, value=float(item['live_weight']))
+            ws.cell(row=row, column=4, value=float(item['hot_carcass_weight']))  # SICAK KARKAS
             ws.cell(row=row, column=5, value=item.get('identification_tag', ''))
             ws.cell(row=row, column=6, value=item['offal_status'])
             ws.cell(row=row, column=7, value=item['bowels_status'])
@@ -412,7 +424,7 @@ class ExcelReportGenerator:
             adjusted_width = min(max_length + 2, 30)
             ws.column_dimensions[column_letter].width = adjusted_width
 
-        # Column 5 is HAYVAN KİMLİK NO explicitly widen for long tags
+        # Column 5 is HAYVAN KİMLİK NO explicitly widen for long tags (moved due to removed column)
         try:
             ws.column_dimensions[get_column_letter(5)].width = max(ws.column_dimensions[get_column_letter(5)].width, 25)
         except Exception:
@@ -589,7 +601,7 @@ class PDFReportGenerator:
                 "ALINAN MUSTERI", 
                 "ADET", 
                 "CINSI", 
-                "CANLI AGIRLIK", 
+                "SICAK KARKAS",
                 "HAYVAN KIMLIK NO",
                 "SAKATAT", 
                 "BAGIRSAK", 
@@ -610,7 +622,7 @@ class PDFReportGenerator:
                     destination,
                     str(int(float(item.get('quantity', 0)))),
                     self._convert_turkish_chars(item.get('animal_type', '')),
-                    f"{float(item.get('live_weight', 0)):.1f}",
+                    f"{float(item.get('hot_carcass_weight', 0)):.1f}",
                     self._convert_turkish_chars(item.get('identification_tag', '')),
                     self._convert_turkish_chars(item.get('offal_status', '')),
                     self._convert_turkish_chars(item.get('bowels_status', '')),
@@ -653,7 +665,7 @@ class PDFReportGenerator:
                 
                 # Special alignment for numeric columns
                 ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # ADET
-                ('ALIGN', (3, 1), (4, -1), 'CENTER'),  # Weight columns
+                ('ALIGN', (3, 1), (3, -1), 'CENTER'),  # Hot carcass weight column
                 ('ALIGN', (7, 1), (7, -1), 'CENTER'),  # DERI
             ]))
             
