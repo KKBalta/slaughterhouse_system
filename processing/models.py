@@ -173,6 +173,18 @@ class Animal(BaseModel):
         if not self.identification_tag:
             # Generate a unique tag based on animal type if not provided
             self.identification_tag = f"{self.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
+        else:
+            # Validate and sanitize identification tag for batch file compatibility
+            from labeling.utils import validate_animal_identification_for_batch
+            validation_result = validate_animal_identification_for_batch(self.identification_tag)
+            
+            if not validation_result['is_valid']:
+                # If validation fails, generate a new tag
+                self.identification_tag = f"{self.animal_type.upper()}-{uuid.uuid4().hex[:10].upper()}"
+            elif validation_result['warnings']:
+                # If there are warnings (Turkish characters, etc.), sanitize the tag
+                self.identification_tag = validation_result['sanitized_name']
+                
         super().save(*args, **kwargs)
 
     def get_performance(self):

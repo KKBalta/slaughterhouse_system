@@ -112,8 +112,14 @@ def generate_animal_label_data(animal) -> dict:
     }
     cinsi = animal_type_mapping.get(animal.animal_type, animal.animal_type.upper())
     
-    # Get kupe number (identification tag)
-    kupe_no = animal.identification_tag or "Bilinmiyor"
+    # Get kupe number (identification tag) with validation for batch file compatibility
+    raw_kupe_no = animal.identification_tag or "Bilinmiyor"
+    validation_result = validate_animal_identification_for_batch(raw_kupe_no)
+    kupe_no = validation_result['sanitized_name']
+    
+    # Log warnings if any (for debugging)
+    if validation_result['warnings']:
+        print(f"Animal {animal.id} identification validation warnings: {validation_result['warnings']}")
     
     # Get trader (destination address from slaughter order)
     tuccar = order.destination or ""
@@ -720,8 +726,9 @@ def create_animal_label(animal, label_type='hot_carcass', user=None, printer_con
     # Generate TSPL/PRN content
     prn_content = generate_tspl_prn_label(animal, label_type)
     
-    # Generate dynamic filename based on animal data
-    dynamic_filename = f"animal_label_{animal.identification_tag}_{label_type}.prn"
+    # Generate dynamic filename based on animal data with sanitized identification tag
+    sanitized_tag = validate_and_sanitize_english_name(animal.identification_tag or "UNKNOWN")
+    dynamic_filename = f"animal_label_{sanitized_tag}_{label_type}.prn"
     
     # Generate .bat file content with dynamic filename
     bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
@@ -756,23 +763,26 @@ def get_animal_label_download_data(animal_label, format_type='bat'):
         animal_label: AnimalLabel instance
         format_type: 'bat', 'prn', or 'pdf'
     """
+    # Get sanitized identification tag for filenames
+    sanitized_tag = validate_and_sanitize_english_name(animal_label.animal.identification_tag or "UNKNOWN")
+    
     if format_type.lower() == 'bat':
         return {
             'content': animal_label.bat_content,
-            'filename': f"print_label_{animal_label.animal.identification_tag}_{animal_label.label_type}.bat",
+            'filename': f"print_label_{sanitized_tag}_{animal_label.label_type}.bat",
             'content_type': 'application/octet-stream'
         }
     elif format_type.lower() == 'prn':
         return {
             'content': animal_label.prn_content,
-            'filename': f"animal_label_{animal_label.animal.identification_tag}_{animal_label.label_type}.prn",
+            'filename': f"animal_label_{sanitized_tag}_{animal_label.label_type}.prn",
             'content_type': 'text/plain'
         }
     elif format_type.lower() == 'pdf':
         if animal_label.pdf_file:
             return {
                 'file': animal_label.pdf_file,
-                'filename': f"animal_label_{animal_label.animal.identification_tag}_{animal_label.label_type}.pdf",
+                'filename': f"animal_label_{sanitized_tag}_{animal_label.label_type}.pdf",
                 'content_type': 'application/pdf'
             }
         else:
@@ -1031,6 +1041,131 @@ def generate_zpl_label(animal, label_type='hot_carcass') -> str:
     """
     return generate_tspl_prn_label(animal, label_type)
 
+
+def validate_and_sanitize_english_name(text: str, max_length: int = 50) -> str:
+    """
+    Validate and sanitize text to ensure it contains only English characters suitable for batch files.
+    
+    This function:
+    1. Replaces Turkish characters with English equivalents
+    2. Removes or replaces special characters that cause issues in batch files
+    3. Ensures the result is safe for file names and batch file operations
+    
+    Args:
+        text: Input text that may contain Turkish characters
+        max_length: Maximum length for the sanitized text
+    
+    Returns:
+        Sanitized text with only English characters safe for batch files
+    """
+    if not text:
+        return ""
+    
+    # Turkish to English character mapping
+    turkish_to_english = {
+        'ı': 'i', 'İ': 'I',  # Turkish i
+        'ğ': 'g', 'Ğ': 'G',  # Turkish g
+        'ü': 'u', 'Ü': 'U',  # Turkish u
+        'ş': 's', 'Ş': 'S',  # Turkish s
+        'ö': 'o', 'Ö': 'O',  # Turkish o
+        'ç': 'c', 'Ç': 'C',  # Turkish c
+    }
+    
+    # Replace Turkish characters with English equivalents
+    sanitized = text
+    for turkish_char, english_char in turkish_to_english.items():
+        sanitized = sanitized.replace(turkish_char, english_char)
+    
+    # Remove or replace characters that cause issues in batch files
+    # These characters can cause problems in Windows batch files
+    problematic_chars = {
+        '<': '_', '>': '_', '|': '_', '?': '_', '*': '_',
+        '"': '_', ':': '_', ';': '_', '=': '_', '+': '_',
+        '[': '_', ']': '_', '{': '_', '}': '_', '^': '_',
+        '&': '_', '%': '_', '!': '_', '@': '_', '#': '_',
+        '$': '_', '~': '_', '`': '_', '\\': '_', '/': '_',
+        ' ': '_', '\t': '_', '\n': '_', '\r': '_'
+    }
+    
+    for char, replacement in problematic_chars.items():
+        sanitized = sanitized.replace(char, replacement)
+    
+    # Remove any remaining non-ASCII characters
+    sanitized = ''.join(char for char in sanitized if ord(char) < 128)
+    
+    # Remove multiple consecutive underscores and trim
+    import re
+    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
+    
+    # Ensure it's not empty and limit length
+    if not sanitized:
+        sanitized = "ANIMAL"
+    
+    # Truncate if too long
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length].rstrip('_')
+    
+    return sanitized
+
+def validate_animal_identification_for_batch(identification_tag: str) -> dict:
+    """
+    Validate animal identification tag for batch file compatibility.
+    
+    Args:
+        identification_tag: The animal identification tag to validate
+    
+    Returns:
+        Dictionary with validation results:
+        {
+            'is_valid': bool,
+            'sanitized_name': str,
+            'original_name': str,
+            'warnings': list,
+            'errors': list
+        }
+    """
+    result = {
+        'is_valid': True,
+        'sanitized_name': '',
+        'original_name': identification_tag or '',
+        'warnings': [],
+        'errors': []
+    }
+    
+    if not identification_tag:
+        result['errors'].append('Identification tag is empty')
+        result['is_valid'] = False
+        result['sanitized_name'] = 'UNKNOWN'
+        return result
+    
+    # Check for Turkish characters
+    turkish_chars = ['ı', 'İ', 'ğ', 'Ğ', 'ü', 'Ü', 'ş', 'Ş', 'ö', 'Ö', 'ç', 'Ç']
+    has_turkish = any(char in identification_tag for char in turkish_chars)
+    
+    if has_turkish:
+        result['warnings'].append('Contains Turkish characters that may cause batch file issues')
+    
+    # Check for problematic characters
+    problematic_chars = ['<', '>', '|', '?', '*', '"', ':', ';', '=', '+', '[', ']', '{', '}', '^', '&', '%', '!', '@', '#', '$', '~', '`', '\\', '/']
+    has_problematic = any(char in identification_tag for char in problematic_chars)
+    
+    if has_problematic:
+        result['warnings'].append('Contains special characters that may cause batch file issues')
+    
+    # Generate sanitized version
+    result['sanitized_name'] = validate_and_sanitize_english_name(identification_tag)
+    
+    # Check if sanitization changed the name significantly
+    if result['sanitized_name'] != identification_tag:
+        result['warnings'].append(f'Name sanitized from "{identification_tag}" to "{result["sanitized_name"]}"')
+    
+    # Final validation
+    if not result['sanitized_name']:
+        result['errors'].append('Sanitized name is empty')
+        result['is_valid'] = False
+        result['sanitized_name'] = 'ANIMAL'
+    
+    return result
 
 def get_company_info() -> dict:
     """
