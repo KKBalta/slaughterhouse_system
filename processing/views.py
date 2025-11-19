@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.http import JsonResponse
 from django.urls import reverse
-from datetime import datetime
+from datetime import datetime, timedelta
 from django import forms
 
 from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
@@ -517,9 +517,12 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 selected_order = None
         
         # Get orders with animals ready for weight logging (any status that allows weight logging)
+        # Filter to only show orders from the last week
+        one_week_ago = timezone.now() - timedelta(days=7)
         relevant_statuses = ['received', 'slaughtered', 'carcass_ready', 'disassembled', 'packaged', 'delivered']
         orders = SlaughterOrder.objects.filter(
-            animals__status__in=relevant_statuses
+            animals__status__in=relevant_statuses,
+            order_datetime__gte=one_week_ago
         ).annotate(
             received_count=Count('animals', filter=Q(animals__status='received')),
             slaughtered_count=Count('animals', filter=Q(animals__status='slaughtered')),
