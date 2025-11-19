@@ -99,7 +99,29 @@ class SlaughterOrderListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return SlaughterOrder.objects.all().order_by('-order_datetime')
+        queryset = SlaughterOrder.objects.select_related(
+            'client', 'client__user', 'service_package'
+        ).order_by('-order_datetime')
+        
+        # Search functionality
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            queryset = queryset.filter(
+                Q(slaughter_order_no__icontains=search) |
+                Q(client__company_name__icontains=search) |
+                Q(client__user__first_name__icontains=search) |
+                Q(client__user__last_name__icontains=search) |
+                Q(client__contact_person__icontains=search) |
+                Q(client_name__icontains=search) |
+                Q(destination__icontains=search)
+            )
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_search'] = self.request.GET.get('search', '')
+        return context
 
 
 class SlaughterOrderDetailView(LoginRequiredMixin, DetailView):
