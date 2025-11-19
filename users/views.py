@@ -41,7 +41,31 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
-        return reverse_lazy('dashboard') # Redirect to dashboard page after login
+        """
+        Redirect to the 'next' parameter if provided, otherwise to dashboard.
+        This allows proper redirection after login when accessing protected pages.
+        Handles both GET and POST parameters for the 'next' value.
+        """
+        # Check POST first (form submission), then GET (URL parameter)
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        
+        if next_url:
+            # Validate that the next URL is safe (same domain)
+            from django.utils.http import url_has_allowed_host_and_scheme
+            allowed_hosts = {self.request.get_host()}
+            # Also allow the site URL from settings
+            from django.conf import settings
+            if hasattr(settings, 'SITE_URL'):
+                from urllib.parse import urlparse
+                parsed = urlparse(settings.SITE_URL)
+                if parsed.netloc:
+                    allowed_hosts.add(parsed.netloc)
+            
+            if url_has_allowed_host_and_scheme(next_url, allowed_hosts=allowed_hosts):
+                return next_url
+        
+        # Default redirect to dashboard
+        return reverse_lazy('dashboard')
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('logged_out') # Redirect to logged_out page after logout

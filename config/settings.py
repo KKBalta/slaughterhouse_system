@@ -396,6 +396,13 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
 
 # -------------------------
+# Authentication Settings
+# -------------------------
+LOGIN_URL = '/login/'  # Will be automatically prefixed with language by i18n_patterns
+LOGIN_REDIRECT_URL = '/dashboard/'  # Default redirect after successful login
+LOGOUT_REDIRECT_URL = '/logged-out/'  # Redirect after logout
+
+# -------------------------
 # Other settings
 # -------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
