@@ -4,102 +4,120 @@
 {% block title %}{% trans "Dashboard" %} - {{ block.super }}{% endblock %}
 
 {% block content %}
-    <header class="mb-8">
-        <div class="flex items-center gap-4 mb-4">
-            <h1 class="text-4xl font-extrabold text-gray-900">{% blocktrans with username=user.username %}Welcome, {{ username }}!{% endblocktrans %}</h1>
-            {% if user.role == 'ADMIN' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                    </svg>
-                    {% trans "System Administrator" %}
-                </span>
-            {% elif user.role == 'MANAGER' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z"/>
-                        <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z"/>
-                    </svg>
-                    {% trans "Manager" %}
-                </span>
-            {% elif user.role == 'OPERATOR' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                    </svg>
-                    {% trans "Operator" %}
-                </span>
-            {% elif user.role == 'CLIENT' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-                    </svg>
-                    {% trans "Client" %}
-                </span>
-            {% else %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/>
-                    </svg>
-                    {% trans "User" %}
-                </span>
-            {% endif %}
-        </div>
-        <p class="mt-2 text-lg text-gray-600">{% trans "This is your dashboard. Here are the actions you can perform." %}</p>
-    </header>
+<header class="mb-8">
+    <div class="flex items-center gap-4 mb-4">
+        <h1 class="text-4xl font-extrabold text-gray-900">{% blocktrans with username=user.username %}Welcome, {{ username }}!{% endblocktrans %}</h1>
+        {% if user.role == 'ADMIN' %}
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+            </svg>
+            {% trans "System Administrator" %}
+        </span>
+        {% elif user.role == 'MANAGER' %}
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" />
+                <path
+                    d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
+            </svg>
+            {% trans "Manager" %}
+        </span>
+        {% elif user.role == 'OPERATOR' %}
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+            </svg>
+            {% trans "Operator" %}
+        </span>
+        {% elif user.role == 'CLIENT' %}
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+            </svg>
+            {% trans "Client" %}
+        </span>
+        {% else %}
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
+            </svg>
+            {% trans "User" %}
+        </span>
+        {% endif %}
+    </div>
+    <p class="mt-2 text-lg text-gray-600">{% trans "This is your dashboard. Here are the actions you can perform." %}
+    </p>
+</header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        {% if user.role != 'CLIENT' %}
-        <!-- Reception App Section -->
-        <div class="md:col-span-2 lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-                {% trans "Reception Management" %}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <!-- Create New Order -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "New Order" %}</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    {% if user.role != 'CLIENT' %}
+    <!-- Reception App Section -->
+    <div class="md:col-span-2 lg:col-span-3">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                </path>
+            </svg>
+            {% trans "Reception Management" %}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <!-- Create New Order -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
                         </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Create slaughter order for new or existing clients" %}</p>
-                        <a href="{% url 'reception:create_slaughter_order' %}" 
-                           class="w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                            {% trans "Create Order" %}
-                        </a>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "New Order" %}</h3>
                     </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Create slaughter order for new or existing clients" %}</p>
+                    <a href="{% url 'reception:create_slaughter_order' %}"
+                        class="w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Create Order" %}
+                    </a>
                 </div>
+            </div>
 
-                <!-- View All Orders -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "All Orders" %}</h3>
+            <!-- View All Orders -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                </path>
+                            </svg>
                         </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "View and manage all slaughter orders" %}</p>
-                        <a href="{% url 'reception:slaughter_order_list' %}" 
-                           class="w-full bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                            {% trans "View Orders" %}
-                        </a>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "All Orders" %}</h3>
                     </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "View and manage all slaughter orders" %}</p>
+                    <a href="{% url 'reception:slaughter_order_list' %}"
+                        class="w-full bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "View Orders" %}
+                    </a>
                 </div>
+            </div>
 
-                <!-- Pending Orders -->
-                <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <!-- Pending Orders -->
+            <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="p-4">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -117,8 +135,8 @@
                     </div>
                 </div> -->
 
-                <!-- In Progress Orders -->
-                <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <!-- In Progress Orders -->
+            <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="p-4">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -136,8 +154,8 @@
                     </div>
                 </div> -->
 
-                <!-- Client Search -->
-                <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <!-- Client Search -->
+            <!-- <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="p-4">
                         <div class="flex items-center mb-3">
                             <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -154,394 +172,451 @@
                         </button>
                     </div>
                 </div> -->
-            </div>
-        </div>
-
-        <!-- Processing App Section -->
-        {% endif %}
-
-        {% if user.role == 'CLIENT' %}
-        <!-- Client Portal Section -->
-        <div class="md:col-span-2 lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                {% trans "Client Portal" %}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                <!-- My Orders -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "My Orders" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Track your order status and progress" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "View Orders" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Order History -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "History" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "View past orders and invoices" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "Order History" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Documents -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Documents" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Download certificates and reports" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "View Documents" %}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        {% if user.role == 'OPERATOR' or user.role == 'MANAGER' or user.role == 'ADMIN' %}
-        <!-- Processing App Section -->
-        <div class="md:col-span-2 lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                {% trans "Processing & Operations" %}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <!-- Active Processing -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Operation Dashboard" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Processing overview and workflow status" %}</p>
-                        <a href="{% url 'processing:dashboard' %}" 
-                           class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                            {% trans "View Dashboard" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Inventory -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Inventory" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Stock levels and storage" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "View Inventory" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Labeling -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Labeling" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Print labels and barcodes" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "Label Manager" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Quality Control -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Quality" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Quality control and compliance" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "QC Dashboard" %}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if user.role == 'MANAGER' or user.role == 'ADMIN' %}
-        <!-- Management & Reporting Section -->
-        <div class="md:col-span-2 lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                {% trans "Management & Reporting" %}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                <!-- Analytics Dashboard -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Analytics" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Performance metrics and KPIs" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "View Analytics" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Financial Reports -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Finance" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Revenue and cost analysis" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "Financial Reports" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Daily Reports -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Daily Reports" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Generate daily slaughter reports" %}</p>
-                        <a href="/reporting/" 
-                           class="w-full bg-purple-600 text-white py-2 px-3 rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                            {% trans "Generate Reports" %}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if user.role == 'ADMIN' %}
-        <!-- System Administration -->
-        <div class="md:col-span-2 lg:col-span-3">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                {% trans "System Administration" %}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                <!-- User Management -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Users" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Manage user accounts and permissions" %}</p>
-                        <a href="/admin/" class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                            {% trans "Django Admin" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- System Settings -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Settings" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Configure system parameters" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "System Settings" %}
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Backup & Maintenance -->
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div class="p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Maintenance" %}</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">{% trans "Database backup and system health" %}</p>
-                        <a href="#" class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed" 
-                           title="Coming Soon">
-                            {% trans "Maintenance" %}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-    </div>
-
-    <!-- Client Search Modal -->
-    <div id="clientSearchModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">{% trans "Search Clients" %}</h3>
-                    <button onclick="closeClientSearch()" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <input type="text" id="modalClientSearch" placeholder="{% trans "Type client name to search..." %}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                <div id="modalSearchResults" class="mt-3 max-h-60 overflow-y-auto"></div>
-            </div>
         </div>
     </div>
 
-    <script>
-        function openClientSearch() {
-            document.getElementById('clientSearchModal').classList.remove('hidden');
-            document.getElementById('modalClientSearch').focus();
-        }
+    <!-- Processing App Section -->
+    {% endif %}
 
-        function closeClientSearch() {
-            document.getElementById('clientSearchModal').classList.add('hidden');
-            document.getElementById('modalClientSearch').value = '';
-            document.getElementById('modalSearchResults').innerHTML = '';
-        }
+    {% if user.role == 'CLIENT' %}
+    <!-- Client Portal Section -->
+    <div class="md:col-span-2 lg:col-span-3">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            {% trans "Client Portal" %}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <!-- My Orders -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "My Orders" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Track your order status and progress" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "View Orders" %}
+                    </a>
+                </div>
+            </div>
 
-        // Client search functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('modalClientSearch');
-            const searchResults = document.getElementById('modalSearchResults');
-            let searchTimeout;
+            <!-- Order History -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "History" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "View past orders and invoices" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "Order History" %}
+                    </a>
+                </div>
+            </div>
 
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const query = this.value.trim();
-                    
-                    clearTimeout(searchTimeout);
-                    
-                    if (query.length < 2) {
-                        searchResults.innerHTML = '';
-                        return;
-                    }
-                    
-                    searchTimeout = setTimeout(() => {
-                        fetch(`/reception/api/search-clients/?q=${encodeURIComponent(query)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                searchResults.innerHTML = '';
-                                
-                                if (data.clients.length === 0) {
-                                    searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
-                                } else {
-                                    data.clients.forEach(client => {
-                                        const item = document.createElement('div');
-                                        item.className = 'p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100';
-                                        item.innerHTML = `
+            <!-- Documents -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Documents" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Download certificates and reports" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "View Documents" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == 'OPERATOR' or user.role == 'MANAGER' or user.role == 'ADMIN' %}
+    <!-- Processing App Section -->
+    <div class="md:col-span-2 lg:col-span-3">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+                </path>
+            </svg>
+            {% trans "Processing & Operations" %}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Active Processing -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Operation Dashboard" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Processing overview and workflow status" %}</p>
+                    <a href="{% url 'processing:dashboard' %}"
+                        class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "View Dashboard" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Disassembly Management -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Disassembly" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Manage animal disassembly and cuts" %}</p>
+                    <a href="{% url 'processing:disassembly_dashboard' %}"
+                        class="w-full bg-purple-600 text-white py-2 px-3 rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Manage Cuts" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Inventory -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Inventory" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Stock levels and storage" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "View Inventory" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Labeling -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Labeling" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Print labels and barcodes" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "Label Manager" %}
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == 'MANAGER' or user.role == 'ADMIN' %}
+    <!-- Management & Reporting Section -->
+    <div class="md:col-span-2 lg:col-span-3">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                </path>
+            </svg>
+            {% trans "Management & Reporting" %}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <!-- Analytics Dashboard -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Analytics" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Performance metrics and KPIs" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "View Analytics" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Financial Reports -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Finance" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Revenue and cost analysis" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "Financial Reports" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Daily Reports -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Daily Reports" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Generate daily slaughter reports" %}</p>
+                    <a href="/reporting/"
+                        class="w-full bg-purple-600 text-white py-2 px-3 rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Generate Reports" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == 'ADMIN' %}
+    <!-- System Administration -->
+    <div class="md:col-span-2 lg:col-span-3">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            {% trans "System Administration" %}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <!-- User Management -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Users" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Manage user accounts and permissions" %}</p>
+                    <a href="/admin/"
+                        class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Django Admin" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- System Settings -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Settings" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Configure system parameters" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "System Settings" %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Backup & Maintenance -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Maintenance" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Database backup and system health" %}</p>
+                    <a href="#"
+                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
+                        title="Coming Soon">
+                        {% trans "Maintenance" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Client Search Modal -->
+<div id="clientSearchModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">{% trans "Search Clients" %}</h3>
+                <button onclick="closeClientSearch()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <input type="text" id="modalClientSearch" placeholder="{% trans " Type client name to search..." %}"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <div id="modalSearchResults" class="mt-3 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openClientSearch() {
+        document.getElementById('clientSearchModal').classList.remove('hidden');
+        document.getElementById('modalClientSearch').focus();
+    }
+
+    function closeClientSearch() {
+        document.getElementById('clientSearchModal').classList.add('hidden');
+        document.getElementById('modalClientSearch').value = '';
+        document.getElementById('modalSearchResults').innerHTML = '';
+    }
+
+    // Client search functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('modalClientSearch');
+        const searchResults = document.getElementById('modalSearchResults');
+        let searchTimeout;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+
+                clearTimeout(searchTimeout);
+
+                if (query.length < 2) {
+                    searchResults.innerHTML = '';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    fetch(`/reception/api/search-clients/?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            searchResults.innerHTML = '';
+
+                            if (data.clients.length === 0) {
+                                searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
+                            } else {
+                                data.clients.forEach(client => {
+                                    const item = document.createElement('div');
+                                    item.className = 'p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100';
+                                    item.innerHTML = `
                                             <div class="font-medium text-gray-900">${client.display_name}</div>
                                             <div class="text-sm text-gray-600">${client.contact_info} • ${client.phone}</div>
                                         `;
-                                        item.addEventListener('click', () => {
-                                            // You can add client selection logic here
-                                            alert(`{% trans "Selected client" %}: ${client.display_name}`);
-                                            closeClientSearch();
-                                        });
-                                        searchResults.appendChild(item);
+                                    item.addEventListener('click', () => {
+                                        // You can add client selection logic here
+                                        alert(`{% trans "Selected client" %}: ${client.display_name}`);
+                                        closeClientSearch();
                                     });
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching clients:', error);
-                                searchResults.innerHTML = '<div class="p-3 text-red-500 text-sm text-center">{% trans "Error searching clients" %}</div>';
-                            });
-                    }, 300);
-                });
-            }
-        });
-    </script>
+                                    searchResults.appendChild(item);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching clients:', error);
+                            searchResults.innerHTML = '<div class="p-3 text-red-500 text-sm text-center">{% trans "Error searching clients" %}</div>';
+                        });
+                }, 300);
+            });
+        }
+    });
+</script>
 {% endblock %}

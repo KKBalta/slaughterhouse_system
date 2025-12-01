@@ -26,4 +26,11 @@ urlpatterns = [
     
     # Status Updates
     path('orders/<uuid:order_pk>/status/', views.OrderStatusUpdateView.as_view(), name='order_status_update'),
+
+    # Disassembly
+    path('disassembly/', views.DisassemblyDashboardView.as_view(), name='disassembly_dashboard'),
+    path('animals/<uuid:pk>/disassembly/', views.DisassemblyDetailView.as_view(), name='disassembly_detail'),
+    path('animals/<uuid:pk>/disassembly/add/', views.AddDisassemblyCutView.as_view(), name='add_disassembly_cut'),
+    path('animals/<uuid:pk>/disassembly/cuts/<uuid:cut_pk>/edit/', views.EditDisassemblyCutView.as_view(), name='edit_disassembly_cut'),
+    path('animals/<uuid:pk>/disassembly/cuts/<uuid:cut_pk>/delete/', views.DeleteDisassemblyCutView.as_view(), name='delete_disassembly_cut'),
 ]

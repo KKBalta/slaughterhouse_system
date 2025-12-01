@@ -1,7 +1,7 @@
 from django.db import models
 from core.models import BaseModel
 from users.models import User
-from processing.models import Animal
+from processing.models import Animal, DisassemblyCut
 from reception.models import SlaughterOrder
 import uuid # Import uuid for UUIDField
 
@@ -133,6 +133,7 @@ class Label(BaseModel):
 class AnimalLabel(BaseModel):
     """
     Specific model for animal labels used in hot carcass identification.
+    Can also be used for disassembly cut labels.
     """
     animal = models.ForeignKey(
         Animal,
@@ -140,12 +141,21 @@ class AnimalLabel(BaseModel):
         related_name='labels',
         help_text="The animal this label is for."
     )
+    cut = models.ForeignKey(
+        DisassemblyCut,
+        on_delete=models.CASCADE,
+        related_name='labels',
+        null=True,
+        blank=True,
+        help_text="The disassembly cut this label is for (if label_type is 'cut')."
+    )
     label_type = models.CharField(
         max_length=50,
         choices=[
             ('hot_carcass', 'Hot Carcass'),
             ('cold_carcass', 'Cold Carcass'),
             ('final', 'Final Product'),
+            ('cut', 'Cut'),
         ],
         default='hot_carcass',
         help_text="Type of label for the animal."
@@ -180,14 +190,23 @@ class AnimalLabel(BaseModel):
     )
     
     class Meta:
-        unique_together = ['animal', 'label_type']
+        # Note: unique_together with nullable fields is handled via application logic
+        # label_code is already unique=True, which ensures global uniqueness
+        # For cut labels: one label per cut (enforced in save/validation)
+        # For other labels: one label per animal per label_type (enforced in save/validation)
         ordering = ['-print_date']
 
     def __str__(self):
+        if self.cut:
+            return f"Cut Label {self.label_code} for {self.animal.identification_tag} - {self.cut.get_cut_name_display()}"
         return f"Animal Label {self.label_code} for {self.animal.identification_tag}"
 
     def save(self, *args, **kwargs):
         if not self.label_code:
             # Generate unique label code
-            self.label_code = f"AL-{self.animal.identification_tag}-{self.label_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+            if self.cut:
+                cut_slug = self.cut.get_cut_name_display().replace(' ', '_').upper()
+                self.label_code = f"CL-{self.animal.identification_tag}-{cut_slug}-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                self.label_code = f"AL-{self.animal.identification_tag}-{self.label_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)

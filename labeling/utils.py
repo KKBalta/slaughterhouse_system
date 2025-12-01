@@ -409,6 +409,123 @@ PRINT 1,1
     
     return tspl_template
 
+def generate_cut_label_data(cut) -> dict:
+    """
+    Generate label data for a disassembly cut.
+    """
+    animal = cut.animal
+    order = animal.slaughter_order
+    
+    # Get client information
+    if order.client:
+        uretici = order.client.company_name or order.client.get_full_name()
+    else:
+        uretici = order.client_name or "Bilinmeyen"
+    uretici = truncate_to_first_two_words(uretici)
+    
+    # Dates
+    kesim_tarihi = animal.slaughter_date.strftime("%d.%m.%Y") if animal.slaughter_date else "Bilinmiyor"
+    uretim_tarihi = timezone.now().strftime("%d.%m.%Y")
+    
+    # STT (10 days from production)
+    from datetime import timedelta
+    stt_date = timezone.now() + timedelta(days=10)
+    stt = stt_date.strftime("%d.%m.%Y")
+    
+    # Order No
+    siparis_no = order.slaughter_order_no or "Bilinmiyor"
+    
+    # Animal Type
+    animal_type_mapping = {
+        'cattle': 'SIGIR', 'sheep': 'KOYUN', 'goat': 'KECI',
+        'lamb': 'KUZU', 'oglak': 'OGLAK', 'calf': 'BUZA',
+        'heifer': 'DUVE', 'beef': 'DANA',
+    }
+    cinsi = animal_type_mapping.get(animal.animal_type, animal.animal_type.upper())
+    
+    # Identification Tag
+    raw_kupe_no = animal.identification_tag or "Bilinmiyor"
+    validation_result = validate_animal_identification_for_batch(raw_kupe_no)
+    kupe_no = validation_result['sanitized_name']
+    
+    # Cut Name
+    cut_name = cut.get_cut_name_display().upper()
+    
+    # Weight
+    weight = str(cut.weight_kg)
+    
+    # QR Code
+    from django.utils.translation import get_language
+    current_language = get_language() or 'tr'
+    base_url = getattr(settings, 'SITE_URL', 'https://carnitrack-app-1000671720976.europe-west1.run.app')
+    qr_url = f"{base_url}/{current_language}/processing/animals/{animal.id}/"
+    
+    compat_mode = get_printer_compatibility_mode()
+    
+    return {
+        'uretici': format_turkish_text_for_printer(uretici, compat_mode),
+        'kupe_no': format_turkish_text_for_printer(kupe_no, compat_mode),
+        'kesim_tarihi': kesim_tarihi,
+        'uretim_tarihi': uretim_tarihi,
+        'stt': stt,
+        'siparis_no': format_turkish_text_for_printer(siparis_no, compat_mode),
+        'cinsi': cinsi,
+        'cut_name': format_turkish_text_for_printer(cut_name, compat_mode),
+        'weight': weight,
+        'isletme_onay_no': '17-0509',
+        'qr_url': qr_url,
+        'qr_data': qr_url,
+    }
+
+def generate_cut_prn_label(cut) -> str:
+    """
+    Generate TSPL/PRN commands for a cut label.
+    Uses a smaller label format (e.g. 100x100mm or similar) or the same format.
+    For now, we'll use a modified version of the carcass label but focused on the cut.
+    """
+    label_data = generate_cut_label_data(cut)
+    company_info = get_company_info()
+    
+    # Template for cut label (simplified)
+    # Using the same size for now but can be adjusted
+    tspl_template = f'''SIZE 97.5 mm, 260 mm
+GAP 3 mm, 0 mm
+DIRECTION 0,0
+REFERENCE 0,0
+OFFSET 0 mm
+SET PEEL OFF
+SET CUTTER OFF
+SET PARTIAL_CUTTER OFF
+SET TEAR ON
+CLS
+CODEPAGE 1254
+TEXT 766,64,"0",90,9,9,"Kupe No"
+TEXT 666,279,"ROMAN.TTF",90,1,10,"{label_data['kesim_tarihi']}"
+TEXT 630,279,"ROMAN.TTF",90,1,10,"{label_data['stt']}"
+TEXT 739,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 714,791, 1, 93
+TEXT 768,1583,"0",90,14,11,"{company_info['company_name']}"
+TEXT 736,1602,"ROMAN.TTF",90,1,11,"{company_info['company_full_name']}"
+TEXT 704,1556,"ROMAN.TTF",90,1,11,"{company_info['company_address']}"
+TEXT 672,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info['license_no']}"
+TEXT 773,279,"0",90,10,11,"{label_data['kupe_no']}"
+TEXT 724,1033,"ROMAN.TTF",180,1,10,"{label_data['cinsi']} - {label_data['cut_name']}"
+TEXT 732,64,"0",90,9,9,"Uretici Unvani"
+TEXT 739,279,"0",90,10,11,"{label_data['uretici']}"
+TEXT 664,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 628,64,"0",90,9,9,"Son Tuketim Tar."
+TEXT 692,791,"0",90,25,14,"{label_data['weight']}"
+QRCODE 770,601,L,4,A,90,M2,S7,"{label_data['qr_data']}"
+TEXT 769,986,"0",180,9,9,"{label_data['siparis_no']}"
+PRINT 1,1
+'''
+    # Note: This is a simplified version, just one label per row for now to be safe.
+    # The original had 4 labels per row (columns).
+    
+    tspl_template = tspl_template.replace('\n', '\r\n')
+    return tspl_template
+
+
 def generate_bat_file_content(prn_commands: str, printer_config: dict = None, filename: str = None) -> str:
     """
     Generate enhanced .bat file content with multiple printing methods and better error handling.
@@ -754,6 +871,106 @@ def create_animal_label(animal, label_type='hot_carcass', user=None, printer_con
     animal_label.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
     
     return animal_label
+
+def create_cut_label(cut, label_type='cut', user=None, printer_config=None):
+    """
+    Create an AnimalLabel instance for a disassembly cut.
+    """
+    from .models import AnimalLabel
+    
+    # Default printer config if none provided
+    if printer_config is None:
+        printer_config = {'port': 'LPT1'}
+    
+    # Generate TSPL/PRN content
+    prn_content = generate_cut_prn_label(cut)
+    
+    # Generate dynamic filename
+    sanitized_tag = validate_and_sanitize_english_name(cut.animal.identification_tag or "UNKNOWN")
+    cut_name_slug = cut.get_cut_name_display().replace(' ', '_').lower()
+    dynamic_filename = f"cut_label_{sanitized_tag}_{cut_name_slug}.prn"
+    
+    # Generate .bat file content
+    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
+    
+    # Generate PDF content (reusing generate_pdf_label for now or we need a new one)
+    # For now, let's use generate_pdf_label but we might need to adapt it for cuts.
+    # Since generate_pdf_label takes an animal, we can pass the animal but the content will be generic animal label.
+    # Ideally we should have generate_cut_pdf_label.
+    # Let's just use generate_pdf_label(cut.animal) as a placeholder or implement generate_cut_pdf_label.
+    # Implementing a simple generate_cut_pdf_label is better.
+    
+    pdf_buffer = generate_cut_pdf_label(cut)
+    
+    # Create AnimalLabel instance
+    # Link the label to the specific cut
+    animal_label = AnimalLabel(
+        animal=cut.animal,
+        cut=cut,
+        label_type=label_type,
+        printed_by=user,
+        prn_content=prn_content,
+        bat_content=bat_content
+    )
+    
+    animal_label.save()
+    
+    # Save PDF file
+    from django.core.files.base import ContentFile
+    pdf_filename = f"cut_label_{cut.animal.identification_tag}_{cut_name_slug}_{animal_label.id}.pdf"
+    animal_label.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
+    
+    return animal_label
+
+def generate_cut_pdf_label(cut) -> BytesIO:
+    """
+    Generate PDF label for a disassembly cut.
+    """
+    label_data = generate_cut_label_data(cut)
+    
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, height - 50, "CUT LABEL")
+    c.setFont("Helvetica", 10)
+    
+    y_position = height - 80
+    line_height = 20
+    
+    c.drawString(50, y_position, f"URUN: {label_data['cinsi']} - {label_data['cut_name']}")
+    y_position -= line_height
+    
+    c.drawString(50, y_position, f"KUP NO: {label_data['kupe_no']}")
+    y_position -= line_height
+    
+    c.drawString(50, y_position, f"AGIRLIK: {label_data['weight']} KG")
+    y_position -= line_height
+    
+    c.drawString(50, y_position, f"URETICI: {label_data['uretici']}")
+    y_position -= line_height
+    
+    c.drawString(50, y_position, f"KESIM TARIHI: {label_data['kesim_tarihi']}")
+    y_position -= line_height
+    
+    c.drawString(50, y_position, f"STT: {label_data['stt']}")
+    y_position -= line_height * 3
+    
+    # QR Code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(label_data['qr_url'])
+    qr.make(fit=True)
+    
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+        qr_img.save(tmp_file.name, format='PNG')
+        c.drawImage(tmp_file.name, 50, y_position - 100, width=100, height=100)
+        os.unlink(tmp_file.name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
 
 def get_animal_label_download_data(animal_label, format_type='bat'):
     """

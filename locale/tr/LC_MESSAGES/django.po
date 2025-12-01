@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-06 00:37+0300\n"
+"POT-Creation-Date: 2025-11-26 21:13+0300\n"
 "PO-Revision-Date: 2025-08-20 05:18+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
@@ -94,34 +94,37 @@ msgid "Printed By"
 msgstr "Yazdıran"
 
 #: labeling/templates/labeling/animal_label_detail.html:73
-#: processing/templates/processing/animal_detail.html:234
+#: processing/templates/processing/animal_detail.html:258
+#: processing/templates/processing/disassembly_detail.html:363
 msgid "Animal Information"
 msgstr "Hayvan Bilgileri"
 
 #: labeling/templates/labeling/animal_label_detail.html:76
-#: processing/templates/processing/animal_detail.html:237
+#: processing/templates/processing/animal_detail.html:261
 msgid "Identification Tag"
 msgstr "Kimlik Etiketi"
 
 #: labeling/templates/labeling/animal_label_detail.html:80
 #: processing/forms.py:23
-#: processing/templates/processing/animal_detail.html:241
+#: processing/templates/processing/animal_detail.html:265
 #: reception/forms.py:300
 msgid "Animal Type"
 msgstr "Hayvan Türü"
 
 #: labeling/templates/labeling/animal_label_detail.html:84
 #: processing/forms.py:11
-#: processing/templates/processing/animal_detail.html:245
+#: processing/templates/processing/animal_detail.html:269
 #: processing/templates/processing/animal_list.html:316
-#: reception/templates/reception/order_detail.html:147
-#: reception/templates/reception/order_list.html:55
+#: processing/templates/processing/disassembly_dashboard.html:198
+#: processing/templates/processing/disassembly_detail.html:374
+#: reception/templates/reception/order_detail.html:154
+#: reception/templates/reception/order_list.html:78
 #: reporting/templates/reporting/report_list.html:39
 msgid "Status"
 msgstr "Durum"
 
 #: labeling/templates/labeling/animal_label_detail.html:97
-#: processing/templates/processing/animal_detail.html:265
+#: processing/templates/processing/animal_detail.html:289
 msgid "Slaughter Date"
 msgstr "Kesim Tarihi"
 
@@ -176,8 +179,9 @@ msgstr "PDF mevcut değil"
 #: labeling/templates/labeling/animal_label_detail.html:165
 #: labeling/templates/labeling/animal_label_list.html:72
 #: processing/templates/processing/animal_list.html:322
-#: reception/templates/reception/order_detail.html:149
-#: reception/templates/reception/order_list.html:56
+#: processing/templates/processing/disassembly_dashboard.html:210
+#: reception/templates/reception/order_detail.html:155
+#: reception/templates/reception/order_list.html:79
 #: reporting/templates/reporting/report_list.html:42
 msgid "Actions"
 msgstr "İşlemler"
@@ -206,7 +210,9 @@ msgid "Generated Labels"
 msgstr "Oluşturulan Etiketler"
 
 #: labeling/templates/labeling/animal_label_list.html:63
-#: processing/templates/processing/animal_detail.html:522
+#: processing/templates/processing/animal_detail.html:641
+#: processing/templates/processing/disassembly_dashboard.html:194
+#: processing/templates/processing/disassembly_detail.html:370
 #: reporting/templates/reporting/report_list.html:30
 msgid "Type"
 msgstr "Tür"
@@ -217,11 +223,13 @@ msgstr "Sistem"
 
 #: labeling/templates/labeling/animal_label_list.html:119
 #: processing/templates/processing/animal_list.html:396
+#: processing/templates/processing/disassembly_detail.html:310
 msgid "View"
 msgstr "Görüntüle"
 
 #: labeling/templates/labeling/animal_label_list.html:126
-#: processing/templates/processing/animal_detail.html:570
+#: processing/templates/processing/disassembly_detail.html:270
+#: processing/templates/processing/disassembly_detail.html:331
 msgid "Delete"
 msgstr "Sil"
 
@@ -250,39 +258,43 @@ msgstr ""
 "PRN etiketi ve BAT dosyası başarıyla oluşturuldu! Artık etiketi indirebilir "
 "ve yazdırabilirsiniz."
 
-#: labeling/views.py:60
+#: labeling/views.py:60 labeling/views.py:100
 #, python-format
 msgid "Error generating label: %(error)s"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
-#: labeling/views.py:121
+#: labeling/views.py:96
+msgid "Cut label generated successfully!"
+msgstr "Parça etiketi başarıyla oluşturuldu!"
+
+#: labeling/views.py:161
 msgid "PDF file not found."
 msgstr "PDF dosyası bulunamadı."
 
-#: labeling/views.py:125
+#: labeling/views.py:165
 #, python-format
 msgid "Error downloading label: %(error)s"
 msgstr "Etiket indirilirken hata oluştu: %(error)s"
 
-#: labeling/views.py:163
+#: labeling/views.py:203
 msgid "Please select at least one animal."
 msgstr "Lütfen en az bir hayvan seçin."
 
-#: labeling/views.py:196
+#: labeling/views.py:236
 #, python-format
 msgid "Successfully generated %(count)s labels."
 msgstr "%(count)s etiket başarıyla oluşturuldu."
 
-#: labeling/views.py:199
+#: labeling/views.py:239
 #, python-format
 msgid "Some errors occurred: %(errors)s"
 msgstr "Bazı hatalar oluştu: %(errors)s"
 
-#: labeling/views.py:216
+#: labeling/views.py:256
 msgid "Label deleted successfully."
 msgstr "Etiket başarıyla silindi."
 
-#: labeling/views.py:219
+#: labeling/views.py:259
 #, python-format
 msgid "Error deleting label: %(error)s"
 msgstr "Etiket silinirken hata oluştu: %(error)s"
@@ -316,25 +328,22 @@ msgid "Heifer Details"
 msgstr "Düve Detayları"
 
 #: processing/admin.py:47
-
-#| msgid "Sheep Details"
 msgid "Beef Details"
 msgstr "Koyun Detayları"
 
 #: processing/admin.py:52
-
-#| msgid "Weight Logging"
 msgid "Weight Logs"
 msgstr "Ağırlık Kaydı"
 
 #: processing/admin.py:78 processing/forms.py:65 processing/forms.py:122
-#: processing/models.py:416
-#: processing/templates/processing/animal_detail.html:271
+#: processing/models.py:457
+#: processing/templates/processing/animal_detail.html:295
 msgid "Leather Weight"
 msgstr "Deri Ağırlığı"
 
 #: processing/admin.py:89 processing/forms.py:62 processing/forms.py:110
-#: processing/forms.py:234 processing/models.py:413
+#: processing/forms.py:234 processing/models.py:454
+#: processing/templates/processing/disassembly_detail.html:403
 msgid "Hot Carcass Weight"
 msgstr "Sıcak Karkas Ağırlığı"
 
@@ -355,7 +364,7 @@ msgid "Pictures"
 msgstr "Resimler"
 
 #: processing/admin.py:106
-#: processing/templates/processing/animal_detail.html:550
+#: processing/templates/processing/animal_detail.html:671
 msgid "Scale Receipt"
 msgstr "Kantar Fişi"
 
@@ -397,17 +406,17 @@ msgid "Select weight type"
 msgstr "Ağırlık türünü seçin"
 
 #: processing/forms.py:61 processing/forms.py:106 processing/forms.py:233
-#: processing/models.py:412 processing/templates/processing/dashboard.html:340
+#: processing/models.py:453 processing/templates/processing/dashboard.html:340
 msgid "Live Weight"
 msgstr "Canlı Ağırlık"
 
 #: processing/forms.py:63 processing/forms.py:114 processing/forms.py:235
-#: processing/models.py:414
+#: processing/models.py:455
 msgid "Cold Carcass Weight"
 msgstr "Soğuk Karkas Ağırlığı"
 
 #: processing/forms.py:64 processing/forms.py:118 processing/forms.py:236
-#: processing/models.py:415
+#: processing/models.py:456
 msgid "Final Weight"
 msgstr "Son Ağırlık"
 
@@ -417,11 +426,11 @@ msgstr "Son Ağırlık"
 msgid "Weight Type"
 msgstr "Ağırlık Türü"
 
-#: processing/forms.py:83
+#: processing/forms.py:83 processing/forms.py:553
 msgid "Weight (kg)"
 msgstr "Toplam Ağırlık"
 
-#: processing/forms.py:86
+#: processing/forms.py:86 processing/forms.py:561
 msgid "Enter weight in kg"
 msgstr "Deri Ağırlığı Eksik"
 
@@ -484,7 +493,7 @@ msgstr ""
 "Deri ağırlığı alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
 
 #: processing/forms.py:211
-#: processing/templates/processing/animal_detail.html:555
+#: processing/templates/processing/animal_detail.html:676
 msgid "Scale Receipt Image"
 msgstr "Kantar Fişi Görüntüsü"
 
@@ -584,6 +593,25 @@ msgstr "Irkı girin (örn., Holstein, Jersey, Brahman)"
 #: processing/forms.py:501 processing/forms.py:524
 msgid "Enter breed (e.g., Holstein, Angus, Charolais)"
 msgstr "Irkı girin (örn., Holstein, Angus, Charolais)"
+
+#: processing/forms.py:552
+msgid "Cut Name"
+msgstr "Parça Adı"
+
+#: processing/forms.py:577
+msgid "Boneless Meat Weight (kg)"
+msgstr "Kemiksiz Et Ağırlığı (kg)"
+
+#: processing/forms.py:631 processing/models.py:633
+#, python-format
+msgid ""
+"Total disassembly weight (%(total)s kg) cannot exceed hot carcass weight "
+"(%(carcass)s kg). Current excess: %(excess)s kg. Please reduce the weight or "
+"check existing cuts."
+msgstr ""
+"Toplam parçalama ağırlığı (%(total)s kg) sıcak karkas ağırlığını (%(carcass)s "
+"kg) aşamaz. Mevcut fazlalık: %(excess)s kg. Lütfen ağırlığı azaltın veya mevcut "
+"parçaları kontrol edin."
 
 #: processing/models.py:59
 msgid "Cattle"
@@ -694,158 +722,154 @@ msgstr "Hayvanın ağırlıkları için kantar fişi fotoğrafı."
 msgid "The weight of the leather in kilograms."
 msgstr "Derinin kilogram cinsinden ağırlığı."
 
-#: processing/models.py:193
-#: processing/templates/processing/animal_detail.html:347
+#: processing/models.py:234
+#: processing/templates/processing/animal_detail.html:372
 msgid "Not Usable"
 msgstr "Kullanılamaz"
 
-#: processing/models.py:194
-#: processing/templates/processing/animal_detail.html:348
+#: processing/models.py:235
+#: processing/templates/processing/animal_detail.html:373
 msgid "Not Bad"
 msgstr "Fena Değil"
 
-#: processing/models.py:195
-#: processing/templates/processing/animal_detail.html:349
+#: processing/models.py:236
+#: processing/templates/processing/animal_detail.html:374
 msgid "Good"
 msgstr "İyi"
 
-#: processing/models.py:204
+#: processing/models.py:245
 msgid "The associated cattle animal."
 msgstr "İlişkili sığır hayvanı."
 
-#: processing/models.py:209
+#: processing/models.py:250
 msgid "Breed of the cattle."
 msgstr "Sığırın ırkı."
 
-#: processing/models.py:214 processing/models.py:242 processing/models.py:270
-#: processing/models.py:292 processing/models.py:314 processing/models.py:342
-#: processing/models.py:369 processing/models.py:396
+#: processing/models.py:255 processing/models.py:283 processing/models.py:311
+#: processing/models.py:333 processing/models.py:355 processing/models.py:383
+#: processing/models.py:410 processing/models.py:437
 msgid "Score reflecting the usability of the sakatat (internal organs)."
 msgstr ""
 
-#: processing/models.py:219 processing/models.py:247 processing/models.py:275
-#: processing/models.py:297 processing/models.py:319 processing/models.py:347
-#: processing/models.py:374 processing/models.py:401
+#: processing/models.py:260 processing/models.py:288 processing/models.py:316
+#: processing/models.py:338 processing/models.py:360 processing/models.py:388
+#: processing/models.py:415 processing/models.py:442
 msgid "Score reflecting the usability of the bowels."
 msgstr "Bağırsakların kullanılabilirliğini gösteren puan."
 
-#: processing/models.py:224
+#: processing/models.py:265
 #, python-format
 msgid "Details for Cattle: %(tag)s"
 msgstr "Sığır Detayları: %(tag)s"
 
-#: processing/models.py:232
+#: processing/models.py:273
 msgid "The associated sheep animal."
 msgstr "İlişkili koyun hayvanı."
 
-#: processing/models.py:237
+#: processing/models.py:278
 msgid "Breed of the sheep."
 msgstr "Koyunun ırkı."
 
-#: processing/models.py:252
+#: processing/models.py:293
+#, python-format
 msgid "Details for Sheep: %(tag)s"
 msgstr "Koyun Detayları: %(tag)s"
 
-#: processing/models.py:260
+#: processing/models.py:301
 msgid "The associated goat animal."
 msgstr "İlişkili keçi hayvanı."
 
-#: processing/models.py:265
+#: processing/models.py:306
 msgid "Breed of the goat."
 msgstr "Keçi ırkı."
 
-#: processing/models.py:279
+#: processing/models.py:320
 #, python-format
 msgid "Details for Goat: %(tag)s"
 msgstr "Keçi Detayları: %(tag)s"
 
-#: processing/models.py:287
+#: processing/models.py:328
 msgid "The associated lamb animal."
 msgstr "İlişkili kuzu hayvanı."
 
-#: processing/models.py:301
+#: processing/models.py:342
 #, python-format
 msgid "Details for Lamb: %(tag)s"
 msgstr "Kuzu Detayları: %(tag)s"
 
-#: processing/models.py:309
+#: processing/models.py:350
 msgid "The associated oglak animal."
 msgstr "İlişkili oğlak hayvanı."
 
-#: processing/models.py:323
+#: processing/models.py:364
 #, python-format
 msgid "Details for Oglak: %(tag)s"
 msgstr "Oğlak Detayları: %(tag)s"
 
-#: processing/models.py:332
+#: processing/models.py:373
 msgid "The associated calf animal."
 msgstr "İlişkili buzağı hayvanı."
 
-#: processing/models.py:337
+#: processing/models.py:378
 msgid "Breed of the calf."
 msgstr "Buzağı ırkı."
 
-#: processing/models.py:351
+#: processing/models.py:392
 #, python-format
 msgid "Details for Calf: %(tag)s"
 msgstr "Buzağı Detayları: %(tag)s"
 
-#: processing/models.py:359
+#: processing/models.py:400
 msgid "The associated heifer animal."
 msgstr "İlişkili düve hayvanı."
 
-#: processing/models.py:364
+#: processing/models.py:405
 msgid "Breed of the heifer."
 msgstr "Düve ırkı."
 
-#: processing/models.py:378
+#: processing/models.py:419
 #, python-format
 msgid "Details for Heifer: %(tag)s"
 msgstr "Düve Detayları: %(tag)s"
 
-#: processing/models.py:386
-
-#| msgid "The associated sheep animal."
+#: processing/models.py:427
 msgid "The associated beef animal."
 msgstr "İlişkili koyun hayvanı."
 
-#: processing/models.py:391
-
-#| msgid "Breed of the sheep."
+#: processing/models.py:432
 msgid "Breed of the beef."
 msgstr "Koyunun ırkı."
 
-#: processing/models.py:405
+#: processing/models.py:446
 #, python-format
-#| msgid "Details for Sheep: %(tag)s"
 msgid "Details for Beef: %(tag)s"
 msgstr "Sığır Detayları: %(tag)s"
 
-#: processing/models.py:417
+#: processing/models.py:458
 msgid "Live Weight Group"
 msgstr "Canlı Ağırlık"
 
-#: processing/models.py:418
+#: processing/models.py:459
 msgid "Hot Carcass Weight Group"
 msgstr "Sıcak Karkas Ağırlığını Kaydet"
 
-#: processing/models.py:419
+#: processing/models.py:460
 msgid "Cold Carcass Weight Group"
 msgstr "Sıcak Karkas Ağırlığını Kaydet"
 
-#: processing/models.py:420
+#: processing/models.py:461
 msgid "Final Weight Group"
 msgstr "Toplam Ağırlık"
 
-#: processing/models.py:428
+#: processing/models.py:469
 msgid "The animal whose weight is being logged (for individual weights)."
 msgstr "Ağırlığı kaydedilen hayvan (bireysel ağırlıklar için)."
 
-#: processing/models.py:435
+#: processing/models.py:476
 msgid "The slaughter order this group weight belongs to (for group weights)."
 msgstr "Bu grup ağırlığının ait olduğu kesim siparişi (grup ağırlıkları için)."
 
-#: processing/models.py:440
+#: processing/models.py:481
 msgid ""
 "Weight recorded (e.g., live weight, hot carcass weight). For group weights, "
 "this is the average per animal."
@@ -853,83 +877,204 @@ msgstr ""
 "Kaydedilen ağırlık (örn., canlı ağırlık, sıcak karkas ağırlığı). Grup "
 "ağırlıkları için bu, hayvan başına ortalamadır."
 
-#: processing/models.py:445
+#: processing/models.py:486
 msgid ""
 "Type of weight (e.g., 'Live', 'Hot Carcass', 'Cold Carcass', 'Live Group')."
 msgstr ""
 "Ağırlık türü (örn., 'Canlı', 'Sıcak Karkas', 'Soğuk Karkas', 'Canlı Grup')."
 
-#: processing/models.py:449
+#: processing/models.py:490
 msgid "True if this log entry represents a group weighing."
 msgstr "Bu kayıt grup tartımı ise doğru."
 
-#: processing/models.py:453
+#: processing/models.py:494
 msgid "Number of animals in the group, if this is a group weight."
 msgstr "Grup ağırlığı ise gruptaki hayvan sayısı."
 
-#: processing/models.py:459
+#: processing/models.py:500
 msgid "Total weight of the group, if this is a group weight."
 msgstr "Grup ağırlığı ise grubun toplam ağırlığı."
 
-#: processing/models.py:463
+#: processing/models.py:504
 msgid "Date and time the weight was logged."
 msgstr "Henüz toplu ağırlık kaydedilmedi"
 
-#: processing/models.py:468
+#: processing/models.py:509
 #, python-format
 msgid "%(type)s - %(quantity)s animals (%(total_weight)skg total)"
 msgstr ""
 
-#: processing/models.py:474
+#: processing/models.py:515
 #, python-format
 msgid "%(type)s - %(tag)s (%(weight)skg)"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:4
+#: processing/models.py:542 processing/models.py:561
+msgid "Neck"
+msgstr "Boyun"
+
+#: processing/models.py:543
+msgid "Front Leg"
+msgstr "Ön Bacak"
+
+#: processing/models.py:544
+msgid "Rib"
+msgstr "Kaburga"
+
+#: processing/models.py:545
+msgid "Breast / Plate"
+msgstr "Göğüs / Plaka"
+
+#: processing/models.py:546
+msgid "Flank"
+msgstr "Yan"
+
+#: processing/models.py:547
+msgid "Tenderloin"
+msgstr "Bonfile"
+
+#: processing/models.py:548
+msgid "Ribeye"
+msgstr "Kontrfile"
+
+#: processing/models.py:549
+msgid "Topside / Tranç"
+msgstr "Tranç"
+
+#: processing/models.py:550
+msgid "Knuckle / Yumurta"
+msgstr "Yumurta"
+
+#: processing/models.py:551
+msgid "Round / Nuar"
+msgstr "Nuar"
+
+#: processing/models.py:552
+msgid "Ground Beef"
+msgstr "Kıyma"
+
+#: processing/models.py:553 processing/models.py:571
+msgid "Trim"
+msgstr "Sıyırma"
+
+#: processing/models.py:554
+msgid "Stew Cubes"
+msgstr "Kuşbaşı"
+
+#: processing/models.py:555 processing/models.py:572
+msgid "Whole Cut (Bones Removed)"
+msgstr "Kemiksiz Bütün Parça"
+
+#: processing/models.py:556
+msgid "Boneless Meat (Total)"
+msgstr "Kemiksiz Et (Toplam)"
+
+#: processing/models.py:560
+msgid "Shoulder"
+msgstr "Omuz"
+
+#: processing/models.py:562
+msgid "Rib Cage"
+msgstr "Kaburga Kafesi"
+
+#: processing/models.py:563
+msgid "Chop / Rack"
+msgstr "Pirzola / Rack"
+
+#: processing/models.py:564
+msgid "Breast"
+msgstr "Göğüs"
+
+#: processing/models.py:565
+msgid "Fillet"
+msgstr "Fileto"
+
+#: processing/models.py:566
+msgid "Back Strip"
+msgstr "Sırt Şeridi"
+
+#: processing/models.py:567
+msgid "Leg"
+msgstr "Bacak"
+
+#: processing/models.py:568
+msgid "Shank"
+msgstr "İncik"
+
+#: processing/models.py:569
+msgid "Kulbasti"
+msgstr "Kulbastı"
+
+#: processing/models.py:570
+msgid "Soup Bones"
+msgstr "Çorba Kemiği"
+
+#: processing/models.py:587
+msgid "Name of the cut (depends on animal type)"
+msgstr "Parça adı (hayvan türüne bağlıdır)"
+
+#: processing/models.py:593
+msgid "Weight of this cut in kg"
+msgstr "Bu parçanın kilogram cinsinden ağırlığı"
+
+#: processing/models.py:604
+msgid ""
+"This animal uses boneless disassembly. Only 'Boneless Meat (Total)' can be "
+"recorded."
+msgstr ""
+"Bu hayvan kemiksiz parçalama kullanıyor. Yalnızca 'Kemiksiz Et (Toplam)' "
+"kaydedilebilir."
+
+#: processing/models.py:608
+msgid ""
+"This animal uses standard disassembly. Please select a specific cut type."
+msgstr ""
+"Bu hayvan standart parçalama kullanıyor. Lütfen belirli bir parça türü seçin."
+
+#: processing/templates/processing/animal_detail.html:5
 msgid "Animal Detail"
 msgstr "Hayvan Detayı"
 
-#: processing/templates/processing/animal_detail.html:116
+#: processing/templates/processing/animal_detail.html:133
 msgid "Back to List"
 msgstr "Listeye Dön"
 
-#: processing/templates/processing/animal_detail.html:120
-#: processing/templates/processing/animal_detail.html:310
-#: processing/templates/processing/animal_detail.html:635
+#: processing/templates/processing/animal_detail.html:137
+#: processing/templates/processing/animal_detail.html:334
+#: processing/templates/processing/animal_detail.html:763
 #: processing/templates/processing/animal_list.html:400
 msgid "Mark animal as slaughtered?"
 msgstr "Hayvan kesildi olarak işaretlensin mi?"
 
-#: processing/templates/processing/animal_detail.html:123
-#: processing/templates/processing/animal_detail.html:639
+#: processing/templates/processing/animal_detail.html:141
+#: processing/templates/processing/animal_detail.html:767
 msgid "Mark Slaughtered"
 msgstr "Kesildi Olarak İşaretle"
 
-#: processing/templates/processing/animal_detail.html:157
+#: processing/templates/processing/animal_detail.html:176
 #, python-format
-msgid "Action Required: %(detail_form_title)s"
-msgstr "Gerekli İşlem: %(detail_form_title)s"
+msgid "Action Required: %(title)s"
+msgstr "Gerekli İşlem: %(title)s"
 
-#: processing/templates/processing/animal_detail.html:159
+#: processing/templates/processing/animal_detail.html:178
 #, python-format
 msgid ""
-"This %(animal_type)s does not have its specific details filled in yet. \n"
-"                            Please complete the %(detail_form_title)s form "
-"below to ensure proper processing and record keeping."
+"This %(animal_type)s does not have its specific details filled in yet. "
+"Please complete the %(detail_form_title)s form below to ensure proper "
+"processing and record keeping."
 msgstr ""
-"Bu %(animal_type)s henüz özel detayları doldurulmamış. \n"
-"                            Uygun işleme ve kayıt tutma için lütfen "
-"aşağıdaki %(detail_form_title)s formunu doldurun."
+"Bu %(animal_type)s henüz özel detayları doldurulmamış. Uygun işleme ve kayıt "
+"tutma için lütfen aşağıdaki %(detail_form_title)s formunu doldurun."
 
-#: processing/templates/processing/animal_detail.html:165
+#: processing/templates/processing/animal_detail.html:183
 msgid "Fill Details Now"
 msgstr "Detayları Şimdi Doldur"
 
-#: processing/templates/processing/animal_detail.html:185
+#: processing/templates/processing/animal_detail.html:205
 msgid "Leather Weight Missing"
 msgstr "Deri Ağırlığı Eksik"
 
-#: processing/templates/processing/animal_detail.html:187
+#: processing/templates/processing/animal_detail.html:207
 msgid ""
 "This animal has been processed but the leather weight has not been recorded "
 "yet. Please log the leather weight for complete records."
@@ -937,15 +1082,15 @@ msgstr ""
 "Bu hayvan işlenmiş ancak deri ağırlığı henüz kaydedilmemiş. Tam kayıtlar "
 "için lütfen deri ağırlığını kaydedin."
 
-#: processing/templates/processing/animal_detail.html:192
+#: processing/templates/processing/animal_detail.html:213
 msgid "Log Weight Now"
 msgstr "Ağırlığı Şimdi Kaydet"
 
-#: processing/templates/processing/animal_detail.html:212
+#: processing/templates/processing/animal_detail.html:235
 msgid "Hot Carcass Weight Missing"
 msgstr "Sıcak Karkas Ağırlığı Eksik"
 
-#: processing/templates/processing/animal_detail.html:214
+#: processing/templates/processing/animal_detail.html:237
 msgid ""
 "This animal has been slaughtered but the hot carcass weight has not been "
 "recorded yet. This is a critical weight measurement required immediately "
@@ -954,54 +1099,51 @@ msgstr ""
 "Bu hayvan kesilmiş ancak sıcak karkas ağırlığı henüz kaydedilmemiş. Bu, "
 "kesimden hemen sonra gerekli olan kritik bir ağırlık ölçümüdür."
 
-#: processing/templates/processing/animal_detail.html:219
+#: processing/templates/processing/animal_detail.html:243
 msgid "Log Hot Carcass Weight"
 msgstr "Sıcak Karkas Ağırlığını Kaydet"
 
-#: processing/templates/processing/animal_detail.html:260
+#: processing/templates/processing/animal_detail.html:284
 msgid "Received Date"
 msgstr "Alınış Tarihi"
 
-#: processing/templates/processing/animal_detail.html:277
-msgid "Performance"
-msgstr ""
-
 #: processing/templates/processing/animal_detail.html:301
+msgid "Performance"
+msgstr "Performans"
+
+#: processing/templates/processing/animal_detail.html:327
 msgid "Details Not Available"
 msgstr "Detaylar Mevcut Değil"
 
-#: processing/templates/processing/animal_detail.html:303
+#: processing/templates/processing/animal_detail.html:329
 #, python-format
 msgid ""
-"Animal details can only be filled after the animal has been slaughtered. \n"
-"                                    Current status: <strong>%(status)s</"
-"strong>. \n"
-"                                    Please slaughter the animal first before "
-"filling in the specific %(animal_type)s details."
+"Animal details can only be filled after the animal has been slaughtered. "
+"Current status: <strong>%(status)s</strong>. Please slaughter the animal "
+"first before filling in the specific %(animal_type)s details."
 msgstr ""
-"Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. \n"
-"                                    Mevcut durum: <strong>%(status)s</"
-"strong>. \n"
-"                                    Lütfen belirli %(animal_type)s "
+"Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. Mevcut "
+"durum: <strong>%(status)s</strong>. Lütfen belirli %(animal_type)s "
 "detaylarını doldurmadan önce hayvanı kesin."
 
-#: processing/templates/processing/animal_detail.html:314
+#: processing/templates/processing/animal_detail.html:338
 msgid "Slaughter Animal"
 msgstr "Hayvanı Kes"
 
-#: processing/templates/processing/animal_detail.html:326
+#: processing/templates/processing/animal_detail.html:350
 msgid "Existing Details (Read-Only)"
 msgstr "Mevcut Detaylar (Salt Okunur)"
 
-#: processing/templates/processing/animal_detail.html:329
+#: processing/templates/processing/animal_detail.html:353
 msgid "Details were filled previously and are preserved."
 msgstr "Detaylar daha önce dolduruldu ve korundu."
 
-#: processing/templates/processing/animal_detail.html:365
+#: processing/templates/processing/animal_detail.html:390
 msgid "Edit Details"
 msgstr "Detayları Düzenle"
 
-#: processing/templates/processing/animal_detail.html:401
+#: processing/templates/processing/animal_detail.html:427
+#: processing/templates/processing/disassembly_dashboard.html:146
 #: reception/templates/reception/add_animal.html:103
 #: reception/templates/reception/batch_add_animals.html:167
 #: reception/templates/reception/edit_animal.html:106
@@ -1009,128 +1151,192 @@ msgstr "Detayları Düzenle"
 msgid "Cancel"
 msgstr "İptal"
 
-#: processing/templates/processing/animal_detail.html:406
+#: processing/templates/processing/animal_detail.html:432
 msgid "Update Details"
 msgstr "Detayları Güncelle"
 
-#: processing/templates/processing/animal_detail.html:406
+#: processing/templates/processing/animal_detail.html:432
 msgid "Save Details"
 msgstr "Detayları Kaydet"
 
-#: processing/templates/processing/animal_detail.html:418
+#: processing/templates/processing/animal_detail.html:444
 msgid "Label Management"
 msgstr "Etiket Yönetimi"
 
-#: processing/templates/processing/animal_detail.html:427
-msgid "Generate Label"
-msgstr ""
+#: processing/templates/processing/animal_detail.html:453
+msgid "Hot Carcass Label Generate"
+msgstr "Sıcak Karkas Etiketi Oluştur"
 
-#: processing/templates/processing/animal_detail.html:435
-msgid "Preview PRN"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:441
+#: processing/templates/processing/animal_detail.html:460
 msgid "View All Labels"
 msgstr "Tüm Etiketleri Görüntüle"
 
-#: processing/templates/processing/animal_detail.html:446
+#: processing/templates/processing/animal_detail.html:465
 msgid "Label Types Available:"
 msgstr "Mevcut Etiket Türleri:"
 
-#: processing/templates/processing/animal_detail.html:448
+#: processing/templates/processing/animal_detail.html:467
 msgid "PRN Format: Direct printer commands for TSC label printers"
-msgstr ""
+msgstr "PRN Formatı: TSC etiket yazıcıları için direkt yazıcı komutları"
 
-#: processing/templates/processing/animal_detail.html:449
+#: processing/templates/processing/animal_detail.html:468
 msgid "BAT Format: Windows batch file for easy printing"
-msgstr ""
+msgstr "BAT Formatı: Kolay yazdırma için Windows toplu işlem dosyası"
 
-#: processing/templates/processing/animal_detail.html:450
+#: processing/templates/processing/animal_detail.html:469
 msgid "PDF Format: Printable document for any printer"
-msgstr ""
+msgstr "PDF Formatı: Herhangi bir yazıcı için yazdırılabilir belge"
 
-#: processing/templates/processing/animal_detail.html:458
+#: processing/templates/processing/animal_detail.html:477
 msgid "Order Information"
 msgstr "Sipariş Bilgileri"
 
-#: processing/templates/processing/animal_detail.html:461
+#: processing/templates/processing/animal_detail.html:480
 msgid "Order Number"
 msgstr "Sipariş Numarası"
 
-#: processing/templates/processing/animal_detail.html:470
-#: reception/templates/reception/order_list.html:53
-#: users/templates/users/dashboard.html:37
+#: processing/templates/processing/animal_detail.html:489
+#: processing/templates/processing/disassembly_dashboard.html:202
+#: processing/templates/processing/disassembly_dashboard.html:280
+#: reception/templates/reception/order_list.html:76
+#: users/templates/users/dashboard.html:45
 msgid "Client"
 msgstr "Müşteri"
 
-#: processing/templates/processing/animal_detail.html:480
+#: processing/templates/processing/animal_detail.html:499
+#: processing/templates/processing/disassembly_detail.html:393
 msgid "Service Package"
 msgstr "Hizmet Paketi"
 
-#: processing/templates/processing/animal_detail.html:484
-#: reception/templates/reception/order_list.html:54
+#: processing/templates/processing/animal_detail.html:503
+#: reception/templates/reception/order_list.html:77
 msgid "Order Date"
 msgstr "Sipariş Tarihi"
 
-#: processing/templates/processing/animal_detail.html:493
+#: processing/templates/processing/animal_detail.html:513
 msgid "Photos"
 msgstr "Fotoğraflar"
 
-#: processing/templates/processing/animal_detail.html:497
+#: processing/templates/processing/animal_detail.html:517
 msgid "Animal Photo"
 msgstr "Hayvan Fotoğrafı"
 
-#: processing/templates/processing/animal_detail.html:504
+#: processing/templates/processing/animal_detail.html:524
 msgid "Passport Photo"
 msgstr "Pasaport Fotoğrafı"
 
-#: processing/templates/processing/animal_detail.html:515
+#: processing/templates/processing/animal_detail.html:537
+#: users/templates/users/dashboard.html:308
+msgid "Disassembly"
+msgstr "Parçalama"
+
+#: processing/templates/processing/animal_detail.html:540
+#: processing/templates/processing/disassembly_dashboard.html:43
+#: processing/templates/processing/disassembly_detail.html:50
+msgid "Boneless Service"
+msgstr "Kemiksiz Hizmet"
+
+#: processing/templates/processing/animal_detail.html:544
+#: processing/templates/processing/disassembly_dashboard.html:47
+#: processing/templates/processing/disassembly_detail.html:54
+msgid "Standard Cuts"
+msgstr "Standart Parçalar"
+
+#: processing/templates/processing/animal_detail.html:561
+#: processing/templates/processing/disassembly_dashboard.html:62
+#: processing/templates/processing/disassembly_detail.html:70
+msgid "Cannot Proceed to Disassembly"
+msgstr "Parçalama İşlemine Devam Edilemez"
+
+#: processing/templates/processing/animal_detail.html:565
+#: processing/templates/processing/disassembly_dashboard.html:65
+#: processing/templates/processing/disassembly_detail.html:73
+msgid "Hot carcass weight must be logged before disassembly can begin."
+msgstr "Parçalama işlemine başlamadan önce sıcak karkas ağırlığı kaydedilmelidir."
+
+#: processing/templates/processing/animal_detail.html:576
+msgid "Record the total weight of boneless meat after removing all bones."
+msgstr "Tüm kemikler çıkarıldıktan sonra kemiksiz etin toplam ağırlığını kaydedin."
+
+#: processing/templates/processing/animal_detail.html:578
+msgid "Manage disassembly cuts and generate labels for individual pieces."
+msgstr "Parçalama kesimlerini yönetin ve bireysel parçalar için etiket oluşturun."
+
+#: processing/templates/processing/animal_detail.html:586
+#: processing/templates/processing/disassembly_dashboard.html:158
+msgid "Boneless Meat Weight:"
+msgstr "Kemiksiz Et Ağırlığı:"
+
+#: processing/templates/processing/animal_detail.html:591
+msgid "Total Cuts:"
+msgstr "Toplam Parça:"
+
+#: processing/templates/processing/animal_detail.html:593
+#: processing/templates/processing/disassembly_dashboard.html:171
+#: processing/templates/processing/disassembly_detail.html:342
+msgid "Total Weight:"
+msgstr "Toplam Ağırlık:"
+
+#: processing/templates/processing/animal_detail.html:599
+msgid "Individual Cuts:"
+msgstr "Bireysel Parçalar:"
+
+#: processing/templates/processing/animal_detail.html:621
+#: processing/templates/processing/disassembly_dashboard.html:243
+#: processing/templates/processing/disassembly_dashboard.html:297
+#: users/templates/users/dashboard.html:313
+msgid "Manage Cuts"
+msgstr "Parçaları Yönet"
+
+#: processing/templates/processing/animal_detail.html:630
 msgid "Weight History"
 msgstr "Ağırlık Geçmişi"
 
-#: processing/templates/processing/animal_detail.html:521
+#: processing/templates/processing/animal_detail.html:638
 msgid "Date"
 msgstr "Tarih"
 
-#: processing/templates/processing/animal_detail.html:523
+#: processing/templates/processing/animal_detail.html:644
+#: processing/templates/processing/disassembly_detail.html:406
 msgid "Weight"
 msgstr "Ağırlık"
 
-#: processing/templates/processing/animal_detail.html:544
+#: processing/templates/processing/animal_detail.html:665
 msgid "No weight records yet."
 msgstr "Henüz ağırlık kaydı yok."
 
-#: processing/templates/processing/animal_detail.html:559
+#: processing/templates/processing/animal_detail.html:680
 #: reception/templates/reception/edit_animal.html:72
 msgid "Current Image:"
 msgstr "Mevcut Resim:"
 
-#: processing/templates/processing/animal_detail.html:566
+#: processing/templates/processing/animal_detail.html:687
 #: reception/templates/reception/edit_animal.html:79
 msgid "Upload a new image to replace"
 msgstr "Değiştirmek için yeni bir resim yükleyin"
 
-#: processing/templates/processing/animal_detail.html:578
+#: processing/templates/processing/animal_detail.html:704
 msgid "Choose Scale Receipt Image"
-msgstr ""
+msgstr "Kantar Fişi Görüntüsü Seç"
 
-#: processing/templates/processing/animal_detail.html:607
+#: processing/templates/processing/animal_detail.html:735
 msgid "Upload"
-msgstr ""
+msgstr "Yükle"
 
-#: processing/templates/processing/animal_detail.html:631
+#: processing/templates/processing/animal_detail.html:759
+#: processing/templates/processing/disassembly_detail.html:462
 #: reporting/templates/reporting/dashboard.html:154
 #: reporting/templates/reporting/simple_dashboard.html:82
 msgid "Quick Actions"
 msgstr "Hızlı İşlemler"
 
-#: processing/templates/processing/animal_detail.html:646
+#: processing/templates/processing/animal_detail.html:774
 #: reception/templates/reception/edit_animal.html:42
 msgid "Edit Animal"
 msgstr "Hayvanı Düzenle"
 
-#: processing/templates/processing/animal_detail.html:653
-#: processing/templates/processing/animal_detail.html:704
+#: processing/templates/processing/animal_detail.html:781
+#: processing/templates/processing/animal_detail.html:834
 msgid "Log Weight"
 msgstr "Ağırlık Kaydet"
 
@@ -1184,6 +1390,8 @@ msgstr "Hayvan"
 
 #: processing/templates/processing/animal_list.html:313
 #: processing/templates/processing/batch_weight_reports.html:174
+#: processing/templates/processing/disassembly_detail.html:16
+#: processing/templates/processing/disassembly_detail.html:384
 #: reception/templates/reception/add_animal.html:43
 #: reception/templates/reception/batch_add_animals.html:48
 #: reception/templates/reception/edit_animal.html:44
@@ -1210,11 +1418,19 @@ msgstr "Kesim"
 
 #: processing/templates/processing/animal_list.html:426
 #: processing/templates/processing/animal_list.html:433
+#: processing/templates/processing/disassembly_dashboard.html:315
+#: processing/templates/processing/disassembly_dashboard.html:342
+#: reception/templates/reception/order_list.html:130
+#: reception/templates/reception/order_list.html:137
 msgid "Previous"
 msgstr "Önceki"
 
 #: processing/templates/processing/animal_list.html:440
 #: processing/templates/processing/animal_list.html:447
+#: processing/templates/processing/disassembly_dashboard.html:321
+#: processing/templates/processing/disassembly_dashboard.html:364
+#: reception/templates/reception/order_list.html:144
+#: reception/templates/reception/order_list.html:151
 msgid "Next"
 msgstr "Sonraki"
 
@@ -1244,19 +1460,23 @@ msgstr ""
 "                                hayvan"
 
 #: processing/templates/processing/animal_list.html:467
+#: reception/templates/reception/order_list.html:171
 msgid "filtered"
 msgstr "filtrelendi"
 
 #: processing/templates/processing/animal_list.html:477
+#: reception/templates/reception/order_list.html:181
 msgid "Previous page"
 msgstr "Önceki sayfa"
 
 #: processing/templates/processing/animal_list.html:499
+#: reception/templates/reception/order_list.html:203
 #, python-format
 msgid "Go to page %(num)s"
 msgstr "Sayfaya git %(num)s"
 
 #: processing/templates/processing/animal_list.html:529
+#: reception/templates/reception/order_list.html:233
 msgid "Next page"
 msgstr "Sonraki sayfa"
 
@@ -1334,6 +1554,9 @@ msgstr "Tartılan Hayvanlar"
 #: processing/templates/processing/batch_slaughter.html:153
 #: processing/templates/processing/batch_weight_reports.html:234
 #: processing/templates/processing/batch_weights.html:254
+#: processing/templates/processing/disassembly_dashboard.html:13
+#: processing/templates/processing/disassembly_detail.html:23
+#: processing/templates/processing/disassembly_detail.html:470
 msgid "Back to Dashboard"
 msgstr "Anasayfaya Dön"
 
@@ -1552,15 +1775,15 @@ msgstr "Karkas Hazır"
 
 #: processing/templates/processing/batch_weights.html:146
 msgid "disassembled"
-msgstr ""
+msgstr "Parçalandı"
 
 #: processing/templates/processing/batch_weights.html:151
 msgid "packaged"
-msgstr ""
+msgstr "Paketlendi"
 
 #: processing/templates/processing/batch_weights.html:156
 msgid "delivered"
-msgstr ""
+msgstr "Teslim Edildi"
 
 #: processing/templates/processing/batch_weights.html:172
 #: processing/templates/processing/batch_weights.html:277
@@ -1600,11 +1823,11 @@ msgstr "Son Toplu Ağırlıklar"
 
 #: processing/templates/processing/batch_weights.html:283
 msgid "total"
-msgstr ""
+msgstr "toplam"
 
 #: processing/templates/processing/batch_weights.html:284
 msgid "avg"
-msgstr "Etiket"
+msgstr "ort"
 
 #: processing/templates/processing/batch_weights.html:295
 msgid "No batch weights logged yet"
@@ -1744,72 +1967,248 @@ msgstr "Tüm alınan hayvanları görüntüle →"
 msgid "No animals recently received"
 msgstr "Son zamanlarda alınan hayvan yok"
 
+#: processing/templates/processing/disassembly_dashboard.html:5
+#: processing/templates/processing/disassembly_dashboard.html:11
+msgid "Disassembly Management"
+msgstr "Parçalama Yönetimi"
+
+#: processing/templates/processing/disassembly_dashboard.html:21
+#: processing/templates/processing/disassembly_dashboard.html:29
+#: reception/templates/reception/order_list.html:24
+msgid "Search"
+msgstr "Ara"
+
+#: processing/templates/processing/disassembly_dashboard.html:24
+msgid "Search by Tag, Order No, or Client..."
+msgstr "Etiket, Sipariş No veya Müşteriye Göre Ara..."
+
+#: processing/templates/processing/disassembly_dashboard.html:39
+#: processing/templates/processing/disassembly_dashboard.html:142
+#: processing/templates/processing/disassembly_detail.html:115
+#: processing/templates/processing/disassembly_detail.html:197
+msgid "Add Cut"
+msgstr "Parça Ekle"
+
+#: processing/templates/processing/disassembly_dashboard.html:154
+#: processing/templates/processing/disassembly_detail.html:213
+msgid "Existing Cuts"
+msgstr "Mevcut Parçalar"
+
+#: processing/templates/processing/disassembly_dashboard.html:190
+#: processing/templates/processing/disassembly_detail.html:366
+#: reception/templates/reception/order_detail.html:152
+msgid "Tag"
+msgstr "Etiket"
+
+#: processing/templates/processing/disassembly_dashboard.html:206
+#: processing/templates/processing/disassembly_dashboard.html:290
+msgid "Order No"
+msgstr "Sipariş No"
+
+#: processing/templates/processing/disassembly_dashboard.html:250
+#: processing/templates/processing/disassembly_dashboard.html:302
+msgid "No animals found ready for disassembly."
+msgstr "Parçalamaya hazır hayvan bulunamadı."
+
+#: processing/templates/processing/disassembly_dashboard.html:328
+msgid "Showing"
+msgstr "Gösterilen"
+
+#: processing/templates/processing/disassembly_dashboard.html:330
+msgid "to"
+msgstr "ile"
+
+#: processing/templates/processing/disassembly_dashboard.html:332
+msgid "of"
+msgstr "/"
+
+#: processing/templates/processing/disassembly_dashboard.html:334
+msgid "results"
+msgstr "sonuç"
+
+#: processing/templates/processing/disassembly_detail.html:5
+msgid "Disassembly Details"
+msgstr "Parçalama Detayları"
+
+#: processing/templates/processing/disassembly_detail.html:27
+msgid "View Animal"
+msgstr "Hayvanı Görüntüle"
+
+#: processing/templates/processing/disassembly_detail.html:96
+msgid "Editing Cut"
+msgstr "Parça Düzenleniyor"
+
+#: processing/templates/processing/disassembly_detail.html:98
+msgid "Cut"
+msgstr "Parça"
+
+#: processing/templates/processing/disassembly_detail.html:99
+msgid "Current Weight"
+msgstr "Mevcut Ağırlık"
+
+#: processing/templates/processing/disassembly_detail.html:105
+#: processing/templates/processing/disassembly_detail.html:203
+msgid "Cancel Edit"
+msgstr "Düzenlemeyi İptal Et"
+
+#: processing/templates/processing/disassembly_detail.html:113
+msgid "Edit Cut"
+msgstr "Parçayı Düzenle"
+
+#: processing/templates/processing/disassembly_detail.html:192
+msgid "Update Cut"
+msgstr "Parçayı Güncelle"
+
+#: processing/templates/processing/disassembly_detail.html:217
+#: processing/templates/processing/disassembly_detail.html:221
+msgid "Total:"
+msgstr "Toplam:"
+
+#: processing/templates/processing/disassembly_detail.html:233
+msgid "Boneless Meat Weight"
+msgstr "Kemiksiz Et Ağırlığı"
+
+#: processing/templates/processing/disassembly_detail.html:236
+#: processing/templates/processing/disassembly_detail.html:292
+msgid "Added"
+msgstr "Eklendi"
+
+#: processing/templates/processing/disassembly_detail.html:247
+#: processing/templates/processing/disassembly_detail.html:252
+#: processing/templates/processing/disassembly_detail.html:305
+msgid "View Label"
+msgstr "Etiketi Görüntüle"
+
+#: processing/templates/processing/disassembly_detail.html:257
+#: processing/templates/processing/disassembly_detail.html:261
+#: processing/templates/processing/disassembly_detail.html:315
+msgid "Generate Label"
+msgstr "Etiket Oluştur"
+
+#: processing/templates/processing/disassembly_detail.html:261
+#: processing/templates/processing/disassembly_detail.html:319
+msgid "Regenerate"
+msgstr "Yeniden Oluştur"
+
+#: processing/templates/processing/disassembly_detail.html:267
+#: processing/templates/processing/disassembly_detail.html:328
+msgid "Are you sure you want to delete this cut?"
+msgstr "Bu parçayı silmek istediğinizden emin misiniz?"
+
+#: processing/templates/processing/disassembly_detail.html:287
+msgid "Editing"
+msgstr "Düzenleniyor"
+
+#: processing/templates/processing/disassembly_detail.html:301
+msgid "Currently Editing"
+msgstr "Şu Anda Düzenleniyor"
+
+#: processing/templates/processing/disassembly_detail.html:319
+msgid "Label"
+msgstr "Etiket"
+
+#: processing/templates/processing/disassembly_detail.html:324
+#: reception/templates/reception/order_detail.html:131
+#: reception/templates/reception/order_detail.html:186
+msgid "Edit"
+msgstr "Düzenle"
+
+#: processing/templates/processing/disassembly_detail.html:352
+msgid "No cuts added yet."
+msgstr "Henüz parça eklenmedi."
+
+#: processing/templates/processing/disassembly_detail.html:353
+msgid "Use the form above to add your first cut."
+msgstr "İlk parçanızı eklemek için yukarıdaki formu kullanın."
+
+#: processing/templates/processing/disassembly_detail.html:411
+msgid "Logged"
+msgstr "Kaydedildi"
+
+#: processing/templates/processing/disassembly_detail.html:421
+msgid "Boneless Yield"
+msgstr "Kemiksiz Verim"
+
+#: processing/templates/processing/disassembly_detail.html:427
+#: processing/templates/processing/disassembly_detail.html:446
+#, python-format
+msgid "Yield %%"
+msgstr "Verim %%"
+
+#: processing/templates/processing/disassembly_detail.html:440
+msgid "Total Cuts Weight"
+msgstr "Toplam Parça Ağırlığı"
+
+#: processing/templates/processing/disassembly_detail.html:466
+msgid "View Full Animal Details"
+msgstr "Tam Hayvan Detaylarını Görüntüle"
+
 #: processing/views.py:346
 msgid "Scale receipt image deleted."
-msgstr ""
+msgstr "Kantar fişi görüntüsü silindi."
 
 #: processing/views.py:348
 msgid "No scale receipt image to delete."
-msgstr ""
+msgstr "Silinecek kantar fişi görüntüsü yok."
 
 #: processing/views.py:353
 msgid "Scale receipt image uploaded successfully."
-msgstr ""
+msgstr "Kantar fişi görüntüsü başarıyla yüklendi."
 
 #: processing/views.py:355
 msgid "Failed to upload scale receipt image."
-msgstr ""
+msgstr "Kantar fişi görüntüsü yüklenemedi."
 
 #: processing/views.py:394 processing/views.py:397
 #, python-format
 msgid "%(animal_type)s Details"
 msgstr "%(animal_type)s Detayları"
 
-#: processing/views.py:415
+#: processing/views.py:417
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr "Hayvan %(tag)s kesildi olarak işaretlendi."
 
-#: processing/views.py:417
+#: processing/views.py:419
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr "Hayvan kesildi olarak işaretlenirken hata oluştu: %(error)s"
 
-#: processing/views.py:435 processing/views.py:796
+#: processing/views.py:437 processing/views.py:802
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
-msgstr ""
-
-#: processing/views.py:447
-#, python-format
-msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
-msgstr ""
+msgstr "%(tag)s için deri ağırlığı (%(weight)s kg) kaydedildi."
 
 #: processing/views.py:449
 #, python-format
-msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
-msgstr ""
+msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
+msgstr "%(tag)s için %(weight_type)s %(weight)s kg olarak güncellendi."
 
 #: processing/views.py:451
 #, python-format
-msgid "Error logging weight: %(error)s"
-msgstr ""
+msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
+msgstr "%(tag)s için %(weight_type)s (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:480
+#: processing/views.py:453
+#, python-format
+msgid "Error logging weight: %(error)s"
+msgstr "Ağırlık kaydedilirken hata oluştu: %(error)s"
+
+#: processing/views.py:482
 msgid "Please select an order."
 msgstr "Seçili Siparişi İşle"
 
-#: processing/views.py:497
-#, python-format
-msgid "Successfully slaughtered %(count)s animals."
-msgstr ""
-
 #: processing/views.py:499
 #, python-format
-msgid "%(count)s animals could not be processed."
-msgstr ""
+msgid "Successfully slaughtered %(count)s animals."
+msgstr "%(count)s hayvan başarıyla kesildi."
 
-#: processing/views.py:658
+#: processing/views.py:501
+#, python-format
+msgid "%(count)s animals could not be processed."
+msgstr "%(count)s hayvan işlenemedi."
+
+#: processing/views.py:663
 #, python-format
 msgid ""
 "✅ Batch weight logged successfully! All %(available_count)s animals for "
@@ -1817,35 +2216,42 @@ msgid ""
 "automatically created with average weight of %(average_weight).2fkg per "
 "animal."
 msgstr ""
+"✅ Toplu ağırlık başarıyla kaydedildi! %(weight_type)s için tüm "
+"%(available_count)s hayvan artık tartıldı. Bireysel ağırlık kayıtları "
+"hayvan başına %(average_weight).2fkg ortalama ağırlıkla otomatik olarak "
+"oluşturuldu."
 
-#: processing/views.py:668
+#: processing/views.py:673
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
 "total, %(average_weight).2fkg average). %(remaining)s animals remaining for "
 "%(weight_type)s."
 msgstr ""
+"Toplu ağırlık kaydedildi: %(animal_count)s hayvan tartıldı (%(total_weight)skg "
+"toplam, %(average_weight).2fkg ortalama). %(weight_type)s için %(remaining)s "
+"hayvan kaldı."
 
-#: processing/views.py:678
+#: processing/views.py:683
 #, python-format
 msgid "Error logging batch weight: %(error)s"
-msgstr ""
+msgstr "Toplu ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:736
+#: processing/views.py:741
 #, python-format
 msgid "Order %(order_no)s status updated."
-msgstr ""
+msgstr "Sipariş %(order_no)s durumu güncellendi."
 
-#: processing/views.py:770 processing/views.py:840
+#: processing/views.py:775 processing/views.py:846
 msgid "Walk-in Client"
 msgstr "Parakende Müsteri"
 
-#: processing/views.py:798
+#: processing/views.py:804
 #, python-format
 msgid "Error logging leather weight: %(error)s"
-msgstr ""
+msgstr "Deri ağırlığı kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:878
+#: processing/views.py:884
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
@@ -1854,23 +2260,52 @@ msgstr ""
 "Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. Mevcut "
 "durum: %(status)s. Lütfen önce hayvanı kesin."
 
-#: processing/views.py:887
+#: processing/views.py:893
 #, python-format
 msgid "No detail form available for %(animal_type)s."
-msgstr ""
+msgstr "%(animal_type)s için detay formu mevcut değil."
 
-#: processing/views.py:894
+#: processing/views.py:900
 msgid "updated"
 msgstr "Siparişi Güncelle"
 
-#: processing/views.py:898
+#: processing/views.py:904
 msgid "created"
 msgstr "Sipariş Oluştur"
 
-#: processing/views.py:907
+#: processing/views.py:913
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
-msgstr ""
+msgstr "%(tag)s için %(animal_type)s detayları başarıyla %(action)s."
+
+#: processing/views.py:1089
+#, python-format
+msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
+msgstr "Kemiksiz et ağırlığı (%(weight)s kg) başarıyla kaydedildi."
+
+#: processing/views.py:1091
+#, python-format
+msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
+msgstr "\"%(cut)s\" parçası (%(weight)s kg) başarıyla eklendi."
+
+#: processing/views.py:1093
+#, python-format
+msgid "Error saving cut: %(error)s"
+msgstr "Parça kaydedilirken hata oluştu: %(error)s"
+
+#: processing/views.py:1134
+msgid "Cut updated successfully."
+msgstr "Parça başarıyla güncellendi."
+
+#: processing/views.py:1137
+#, python-format
+msgid "Error updating cut: %(error)s"
+msgstr "Parça güncellenirken hata oluştu: %(error)s"
+
+#: processing/views.py:1167
+#, python-format
+msgid "Cut \"%(cut)s\" deleted successfully."
+msgstr "\"%(cut)s\" parçası başarıyla silindi."
 
 #: reception/forms.py:12 reception/forms.py:123
 #: reception/templates/reception/create_order.html:158
@@ -1879,7 +2314,6 @@ msgid "Search Registered Client"
 msgstr "Üretici Ünvanı"
 
 #: reception/forms.py:15 reception/forms.py:126
-#: users/templates/users/dashboard.html:477
 msgid "Type client name to search..."
 msgstr "Aramak için müşteri adını yazın..."
 
@@ -2038,7 +2472,7 @@ msgid "Batch Add Animals to Order"
 msgstr "Siparişe Toplu Hayvan Ekle"
 
 #: reception/templates/reception/batch_add_animals.html:47
-#: reception/templates/reception/order_detail.html:201
+#: reception/templates/reception/order_detail.html:213
 msgid "Batch Add Animals"
 msgstr "Toplu Hayvan Ekle"
 
@@ -2108,13 +2542,13 @@ msgid "OR"
 msgstr "VEYA"
 
 #: reception/templates/reception/create_order.html:271
-#: users/templates/users/dashboard.html:77
+#: users/templates/users/dashboard.html:92
 msgid "Create Order"
 msgstr "Kesim Oluştur"
 
 #: reception/templates/reception/create_order.html:309
 #: reception/templates/reception/update_order.html:301
-#: users/templates/users/dashboard.html:520
+#: users/templates/users/dashboard.html:595
 msgid "No clients found"
 msgstr "Müşteri bulunamadı"
 
@@ -2171,34 +2605,30 @@ msgstr "Siparişi Faturalandır"
 msgid "Batch Add"
 msgstr "Toplu Ekle"
 
-#: reception/templates/reception/order_detail.html:124
-#: reception/templates/reception/order_detail.html:174
-msgid "Edit"
-msgstr "Düzenle"
+#: reception/templates/reception/order_detail.html:126
+#: reception/templates/reception/order_detail.html:183
+msgid "View Profile"
+msgstr "Profili Görüntüle"
 
-#: reception/templates/reception/order_detail.html:130
-#: reception/templates/reception/order_detail.html:179
+#: reception/templates/reception/order_detail.html:137
+#: reception/templates/reception/order_detail.html:191
 msgid "Are you sure you want to remove this animal?"
 msgstr "Bu hayvanı kaldırmak istediğinizden emin misiniz?"
 
-#: reception/templates/reception/order_detail.html:131
-#: reception/templates/reception/order_detail.html:180
+#: reception/templates/reception/order_detail.html:138
+#: reception/templates/reception/order_detail.html:192
 msgid "Remove"
 msgstr "Kaldır"
 
-#: reception/templates/reception/order_detail.html:145
-msgid "Tag"
-msgstr "Etiket"
-
-#: reception/templates/reception/order_detail.html:146
+#: reception/templates/reception/order_detail.html:153
 msgid "Species"
 msgstr "Tür"
 
-#: reception/templates/reception/order_detail.html:192
+#: reception/templates/reception/order_detail.html:204
 msgid "No animals in this order yet."
 msgstr "Bu siparişte henüz hayvan yok."
 
-#: reception/templates/reception/order_detail.html:197
+#: reception/templates/reception/order_detail.html:209
 msgid "Add First Animal"
 msgstr "İlk Hayvanı Ekle"
 
@@ -2207,28 +2637,55 @@ msgid "Slaughter Orders"
 msgstr "Kesim Siparişleri"
 
 #: reception/templates/reception/order_list.html:10
-#: users/templates/users/dashboard.html:72
+#: users/templates/users/dashboard.html:87
 msgid "New Order"
 msgstr "Yeni Kesim"
 
-#: reception/templates/reception/order_list.html:40
-#: reception/templates/reception/order_list.html:84
+#: reception/templates/reception/order_list.html:20
+msgid "Search by order number, client name, or destination..."
+msgstr "Sipariş numarası, müşteri adı veya varış yerine göre ara..."
+
+#: reception/templates/reception/order_list.html:29
+msgid "Clear"
+msgstr "Temizle"
+
+#: reception/templates/reception/order_list.html:63
+#: reception/templates/reception/order_list.html:110
 msgid "View Details"
 msgstr "Detayları Görüntüle"
 
-#: reception/templates/reception/order_list.html:52
+#: reception/templates/reception/order_list.html:75
 msgid "Order No."
 msgstr "Sipariş No."
 
-#: reception/templates/reception/order_list.html:94
+#: reception/templates/reception/order_list.html:163
+#, python-format
+msgid ""
+"Showing \n"
+"                            <span class=\"font-semibold\">%(start)s</span> \n"
+"                            to \n"
+"                            <span class=\"font-semibold\">%(end)s</span> \n"
+"                            of \n"
+"                            <span class=\"font-semibold\">%(count)s</span> \n"
+"                            orders"
+msgstr ""
+"Gösterilen \n"
+"                            <span class=\"font-semibold\">%(start)s</span> \n"
+"                            ile \n"
+"                            <span class=\"font-semibold\">%(end)s</span> \n"
+"                            arası \n"
+"                            <span class=\"font-semibold\">%(count)s</span> \n"
+"                            sipariş"
+
+#: reception/templates/reception/order_list.html:253
 msgid "No orders yet"
 msgstr "Henüz sipariş yok"
 
-#: reception/templates/reception/order_list.html:95
+#: reception/templates/reception/order_list.html:254
 msgid "Get started by creating your first slaughter order."
 msgstr "İlk kesim siparişinizi oluşturarak başlayın."
 
-#: reception/templates/reception/order_list.html:98
+#: reception/templates/reception/order_list.html:257
 msgid "Create First Order"
 msgstr "İlk Siparişi Oluştur"
 
@@ -2243,8 +2700,6 @@ msgstr "Siparişi Güncelle"
 
 #: reporting/templates/reporting/dashboard.html:4
 #: reporting/templates/reporting/dashboard.html:9
-
-#| msgid "Operation Dashboard"
 msgid "Reports Dashboard"
 msgstr "Operasyon Paneli"
 
@@ -2257,13 +2712,11 @@ msgid ""
 "Generate and manage daily, monthly, and yearly reports for your "
 "slaughterhouse operations."
 msgstr ""
-"Mezbahane operasyonlarınız için günlük, aylık ve yıllık raporları "
-"oluşturun ve yönetin."
+"Mezbahane operasyonlarınız için günlük, aylık ve yıllık raporları oluşturun "
+"ve yönetin."
 
 #: reporting/templates/reporting/dashboard.html:32
-#: users/templates/users/dashboard.html:379
-
-#| msgid "Filter Reports"
+#: users/templates/users/dashboard.html:437
 msgid "Daily Reports"
 msgstr "Raporları Filtrele"
 
@@ -2274,8 +2727,6 @@ msgstr "Detaylı hayvan işleme verileri ile günlük kesim raporları oluşturu
 #: reporting/templates/reporting/dashboard.html:45
 #: reporting/templates/reporting/dashboard.html:90
 #: reporting/templates/reporting/dashboard.html:131
-
-#| msgid "Generated Labels"
 msgid "Generate"
 msgstr "Oluşturulan Etiketler"
 
@@ -2288,8 +2739,6 @@ msgid "No daily reports configured"
 msgstr "Günlük rapor yapılandırması yok"
 
 #: reporting/templates/reporting/dashboard.html:77
-
-#| msgid "Print Report"
 msgid "Monthly Reports"
 msgstr "Raporu Yazdır"
 
@@ -2302,8 +2751,6 @@ msgid "No monthly reports configured"
 msgstr "Aylık rapor yapılandırması yok"
 
 #: reporting/templates/reporting/dashboard.html:118
-
-#| msgid "Filter Reports"
 msgid "Yearly Reports"
 msgstr "Raporları Filtrele"
 
@@ -2317,8 +2764,6 @@ msgstr "Yıllık rapor yapılandırması yok"
 
 #: reporting/templates/reporting/dashboard.html:164
 #: reporting/templates/reporting/simple_dashboard.html:86
-
-#| msgid "Today's Total"
 msgid "Today's Report"
 msgstr "Bugünün Toplamı"
 
@@ -2327,8 +2772,6 @@ msgid "Generate daily slaughter report for today"
 msgstr "Bugün için günlük kesim raporu oluştur"
 
 #: reporting/templates/reporting/dashboard.html:169
-
-#| msgid "Generate New Label"
 msgid "Generate Now"
 msgstr "Yeni Etiket Oluştur"
 
@@ -2337,14 +2780,10 @@ msgid "Browse previously generated reports"
 msgstr "Daha önce oluşturulan raporları görüntüle"
 
 #: reporting/templates/reporting/dashboard.html:186
-
-#| msgid "View Animals"
 msgid "View All"
 msgstr "Hayvanları Görüntüle"
 
 #: reporting/templates/reporting/dashboard.html:198
-
-#| msgid "Destination"
 msgid "Test Generation"
 msgstr "Varış Yeri"
 
@@ -2358,8 +2797,6 @@ msgstr "Şimdi Test Et"
 
 #: reporting/templates/reporting/dashboard.html:221
 #: reporting/templates/reporting/simple_dashboard.html:114
-
-#| msgid "Print Report"
 msgid "Generating Report"
 msgstr "Raporu Yazdır"
 
@@ -2373,15 +2810,11 @@ msgstr "Rapor oluşturma başlatıldı:"
 
 #: reporting/templates/reporting/dashboard.html:277
 #: reporting/templates/reporting/simple_dashboard.html:217
-
-#| msgid "Error generating label: %(error)s"
 msgid "Error generating report"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
 #: reporting/templates/reporting/report_list.html:4
 #: reporting/templates/reporting/report_list.html:9
-
-#| msgid "Generated Labels"
 msgid "Generated Reports"
 msgstr "Oluşturulan Etiketler"
 
@@ -2398,51 +2831,35 @@ msgid "Report Name"
 msgstr "Rapor Adı"
 
 #: reporting/templates/reporting/report_list.html:33
-
-#| msgid "Generated Labels"
 msgid "Generated At"
 msgstr "Oluşturulan Etiketler"
 
 #: reporting/templates/reporting/report_list.html:36
-
-#| msgid "Generated Labels"
 msgid "Generated By"
 msgstr "Oluşturulan Etiketler"
 
 #: reporting/templates/reporting/report_list.html:81
-
-#| msgid "Download PRN"
 msgid "Download"
 msgstr "PRN İndir"
 
 #: reporting/templates/reporting/report_list.html:86
-
-#| msgid "Goat Details"
 msgid "Details"
 msgstr "Keçi Detayları"
 
 #: reporting/templates/reporting/report_list.html:99
-
-#| msgid "No labels generated"
 msgid "No reports generated yet"
 msgstr "Henüz rapor oluşturulmamış"
 
 #: reporting/templates/reporting/report_list.html:100
-
-#| msgid "Get started by creating your first slaughter order."
 msgid "Start by generating your first report from the dashboard."
 msgstr "Panodan ilk raporunuzu oluşturarak başlayın."
 
 #: reporting/templates/reporting/report_list.html:103
-
-#| msgid "Back to Dashboard"
 msgid "Go to Dashboard"
 msgstr "Anasayfaya Dön"
 
 #: reporting/templates/reporting/report_list.html:112
 #: reporting/templates/reporting/test_report.html:56
-
-#| msgid "Back to Dashboard"
 msgid "← Back to Reports Dashboard"
 msgstr "Anasayfaya Dön"
 
@@ -2453,8 +2870,6 @@ msgstr "ID için rapor detayları"
 #: reporting/templates/reporting/simple_dashboard.html:4
 #: reporting/templates/reporting/simple_dashboard.html:16
 #: reporting/templates/reporting/simple_dashboard.html:76
-
-#| msgid "Print Report"
 msgid "Generate Report"
 msgstr "Raporu Yazdır"
 
@@ -2463,20 +2878,14 @@ msgid "Select date range and download your report"
 msgstr "Tarih aralığını seçin ve raporunuzu indirin"
 
 #: reporting/templates/reporting/simple_dashboard.html:27
-
-#| msgid "Print Date"
 msgid "Start Date"
 msgstr "Yazdırma Tarihi"
 
 #: reporting/templates/reporting/simple_dashboard.html:38
-
-#| msgid "Print Date"
 msgid "End Date"
 msgstr "Yazdırma Tarihi"
 
 #: reporting/templates/reporting/simple_dashboard.html:50
-
-#| msgid "PRN Format"
 msgid "Output Format"
 msgstr "PRN Formatı"
 
@@ -2485,8 +2894,6 @@ msgid "Excel (.xlsx)"
 msgstr "Excel (.xlsx)"
 
 #: reporting/templates/reporting/simple_dashboard.html:90
-
-#| msgid "Filter Reports"
 msgid "Yesterday's Report"
 msgstr "Dünün Raporu"
 
@@ -2503,8 +2910,6 @@ msgid "Please wait..."
 msgstr "Lütfen bekleyin..."
 
 #: reporting/templates/reporting/simple_dashboard.html:176
-
-#| msgid "Please select at least one animal."
 msgid "Please select both start and end dates"
 msgstr "Lütfen en az bir hayvan seçin."
 
@@ -2518,8 +2923,6 @@ msgid "Test Report Generation"
 msgstr "Test Raporu Oluşturma"
 
 #: reporting/templates/reporting/test_report.html:14
-
-#| msgid "Settings"
 msgid "Testing"
 msgstr "Ayarlar"
 
@@ -2533,8 +2936,6 @@ msgstr ""
 
 #: reporting/templates/reporting/test_report.html:29
 #: reporting/templates/reporting/test_report.html:36
-
-#| msgid "Generate First Label"
 msgid "Generate Test Report"
 msgstr "İlk Etiketi Oluştur"
 
@@ -2551,20 +2952,14 @@ msgid "The test report will include:"
 msgstr "Test raporu şunları içerecektir:"
 
 #: reporting/templates/reporting/test_report.html:43
-
-#| msgid "Select animal type"
 msgid "Sample animal data"
 msgstr "Hayvan türünü seçin"
 
 #: reporting/templates/reporting/test_report.html:44
-
-#| msgid "Label Information"
 msgid "Weight information"
 msgstr "Etiket Bilgileri"
 
 #: reporting/templates/reporting/test_report.html:45
-
-#| msgid "Bowels Status"
 msgid "Offal and bowels status"
 msgstr "Bağırsak Durumu"
 
@@ -2577,8 +2972,6 @@ msgid "Generating..."
 msgstr "Oluşturuluyor..."
 
 #: reporting/templates/reporting/test_report.html:100
-
-#| msgid "Error generating label: %(error)s"
 msgid "Error generating test report"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
@@ -2611,221 +3004,213 @@ msgstr "Üretici Ünvanı"
 msgid "Welcome, %(username)s!"
 msgstr "Hoş geldin, %(username)s!"
 
-#: users/templates/users/dashboard.html:15
+#: users/templates/users/dashboard.html:17
 msgid "System Administrator"
 msgstr "Sistem Yöneticisi"
 
-#: users/templates/users/dashboard.html:23
+#: users/templates/users/dashboard.html:28
 msgid "Manager"
 msgstr "Yönetici"
 
-#: users/templates/users/dashboard.html:30
+#: users/templates/users/dashboard.html:37
 msgid "Operator"
 msgstr "Operatör"
 
-#: users/templates/users/dashboard.html:44
+#: users/templates/users/dashboard.html:54
 msgid "User"
 msgstr "Kullanıcı"
 
-#: users/templates/users/dashboard.html:48
+#: users/templates/users/dashboard.html:58
 msgid "This is your dashboard. Here are the actions you can perform."
 msgstr "Bu sizin ana sayfanız. Gerçekleştirebileceğiniz işlemler burada."
 
-#: users/templates/users/dashboard.html:60
+#: users/templates/users/dashboard.html:73
 msgid "Reception Management"
 msgstr "Kabul Yönetimi"
 
-#: users/templates/users/dashboard.html:74
+#: users/templates/users/dashboard.html:89
 msgid "Create slaughter order for new or existing clients"
 msgstr "Yeni veya mevcut müşteriler için kesim siparişi oluşturun"
 
-#: users/templates/users/dashboard.html:91
+#: users/templates/users/dashboard.html:109
 msgid "All Orders"
 msgstr "Tüm Kesimler"
 
-#: users/templates/users/dashboard.html:93
+#: users/templates/users/dashboard.html:111
 msgid "View and manage all slaughter orders"
 msgstr "Tüm kesim siparişlerini görüntüleyin ve yönetin"
 
-#: users/templates/users/dashboard.html:96
-#: users/templates/users/dashboard.html:187
+#: users/templates/users/dashboard.html:114
+#: users/templates/users/dashboard.html:210
 msgid "View Orders"
 msgstr "Siparişleri Görüntüle"
 
-#: users/templates/users/dashboard.html:170
+#: users/templates/users/dashboard.html:189
 msgid "Client Portal"
 msgstr "Müşteri Portalı"
 
-#: users/templates/users/dashboard.html:182
+#: users/templates/users/dashboard.html:204
 msgid "My Orders"
 msgstr "Siparişlerim"
 
-#: users/templates/users/dashboard.html:184
+#: users/templates/users/dashboard.html:206
 msgid "Track your order status and progress"
 msgstr "Sipariş durumunuzu ve ilerlemesini takip edin"
 
-#: users/templates/users/dashboard.html:201
+#: users/templates/users/dashboard.html:226
 msgid "History"
 msgstr "Geçmiş"
 
-#: users/templates/users/dashboard.html:203
+#: users/templates/users/dashboard.html:228
 msgid "View past orders and invoices"
 msgstr "Geçmiş siparişleri ve faturaları görüntüleyin"
 
-#: users/templates/users/dashboard.html:206
+#: users/templates/users/dashboard.html:232
 msgid "Order History"
 msgstr "Sipariş Geçmişi"
 
-#: users/templates/users/dashboard.html:220
+#: users/templates/users/dashboard.html:249
 msgid "Documents"
 msgstr "Belgeler"
 
-#: users/templates/users/dashboard.html:222
+#: users/templates/users/dashboard.html:251
 msgid "Download certificates and reports"
 msgstr "Sertifikaları ve raporları indirin"
 
-#: users/templates/users/dashboard.html:225
+#: users/templates/users/dashboard.html:255
 msgid "View Documents"
 msgstr "Belgeleri Görüntüle"
 
-#: users/templates/users/dashboard.html:240
+#: users/templates/users/dashboard.html:271
 msgid "Processing & Operations"
 msgstr "İşleme ve Operasyonlar"
 
-#: users/templates/users/dashboard.html:252
+#: users/templates/users/dashboard.html:286
 msgid "Operation Dashboard"
 msgstr "Operasyon Paneli"
 
-#: users/templates/users/dashboard.html:254
+#: users/templates/users/dashboard.html:288
 msgid "Processing overview and workflow status"
 msgstr "İşleme genel bakışı ve iş akışı durumu"
 
-#: users/templates/users/dashboard.html:257
+#: users/templates/users/dashboard.html:291
 msgid "View Dashboard"
 msgstr "Paneli Görüntüle"
 
-#: users/templates/users/dashboard.html:271
+#: users/templates/users/dashboard.html:310
+msgid "Manage animal disassembly and cuts"
+msgstr "Hayvan parçalama ve kesimlerini yönet"
+
+#: users/templates/users/dashboard.html:329
 msgid "Inventory"
 msgstr "Envanter"
 
-#: users/templates/users/dashboard.html:273
+#: users/templates/users/dashboard.html:331
 msgid "Stock levels and storage"
 msgstr "Stok seviyeleri ve depolama"
 
-#: users/templates/users/dashboard.html:276
+#: users/templates/users/dashboard.html:335
 msgid "View Inventory"
 msgstr "Envanteri Görüntüle"
 
-#: users/templates/users/dashboard.html:290
+#: users/templates/users/dashboard.html:352
 msgid "Labeling"
 msgstr "Etiketleme"
 
-#: users/templates/users/dashboard.html:292
+#: users/templates/users/dashboard.html:354
 msgid "Print labels and barcodes"
 msgstr "Etiket ve barkod yazdırma"
 
-#: users/templates/users/dashboard.html:295
+#: users/templates/users/dashboard.html:358
 msgid "Label Manager"
 msgstr "Etiket Yöneticisi"
 
-#: users/templates/users/dashboard.html:309
-msgid "Quality"
-msgstr "Kalite"
-
-#: users/templates/users/dashboard.html:311
-msgid "Quality control and compliance"
-msgstr "Kalite kontrol ve uyumluluk"
-
-#: users/templates/users/dashboard.html:314
-msgid "QC Dashboard"
-msgstr "Kalite Kontrol Paneli"
-
-#: users/templates/users/dashboard.html:329
+#: users/templates/users/dashboard.html:376
 msgid "Management & Reporting"
 msgstr "Yönetim ve Raporlama"
 
-#: users/templates/users/dashboard.html:341
+#: users/templates/users/dashboard.html:391
 msgid "Analytics"
 msgstr "Analitik"
 
-#: users/templates/users/dashboard.html:343
+#: users/templates/users/dashboard.html:393
 msgid "Performance metrics and KPIs"
 msgstr "Performans metrikleri ve KPI'lar"
 
-#: users/templates/users/dashboard.html:346
+#: users/templates/users/dashboard.html:397
 msgid "View Analytics"
 msgstr "Analitikleri Görüntüle"
 
-#: users/templates/users/dashboard.html:360
+#: users/templates/users/dashboard.html:414
 msgid "Finance"
 msgstr "Finans"
 
-#: users/templates/users/dashboard.html:362
+#: users/templates/users/dashboard.html:416
 msgid "Revenue and cost analysis"
 msgstr "Gelir ve maliyet analizi"
 
-#: users/templates/users/dashboard.html:365
+#: users/templates/users/dashboard.html:420
 msgid "Financial Reports"
 msgstr "Finansal Raporlar"
 
-#: users/templates/users/dashboard.html:381
-
-#| msgid "View and manage all slaughter orders"
+#: users/templates/users/dashboard.html:439
 msgid "Generate daily slaughter reports"
 msgstr "Tüm kesim siparişlerini görüntüleyin ve yönetin"
 
-#: users/templates/users/dashboard.html:384
-
-#| msgid "Generated Labels"
+#: users/templates/users/dashboard.html:442
 msgid "Generate Reports"
 msgstr "Raport Oluştur"
 
-#: users/templates/users/dashboard.html:400
+#: users/templates/users/dashboard.html:461
 msgid "System Administration"
 msgstr "Sistem Yönetimi"
 
-#: users/templates/users/dashboard.html:412
+#: users/templates/users/dashboard.html:476
 msgid "Users"
 msgstr "Kullanıcılar"
 
-#: users/templates/users/dashboard.html:414
+#: users/templates/users/dashboard.html:478
 msgid "Manage user accounts and permissions"
 msgstr "Kullanıcı hesaplarını ve izinlerini yönetin"
 
-#: users/templates/users/dashboard.html:416
+#: users/templates/users/dashboard.html:481
 msgid "Django Admin"
 msgstr "Django Yönetici"
 
-#: users/templates/users/dashboard.html:431
+#: users/templates/users/dashboard.html:500
 msgid "Settings"
 msgstr "Ayarlar"
 
-#: users/templates/users/dashboard.html:433
+#: users/templates/users/dashboard.html:502
 msgid "Configure system parameters"
 msgstr "Sistem parametrelerini yapılandırın"
 
-#: users/templates/users/dashboard.html:436
+#: users/templates/users/dashboard.html:506
 msgid "System Settings"
 msgstr "Sistem Ayarları"
 
-#: users/templates/users/dashboard.html:450
-#: users/templates/users/dashboard.html:455
+#: users/templates/users/dashboard.html:523
+#: users/templates/users/dashboard.html:529
 msgid "Maintenance"
 msgstr "Bakım"
 
-#: users/templates/users/dashboard.html:452
+#: users/templates/users/dashboard.html:525
 msgid "Database backup and system health"
 msgstr "Veritabanı yedekleme ve sistem sağlığı"
 
-#: users/templates/users/dashboard.html:470
+#: users/templates/users/dashboard.html:544
 msgid "Search Clients"
 msgstr "Müşteri Ara"
 
-#: users/templates/users/dashboard.html:531
+#: users/templates/users/dashboard.html:552
+msgid " Type client name to search..."
+msgstr "Aramak için müşteri adını yazın..."
+
+#: users/templates/users/dashboard.html:606
 msgid "Selected client"
 msgstr "Seçili müşteri"
 
-#: users/templates/users/dashboard.html:540
+#: users/templates/users/dashboard.html:615
 msgid "Error searching clients"
 msgstr "Müşteri aranırken hata oluştu"
 
@@ -2888,23 +3273,23 @@ msgstr "Tekrar giriş yap"
 msgid "Sign in to your account"
 msgstr "Hesabınıza giriş yapın"
 
-#: users/templates/users/login.html:26
+#: users/templates/users/login.html:31
 msgid "Username"
 msgstr "Kullanıcı Adı"
 
-#: users/templates/users/login.html:35
+#: users/templates/users/login.html:40
 msgid "Password"
 msgstr "Şifre"
 
-#: users/templates/users/login.html:44
+#: users/templates/users/login.html:49
 msgid "Sign in"
 msgstr "Giriş Yap"
 
-#: users/templates/users/login.html:49
+#: users/templates/users/login.html:54
 msgid "Don't have an account?"
 msgstr "Hesabınız yok mu?"
 
-#: users/templates/users/login.html:49
+#: users/templates/users/login.html:54
 msgid "Register here."
 msgstr "Buradan kayıt olun."
 
@@ -2923,6 +3308,15 @@ msgstr "Zaten bir hesabınız var mı?"
 #: users/templates/users/register.html:46
 msgid "Sign in."
 msgstr "Giriş yapın."
+
+#~ msgid "Quality"
+#~ msgstr "Kalite"
+
+#~ msgid "Quality control and compliance"
+#~ msgstr "Kalite kontrol ve uyumluluk"
+
+#~ msgid "QC Dashboard"
+#~ msgstr "Kalite Kontrol Paneli"
 
 #~ msgid "Leather weight has already been recorded for this animal."
 #~ msgstr "Bu hayvan için deri ağırlığı zaten kaydedilmiş."

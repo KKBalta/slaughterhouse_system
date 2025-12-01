@@ -60,6 +60,46 @@ class GenerateAnimalLabelView(LoginRequiredMixin, View):
             messages.error(request, _('Error generating label: %(error)s') % {'error': str(e)})
             return redirect('processing:animal_detail', pk=animal.pk)
 
+class GenerateCutLabelView(LoginRequiredMixin, View):
+    """Generate and create a new label for a disassembly cut."""
+    
+    def post(self, request, cut_id):
+        from processing.models import DisassemblyCut
+        cut = get_object_or_404(DisassemblyCut, id=cut_id)
+        
+        try:
+            # Create the label with default printer settings
+            # We reuse create_animal_label but adapted for cuts? 
+            # Actually create_animal_label is specific to Animal model.
+            # We should probably create a create_cut_label function in utils or handle it here.
+            # Let's check utils.py again. create_animal_label creates an AnimalLabel.
+            # We might need a CutLabel model or reuse AnimalLabel if it can link to a cut?
+            # The AnimalLabel model likely has a ForeignKey to Animal.
+            # If we want to use AnimalLabel, we might need to add a foreign key to DisassemblyCut or make it generic.
+            # However, looking at the existing code, AnimalLabel is tied to Animal.
+            # For now, let's assume we are generating a label that is associated with the Animal but contains Cut info.
+            # Or maybe we should create a new function create_cut_label in utils.py that creates an AnimalLabel 
+            # but stores the cut info in the PRN content.
+            
+            # Let's implement create_cut_label in utils.py first or here.
+            # But wait, I missed checking if AnimalLabel supports cuts.
+            # Let's assume for now we will use AnimalLabel and just store the cut-specific PRN content.
+            # The label_type can be 'cut'.
+            
+            from .utils import create_cut_label
+            
+            animal_label = create_cut_label(
+                cut=cut,
+                user=request.user
+            )
+
+            messages.success(request, _('Cut label generated successfully!'))
+            return redirect('labeling:animal_label_detail', pk=animal_label.pk)
+            
+        except Exception as e:
+            messages.error(request, _('Error generating label: %(error)s') % {'error': str(e)})
+            return redirect('processing:animal_detail', pk=cut.animal.pk)
+
 class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
     """Display details of a specific animal label."""
     model = AnimalLabel

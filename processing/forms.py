@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails, DisassemblyCut
 from django.core.exceptions import ValidationError
 
 class AnimalFilterForm(forms.Form):
@@ -542,3 +542,98 @@ ANIMAL_DETAIL_FORMS = {
     'heifer': HeiferDetailsForm,
     'beef': BeefDetailsForm,
 }
+
+class DisassemblyCutForm(forms.ModelForm):
+    """Form for adding a disassembly cut"""
+    class Meta:
+        model = DisassemblyCut
+        fields = ['cut_name', 'weight_kg']
+        labels = {
+            'cut_name': _('Cut Name'),
+            'weight_kg': _('Weight (kg)'),
+        }
+        widgets = {
+            'cut_name': forms.Select(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500'
+            }),
+            'weight_kg': forms.NumberInput(attrs={
+                'class': 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500',
+                'placeholder': _('Enter weight in kg'),
+                'step': '0.01'
+            })
+        }
+
+    def __init__(self, *args, animal=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.animal = animal
+        
+        if animal:
+            # Check if this is boneless disassembly
+            if animal.is_boneless_disassembly():
+                # Hide cut_name field and auto-set to 'boneless_meat'
+                self.fields['cut_name'].widget = forms.HiddenInput()
+                self.fields['cut_name'].initial = 'boneless_meat'
+                # Update weight label for boneless
+                self.fields['weight_kg'].label = _('Boneless Meat Weight (kg)')
+            elif animal.is_standard_disassembly():
+                # Determine which choices to use based on animal type
+                # CALF/HERIFER/BEEF/CATTLE use BIG_CUT_CHOICES
+                # Others use SMALL_CUT_CHOICES
+                big_cut_types = ['calf', 'heifer', 'beef', 'cattle']
+                small_cut_types = ['sheep', 'goat', 'lamb', 'oglak']
+                
+                if animal.animal_type in big_cut_types:
+                    self.fields['cut_name'].choices = DisassemblyCut.BIG_CUT_CHOICES
+                elif animal.animal_type in small_cut_types:
+                    self.fields['cut_name'].choices = DisassemblyCut.SMALL_CUT_CHOICES
+                else:
+                    # Fallback for any new/unknown types, default to small cuts
+                    self.fields['cut_name'].choices = DisassemblyCut.SMALL_CUT_CHOICES
+                
+                # Remove 'boneless_meat' from choices for standard disassembly
+                current_choices = list(self.fields['cut_name'].choices)
+                self.fields['cut_name'].choices = [
+                    choice for choice in current_choices 
+                    if choice[0] != 'boneless_meat'
+                ]
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.animal and self.animal.is_boneless_disassembly():
+            # Ensure cut_name is set to boneless_meat for boneless disassembly
+            cleaned_data['cut_name'] = 'boneless_meat'
+        
+        # Validate that total disassembly cuts weight doesn't exceed hot carcass weight
+        if self.animal and cleaned_data.get('weight_kg'):
+            # Get hot carcass weight
+            hot_carcass_log = self.animal.individual_weight_logs.filter(
+                weight_type='hot_carcass_weight',
+                is_group_weight=False
+            ).order_by('-log_date').first()
+            
+            if hot_carcass_log and hot_carcass_log.weight:
+                hot_carcass_weight = float(hot_carcass_log.weight)
+                new_weight = float(cleaned_data['weight_kg'])
+                
+                # Calculate total weight of existing cuts (excluding the one being edited if editing)
+                existing_cuts = self.animal.disassembly_cuts.all()
+                if self.instance and self.instance.pk:
+                    # If editing, exclude the current cut from the total
+                    existing_cuts = existing_cuts.exclude(pk=self.instance.pk)
+                
+                total_existing_weight = sum(float(cut.weight_kg) for cut in existing_cuts)
+                total_weight_after = total_existing_weight + new_weight
+                
+                # Check if total exceeds hot carcass weight
+                if total_weight_after > hot_carcass_weight:
+                    excess = total_weight_after - hot_carcass_weight
+                    raise ValidationError(
+                        _('Total disassembly weight (%(total)s kg) cannot exceed hot carcass weight (%(carcass)s kg). '
+                          'Current excess: %(excess)s kg. Please reduce the weight or check existing cuts.') % {
+                            'total': f'{total_weight_after:.2f}',
+                            'carcass': f'{hot_carcass_weight:.2f}',
+                            'excess': f'{excess:.2f}'
+                        }
+                    )
+        
+        return cleaned_data

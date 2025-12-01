@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load processing_filters %}
+
+{% block title %}{% trans "Disassembly Management" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Disassembly Management" %}</h1>
+        <a href="{% url 'processing:dashboard' %}" class="text-blue-600 hover:text-blue-800 text-sm sm:text-base">
+            &larr; {% trans "Back to Dashboard" %}
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-white shadow rounded-lg p-3 sm:p-6 mb-4 sm:mb-6">
+        <form method="get" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div class="flex-grow">
+                <label for="search" class="sr-only">{% trans "Search" %}</label>
+                <input type="text" name="search" id="search" value="{{ current_search }}"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base text-gray-900 bg-white placeholder-gray-500"
+                    placeholder="{% trans 'Search by Tag, Order No, or Client...' %}"
+                    style="color: #111827 !important; background-color: #ffffff !important;">
+            </div>
+            <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm sm:text-base whitespace-nowrap">
+                {% trans "Search" %}
+            </button>
+        </form>
+    </div>
+
+    <!-- Add Cut Form (when animal is selected) -->
+    {% if selected_animal and disassembly_form %}
+    <div class="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900">
+                {% trans "Add Cut" %} - {{ selected_animal.identification_tag }}
+            </h2>
+            {% if selected_animal.is_boneless_disassembly %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                    {% trans "Boneless Service" %}
+                </span>
+            {% elif selected_animal.is_standard_disassembly %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {% trans "Standard Cuts" %}
+                </span>
+            {% endif %}
+        </div>
+
+        {% if selected_animal.status == 'carcass_ready' and not selected_animal.can_proceed_to_disassembly.can_proceed %}
+        <!-- Warning: Cannot proceed to disassembly -->
+        <div class="p-4 rounded-md border border-amber-400 bg-amber-50 mb-4" role="alert">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-semibold text-amber-800">{% trans "Cannot Proceed to Disassembly" %}</h3>
+                    <p class="text-sm text-amber-700 mt-1">
+                        {% if not selected_animal.can_proceed_to_disassembly.has_hot_carcass_weight %}
+                            {% trans "Hot carcass weight must be logged before disassembly can begin." %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'processing:add_disassembly_cut' selected_animal.pk %}?redirect=disassembly_dashboard" class="space-y-4">
+            {% csrf_token %}
+            
+            {% if selected_animal.is_boneless_disassembly %}
+                <!-- Boneless disassembly: Only weight input -->
+                <div>
+                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ disassembly_form.weight_kg.label }}
+                    </label>
+                    {{ disassembly_form.weight_kg }}
+                    {% if disassembly_form.weight_kg.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.weight_kg.help_text }}</p>
+                    {% endif %}
+                    {% if disassembly_form.weight_kg.errors %}
+                    <div class="mt-1">
+                        {% for error in disassembly_form.weight_kg.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {{ disassembly_form.cut_name }}
+                </div>
+            {% else %}
+                <!-- Standard disassembly: Cut type and weight -->
+                <div>
+                    <label for="{{ disassembly_form.cut_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ disassembly_form.cut_name.label }}
+                    </label>
+                    {{ disassembly_form.cut_name }}
+                    {% if disassembly_form.cut_name.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.cut_name.help_text }}</p>
+                    {% endif %}
+                    {% if disassembly_form.cut_name.errors %}
+                    <div class="mt-1">
+                        {% for error in disassembly_form.cut_name.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ disassembly_form.weight_kg.label }}
+                    </label>
+                    {{ disassembly_form.weight_kg }}
+                    {% if disassembly_form.weight_kg.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.weight_kg.help_text }}</p>
+                    {% endif %}
+                    {% if disassembly_form.weight_kg.errors %}
+                    <div class="mt-1">
+                        {% for error in disassembly_form.weight_kg.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if disassembly_form.non_field_errors %}
+            <div class="mt-1">
+                {% for error in disassembly_form.non_field_errors %}
+                <p class="text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="flex space-x-3">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                    {% trans "Add Cut" %}
+                </button>
+                <a href="{% url 'processing:disassembly_dashboard' %}{% if current_search %}?search={{ current_search }}{% endif %}" 
+                   class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium">
+                    {% trans "Cancel" %}
+                </a>
+            </div>
+        </form>
+
+        <!-- Show existing cuts -->
+        {% if selected_animal.disassembly_cuts.exists %}
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">{% trans "Existing Cuts" %}</h3>
+            {% if selected_animal.is_boneless_disassembly %}
+                <div class="bg-gray-50 p-3 rounded-md">
+                    <p class="text-sm font-medium text-gray-900">
+                        {% trans "Boneless Meat Weight:" %}
+                        {{ selected_animal.disassembly_cuts.first.weight_kg }} kg
+                    </p>
+                </div>
+            {% else %}
+                <div class="space-y-2">
+                    {% for cut in selected_animal.disassembly_cuts.all %}
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-md">
+                        <span class="text-sm text-gray-900">{{ cut.get_cut_name_display }}</span>
+                        <span class="text-sm font-medium text-gray-900">{{ cut.weight_kg }} kg</span>
+                    </div>
+                    {% endfor %}
+                    <div class="flex justify-between items-center bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <span class="text-sm font-semibold text-gray-900">{% trans "Total Weight:" %}</span>
+                        <span class="text-sm font-semibold text-gray-900">
+                            {{ selected_animal.disassembly_cuts.all|sum_weights|floatformat:2 }} kg
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Animals List - Desktop Table View -->
+    <div class="hidden md:block bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Tag" %}
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Type" %}
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Status" %}
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Client" %}
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Order No" %}
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {% trans "Actions" %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for animal in animals %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ animal.identification_tag }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ animal.get_animal_type_display }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span
+                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ animal.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if animal.slaughter_order.client %}
+                        {{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}
+                        {% else %}
+                        {{ animal.slaughter_order.client_name|default:"Walk-in" }}
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ animal.slaughter_order.slaughter_order_no }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'processing:disassembly_detail' animal.pk %}"
+                            class="text-blue-600 hover:text-blue-900">
+                            {% trans "Manage Cuts" %}
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        {% trans "No animals found ready for disassembly." %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Animals List - Mobile Card View -->
+    <div class="md:hidden space-y-3">
+        {% for animal in animals %}
+        <div class="bg-white shadow rounded-lg p-4">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex-1">
+                    <div class="font-semibold text-gray-900 text-base mb-1">
+                        {{ animal.identification_tag }}
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        {{ animal.get_animal_type_display }}
+                    </div>
+                </div>
+                <span
+                    class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {{ animal.get_status_display }}
+                </span>
+            </div>
+
+            <div class="space-y-2 text-sm mb-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Client" %}:</span>
+                    <span class="text-gray-900 font-medium text-right">
+                        {% if animal.slaughter_order.client %}
+                        {{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}
+                        {% else %}
+                        {{ animal.slaughter_order.client_name|default:"Walk-in" }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Order No" %}:</span>
+                    <span class="text-gray-900 font-medium">{{ animal.slaughter_order.slaughter_order_no }}</span>
+                </div>
+            </div>
+
+            <a href="{% url 'processing:disassembly_detail' animal.pk %}"
+                class="block w-full text-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                {% trans "Manage Cuts" %}
+            </a>
+        </div>
+        {% empty %}
+        <div class="bg-white shadow rounded-lg p-6 text-center text-gray-500">
+            {% trans "No animals found ready for disassembly." %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div
+        class="bg-white px-3 sm:px-4 py-3 flex items-center justify-between border-t border-gray-200 mt-4 rounded-lg shadow">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                {% trans "Previous" %}
+            </a>
+            {% endif %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                class="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                {% trans "Next" %}
+            </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    {% trans "Showing" %}
+                    <span class="font-medium">{{ page_obj.start_index }}</span>
+                    {% trans "to" %}
+                    <span class="font-medium">{{ page_obj.end_index }}</span>
+                    {% trans "of" %}
+                    <span class="font-medium">{{ paginator.count }}</span>
+                    {% trans "results" %}
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">{% trans "Previous" %}</span>
+                        &larr;
+                    </a>
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <span
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                        {{ i }}
+                    </span>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %} <a
+                        href="?page={{ i }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        {{ i }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">{% trans "Next" %}</span>
+                            &rarr;
+                        </a>
+                        {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

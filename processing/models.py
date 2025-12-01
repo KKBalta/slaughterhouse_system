@@ -143,9 +143,12 @@ class Animal(BaseModel):
         pass
 
     @transition(field=status, source='carcass_ready', target='disassembled', 
-                conditions=[lambda instance: instance.slaughter_order.service_package.includes_disassembly])
+                conditions=[
+                    lambda instance: instance.slaughter_order.service_package.includes_disassembly,
+                    lambda instance: instance.individual_weight_logs.filter(weight_type='hot_carcass_weight').exists()
+                ])
     def perform_disassembly(self):
-        """Transition from carcass ready to disassembled, if disassembly is included in service package."""
+        """Transition from carcass ready to disassembled, if disassembly is included and hot carcass weight is logged."""
         pass
 
     @transition(field=status, source=['carcass_ready', 'disassembled'], target='packaged')
@@ -197,6 +200,32 @@ class Animal(BaseModel):
             except (ZeroDivisionError, ValueError):
                 return None
         return None
+
+    def can_proceed_to_disassembly(self):
+        """Check if animal meets all requirements to transition to disassembled status."""
+        has_hot_carcass_weight = self.individual_weight_logs.filter(weight_type='hot_carcass_weight').exists()
+        has_disassembly_service = self.slaughter_order.service_package.includes_disassembly if self.slaughter_order and self.slaughter_order.service_package else False
+        is_carcass_ready = self.status == 'carcass_ready'
+        
+        return {
+            'can_proceed': has_hot_carcass_weight and has_disassembly_service and is_carcass_ready,
+            'has_hot_carcass_weight': has_hot_carcass_weight,
+            'has_disassembly_service': has_disassembly_service,
+            'is_carcass_ready': is_carcass_ready,
+        }
+
+    def is_boneless_disassembly(self):
+        """Check if this animal uses boneless disassembly (no specific cuts)."""
+        if self.slaughter_order and self.slaughter_order.service_package:
+            package_name = self.slaughter_order.service_package.name.lower()
+            return 'boneless' in package_name or 'kemikli' in package_name  # Turkish: kemikli = boneless
+        return False
+
+    def is_standard_disassembly(self):
+        """Check if this animal uses standard disassembly (specific cuts)."""
+        if self.slaughter_order and self.slaughter_order.service_package:
+            return self.slaughter_order.service_package.includes_disassembly and not self.is_boneless_disassembly()
+        return False
 
     def __str__(self):
         return f"{self.get_animal_type_display()} - {self.identification_tag}"
@@ -507,3 +536,106 @@ class WeightLog(BaseModel):
                 name='group_weight_consistency'
             )
         ]
+
+class DisassemblyCut(BaseModel):
+    BIG_CUT_CHOICES = (
+        ('neck', _('Neck')),
+        ('front_leg', _('Front Leg')),
+        ('rib', _('Rib')),
+        ('breast', _('Breast / Plate')),
+        ('flank', _('Flank')),
+        ('tenderloin', _('Tenderloin')),
+        ('ribeye', _('Ribeye')),
+        ('topside', _('Topside / Tranç')),
+        ('knuckle', _('Knuckle / Yumurta')),
+        ('round', _('Round / Nuar')),
+        ('ground_beef', _('Ground Beef')),
+        ('trim', _('Trim')),
+        ('stew_cubes', _('Stew Cubes')),
+        ('whole_cut', _('Whole Cut (Bones Removed)')),
+        ('boneless_meat', _('Boneless Meat (Total)')),
+    )
+
+    SMALL_CUT_CHOICES = (
+        ('shoulder', _('Shoulder')),
+        ('neck', _('Neck')),
+        ('rib_cage', _('Rib Cage')),
+        ('chop', _('Chop / Rack')),
+        ('breast', _('Breast')),
+        ('fillet', _('Fillet')),
+        ('back_strip', _('Back Strip')),
+        ('leg', _('Leg')),
+        ('shank', _('Shank')),
+        ('kulbasti', _('Kulbasti')),
+        ('hastamalik', _('Soup Bones')),
+        ('trim', _('Trim')),
+        ('whole_cut', _('Whole Cut (Bones Removed)')),
+    )
+
+    # Combine all choices for the model field
+    ALL_CUT_CHOICES = BIG_CUT_CHOICES + SMALL_CUT_CHOICES
+
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='disassembly_cuts'
+    )
+
+    cut_name = models.CharField(
+        max_length=100,
+        choices=ALL_CUT_CHOICES,
+        help_text=_("Name of the cut (depends on animal type)")
+    )
+
+    weight_kg = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        help_text=_("Weight of this cut in kg")
+    )
+
+    def __str__(self):
+        return f"{self.animal.identification_tag} - {self.cut_name} ({self.weight_kg} kg)"
+
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        
+        # Validation: if animal uses boneless disassembly, only allow 'boneless_meat' cut
+        if self.animal.is_boneless_disassembly() and self.cut_name != 'boneless_meat':
+            raise ValidationError(_("This animal uses boneless disassembly. Only 'Boneless Meat (Total)' can be recorded."))
+        
+        # Validation: if animal uses standard disassembly, don't allow 'boneless_meat' cut
+        if self.animal.is_standard_disassembly() and self.cut_name == 'boneless_meat':
+            raise ValidationError(_("This animal uses standard disassembly. Please select a specific cut type."))
+        
+        # Validation: total disassembly cuts weight cannot exceed hot carcass weight
+        hot_carcass_log = self.animal.individual_weight_logs.filter(
+            weight_type='hot_carcass_weight',
+            is_group_weight=False
+        ).order_by('-log_date').first()
+        
+        if hot_carcass_log and hot_carcass_log.weight:
+            hot_carcass_weight = float(hot_carcass_log.weight)
+            new_weight = float(self.weight_kg)
+            
+            # Calculate total weight of existing cuts (excluding this one if updating)
+            existing_cuts = self.animal.disassembly_cuts.all()
+            if self.pk:
+                # If updating, exclude the current cut from the total
+                existing_cuts = existing_cuts.exclude(pk=self.pk)
+            
+            total_existing_weight = sum(float(cut.weight_kg) for cut in existing_cuts)
+            total_weight_after = total_existing_weight + new_weight
+            
+            # Check if total exceeds hot carcass weight
+            if total_weight_after > hot_carcass_weight:
+                excess = total_weight_after - hot_carcass_weight
+                raise ValidationError(
+                    _('Total disassembly weight (%(total)s kg) cannot exceed hot carcass weight (%(carcass)s kg). '
+                      'Current excess: %(excess)s kg. Please reduce the weight or check existing cuts.') % {
+                        'total': f'{total_weight_after:.2f}',
+                        'carcass': f'{hot_carcass_weight:.2f}',
+                        'excess': f'{excess:.2f}'
+                    }
+                )
+        
+        super().save(*args, **kwargs)

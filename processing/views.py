@@ -10,13 +10,13 @@ from django.urls import reverse
 from datetime import datetime, timedelta
 from django import forms
 
-from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails
+from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails, DisassemblyCut, DisassemblyCut
 from reception.models import SlaughterOrder
 from .forms import (
     AnimalFilterForm, WeightLogForm, LeatherWeightForm, BatchWeightLogForm, 
     ANIMAL_DETAIL_FORMS, CattleDetailsForm, SheepDetailsForm, GoatDetailsForm,
     LambDetailsForm, OglakDetailsForm, CalfDetailsForm, HeiferDetailsForm, BeefDetailsForm,
-    ScaleReceiptUploadForm
+    ScaleReceiptUploadForm, DisassemblyCutForm
 )
 from .services import log_group_weight, mark_animal_slaughtered, log_individual_weight, log_leather_weight, get_batch_weight_reports, ANIMAL_DETAIL_MODELS
 from . import services
@@ -397,12 +397,14 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
             context['detail_form_title'] = _("%(animal_type)s Details") % {'animal_type': self.object.get_animal_type_display()}
             context['has_details'] = False
             try:
-                # Check if details already exist (for display only)
                 detail_instance = detail_model.objects.get(animal=self.object)
                 context['existing_details'] = detail_instance
             except detail_model.DoesNotExist:
                 context['existing_details'] = None
         
+        # Add disassembly readiness check
+        context['can_proceed_to_disassembly'] = self.object.can_proceed_to_disassembly()
+            
         return context
 
 
@@ -795,7 +797,8 @@ class LeatherWeightLogView(LoginRequiredMixin, View):
         if form.is_valid():
             try:
                 leather_weight = form.cleaned_data['leather_weight_kg']
-                log_leather_weight(animal, leather_weight)
+                # Save the form to update the animal instance
+                form.save()
                 messages.success(request, _('Leather weight (%(weight)s kg) logged for %(tag)s.') % {'weight': leather_weight, 'tag': animal.identification_tag})
             except Exception as e:
                 messages.error(request, _('Error logging leather weight: %(error)s') % {'error': str(e)})
@@ -921,3 +924,245 @@ class AnimalDetailsUpdateView(LoginRequiredMixin, View):
                     messages.error(request, f'{field_label}: {error}')
         
         return redirect('processing:animal_detail', pk=animal.pk)
+
+class DisassemblyDashboardView(LoginRequiredMixin, ListView):
+    model = Animal
+    template_name = 'processing/disassembly_dashboard.html'
+    context_object_name = 'animals'
+    paginate_by = 50
+    
+    def get_queryset(self):
+        from django.db.models import Q
+        
+        queryset = Animal.objects.filter(
+            status__in=['carcass_ready', 'disassembled']
+        ).select_related(
+            'slaughter_order', 'slaughter_order__client', 'slaughter_order__service_package'
+        ).prefetch_related('disassembly_cuts', 'individual_weight_logs').order_by('-slaughter_date')
+        
+        # Filter by disassembly service package
+        queryset = queryset.filter(
+            slaughter_order__service_package__includes_disassembly=True
+        )
+        
+        # Filter to only show eligible animals:
+        # - Animals already disassembled: show them
+        # - Animals with carcass_ready status: only show if they have hot carcass weight logged
+        queryset = queryset.filter(
+            Q(status='disassembled') |  # Already disassembled - show them
+            Q(
+                status='carcass_ready',
+                individual_weight_logs__weight_type='hot_carcass_weight',
+                individual_weight_logs__is_group_weight=False
+            )
+        ).distinct()  # Use distinct() to avoid duplicates from the join
+        
+        # Filter by animal ID if provided (for quick add from animal detail page)
+        animal_id = self.request.GET.get('animal')
+        if animal_id:
+            queryset = queryset.filter(pk=animal_id)
+        
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(identification_tag__icontains=search) |
+                Q(slaughter_order__slaughter_order_no__icontains=search) |
+                Q(slaughter_order__client__company_name__icontains=search) |
+                Q(slaughter_order__client_name__icontains=search)
+            )
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get the selected animal from URL parameter
+        animal_id = self.request.GET.get('animal')
+        selected_animal = None
+        if animal_id:
+            try:
+                selected_animal = Animal.objects.select_related(
+                    'slaughter_order', 'slaughter_order__service_package'
+                ).get(pk=animal_id)
+            except Animal.DoesNotExist:
+                pass
+        
+        # Separate animals by disassembly type
+        boneless_animals = []
+        standard_animals = []
+        
+        for animal in context.get('animals', []):
+            if animal.is_boneless_disassembly():
+                boneless_animals.append(animal)
+            elif animal.is_standard_disassembly():
+                standard_animals.append(animal)
+        
+        context['boneless_animals'] = boneless_animals
+        context['standard_animals'] = standard_animals
+        context['selected_animal'] = selected_animal
+        context['current_search'] = self.request.GET.get('search', '')
+        
+        # Add form for selected animal
+        if selected_animal:
+            from .forms import DisassemblyCutForm
+            context['disassembly_form'] = DisassemblyCutForm(animal=selected_animal)
+        
+        return context
+
+class DisassemblyDetailView(LoginRequiredMixin, DetailView):
+    """Dedicated view for managing disassembly cuts for a specific animal"""
+    model = Animal
+    template_name = 'processing/disassembly_detail.html'
+    context_object_name = 'animal'
+    
+    def get_queryset(self):
+        # Only show animals eligible for disassembly
+        from django.db.models import Q
+        return Animal.objects.filter(
+            Q(status='disassembled') |
+            Q(
+                status='carcass_ready',
+                individual_weight_logs__weight_type='hot_carcass_weight',
+                individual_weight_logs__is_group_weight=False
+            ),
+            slaughter_order__service_package__includes_disassembly=True
+        ).select_related(
+            'slaughter_order', 'slaughter_order__service_package'
+        ).prefetch_related('disassembly_cuts', 'individual_weight_logs').distinct()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        animal = self.object
+        
+        # Add disassembly readiness check
+        context['can_proceed_to_disassembly'] = animal.can_proceed_to_disassembly()
+        
+        # Add form for adding new cuts
+        from .forms import DisassemblyCutForm
+        context['disassembly_form'] = DisassemblyCutForm(animal=animal)
+        
+        # Get all existing cuts with their labels prefetched
+        from labeling.models import AnimalLabel
+        cuts = animal.disassembly_cuts.all().order_by('-created_at')
+        # Attach labels directly to cuts for easier template access
+        for cut in cuts:
+            cut.label = AnimalLabel.objects.filter(cut=cut, label_type='cut').order_by('-print_date').first()
+        
+        context['disassembly_cuts'] = cuts
+        
+        # Get hot carcass weight
+        hot_carcass_log = animal.individual_weight_logs.filter(
+            weight_type='hot_carcass_weight',
+            is_group_weight=False
+        ).order_by('-log_date').first()
+        context['hot_carcass_weight'] = hot_carcass_log.weight if hot_carcass_log else None
+        context['hot_carcass_log_date'] = hot_carcass_log.log_date if hot_carcass_log else None
+        
+        return context
+
+class AddDisassemblyCutView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        from .forms import DisassemblyCutForm
+        
+        form = DisassemblyCutForm(request.POST, animal=animal)
+        if form.is_valid():
+            try:
+                cut = form.save(commit=False)
+                cut.animal = animal
+                cut.save()
+                
+                # Auto-transition to disassembled if not already and conditions are met
+                if animal.status == 'carcass_ready':
+                    try:
+                        readiness = animal.can_proceed_to_disassembly()
+                        if readiness['can_proceed']:
+                            animal.perform_disassembly()
+                            animal.save()
+                    except Exception as e:
+                        # Log the error but don't fail the cut addition
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Failed to transition animal {animal.pk} to disassembled: {e}")
+                
+                cut_display = cut.get_cut_name_display()
+                if animal.is_boneless_disassembly():
+                    messages.success(request, _('Boneless meat weight (%(weight)s kg) recorded successfully.') % {'weight': cut.weight_kg})
+                else:
+                    messages.success(request, _('Cut "%(cut)s" (%(weight)s kg) added successfully.') % {'cut': cut_display, 'weight': cut.weight_kg})
+            except Exception as e:
+                messages.error(request, _('Error saving cut: %(error)s') % {'error': str(e)})
+        else:
+            for field, errors in form.errors.items():
+                field_label = form.fields[field].label if field in form.fields else field
+                for error in errors:
+                    messages.error(request, f'{field_label}: {error}')
+        
+        # Redirect back to disassembly detail page
+        return redirect('processing:disassembly_detail', pk=animal.pk)
+
+class EditDisassemblyCutView(LoginRequiredMixin, View):
+    """View for editing an existing disassembly cut"""
+    def get(self, request, pk, cut_pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        from .forms import DisassemblyCutForm
+        from labeling.models import AnimalLabel
+        
+        form = DisassemblyCutForm(instance=cut, animal=animal)
+        cuts = animal.disassembly_cuts.all().order_by('-created_at')
+        # Attach labels directly to cuts for easier template access
+        for c in cuts:
+            c.label = AnimalLabel.objects.filter(cut=c, label_type='cut').order_by('-print_date').first()
+        
+        return render(request, 'processing/disassembly_detail.html', {
+            'animal': animal,
+            'disassembly_form': form,
+            'editing_cut': cut,
+            'disassembly_cuts': cuts,
+            'can_proceed_to_disassembly': animal.can_proceed_to_disassembly(),
+        })
+    
+    def post(self, request, pk, cut_pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        from .forms import DisassemblyCutForm
+        
+        form = DisassemblyCutForm(request.POST, instance=cut, animal=animal)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, _('Cut updated successfully.'))
+                return redirect('processing:disassembly_detail', pk=animal.pk)
+            except Exception as e:
+                messages.error(request, _('Error updating cut: %(error)s') % {'error': str(e)})
+        else:
+            for field, errors in form.errors.items():
+                field_label = form.fields[field].label if field in form.fields else field
+                for error in errors:
+                    messages.error(request, f'{field_label}: {error}')
+        
+        from labeling.models import AnimalLabel
+        cuts = animal.disassembly_cuts.all().order_by('-created_at')
+        # Attach labels directly to cuts for easier template access
+        for c in cuts:
+            c.label = AnimalLabel.objects.filter(cut=c, label_type='cut').order_by('-print_date').first()
+        
+        return render(request, 'processing/disassembly_detail.html', {
+            'animal': animal,
+            'disassembly_form': form,
+            'editing_cut': cut,
+            'disassembly_cuts': cuts,
+            'can_proceed_to_disassembly': animal.can_proceed_to_disassembly(),
+        })
+
+class DeleteDisassemblyCutView(LoginRequiredMixin, View):
+    """View for deleting an existing disassembly cut"""
+    def post(self, request, pk, cut_pk):
+        animal = get_object_or_404(Animal, pk=pk)
+        cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        
+        cut_name = cut.get_cut_name_display()
+        cut.delete()
+        
+        messages.success(request, _('Cut "%(cut)s" deleted successfully.') % {'cut': cut_name})
+        return redirect('processing:disassembly_detail', pk=animal.pk)
