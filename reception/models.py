@@ -42,17 +42,38 @@ class SlaughterOrder(BaseModel):
     )
 
     def save(self, *args, **kwargs):
+        """
+        Auto-generate unique order number if not provided.
+        
+        BUG FIX (2026-01-08):
+        Previously used timezone.now() for the date string but order_datetime for counting,
+        causing duplicate key violations when server timezone differed from order timezone.
+        
+        Example of the bug:
+        - Order created on 2026-07-01 22:31 (local time, e.g., Turkey UTC+3)
+        - Server timezone is UTC, so timezone.now() returns 2026-01-08 (UTC)
+        - Order number generated: ORD-20260108-0012 (using server time)
+        - But count uses order_datetime date (2026-07-01)
+        - When creating 12th order on 2026-07-01, it tries ORD-20260108-0012 again → DUPLICATE ERROR
+        
+        Fix: Use order_datetime for both date string and count to ensure consistency.
+        """
         if not self.slaughter_order_no:
-            today = timezone.now().strftime('%Y%m%d')
-            # Get the count of orders for today to make it unique
+            # Use order_datetime instead of timezone.now() to ensure consistency
+            # This prevents timezone mismatches where server time differs from order time
+            if self.order_datetime:
+                order_date = self.order_datetime.date()
+                date_str = order_date.strftime('%Y%m%d')
+            else:
+                # Fallback to current date if order_datetime is not set
+                order_date = timezone.now().date()
+                date_str = order_date.strftime('%Y%m%d')
+            
+            # Get the count of orders for the same date to make it unique
             # This approach is simple but might have race conditions in high-concurrency
             # For production, consider a more robust sequence generator or database sequence
-            if hasattr(self.order_datetime, 'date'):
-                order_date = self.order_datetime.date()
-            else:
-                order_date = self.order_datetime
             count = SlaughterOrder.objects.filter(order_datetime__date=order_date).count() + 1
-            self.slaughter_order_no = f"ORD-{today}-{count:04d}"
+            self.slaughter_order_no = f"ORD-{date_str}-{count:04d}"
         super().save(*args, **kwargs)
 
     def __str__(self):
