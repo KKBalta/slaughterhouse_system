@@ -8,11 +8,69 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 import uuid
 
+
+def generate_order_number(order_datetime=None) -> str:
+    """
+    Generates a unique order number for a given date.
+    Uses database-level locking with select_for_update() to prevent race conditions.
+    
+    This function should be called within a transaction.atomic() context to ensure
+    proper locking behavior.
+    
+    Args:
+        order_datetime: The datetime for the order. If None, uses current time.
+        
+    Returns:
+        A unique order number string in format: ORD-YYYYMMDD-NNNN
+        
+    Raises:
+        ValidationError: If order number generation fails
+    """
+    if order_datetime:
+        # Handle both datetime (has .date()) and date (use as-is)
+        order_date = order_datetime.date() if hasattr(order_datetime, 'date') else order_datetime
+        date_str = order_date.strftime('%Y%m%d')
+    else:
+        order_date = timezone.now().date()
+        date_str = order_date.strftime('%Y%m%d')
+    
+    # Use select_for_update() to lock the last order for this date
+    # This prevents race conditions in high-concurrency scenarios
+    last_order = SlaughterOrder.objects.filter(
+        slaughter_order_no__startswith=f"ORD-{date_str}"
+    ).select_for_update().order_by('-slaughter_order_no').first()
+    
+    if last_order:
+        # Extract the number from the last order
+        try:
+            last_num = int(last_order.slaughter_order_no.split('-')[-1])
+            count = last_num + 1
+        except (ValueError, IndexError):
+            # Fallback if order number format is unexpected
+            # Count existing orders for this date
+            count = SlaughterOrder.objects.filter(
+                order_datetime__date=order_date
+            ).count() + 1
+    else:
+        count = 1
+    
+    order_number = f"ORD-{date_str}-{count:04d}"
+    
+    # Double-check uniqueness (defense in depth)
+    if SlaughterOrder.objects.filter(slaughter_order_no=order_number).exists():
+        # If somehow a duplicate exists, increment and try again
+        count += 1
+        order_number = f"ORD-{date_str}-{count:04d}"
+    
+    return order_number
+
+
 @transaction.atomic
 def create_slaughter_order(client_id: str, service_package_id: str, order_datetime: datetime, animals_data: list, client_name: str = None, client_phone: str = None, destination: str = None) -> SlaughterOrder:
     """
     Creates a new SlaughterOrder and all its associated animals.
     Handles both registered and walk-in clients.
+    Generates order number atomically to prevent race conditions.
     """
     client_profile = None
     if client_id:
@@ -20,13 +78,18 @@ def create_slaughter_order(client_id: str, service_package_id: str, order_dateti
 
     service_package = ServicePackage.objects.get(id=service_package_id)
 
+    # Generate order number in service layer (not in model save())
+    # This ensures atomic generation with proper database locking
+    order_number = generate_order_number(order_datetime)
+
     order = SlaughterOrder.objects.create(
         client=client_profile,
         service_package=service_package,
         order_datetime=order_datetime,
         client_name=client_name if not client_profile else '',
         client_phone=client_phone if not client_profile else '',
-        destination=destination
+        destination=destination,
+        slaughter_order_no=order_number  # Set explicitly to avoid save() method generation
     )
 
     for animal_data in animals_data:

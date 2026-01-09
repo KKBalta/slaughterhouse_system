@@ -1,4 +1,6 @@
+import unittest
 from django.test import TestCase
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from core.models import ServicePackage
 from users.models import ClientProfile
@@ -7,7 +9,8 @@ from processing.models import Animal, CattleDetails, SheepDetails
 from reception.services import (
     create_slaughter_order, update_slaughter_order, cancel_slaughter_order,
     update_order_status_from_animals, bill_order,
-    add_animal_to_order, remove_animal_from_order, create_batch_animals
+    add_animal_to_order, remove_animal_from_order, create_batch_animals,
+    generate_order_number
 )
 from datetime import date, datetime
 from django.utils import timezone
@@ -75,6 +78,8 @@ class ReceptionServiceTest(TestCase):
             cancel_slaughter_order(order=order)
 
     def test_update_order_status_from_animals_service(self):
+        from processing.models import WeightLog
+        
         order = create_slaughter_order(
             client_id=self.client_profile.id, 
             service_package_id=self.service_package.id, 
@@ -93,24 +98,43 @@ class ReceptionServiceTest(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.status, SlaughterOrder.Status.IN_PROGRESS)
 
-        # Test COMPLETED status
+        # Test COMPLETED status - process all animals through FSM transitions
         from processing.models import WeightLog
         for animal in order.animals.all():
+            # Reload from database to get fresh state (FSM doesn't support refresh_from_db)
+            animal = Animal.objects.get(pk=animal.pk)
+            
+            # Transition through proper FSM sequence
             if animal.status == 'received':
                 animal.perform_slaughter()
-            animal.prepare_carcass()
-            # perform_disassembly requires hot_carcass_weight to be logged
-            WeightLog.objects.create(
-                animal=animal,
-                weight=150.0,
-                weight_type='hot_carcass_weight',
-                is_group_weight=False
-            )
-            # Our test service package includes disassembly and delivery
-            animal.perform_disassembly()
-            animal.perform_packaging()
-            animal.deliver_product()
-            animal.save()
+                animal.save()
+                animal = Animal.objects.get(pk=animal.pk)
+            
+            if animal.status == 'slaughtered':
+                animal.prepare_carcass()
+                animal.save()
+                animal = Animal.objects.get(pk=animal.pk)
+            
+            if animal.status == 'carcass_ready':
+                # Log hot carcass weight (required for disassembly)
+                WeightLog.objects.create(
+                    animal=animal,
+                    weight=300.0,
+                    weight_type='hot_carcass_weight',
+                    is_group_weight=False
+                )
+                animal.perform_disassembly()
+                animal.save()
+                animal = Animal.objects.get(pk=animal.pk)
+            
+            if animal.status == 'disassembled':
+                animal.perform_packaging()
+                animal.save()
+                animal = Animal.objects.get(pk=animal.pk)
+            
+            if animal.status == 'packaged':
+                animal.deliver_product()
+                animal.save()
 
         update_order_status_from_animals(order=order)
         order.refresh_from_db()
@@ -374,3 +398,107 @@ class ReceptionServiceTest(TestCase):
         tags = [animal.identification_tag for animal in created_animals]
         self.assertIn('MAX-001', tags)
         self.assertIn('MAX-100', tags)
+
+    @unittest.skipIf(
+        'sqlite' in str(settings.DATABASES.get('default', {}).get('ENGINE', '')).lower(),
+        "Concurrent tests not supported with SQLite (table locking)"
+    )
+    def test_concurrent_order_creation_race_condition(self):
+        """
+        Test that concurrent order creation generates unique order numbers.
+        This test verifies that the race condition fix works correctly.
+        
+        Note: This test requires PostgreSQL - SQLite has table-level locking
+        that prevents concurrent access.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+        from django.db import transaction
+        
+        order_datetime = timezone.now()
+        orders = []
+        errors = []
+        
+        def create_order():
+            try:
+                order = create_slaughter_order(
+                    client_id=None,
+                    service_package_id=str(self.service_package.id),
+                    order_datetime=order_datetime,
+                    animals_data=[],
+                    client_name="Test Client",
+                    client_phone="1234567890"
+                )
+                orders.append(order.slaughter_order_no)
+            except Exception as e:
+                errors.append(str(e))
+        
+        # Create 20 orders concurrently
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(create_order) for _ in range(20)]
+            [f.result() for f in futures]
+        
+        # Verify all order numbers are unique
+        self.assertEqual(len(set(orders)), len(orders), 
+                         f"All order numbers should be unique. Got duplicates: {[x for x in orders if orders.count(x) > 1]}")
+        
+        # Verify format: ORD-YYYYMMDD-NNNN
+        for order_no in orders:
+            self.assertTrue(order_no.startswith("ORD-"), 
+                          f"Order number should start with 'ORD-': {order_no}")
+            parts = order_no.split('-')
+            self.assertEqual(len(parts), 3, 
+                           f"Order number should have 3 parts: {order_no}")
+            self.assertEqual(len(parts[1]), 8, 
+                           f"Date part should be 8 digits: {order_no}")
+            self.assertEqual(len(parts[2]), 4, 
+                           f"Sequence part should be 4 digits: {order_no}")
+        
+        # Verify sequential numbering
+        numbers = [int(order_no.split('-')[-1]) for order_no in sorted(orders)]
+        expected_numbers = list(range(1, len(orders) + 1))
+        self.assertEqual(numbers, expected_numbers,
+                         f"Order numbers should be sequential: {numbers}")
+        
+        # Verify no errors occurred
+        self.assertEqual(len(errors), 0, 
+                         f"No errors should occur during concurrent creation: {errors}")
+
+    def test_generate_order_number_function(self):
+        """Test the generate_order_number function directly"""
+        from django.db import transaction
+        
+        order_datetime = timezone.now()
+        
+        # Generate first order number (must be in transaction for select_for_update)
+        with transaction.atomic():
+            order_no_1 = generate_order_number(order_datetime)
+        self.assertTrue(order_no_1.startswith("ORD-"))
+        
+        # Create an order with this number to test sequential generation
+        order1 = create_slaughter_order(
+            client_id=None,
+            service_package_id=str(self.service_package.id),
+            order_datetime=order_datetime,
+            animals_data=[],
+            client_name="Test Client 1",
+            client_phone="5551234567"  # Required field for walk-in clients
+        )
+        self.assertEqual(order1.slaughter_order_no, order_no_1)
+        
+        # Generate second order number (should be sequential)
+        with transaction.atomic():
+            order_no_2 = generate_order_number(order_datetime)
+        self.assertTrue(order_no_2.startswith("ORD-"))
+        
+        # Extract numbers
+        num_1 = int(order_no_1.split('-')[-1])
+        num_2 = int(order_no_2.split('-')[-1])
+        
+        self.assertEqual(num_2, num_1 + 1, 
+                        "Second order number should be one more than first")
+        
+        # Verify same date prefix
+        date_part_1 = order_no_1.split('-')[1]
+        date_part_2 = order_no_2.split('-')[1]
+        self.assertEqual(date_part_1, date_part_2,
+                         "Both order numbers should have the same date prefix")

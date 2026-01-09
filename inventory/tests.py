@@ -2,11 +2,11 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from reception.models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
 from processing.models import Animal
 from .models import Carcass, MeatCut, Offal, ByProduct
-from datetime import date
 
 User = get_user_model()
 
@@ -30,7 +30,7 @@ class InventoryModelTest(TestCase):
         )
         self.order = SlaughterOrder.objects.create(
             client=self.client_profile,
-            order_datetime=date.today(),
+            order_datetime=timezone.now(),
             service_package=self.service_package
         )
         self.animal = Animal.objects.create(

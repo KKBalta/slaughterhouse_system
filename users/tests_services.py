@@ -63,10 +63,11 @@ class UsersServiceTest(TestCase):
         self.assertEqual(updated_user.role, User.Role.MANAGER)
 
     def test_convert_walk_in_to_profile_service(self):
+        from django.utils import timezone
         walk_in_phone = '888-777-6666'
         SlaughterOrder.objects.create(
             client_name='Walk-in Joe', client_phone=walk_in_phone, 
-            order_datetime=date.today(), service_package=self.service_package
+            order_datetime=timezone.now(), service_package=self.service_package
         )
         user_data = {'username': 'walkinjoe', 'password': 'newpassword', 'role': User.Role.CLIENT}
         profile_data = {'account_type': 'INDIVIDUAL', 'phone_number': walk_in_phone, 'address': '123 Converted St'}

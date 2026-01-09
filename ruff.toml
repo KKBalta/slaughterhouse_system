@@ -1,0 +1,121 @@
+# Ruff Configuration for Slaughterhouse System
+# https://docs.astral.sh/ruff/configuration/
+
+# Exclude commonly ignored directories
+exclude = [
+    ".git",
+    ".git-rewrite",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "_build",
+    "build",
+    "dist",
+    "htmlcov",
+    "staticfiles",
+    "media",
+    "theme",
+    "node_modules",
+    "*/migrations/*",
+]
+
+# Match Black's default line length
+line-length = 120
+indent-width = 4
+
+# Target Python 3.11 (matching your CI)
+target-version = "py311"
+
+[lint]
+# Enable these rule categories:
+# E = pycodestyle errors
+# F = Pyflakes
+# B = flake8-bugbear
+# I = isort
+# UP = pyupgrade
+# SIM = flake8-simplify
+# DJ = flake8-django
+select = [
+    "E",      # pycodestyle errors
+    "F",      # Pyflakes
+    "B",      # flake8-bugbear
+    "I",      # isort
+    "UP",     # pyupgrade
+    "DJ",     # flake8-django
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "E203",   # Whitespace before ':'
+    "E402",   # Module import not at top of file (Django settings pattern)
+    "B008",   # Do not perform function calls in argument defaults
+    "B904",   # Within an except clause, raise exceptions with raise ... from err
+    "B017",   # Do not assert blind exception (common in tests)
+    "DJ001", # Avoid null=True on CharField (legacy Django models)
+]
+
+# Allow fix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+# Ignore specific rules in specific files
+"*/migrations/*" = ["E501", "F401"]
+"conftest.py" = ["E501", "F401", "F811"]
+"*/tests*.py" = ["S101", "F841", "B017"]  # Allow assert, unused vars in tests
+"*/tests.py" = ["S101", "F841", "B017"]
+"tests/**/*.py" = ["S101", "F841", "B017"]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"config/settings*.py" = ["E402"]  # Allow imports after docstrings
+
+# Allow unused variables in utils/services/views (often kept for debugging/future use)
+"*/utils.py" = ["F841"]
+"*/services.py" = ["F841"]
+"*/views.py" = ["F841"]
+
+[lint.isort]
+# isort configuration (replaces standalone isort)
+known-first-party = [
+    "core",
+    "users",
+    "reception",
+    "processing",
+    "inventory",
+    "portal",
+    "labeling",
+    "reporting",
+    "config",
+]
+known-third-party = ["django", "factory", "pytest", "faker"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+combine-as-imports = true
+split-on-trailing-comma = false
+force-single-line = false
+
+[lint.flake8-bugbear]
+# Allow default arguments like datetime.now()
+extend-immutable-calls = ["django.utils.timezone.now"]
+
+[format]
+# Like Black, use double quotes for strings
+quote-style = "double"
+
+# Like Black, indent with spaces
+indent-style = "space"
+
+# Like Black, respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Automatically detect line ending
+line-ending = "auto"
+
+# Enable docstring code formatting
+docstring-code-format = true

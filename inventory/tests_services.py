@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from datetime import date
+from django.utils import timezone
 
 from users.models import ClientProfile
 from reception.models import SlaughterOrder
@@ -21,7 +21,7 @@ class InventoryServiceTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', role=User.Role.CLIENT)
         self.client_profile = ClientProfile.objects.create(user=self.user, account_type='INDIVIDUAL', phone_number='1234567890', address='123 Test St')
-        self.order = SlaughterOrder.objects.create(client=self.client_profile, order_datetime=date.today())
+        self.order = SlaughterOrder.objects.create(client=self.client_profile, order_datetime=timezone.now())
         self.animal = Animal.objects.create(slaughter_order=self.order, animal_type='cattle')
         self.storage_location_1 = StorageLocation.objects.create(name='Freezer A', location_type='freezer')
         self.storage_location_2 = StorageLocation.objects.create(name='Cooler B', location_type='cooler')
