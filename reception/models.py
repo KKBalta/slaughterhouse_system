@@ -45,35 +45,24 @@ class SlaughterOrder(BaseModel):
         """
         Auto-generate unique order number if not provided.
         
-        BUG FIX (2026-01-08):
-        Previously used timezone.now() for the date string but order_datetime for counting,
-        causing duplicate key violations when server timezone differed from order timezone.
+        NOTE: For production use, always use create_slaughter_order() service function
+        which handles order number generation atomically with proper database locking.
         
-        Example of the bug:
-        - Order created on 2026-07-01 22:31 (local time, e.g., Turkey UTC+3)
-        - Server timezone is UTC, so timezone.now() returns 2026-01-08 (UTC)
-        - Order number generated: ORD-20260108-0012 (using server time)
-        - But count uses order_datetime date (2026-07-01)
-        - When creating 12th order on 2026-07-01, it tries ORD-20260108-0012 again → DUPLICATE ERROR
+        This method is kept for backward compatibility (admin panel, direct model creation)
+        but delegates to the service layer for proper race condition handling.
         
-        Fix: Use order_datetime for both date string and count to ensure consistency.
+        BUG FIX HISTORY:
+        - (2026-01-08): Fixed timezone mismatch bug - use order_datetime consistently
+        - (2026-01-08): Moved order number generation to service layer with select_for_update()
+          to prevent race conditions in high-concurrency scenarios
         """
         if not self.slaughter_order_no:
-            # Use order_datetime instead of timezone.now() to ensure consistency
-            # This prevents timezone mismatches where server time differs from order time
-            if self.order_datetime:
-                order_date = self.order_datetime.date()
-                date_str = order_date.strftime('%Y%m%d')
-            else:
-                # Fallback to current date if order_datetime is not set
-                order_date = timezone.now().date()
-                date_str = order_date.strftime('%Y%m%d')
-            
-            # Get the count of orders for the same date to make it unique
-            # This approach is simple but might have race conditions in high-concurrency
-            # For production, consider a more robust sequence generator or database sequence
-            count = SlaughterOrder.objects.filter(order_datetime__date=order_date).count() + 1
-            self.slaughter_order_no = f"ORD-{date_str}-{count:04d}"
+            # Import here to avoid circular imports
+            from .services import generate_order_number
+            # Use service layer function for proper atomic generation
+            # Note: This still has a small race condition window if called outside
+            # a transaction, but it's better than the previous implementation
+            self.slaughter_order_no = generate_order_number(self.order_datetime)
         super().save(*args, **kwargs)
 
     def __str__(self):
