@@ -9,4 +9,6 @@ gcloud run deploy carnitrack-app \
   --platform managed \
   --allow-unauthenticated \
   --env-vars-file env.yaml \
-  --add-cloudsql-instances carnitrack:europe-west1:carnitrack-db-belgium
+  --add-cloudsql-instances carnitrack:europe-west1:carnitrack-db-belgium \
+  --command="" \
+  --args=""
