@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Reconcile batch" %} {{ batch.batch_id }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-4xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{% trans "Reconcile offline batch" %}</h1>
+    <p class="text-gray-600 mb-4">{{ batch.event_count }} {% trans "events" %}, {{ batch.total_weight_grams }} g total. {% trans "Assign to an animal to create a session and link all events." %}</p>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label for="animal_id" class="block text-sm font-medium text-gray-700">{% trans "Animal" %}</label>
+            <select name="animal_id" id="animal_id" required class="mt-1 block w-full rounded border-gray-300 text-gray-900 bg-white">
+                <option value="">{% trans "— Select animal —" %}</option>
+                {% for animal in animals %}
+                <option value="{{ animal.id }}">{{ animal.identification_tag }} ({{ animal.get_animal_type_display }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex gap-3">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">{% trans "Reconcile to animal" %}</button>
+            <a href="{% url 'scales:orphaned_batch_list' %}" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">{% trans "Cancel" %}</a>
+        </div>
+    </form>
+
+    <h2 class="text-lg font-semibold text-gray-900 mt-8 mb-3">{% trans "Events in this batch" %}</h2>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Time" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "PLU" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Product" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Weight" %}</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for event in events %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ event.scale_timestamp|date:"H:i:s" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ event.plu_code }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ event.product_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ event.weight_grams }} g</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">{% trans "No events." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

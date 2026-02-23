@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Session" %} {{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-start mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Session" %} — {{ session.animal.identification_tag|default:"No animal" }}</h1>
+        <div class="flex gap-3">
+            {% if session.animal %}
+            <a href="{% url 'processing:disassembly_detail' session.animal.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">{% trans "Manage Manual Cuts" %}</a>
+            {% endif %}
+            <a href="{% url 'scales:session_list' %}" class="text-blue-600 hover:text-blue-800">{% trans "Back to list" %}</a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><dt class="text-sm text-gray-500">{% trans "Device" %}</dt><dd class="font-medium">{{ session.device.device_id|default:"—" }}</dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Animal" %}</dt><dd class="font-medium">{{ session.animal.identification_tag|default:"—" }}</dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Operator" %}</dt><dd class="font-medium">{{ session.operator }}</dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Status" %}</dt><dd><span id="session-status-badge" class="px-2 py-1 text-xs font-semibold rounded-full
+                {% if session.status == 'active' %}bg-green-100 text-green-800
+                {% elif session.status == 'completed' %}bg-gray-100 text-gray-800
+                {% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ session.get_status_display }}</span></dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Started" %}</dt><dd>{{ session.started_at|date:"Y-m-d H:i:s" }}</dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Events" %}</dt><dd id="session-event-count">{{ session.event_count }}</dd></div>
+            <div><dt class="text-sm text-gray-500">{% trans "Total weight" %}</dt><dd id="session-total-weight">{{ session.total_weight_grams }} g</dd></div>
+        </dl>
+
+        {% if session.status in "pending,active,paused" %}
+        <div id="session-actions" class="mt-4 flex gap-3">
+            <form method="post" action="{% url 'scales:session_close' session.pk %}" class="inline">
+                {% csrf_token %}
+                <input type="text" name="close_reason" placeholder="{% trans 'Reason (optional)' %}" class="rounded border-gray-300 mr-2 text-gray-900 bg-white">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">{% trans "Close Session" %}</button>
+            </form>
+            <form method="post" action="{% url 'scales:session_cancel' session.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">{% trans "Cancel Session" %}</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <h2 class="text-lg font-semibold text-gray-900 mb-3">{% trans "Weighing events" %}</h2>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Time" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "PLU" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Product" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Weight" %}</th>
+                </tr>
+            </thead>
+            <tbody id="session-events-tbody" class="bg-white divide-y divide-gray-200">
+                {% for event in events %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ event.scale_timestamp|date:"H:i:s" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ event.plu_code }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ event.product_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ event.weight_grams }} g</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">{% trans "No events yet." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if session.status in "pending,active,paused" %}
+<script>
+(function() {
+    var eventsJsonUrl = '{% url "scales:session_events_json" session.pk %}';
+    var statusBadge = document.getElementById('session-status-badge');
+    var eventCountEl = document.getElementById('session-event-count');
+    var totalWeightEl = document.getElementById('session-total-weight');
+    var tbody = document.getElementById('session-events-tbody');
+    var actionsEl = document.getElementById('session-actions');
+    if (!eventsJsonUrl) return;
+
+    function statusClasses(status) {
+        if (status === 'active') return 'bg-green-100 text-green-800';
+        if (status === 'completed' || status === 'cancelled' || status === 'auto_closed') return 'bg-gray-100 text-gray-800';
+        return 'bg-yellow-100 text-yellow-800';
+    }
+
+    function poll() {
+        fetch(eventsJsonUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (statusBadge && data.status_display) {
+                    statusBadge.textContent = data.status_display;
+                    statusBadge.className = 'px-2 py-1 text-xs font-semibold rounded-full ' + statusClasses(data.status);
+                }
+                if (eventCountEl) eventCountEl.textContent = data.event_count != null ? data.event_count : 0;
+                if (totalWeightEl) totalWeightEl.textContent = (data.total_weight_grams != null ? data.total_weight_grams : 0) + ' g';
+                if (tbody) {
+                    if (data.events && data.events.length > 0) {
+                        tbody.innerHTML = data.events.map(function(e) {
+                            var time = e.scale_timestamp ? e.scale_timestamp.split('T')[1].substring(0, 8) : '—';
+                            return '<tr><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">' + time + '</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + (e.plu_code || '') + '</td><td class="px-6 py-4 text-sm text-gray-900">' + (e.product_name || '') + '</td><td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">' + (e.weight_grams || 0) + ' g</td></tr>';
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">{% trans "No events yet." %}</td></tr>';
+                    }
+                }
+                if (actionsEl && (data.status === 'completed' || data.status === 'cancelled' || data.status === 'auto_closed')) {
+                    actionsEl.style.display = 'none';
+                    return false;
+                }
+                return true;
+            })
+            .then(function(continuePolling) {
+                if (continuePolling === false) clearInterval(intervalId);
+            })
+            .catch(function() {});
+    }
+    poll();
+    var intervalId = setInterval(poll, 5000);
+})();
+</script>
+{% endif %}
+{% endblock %}

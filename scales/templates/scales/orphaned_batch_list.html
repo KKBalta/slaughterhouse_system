@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Orphaned Batches" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{% trans "Orphaned Batches" %}</h1>
+    <p class="text-gray-600 mb-4">{% trans "Batches of scale events captured while the Edge was offline. Assign each batch to an animal to reconcile." %}</p>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Batch ID" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Device" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Started" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Events" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Weight" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for batch in batches %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ batch.batch_id|truncatechars:12 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ batch.device.device_id|default:"—" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ batch.started_at|date:"Y-m-d H:i" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ batch.event_count }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ batch.total_weight_grams }} g</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <a href="{% url 'scales:orphaned_batch_reconcile' batch.pk %}" class="text-blue-600 hover:text-blue-800">{% trans "Reconcile" %}</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">{% trans "No pending orphaned batches." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+    <div class="mt-4 flex justify-between">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="text-blue-600 hover:underline">{% trans "Previous" %}</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+        <span class="text-gray-600">{% trans "Page" %} {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="text-blue-600 hover:underline">{% trans "Next" %}</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

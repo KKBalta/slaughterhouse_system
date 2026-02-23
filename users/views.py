@@ -95,7 +95,7 @@ class ClientProfileRegisterView(CreateView):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'users/dashboard.html')
+    return render(request, 'users/dashboard.html', {})
 
 
 # RBAC Decorators using Django's built-in functionality

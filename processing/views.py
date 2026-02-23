@@ -932,13 +932,22 @@ class DisassemblyDashboardView(LoginRequiredMixin, ListView):
     paginate_by = 50
     
     def get_queryset(self):
-        from django.db.models import Q
-        
+        from django.db.models import Q, Prefetch
+        from scales.models import DisassemblySession
+
+        active_sessions = DisassemblySession.objects.filter(
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).order_by("-started_at")
         queryset = Animal.objects.filter(
             status__in=['carcass_ready', 'disassembled']
         ).select_related(
             'slaughter_order', 'slaughter_order__client', 'slaughter_order__service_package'
-        ).prefetch_related('disassembly_cuts', 'individual_weight_logs').order_by('-slaughter_date')
+        ).prefetch_related(
+            'disassembly_cuts',
+            'individual_weight_logs',
+            Prefetch("scale_sessions", queryset=active_sessions, to_attr="active_scale_sessions"),
+        ).order_by('-slaughter_date')
         
         # Filter by disassembly service package
         queryset = queryset.filter(
@@ -1030,9 +1039,33 @@ class DisassemblyDetailView(LoginRequiredMixin, DetailView):
         ).prefetch_related('disassembly_cuts', 'individual_weight_logs').distinct()
     
     def get_context_data(self, **kwargs):
+        from scales.models import DisassemblySession, WeighingEvent
+
         context = super().get_context_data(**kwargs)
         animal = self.object
-        
+
+        # Active scale session for this animal (pending/active/paused)
+        active_session = (
+            DisassemblySession.objects.filter(
+                animal=animal,
+                status__in=["pending", "active", "paused"],
+                is_active=True,
+            )
+            .select_related("device", "site")
+            .order_by("-started_at")
+            .first()
+        )
+        session_events = []
+        if active_session:
+            session_events = list(
+                WeighingEvent.objects.filter(session=active_session).order_by(
+                    "-scale_timestamp"
+                )[:100]
+            )
+        context["active_session"] = active_session
+        context["session_events"] = session_events
+        context["has_active_session"] = active_session is not None
+
         # Add disassembly readiness check
         context['can_proceed_to_disassembly'] = animal.can_proceed_to_disassembly()
         
@@ -1069,6 +1102,19 @@ class AddDisassemblyCutView(LoginRequiredMixin, View):
             try:
                 cut = form.save(commit=False)
                 cut.animal = animal
+                # Attach active scale session if one exists (session-first disassembly)
+                from scales.models import DisassemblySession
+                active_session = (
+                    DisassemblySession.objects.filter(
+                        animal=animal,
+                        status__in=["pending", "active", "paused"],
+                        is_active=True,
+                    )
+                    .order_by("-started_at")
+                    .first()
+                )
+                if active_session:
+                    cut.session = active_session
                 cut.save()
                 
                 # Auto-transition to disassembled if not already and conditions are met

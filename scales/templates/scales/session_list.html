@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Scale Sessions" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Scale Sessions" %}</h1>
+        <a href="{% url 'scales:session_create' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">{% trans "Start Session" %}</a>
+    </div>
+
+    <form method="get" class="flex gap-2 mb-4">
+        <select name="status" class="rounded border-gray-300 text-gray-900 bg-white">
+            <option value="">{% trans "All statuses" %}</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">{% trans "Filter" %}</button>
+    </form>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Animal" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Device" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Operator" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Status" %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Started" %}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for session in sessions %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ session.animal.identification_tag|default:"—" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ session.device.device_id|default:"—" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ session.operator }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full
+                            {% if session.status == 'active' %}bg-green-100 text-green-800
+                            {% elif session.status == 'completed' %}bg-gray-100 text-gray-800
+                            {% elif session.status == 'cancelled' %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ session.get_status_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ session.started_at|date:"Y-m-d H:i" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <a href="{% url 'scales:session_detail' session.pk %}" class="text-blue-600 hover:text-blue-800">{% trans "View" %}</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">{% trans "No sessions." %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+    <div class="mt-4 flex justify-between">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="text-blue-600 hover:underline">{% trans "Previous" %}</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+        <span class="text-gray-600">{% trans "Page" %} {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="text-blue-600 hover:underline">{% trans "Next" %}</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

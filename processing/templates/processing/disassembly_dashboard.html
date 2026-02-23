@@ -9,23 +9,37 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3">
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Disassembly Management" %}</h1>
-        <a href="{% url 'processing:dashboard' %}" class="text-blue-600 hover:text-blue-800 text-sm sm:text-base">
-            &larr; {% trans "Back to Dashboard" %}
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{% url 'scales:session_create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                {% trans "Start Scale Session" %}
+            </a>
+            <a href="{% url 'processing:dashboard' %}" class="text-gray-800 hover:text-gray-900 text-sm sm:text-base font-medium">
+                &larr; {% trans "Back to Dashboard" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Start session callout -->
+    <div class="mb-4 sm:mb-6 p-4 rounded-lg border border-blue-200 bg-blue-50">
+        <p class="text-sm text-blue-900">
+            <strong>{% trans "Session-first workflow:" %}</strong>
+            {% trans "Start a scale session for an animal below (choose device and operator), then use the scale or add manual cuts on the animal's disassembly page." %}
+            <a href="{% url 'scales:session_create' %}" class="ml-1 font-semibold text-blue-700 hover:text-blue-900 underline">{% trans "Go to Start Session" %}</a>
+        </p>
     </div>
 
     <!-- Search -->
-    <div class="bg-white shadow rounded-lg p-3 sm:p-6 mb-4 sm:mb-6">
+    <div class="bg-white shadow rounded-lg p-3 sm:p-6 mb-4 sm:mb-6 border border-gray-200">
         <form method="get" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div class="flex-grow">
-                <label for="search" class="sr-only">{% trans "Search" %}</label>
+                <label for="search" class="block text-sm font-medium text-gray-800 mb-1">{% trans "Search" %}</label>
                 <input type="text" name="search" id="search" value="{{ current_search }}"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base text-gray-900 bg-white placeholder-gray-500"
-                    placeholder="{% trans 'Search by Tag, Order No, or Client...' %}"
-                    style="color: #111827 !important; background-color: #ffffff !important;">
+                    class="w-full rounded-md border-2 border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm sm:text-base"
+                    placeholder="{% trans 'Search by Tag, Order No, or Client...' %}">
             </div>
             <button type="submit"
-                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm sm:text-base whitespace-nowrap">
+                class="self-end bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm sm:text-base whitespace-nowrap font-medium">
                 {% trans "Search" %}
             </button>
         </form>
@@ -33,10 +47,10 @@
 
     <!-- Add Cut Form (when animal is selected) -->
     {% if selected_animal and disassembly_form %}
-    <div class="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+    <div class="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-200">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg sm:text-xl font-semibold text-gray-900">
-                {% trans "Add Cut" %} - {{ selected_animal.identification_tag }}
+                {% trans "Add Cut" %} — {{ selected_animal.identification_tag }}
             </h2>
             {% if selected_animal.is_boneless_disassembly %}
                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
@@ -76,12 +90,12 @@
             {% if selected_animal.is_boneless_disassembly %}
                 <!-- Boneless disassembly: Only weight input -->
                 <div>
-                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-800 mb-1">
                         {{ disassembly_form.weight_kg.label }}
                     </label>
-                    {{ disassembly_form.weight_kg }}
+                    <div class="[&_input]:text-gray-900 [&_input]:bg-white [&_input]:border-gray-400 [&_input]:rounded [&_input]:border-2">{{ disassembly_form.weight_kg }}</div>
                     {% if disassembly_form.weight_kg.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.weight_kg.help_text }}</p>
+                    <p class="mt-1 text-xs text-gray-600">{{ disassembly_form.weight_kg.help_text }}</p>
                     {% endif %}
                     {% if disassembly_form.weight_kg.errors %}
                     <div class="mt-1">
@@ -95,10 +109,10 @@
             {% else %}
                 <!-- Standard disassembly: Cut type and weight -->
                 <div>
-                    <label for="{{ disassembly_form.cut_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="{{ disassembly_form.cut_name.id_for_label }}" class="block text-sm font-medium text-gray-800 mb-1">
                         {{ disassembly_form.cut_name.label }}
                     </label>
-                    {{ disassembly_form.cut_name }}
+                    <div class="[&_select]:text-gray-900 [&_select]:bg-white [&_select]:border-gray-400 [&_select]:rounded">{{ disassembly_form.cut_name }}</div>
                     {% if disassembly_form.cut_name.help_text %}
                     <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.cut_name.help_text }}</p>
                     {% endif %}
@@ -112,12 +126,12 @@
                 </div>
 
                 <div>
-                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="{{ disassembly_form.weight_kg.id_for_label }}" class="block text-sm font-medium text-gray-800 mb-1">
                         {{ disassembly_form.weight_kg.label }}
                     </label>
-                    {{ disassembly_form.weight_kg }}
+                    <div class="[&_input]:text-gray-900 [&_input]:bg-white [&_input]:border-gray-400 [&_input]:rounded">{{ disassembly_form.weight_kg }}</div>
                     {% if disassembly_form.weight_kg.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ disassembly_form.weight_kg.help_text }}</p>
+                    <p class="mt-1 text-xs text-gray-600">{{ disassembly_form.weight_kg.help_text }}</p>
                     {% endif %}
                     {% if disassembly_form.weight_kg.errors %}
                     <div class="mt-1">
@@ -150,10 +164,10 @@
 
         <!-- Show existing cuts -->
         {% if selected_animal.disassembly_cuts.exists %}
-        <div class="mt-6 pt-6 border-t border-gray-200">
+        <div class="mt-6 pt-6 border-t border-gray-300">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">{% trans "Existing Cuts" %}</h3>
             {% if selected_animal.is_boneless_disassembly %}
-                <div class="bg-gray-50 p-3 rounded-md">
+                <div class="bg-gray-100 p-3 rounded-md border border-gray-200">
                     <p class="text-sm font-medium text-gray-900">
                         {% trans "Boneless Meat Weight:" %}
                         {{ selected_animal.disassembly_cuts.first.weight_kg }} kg
@@ -162,12 +176,12 @@
             {% else %}
                 <div class="space-y-2">
                     {% for cut in selected_animal.disassembly_cuts.all %}
-                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-md">
+                    <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md border border-gray-200">
                         <span class="text-sm text-gray-900">{{ cut.get_cut_name_display }}</span>
                         <span class="text-sm font-medium text-gray-900">{{ cut.weight_kg }} kg</span>
                     </div>
                     {% endfor %}
-                    <div class="flex justify-between items-center bg-blue-50 p-3 rounded-md border border-blue-200">
+                    <div class="flex justify-between items-center bg-blue-100 p-3 rounded-md border border-blue-300 text-gray-900">
                         <span class="text-sm font-semibold text-gray-900">{% trans "Total Weight:" %}</span>
                         <span class="text-sm font-semibold text-gray-900">
                             {{ selected_animal.disassembly_cuts.all|sum_weights|floatformat:2 }} kg
@@ -181,72 +195,46 @@
     {% endif %}
 
     <!-- Animals List - Desktop Table View -->
-    <div class="hidden md:block bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="hidden md:block bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-100">
                 <tr>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Tag" %}
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Type" %}
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Status" %}
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Client" %}
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Order No" %}
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {% trans "Actions" %}
-                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Tag" %}</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Type" %}</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Status" %}</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Client" %}</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Order No" %}</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-800 uppercase tracking-wider">{% trans "Actions" %}</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for animal in animals %}
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {{ animal.identification_tag }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ animal.get_animal_type_display }}
-                    </td>
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ animal.identification_tag }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ animal.get_animal_type_display }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {{ animal.get_status_display }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if animal.slaughter_order.client %}
-                        {{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}
-                        {% else %}
-                        {{ animal.slaughter_order.client_name|default:"Walk-in" }}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
+                        {% if animal.active_scale_sessions %}
+                        <span class="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800" title="{% trans 'Scale session in progress' %}">{% trans "Session Active" %}</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ animal.slaughter_order.slaughter_order_no }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="{% url 'processing:disassembly_detail' animal.pk %}"
-                            class="text-blue-600 hover:text-blue-900">
-                            {% trans "Manage Cuts" %}
-                        </a>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{% if animal.slaughter_order.client %}{{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}{% else %}{{ animal.slaughter_order.client_name|default:"Walk-in" }}{% endif %}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ animal.slaughter_order.slaughter_order_no }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        {% if animal.active_scale_sessions %}
+                        {% with active_session=animal.active_scale_sessions.0 %}
+                        <a href="{% url 'scales:session_detail' active_session.pk %}" class="font-semibold text-blue-700 hover:text-blue-900 hover:underline">{% trans "Open Session" %}</a>
+                        {% endwith %}
+                        {% else %}
+                        <a href="{% url 'scales:session_create' %}?animal_id={{ animal.pk }}" class="font-semibold text-blue-700 hover:text-blue-900 hover:underline">{% trans "Start Session" %}</a>
+                        {% endif %}
+                        <span class="text-gray-500" aria-hidden="true">|</span>
+                        <a href="{% url 'processing:disassembly_detail' animal.pk %}" class="font-medium text-gray-800 hover:text-gray-900 hover:underline">{% trans "Manage Cuts" %}</a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-800 font-medium">
                         {% trans "No animals found ready for disassembly." %}
                     </td>
                 </tr>
@@ -258,47 +246,34 @@
     <!-- Animals List - Mobile Card View -->
     <div class="md:hidden space-y-3">
         {% for animal in animals %}
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
             <div class="flex justify-between items-start mb-3">
                 <div class="flex-1">
-                    <div class="font-semibold text-gray-900 text-base mb-1">
-                        {{ animal.identification_tag }}
-                    </div>
-                    <div class="text-sm text-gray-600">
-                        {{ animal.get_animal_type_display }}
-                    </div>
+                    <div class="font-semibold text-gray-900 text-base mb-1">{{ animal.identification_tag }}</div>
+                    <div class="text-sm text-gray-800">{{ animal.get_animal_type_display }}</div>
                 </div>
-                <span
-                    class="px-2 py-1 text-xs font-semibold rounded-full 
-                    {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                    {{ animal.get_status_display }}
-                </span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
+                {% if animal.active_scale_sessions %}
+                <span class="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">{% trans "Session Active" %}</span>
+                {% endif %}
             </div>
-
-            <div class="space-y-2 text-sm mb-3">
-                <div class="flex justify-between">
-                    <span class="text-gray-500">{% trans "Client" %}:</span>
-                    <span class="text-gray-900 font-medium text-right">
-                        {% if animal.slaughter_order.client %}
-                        {{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}
-                        {% else %}
-                        {{ animal.slaughter_order.client_name|default:"Walk-in" }}
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">{% trans "Order No" %}:</span>
-                    <span class="text-gray-900 font-medium">{{ animal.slaughter_order.slaughter_order_no }}</span>
-                </div>
+            <div class="space-y-2 text-sm mb-3 text-gray-800">
+                <div class="flex justify-between"><span class="text-gray-700">{% trans "Client" %}:</span><span class="font-medium">{% if animal.slaughter_order.client %}{{ animal.slaughter_order.client.get_full_name|default:animal.slaughter_order.client.company_name }}{% else %}{{ animal.slaughter_order.client_name|default:"Walk-in" }}{% endif %}</span></div>
+                <div class="flex justify-between"><span class="text-gray-700">{% trans "Order No" %}:</span><span class="font-medium">{{ animal.slaughter_order.slaughter_order_no }}</span></div>
             </div>
-
-            <a href="{% url 'processing:disassembly_detail' animal.pk %}"
-                class="block w-full text-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
-                {% trans "Manage Cuts" %}
-            </a>
+            <div class="space-y-2">
+                {% if animal.active_scale_sessions %}
+                {% with active_session=animal.active_scale_sessions.0 %}
+                <a href="{% url 'scales:session_detail' active_session.pk %}" class="block w-full text-center bg-blue-600 text-white px-4 py-2.5 rounded-md hover:bg-blue-700 font-medium text-sm">{% trans "Open Session" %}</a>
+                {% endwith %}
+                {% else %}
+                <a href="{% url 'scales:session_create' %}?animal_id={{ animal.pk }}" class="block w-full text-center bg-blue-600 text-white px-4 py-2.5 rounded-md hover:bg-blue-700 font-medium text-sm">{% trans "Start Session" %} ({{ animal.identification_tag }})</a>
+                {% endif %}
+                <a href="{% url 'processing:disassembly_detail' animal.pk %}" class="block w-full text-center bg-gray-200 text-gray-900 px-4 py-2.5 rounded-md hover:bg-gray-300 font-medium text-sm border border-gray-300">{% trans "Manage Cuts" %}</a>
+            </div>
         </div>
         {% empty %}
-        <div class="bg-white shadow rounded-lg p-6 text-center text-gray-500">
+        <div class="bg-white shadow rounded-lg p-6 text-center text-gray-800 font-medium border border-gray-200">
             {% trans "No animals found ready for disassembly." %}
         </div>
         {% endfor %}
@@ -306,25 +281,24 @@
 
     <!-- Pagination -->
     {% if is_paginated %}
-    <div
-        class="bg-white px-3 sm:px-4 py-3 flex items-center justify-between border-t border-gray-200 mt-4 rounded-lg shadow">
+    <div class="bg-white px-3 sm:px-4 py-3 flex items-center justify-between border border-gray-200 border-t-0 mt-0 rounded-b-lg shadow text-gray-900">
         <div class="flex-1 flex justify-between sm:hidden">
             {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
-                class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                class="relative inline-flex items-center px-3 py-2 border-2 border-gray-400 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-100">
                 {% trans "Previous" %}
             </a>
             {% endif %}
             {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
-                class="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                class="ml-3 relative inline-flex items-center px-3 py-2 border-2 border-gray-400 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-100">
                 {% trans "Next" %}
             </a>
             {% endif %}
         </div>
         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-                <p class="text-sm text-gray-700">
+                <p class="text-sm text-gray-800 font-medium">
                     {% trans "Showing" %}
                     <span class="font-medium">{{ page_obj.start_index }}</span>
                     {% trans "to" %}
@@ -338,7 +312,7 @@
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
-                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border-2 border-gray-400 bg-white text-sm font-medium text-gray-900 hover:bg-gray-100">
                         <span class="sr-only">{% trans "Previous" %}</span>
                         &larr;
                     </a>
@@ -346,25 +320,19 @@
 
                     {% for i in paginator.page_range %}
                     {% if page_obj.number == i %}
-                    <span
-                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                        {{ i }}
-                    </span>
-                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %} <a
-                        href="?page={{ i }}{% if current_search %}&search={{ current_search }}{% endif %}"
-                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        {{ i }}
-                        </a>
-                        {% endif %}
-                        {% endfor %}
+                    <span class="relative inline-flex items-center px-4 py-2 border-2 border-blue-600 bg-blue-50 text-sm font-semibold text-blue-800">{{ i }}</span>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                    <a href="?page={{ i }}{% if current_search %}&search={{ current_search }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border-2 border-gray-400 bg-white text-sm font-medium text-gray-900 hover:bg-gray-100">{{ i }}</a>
+                    {% endif %}
+                    {% endfor %}
 
-                        {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
-                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">{% trans "Next" %}</span>
-                            &rarr;
-                        </a>
-                        {% endif %}
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}"
+                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border-2 border-gray-400 bg-white text-sm font-medium text-gray-900 hover:bg-gray-100">
+                        <span class="sr-only">{% trans "Next" %}</span>
+                        &rarr;
+                    </a>
+                    {% endif %}
                 </nav>
             </div>
         </div>

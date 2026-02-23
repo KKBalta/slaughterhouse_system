@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Scale Operations" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{% trans "Scale Operations" %}</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <a href="{% url 'scales:session_list' %}" class="bg-white shadow rounded-lg p-6 border border-gray-200 hover:border-blue-500 transition-colors">
+            <h2 class="text-lg font-semibold text-gray-900">{% trans "Sessions" %}</h2>
+            <p class="text-sm text-gray-600 mt-1">{{ active_sessions|length }} {% trans "active" %}</p>
+        </a>
+        <a href="{% url 'scales:session_create' %}" class="bg-white shadow rounded-lg p-6 border border-gray-200 hover:border-blue-500 transition-colors">
+            <h2 class="text-lg font-semibold text-gray-900">{% trans "Start Session" %}</h2>
+            <p class="text-sm text-gray-600 mt-1">{% trans "Link scale to animal" %}</p>
+        </a>
+        <a href="{% url 'scales:orphaned_batch_list' %}" class="bg-white shadow rounded-lg p-6 border border-gray-200 hover:border-blue-500 transition-colors">
+            <h2 class="text-lg font-semibold text-gray-900">{% trans "Orphaned Batches" %}</h2>
+            <p class="text-sm text-gray-600 mt-1">{{ pending_batches }} {% trans "pending" %}</p>
+        </a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 px-6 py-3 border-b border-gray-200">{% trans "Active Sessions" %}</h2>
+        <ul class="divide-y divide-gray-200">
+            {% for session in active_sessions %}
+            <li class="px-6 py-3 flex justify-between items-center">
+                <span class="text-gray-900">{{ session.animal.identification_tag|default:"—" }} @ {{ session.device.device_id|default:"—" }}</span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                    {% if session.status == 'active' %}bg-green-100 text-green-800
+                    {% elif session.status == 'paused' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">{{ session.get_status_display }}</span>
+                <a href="{% url 'scales:session_detail' session.pk %}" class="text-blue-600 hover:text-blue-800 text-sm">{% trans "View" %}</a>
+            </li>
+            {% empty %}
+            <li class="px-6 py-4 text-gray-500">{% trans "No active sessions." %}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'scales:plu_list' %}" class="text-blue-600 hover:underline">{% trans "PLU catalog" %}</a>
+    </p>
+</div>
+{% endblock %}

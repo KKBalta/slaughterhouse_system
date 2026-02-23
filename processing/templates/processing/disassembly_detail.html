@@ -56,6 +56,39 @@
         {% endif %}
     </div>
 
+    <!-- Session Active Banner -->
+    {% if has_active_session and active_session %}
+    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-emerald-900 flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true"></span>
+                    {% trans "Session Active" %}
+                </h2>
+                <p class="text-sm text-emerald-800 mt-1">
+                    {% trans "Device" %}: <strong>{{ active_session.device.device_id|default:"—" }}</strong>
+                    | {% trans "Operator" %}: <strong>{{ active_session.operator }}</strong>
+                    | {% trans "Events" %}: <strong>{{ active_session.event_count }}</strong>
+                    | {% trans "Total" %}: <strong>{{ active_session.total_weight_grams }} g</strong>
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{% url 'scales:session_detail' active_session.pk %}" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm font-medium">
+                    {% trans "View Session" %}
+                </a>
+                <form method="post" action="{% url 'scales:session_close' active_session.pk %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="close_reason" value="Closed from disassembly page">
+                    <input type="hidden" name="next" value="{% url 'processing:disassembly_detail' animal.pk %}">
+                    <button type="submit" class="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-800 text-sm font-medium">
+                        {% trans "Complete Session" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Warning: Cannot proceed to disassembly -->
     {% if animal.status == 'carcass_ready' and not can_proceed_to_disassembly.can_proceed %}
     <div class="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
@@ -82,7 +115,41 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Add/Edit Cut Form -->
+            <!-- Scale Events (when session active) -->
+            {% if has_active_session and active_session %}
+            <div class="bg-white shadow rounded-lg p-4 sm:p-6">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">{% trans "Scale events" %} <span class="text-sm font-normal text-gray-500" id="session-events-count">({{ session_events|length }})</span></h2>
+                <div id="session-events-table" class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Time" %}</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "PLU" %}</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Product" %}</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Weight" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="session-events-tbody">
+                            {% for event in session_events %}
+                            <tr>
+                                <td class="px-4 py-2 text-sm text-gray-600">{{ event.scale_timestamp|date:"H:i:s" }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">{{ event.plu_code }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">{{ event.product_name }}</td>
+                                <td class="px-4 py-2 text-sm text-right text-gray-900">{{ event.weight_grams }} g</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No events yet." %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">{% trans "Updates every 5 seconds." %}</p>
+            </div>
+            {% endif %}
+
+            <!-- Add/Edit Cut Form (Manual Entry / Fallback) -->
             <div class="bg-white shadow rounded-lg p-4 sm:p-6 {% if editing_cut %}border-2 border-blue-500{% endif %}">
                 {% if editing_cut %}
                 <!-- Edit Mode Banner -->
@@ -112,7 +179,7 @@
                     {% if editing_cut %}
                         {% trans "Edit Cut" %}
                     {% else %}
-                        {% trans "Add Cut" %}
+                        {% if has_active_session %}{% trans "Manual Entry (Fallback)" %}{% else %}{% trans "Add Cut" %}{% endif %}
                     {% endif %}
                 </h2>
 
@@ -358,6 +425,21 @@
 
         <!-- Sidebar -->
         <div class="space-y-6">
+            {% if has_active_session and active_session %}
+            <!-- Session Info Card -->
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 sm:p-6">
+                <h3 class="text-lg font-semibold text-emerald-900 mb-4">{% trans "Scale session" %}</h3>
+                <div class="space-y-2 text-sm">
+                    <div><span class="text-emerald-700">{% trans "Device" %}:</span> <span class="font-medium text-gray-900">{{ active_session.device.device_id|default:"—" }}</span></div>
+                    <div><span class="text-emerald-700">{% trans "Operator" %}:</span> <span class="font-medium text-gray-900">{{ active_session.operator }}</span></div>
+                    <div><span class="text-emerald-700">{% trans "Started" %}:</span> <span class="font-medium text-gray-900">{{ active_session.started_at|date:"M d, H:i" }}</span></div>
+                    <div><span class="text-emerald-700">{% trans "Events" %}:</span> <span class="font-medium text-gray-900" id="sidebar-event-count">{{ active_session.event_count }}</span></div>
+                    <div><span class="text-emerald-700">{% trans "Total weight" %}:</span> <span class="font-medium text-gray-900" id="sidebar-total-grams">{{ active_session.total_weight_grams }} g</span></div>
+                </div>
+                <a href="{% url 'scales:session_detail' active_session.pk %}" class="mt-3 inline-block text-sm text-emerald-700 hover:text-emerald-900 font-medium">{% trans "View session" %} &rarr;</a>
+            </div>
+            {% endif %}
+
             <!-- Animal Info Card -->
             <div class="bg-white shadow rounded-lg p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Animal Information" %}</h3>
@@ -474,5 +556,38 @@
         </div>
     </div>
 </div>
+
+{% if has_active_session and active_session %}
+<script>
+(function() {
+    var sessionId = '{{ active_session.pk }}';
+    var eventsJsonUrl = '{% url "scales:session_events_json" active_session.pk %}';
+    var tbody = document.getElementById('session-events-tbody');
+    var countEl = document.getElementById('session-events-count');
+    var sidebarCount = document.getElementById('sidebar-event-count');
+    var sidebarGrams = document.getElementById('sidebar-total-grams');
+    if (!tbody || !eventsJsonUrl) return;
+    function poll() {
+        fetch(eventsJsonUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.events && data.events.length > 0) {
+                    tbody.innerHTML = data.events.map(function(e) {
+                        var time = e.scale_timestamp ? e.scale_timestamp.split('T')[1].substring(0, 8) : '—';
+                        return '<tr><td class="px-4 py-2 text-sm text-gray-600">' + time + '</td><td class="px-4 py-2 text-sm text-gray-900">' + (e.plu_code || '') + '</td><td class="px-4 py-2 text-sm text-gray-900">' + (e.product_name || '') + '</td><td class="px-4 py-2 text-sm text-right text-gray-900">' + (e.weight_grams || 0) + ' g</td></tr>';
+                    }).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No events yet." %}</td></tr>';
+                }
+                if (countEl) countEl.textContent = '(' + (data.events ? data.events.length : 0) + ')';
+                if (sidebarCount) sidebarCount.textContent = data.event_count != null ? data.event_count : (data.events ? data.events.length : 0);
+                if (sidebarGrams) sidebarGrams.textContent = (data.total_weight_grams != null ? data.total_weight_grams : 0) + ' g';
+            })
+            .catch(function() {});
+    }
+    setInterval(poll, 5000);
+})();
+</script>
+{% endif %}
 {% endblock %}
 

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'core',
     'labeling',
     'reporting',
+    'scales',          # Scale operations (CarniTrack Edge)
     'theme',           # Tailwind theme app
 ]
 

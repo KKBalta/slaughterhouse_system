@@ -581,6 +581,14 @@ class DisassemblyCut(BaseModel):
         related_name='disassembly_cuts'
     )
 
+    session = models.ForeignKey(
+        "scales.DisassemblySession",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="manual_cuts",
+    )
+
     cut_name = models.CharField(
         max_length=100,
         choices=ALL_CUT_CHOICES,
