@@ -21,6 +21,7 @@ from .models import (
     EdgeActivityLog,
 )
 from .middleware import require_edge_id, parse_json_body
+from .utils import maybe_mark_event_animals_disassembled
 
 # Default config returned to Edge
 DEFAULT_CONFIG = {
@@ -304,13 +305,14 @@ def edge_post_event(request):
         except (DisassemblySession.DoesNotExist, ValueError):
             pass
 
-    animal = session.animal if session else None
+    animal = session.get_primary_animal() if session else None
 
     event = WeighingEvent.objects.create(
         site=site,
         session=session,
         device=scale_device,
         animal=animal,
+        allocation_mode="split",
         plu_code=plu_code,
         product_name=product_name[:100],
         weight_grams=int(weight_grams),
@@ -320,6 +322,7 @@ def edge_post_event(request):
         edge_event_id=local_event_id,
         offline_batch_id=offline_batch_id or None,
     )
+    maybe_mark_event_animals_disassembled(event)
 
     if session:
         session.total_weight_grams += int(weight_grams)
@@ -451,13 +454,14 @@ def edge_post_event_batch(request):
                     except (DisassemblySession.DoesNotExist, ValueError):
                         pass
 
-                animal = session.animal if session else None
+                animal = session.get_primary_animal() if session else None
 
                 event = WeighingEvent.objects.create(
                     site=site,
                     session=session,
                     device=scale_device,
                     animal=animal,
+                    allocation_mode="split",
                     plu_code=plu_code,
                     product_name=product_name[:100],
                     weight_grams=int(weight_grams),
@@ -467,6 +471,7 @@ def edge_post_event_batch(request):
                     edge_event_id=local_event_id,
                     offline_batch_id=offline_batch_id or None,
                 )
+                maybe_mark_event_animals_disassembled(event)
 
                 if session:
                     session.total_weight_grams += int(weight_grams)

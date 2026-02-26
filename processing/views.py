@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from datetime import datetime, timedelta
 from django import forms
+from decimal import Decimal, ROUND_HALF_UP
 
 from .models import Animal, WeightLog, CattleDetails, SheepDetails, GoatDetails, LambDetails, OglakDetails, CalfDetails, HeiferDetails, BeefDetails, DisassemblyCut, DisassemblyCut
 from reception.models import SlaughterOrder
@@ -404,7 +405,36 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
         
         # Add disassembly readiness check
         context['can_proceed_to_disassembly'] = self.object.can_proceed_to_disassembly()
-            
+
+        # Scale sessions linked to this animal (FK scale_sessions + M2M disassembly_session_animals)
+        from scales.models import DisassemblySession
+        from scales.utils import get_session_per_animal_summary
+        session_ids_fk = set(
+            DisassemblySession.objects.filter(animal=self.object).values_list('id', flat=True)
+        )
+        session_ids_m2m = set(
+            DisassemblySession.objects.filter(animals=self.object).values_list('id', flat=True)
+        )
+        all_session_ids = session_ids_fk | session_ids_m2m
+        scale_sessions_with_allocation = []
+        for sid in all_session_ids:
+            try:
+                session = DisassemblySession.objects.select_related('device', 'site').prefetch_related('animals').get(pk=sid)
+            except DisassemblySession.DoesNotExist:
+                continue
+            summary = get_session_per_animal_summary(session)
+            for row in summary:
+                if row['animal'].id == self.object.id:
+                    scale_sessions_with_allocation.append({
+                        'session': session,
+                        'total_allocated_grams': row['total_allocated_grams'],
+                        'average_grams': row['average_grams'],
+                        'effective_event_count': row['effective_event_count'],
+                    })
+                    break
+        scale_sessions_with_allocation.sort(key=lambda x: x['session'].started_at, reverse=True)
+        context['scale_sessions_with_allocation'] = scale_sessions_with_allocation
+
         return context
 
 
@@ -947,6 +977,7 @@ class DisassemblyDashboardView(LoginRequiredMixin, ListView):
             'disassembly_cuts',
             'individual_weight_logs',
             Prefetch("scale_sessions", queryset=active_sessions, to_attr="active_scale_sessions"),
+            Prefetch("disassembly_session_animals", queryset=active_sessions, to_attr="active_scale_sessions_m2m"),
         ).order_by('-slaughter_date')
         
         # Filter by disassembly service package
@@ -983,7 +1014,17 @@ class DisassemblyDashboardView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+        # Merge FK and M2M active scale sessions so template sees a single list
+        for animal in context.get('animals', []):
+            fk_sessions = list(getattr(animal, 'active_scale_sessions', []))
+            m2m_sessions = getattr(animal, 'active_scale_sessions_m2m', [])
+            seen = {s.id for s in fk_sessions}
+            for s in m2m_sessions:
+                if s.id not in seen:
+                    fk_sessions.append(s)
+                    seen.add(s.id)
+            animal.active_scale_sessions = fk_sessions
+
         # Get the selected animal from URL parameter
         animal_id = self.request.GET.get('animal')
         selected_animal = None
@@ -1037,34 +1078,149 @@ class DisassemblyDetailView(LoginRequiredMixin, DetailView):
         ).select_related(
             'slaughter_order', 'slaughter_order__service_package'
         ).prefetch_related('disassembly_cuts', 'individual_weight_logs').distinct()
+
+    @staticmethod
+    def _sync_scale_events_to_cuts(animal, session, events, session_animals):
+        """
+        Materialize allocated scale events as DisassemblyCut rows so they are
+        visible/printable in the existing cuts pipeline.
+        """
+        from scales.utils import get_event_allocation
+
+        event_ids = set()
+        for event in events:
+            alloc = get_event_allocation(event, session_animals)
+            allocated_grams = int(alloc.get(str(animal.id), 0) or 0)
+            if allocated_grams <= 0:
+                continue
+
+            event_ids.add(event.id)
+            weight_kg = (Decimal(allocated_grams) / Decimal("1000")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            DisassemblyCut.objects.update_or_create(
+                animal=animal,
+                session=session,
+                source_event=event,
+                defaults={
+                    "cut_name": (getattr(event, "display_product_name", "") or event.product_name or f"PLU {event.plu_code}")[:100],
+                    "weight_kg": weight_kg,
+                },
+            )
+
+        # Remove stale generated cuts for events no longer present/allocated.
+        stale_qs = DisassemblyCut.objects.filter(
+            animal=animal,
+            session=session,
+            source_event__isnull=False,
+        )
+        if event_ids:
+            stale_qs = stale_qs.exclude(source_event_id__in=event_ids)
+        stale_qs.delete()
     
     def get_context_data(self, **kwargs):
+        from django.db.models import Q
         from scales.models import DisassemblySession, WeighingEvent
+        from scales.utils import (
+            get_catalog_name_for_plu,
+            get_event_allocation,
+            get_product_display_names,
+            get_session_per_animal_summary,
+            normalize_plu_code,
+        )
 
         context = super().get_context_data(**kwargs)
         animal = self.object
 
-        # Active scale session for this animal (pending/active/paused)
+        # Sync events from all linked sessions (active + completed) into existing cuts.
+        linked_sessions = (
+            DisassemblySession.objects.filter(Q(animal=animal) | Q(animals=animal))
+            .select_related("site")
+            .prefetch_related("animals")
+            .order_by("-started_at")
+        )
+        for linked_session in linked_sessions:
+            linked_animals = list(linked_session.animals.order_by("id"))
+            if not linked_animals and linked_session.animal_id:
+                linked_animals = [linked_session.animal]
+            if not linked_animals:
+                continue
+            linked_events = list(
+                WeighingEvent.objects.filter(
+                    session=linked_session, is_active=True, deleted_at__isnull=True
+                ).order_by("-scale_timestamp")[:300]
+            )
+            if not linked_events:
+                continue
+            linked_product_names = get_product_display_names(
+                [ev.plu_code for ev in linked_events], site=linked_session.site
+            )
+            for ev in linked_events:
+                ev.display_product_name = (
+                    get_catalog_name_for_plu(ev.plu_code)
+                    or linked_product_names.get(ev.plu_code)
+                    or ev.product_name
+                    or f"PLU {normalize_plu_code(ev.plu_code)}"
+                )
+            self._sync_scale_events_to_cuts(
+                animal=animal,
+                session=linked_session,
+                events=linked_events,
+                session_animals=linked_animals,
+            )
+
+        # Active scale session for this animal (session.animal or session.animals M2M)
         active_session = (
             DisassemblySession.objects.filter(
-                animal=animal,
+                Q(animal=animal) | Q(animals=animal),
                 status__in=["pending", "active", "paused"],
                 is_active=True,
             )
             .select_related("device", "site")
+            .prefetch_related("animals")
             .order_by("-started_at")
             .first()
         )
         session_events = []
+        scale_allocation_for_this_animal = None
         if active_session:
+            session_animals = list(active_session.animals.order_by("id"))
+            if not session_animals and active_session.animal_id:
+                session_animals = [active_session.animal]
             session_events = list(
-                WeighingEvent.objects.filter(session=active_session).order_by(
-                    "-scale_timestamp"
-                )[:100]
+                WeighingEvent.objects.filter(
+                    session=active_session, is_active=True, deleted_at__isnull=True
+                ).order_by("-scale_timestamp")[:100]
+            )
+            product_names = get_product_display_names(
+                [ev.plu_code for ev in session_events], site=active_session.site
+            )
+            for ev in session_events:
+                if ev.product_display_override:
+                    ev.display_product_name = ev.product_display_override
+                else:
+                    ev.display_product_name = (
+                        product_names.get(ev.plu_code)
+                        or ev.product_name
+                        or f"PLU {normalize_plu_code(ev.plu_code)}"
+                    )
+                alloc = get_event_allocation(ev, session_animals)
+                ev.allocated_grams_for_this_animal = alloc.get(str(animal.id), 0)
+            summary = get_session_per_animal_summary(active_session)
+            for row in summary:
+                if row["animal"].id == animal.id:
+                    scale_allocation_for_this_animal = row
+                    break
+            self._sync_scale_events_to_cuts(
+                animal=animal,
+                session=active_session,
+                events=session_events,
+                session_animals=session_animals,
             )
         context["active_session"] = active_session
         context["session_events"] = session_events
         context["has_active_session"] = active_session is not None
+        context["scale_allocation_for_this_animal"] = scale_allocation_for_this_animal
 
         # Add disassembly readiness check
         context['can_proceed_to_disassembly'] = animal.can_proceed_to_disassembly()
@@ -1075,12 +1231,13 @@ class DisassemblyDetailView(LoginRequiredMixin, DetailView):
         
         # Get all existing cuts with their labels prefetched
         from labeling.models import AnimalLabel
-        cuts = animal.disassembly_cuts.all().order_by('-created_at')
+        cuts = animal.disassembly_cuts.select_related("source_event").all().order_by('-created_at')
         # Attach labels directly to cuts for easier template access
         for cut in cuts:
             cut.label = AnimalLabel.objects.filter(cut=cut, label_type='cut').order_by('-print_date').first()
         
         context['disassembly_cuts'] = cuts
+        context['manual_disassembly_cuts'] = cuts.filter(source_event__isnull=True)
         
         # Get hot carcass weight
         hot_carcass_log = animal.individual_weight_logs.filter(
@@ -1106,7 +1263,7 @@ class AddDisassemblyCutView(LoginRequiredMixin, View):
                 from scales.models import DisassemblySession
                 active_session = (
                     DisassemblySession.objects.filter(
-                        animal=animal,
+                        Q(animal=animal) | Q(animals=animal),
                         status__in=["pending", "active", "paused"],
                         is_active=True,
                     )
@@ -1151,6 +1308,9 @@ class EditDisassemblyCutView(LoginRequiredMixin, View):
     def get(self, request, pk, cut_pk):
         animal = get_object_or_404(Animal, pk=pk)
         cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        if cut.source_event_id:
+            messages.error(request, _('Scale-origin cuts are read-only. Edit the source event in Scale Session.'))
+            return redirect('processing:disassembly_detail', pk=animal.pk)
         from .forms import DisassemblyCutForm
         from labeling.models import AnimalLabel
         
@@ -1171,6 +1331,9 @@ class EditDisassemblyCutView(LoginRequiredMixin, View):
     def post(self, request, pk, cut_pk):
         animal = get_object_or_404(Animal, pk=pk)
         cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        if cut.source_event_id:
+            messages.error(request, _('Scale-origin cuts are read-only. Edit the source event in Scale Session.'))
+            return redirect('processing:disassembly_detail', pk=animal.pk)
         from .forms import DisassemblyCutForm
         
         form = DisassemblyCutForm(request.POST, instance=cut, animal=animal)
@@ -1206,6 +1369,9 @@ class DeleteDisassemblyCutView(LoginRequiredMixin, View):
     def post(self, request, pk, cut_pk):
         animal = get_object_or_404(Animal, pk=pk)
         cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
+        if cut.source_event_id:
+            messages.error(request, _('Scale-origin cuts cannot be deleted directly. Delete or reassign the source scale event.'))
+            return redirect('processing:disassembly_detail', pk=animal.pk)
         
         cut_name = cut.get_cut_name_display()
         cut.delete()

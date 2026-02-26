@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n processing_filters %}
+
+{% block title %}{% trans "Edit event" %} — {% trans "Session" %}{% endblock %}
+
+{% block content %}
+<div class="space-y-4 sm:space-y-6 max-w-xl mx-auto px-4">
+    <div class="flex flex-col gap-3">
+        <a href="{% url 'scales:session_detail' pk=session.id %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base inline-flex items-center gap-1">
+            ← {% trans "Back to session" %}
+        </a>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Edit weighing event" %}</h1>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-4 sm:p-5 border border-gray-200">
+        <dl class="grid grid-cols-1 gap-3 mb-6">
+            <div>
+                <dt class="text-sm font-medium text-gray-700">{% trans "Time" %}</dt>
+                <dd class="text-gray-900">{{ event.scale_timestamp|date:"H:i:s" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-700">{% trans "Current product" %}</dt>
+                <dd class="text-gray-900">{{ event.display_product_name|default:event.product_name|default:event.plu_code }}</dd>
+            </div>
+        </dl>
+
+        <form method="post" action="{% url 'scales:session_event_update' session_pk=session.id event_pk=event.id %}" class="space-y-5">
+            {% csrf_token %}
+            <div>
+                <label for="plu_code" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Product (PLU)" %}</label>
+                <select name="plu_code" id="plu_code" class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 py-3 px-3 text-base min-h-[44px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30">
+                    {% for item in plu_items %}
+                    <option value="{{ item.plu_code }}" {% if item.plu_code == selected_plu_code %}selected{% endif %}>{{ item.plu_code }} — {{ item.name }}</option>
+                    {% empty %}
+                    <option value="">{% trans "No PLU items" %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="weight_grams" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Weight (kg)" %}</label>
+                <input type="number" step="0.01" min="0" name="weight_grams" id="weight_grams" value="{{ weight_kg }}" class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 py-3 px-3 text-base min-h-[44px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30" placeholder="0.00">
+            </div>
+            {% if session_animals %}
+            <div>
+                <label for="assigned_animal_id" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Assign to animal" %}</label>
+                <select name="assigned_animal_id" id="assigned_animal_id" class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 py-3 px-3 text-base min-h-[44px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30">
+                    <option value="">{% trans "Split (average across all animals)" %}</option>
+                    {% for a in session_animals %}
+                    <option value="{{ a.id }}" {% if event.assigned_animal_id == a.id %}selected{% endif %}>{{ a.identification_tag|default:a.id }}</option>
+                    {% endfor %}
+                </select>
+                <p class="mt-1 text-xs text-gray-500">{% trans "Choose one animal to assign full weight, or Split to share evenly." %}</p>
+            </div>
+            {% endif %}
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                <button type="submit" class="bg-blue-600 text-white px-5 py-3 rounded-md hover:bg-blue-700 font-medium min-h-[44px] text-base">{% trans "Save" %}</button>
+                <a href="{% url 'scales:session_detail' pk=session.id %}" class="bg-gray-200 text-gray-800 px-5 py-3 rounded-md hover:bg-gray-300 font-medium min-h-[44px] text-center text-base inline-flex items-center justify-center">{% trans "Cancel" %}</a>
+            </div>
+        </form>
+
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <form method="post" action="{% url 'scales:session_event_delete' session_pk=session.id event_pk=event.id %}" class="inline" onsubmit="return confirm('{% trans "Delete this event? It will be hidden from the list but kept for logs." %}');">
+                {% csrf_token %}
+                <button type="submit" class="text-red-600 hover:text-red-800 font-medium text-sm">{% trans "Delete event" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

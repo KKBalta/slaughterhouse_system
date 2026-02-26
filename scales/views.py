@@ -1,5 +1,6 @@
 """Template-based views for scale session management and PLU/orphaned batch management."""
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,6 +14,12 @@ from django import forms
 from django.http import JsonResponse
 
 from processing.models import Animal
+from .utils import (
+    parse_animal_uuid_from_qr_url,
+    get_product_display_names,
+    normalize_plu_code,
+    maybe_mark_event_animals_disassembled,
+)
 from .models import (
     Site,
     EdgeDevice,
@@ -227,18 +234,6 @@ class SessionCreateForm(forms.Form):
             }
         ),
     )
-    animal = forms.ModelChoiceField(
-        queryset=Animal.objects.filter(
-            status__in=["carcass_ready", "disassembled", "slaughtered"]
-        ).order_by("-slaughter_date"),
-        label=_("Animal"),
-        required=True,
-        widget=forms.Select(
-            attrs={
-                "class": "block w-full rounded-md border border-gray-300 bg-white text-gray-900 py-2.5 px-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30",
-            }
-        ),
-    )
 
     def __init__(self, *args, **kwargs):
         site_id = kwargs.pop("site_id", None)
@@ -262,54 +257,197 @@ class SessionCreateForm(forms.Form):
                 self.fields[key].initial = value
 
 
+class SessionCreateAnimalSearchJsonView(LoginRequiredMixin, View):
+    """Search animals eligible for scale session (carcass_ready, disassembled, slaughtered)."""
+
+    def get(self, request):
+        query = request.GET.get("q", "").strip()
+        if len(query) < 2:
+            return JsonResponse({"animals": []})
+        from django.db.models import Q
+
+        animals = (
+            Animal.objects.filter(
+                status__in=["carcass_ready", "disassembled", "slaughtered"]
+            )
+            .filter(
+                Q(identification_tag__icontains=query)
+                | Q(slaughter_order__slaughter_order_no__icontains=query)
+                | Q(slaughter_order__client__company_name__icontains=query)
+                | Q(slaughter_order__client_name__icontains=query)
+                | Q(animal_type__icontains=query)
+            )
+            .select_related("slaughter_order", "slaughter_order__client")
+            .order_by("-slaughter_date")[:30]
+        )
+        out = []
+        for a in animals:
+            client_info = _("Walk-in")
+            if a.slaughter_order:
+                if getattr(a.slaughter_order, "client", None):
+                    client_info = (
+                        a.slaughter_order.client.company_name
+                        or (getattr(a.slaughter_order.client, "get_full_name", lambda: "")() or "")
+                    ) or client_info
+                else:
+                    client_info = getattr(a.slaughter_order, "client_name", None) or client_info
+            out.append({
+                "id": str(a.pk),
+                "identification_tag": a.identification_tag or "",
+                "animal_type_display": a.get_animal_type_display(),
+                "order_number": a.slaughter_order.slaughter_order_no if a.slaughter_order else "",
+                "client_info": client_info,
+                "status": a.status,
+                "status_display": a.get_status_display(),
+            })
+        return JsonResponse({"animals": out})
+
+
 class SessionCreateView(LoginRequiredMixin, View):
     template_name = "scales/session_create.html"
 
-    def get(self, request):
+    def _get_sites_and_selected_site_id(self, request):
         sites = Site.objects.filter(is_active=True)
-        site_id = request.GET.get("site_id") or (sites.first() and sites.first().id)
-        initial = {}
-        animal_id = request.GET.get("animal_id")
-        if animal_id:
-            try:
-                animal = Animal.objects.get(
-                    pk=animal_id,
-                    status__in=["carcass_ready", "disassembled", "slaughtered"],
+        selected = request.GET.get("site_id") or request.POST.get("site_id")
+        if selected:
+            return sites, selected
+
+        # Prefer site that currently has an online edge; then any site with an edge.
+        preferred = (
+            sites.filter(edges__is_active=True, edges__is_online=True)
+            .distinct()
+            .first()
+        )
+        if not preferred:
+            preferred = sites.filter(edges__is_active=True).distinct().first()
+        if not preferred:
+            preferred = sites.first()
+        return sites, (preferred.id if preferred else None)
+
+    @staticmethod
+    def _build_initial_animals(animal_ids):
+        if not animal_ids:
+            return []
+        animals = list(
+            Animal.objects.filter(
+                pk__in=animal_ids,
+                status__in=["carcass_ready", "disassembled", "slaughtered"],
+            )
+        )
+        return [
+            {"id": str(a.pk), "identification_tag": a.identification_tag or str(a.pk)[:8]}
+            for a in animals
+        ]
+
+    def get(self, request):
+        sites, site_id = self._get_sites_and_selected_site_id(request)
+        initial_animals = self._build_initial_animals(request.GET.getlist("animal_id"))
+
+        # Support pasted QR URL: parse to animal UUID and redirect with current + new animal_id
+        qr_url = request.GET.get("qr_url")
+        if qr_url:
+            parsed_uuid = parse_animal_uuid_from_qr_url(qr_url)
+            if parsed_uuid:
+                try:
+                    Animal.objects.get(
+                        pk=parsed_uuid,
+                        status__in=["carcass_ready", "disassembled", "slaughtered"],
+                    )
+                    existing_ids = request.GET.getlist("animal_id")
+                    if str(parsed_uuid) not in existing_ids:
+                        existing_ids.append(str(parsed_uuid))
+                    qparams = [("site_id", site_id)]
+                    for aid in existing_ids:
+                        qparams.append(("animal_id", aid))
+                    return redirect(f"{request.path}?{urlencode(qparams)}")
+                except Animal.DoesNotExist:
+                    messages.warning(
+                        request,
+                        _("Animal not found or not eligible for scale session."),
+                    )
+            else:
+                messages.warning(
+                    request,
+                    _("Could not find animal from this QR code."),
                 )
-                initial["animal"] = animal
-            except Animal.DoesNotExist:
-                pass
-        form = SessionCreateForm(site_id=site_id, initial=initial)
+
+        form = SessionCreateForm(site_id=site_id)
         return render(
             request,
             self.template_name,
-            {"form": form, "sites": sites, "selected_site_id": site_id},
+            {
+                "form": form,
+                "sites": sites,
+                "selected_site_id": site_id,
+                "initial_animals": initial_animals,
+            },
         )
 
     def post(self, request):
         site_id = request.POST.get("site_id") or request.GET.get("site_id")
         form = SessionCreateForm(request.POST, site_id=site_id)
+        selected_animal_ids = request.POST.getlist("animal_ids")
+        initial_animals = self._build_initial_animals(selected_animal_ids)
         if not form.is_valid():
-            sites = Site.objects.filter(is_active=True)
+            sites, selected_site_id = self._get_sites_and_selected_site_id(request)
             return render(
                 request,
                 self.template_name,
-                {"form": form, "sites": sites, "selected_site_id": site_id},
+                {
+                    "form": form,
+                    "sites": sites,
+                    "selected_site_id": site_id,
+                    "initial_animals": initial_animals,
+                },
+            )
+        animal_ids = request.POST.getlist("animal_ids")
+        if not animal_ids:
+            sites, selected_site_id = self._get_sites_and_selected_site_id(request)
+            messages.error(request, _("Select at least one animal."))
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": form,
+                    "sites": sites,
+                    "selected_site_id": site_id,
+                    "initial_animals": initial_animals,
+                },
+            )
+        animals = list(
+            Animal.objects.filter(
+                pk__in=animal_ids,
+                status__in=["carcass_ready", "disassembled", "slaughtered"],
+            )
+        )
+        if len(animals) != len(animal_ids):
+            sites, selected_site_id = self._get_sites_and_selected_site_id(request)
+            messages.error(request, _("One or more selected animals are invalid or not eligible."))
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": form,
+                    "sites": sites,
+                    "selected_site_id": site_id,
+                    "initial_animals": initial_animals,
+                },
             )
         device = form.cleaned_data["device"]
-        animal = form.cleaned_data["animal"]
         existing = DisassemblySession.objects.filter(
             device=device,
             status__in=["pending", "active", "paused"],
             is_active=True,
         ).first()
         if existing:
+            primary = existing.get_primary_animal()
+            tag_display = primary.identification_tag if primary else "—"
             messages.error(
                 request,
                 _("Device %(device)s already has an active session (animal: %(tag)s). Close it before starting a new one.")
-                % {"device": device.device_id, "tag": existing.animal.identification_tag if existing.animal else "—"},
+                % {"device": device.device_id, "tag": tag_display},
             )
-            sites = Site.objects.filter(is_active=True)
+            sites, selected_site_id = self._get_sites_and_selected_site_id(request)
             form = SessionCreateForm(request.POST, site_id=site_id)
             form.fields["device"].queryset = ScaleDevice.objects.filter(
                 edge__site_id=site_id, is_active=True
@@ -317,23 +455,36 @@ class SessionCreateView(LoginRequiredMixin, View):
             return render(
                 request,
                 self.template_name,
-                {"form": form, "sites": sites, "selected_site_id": site_id},
+                {
+                    "form": form,
+                    "sites": sites,
+                    "selected_site_id": site_id,
+                    "initial_animals": initial_animals,
+                },
             )
         operator = request.user.get_full_name() or request.user.get_username() or str(request.user)
         site = device.edge.site
         session = DisassemblySession.objects.create(
             site=site,
             device=device,
-            animal=animal,
+            animal=animals[0],
             operator=operator,
             started_at=timezone.now(),
             status="pending",
         )
-        messages.success(
-            request,
-            _("Session started for %(tag)s on %(device)s.")
-            % {"tag": animal.identification_tag, "device": device.device_id},
-        )
+        session.animals.set(animals)
+        if len(animals) == 1:
+            messages.success(
+                request,
+                _("Session started for %(tag)s on %(device)s.")
+                % {"tag": animals[0].identification_tag, "device": device.device_id},
+            )
+        else:
+            messages.success(
+                request,
+                _("Session started for %(count)s animals on %(device)s.")
+                % {"count": len(animals), "device": device.device_id},
+            )
         return redirect("scales:session_detail", pk=session.id)
 
 
@@ -345,14 +496,25 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return DisassemblySession.objects.filter(is_active=True).select_related(
             "device", "animal", "site"
-        )
+        ).prefetch_related("animals")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["events"] = (
-            WeighingEvent.objects.filter(session=self.object)
+        events = list(
+            WeighingEvent.objects.filter(
+                session=self.object, is_active=True, deleted_at__isnull=True
+            )
             .order_by("-scale_timestamp")[:100]
         )
+        plu_codes = [e.plu_code for e in events]
+        product_names = get_product_display_names(plu_codes, site=self.object.site)
+        for e in events:
+            if e.product_display_override:
+                e.display_product_name = e.product_display_override
+            else:
+                resolved = product_names.get(e.plu_code)
+                e.display_product_name = resolved if resolved else f"PLU {normalize_plu_code(e.plu_code)}"
+        context["events"] = events
         return context
 
 
@@ -363,15 +525,23 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
         session = get_object_or_404(
             DisassemblySession, pk=pk, is_active=True
         )
-        events = (
-            WeighingEvent.objects.filter(session=session)
+        events = list(
+            WeighingEvent.objects.filter(
+                session=session, is_active=True, deleted_at__isnull=True
+            )
             .order_by("-scale_timestamp")[:100]
         )
+        plu_codes = [e.plu_code for e in events]
+        product_names = get_product_display_names(plu_codes, site=session.site)
         event_list = [
             {
                 "id": str(e.id),
                 "plu_code": e.plu_code,
-                "product_name": e.product_name,
+                "product_name": (
+                    e.product_display_override
+                    or product_names.get(e.plu_code)
+                    or f"PLU {normalize_plu_code(e.plu_code)}"
+                ),
                 "weight_grams": e.weight_grams,
                 "scale_timestamp": e.scale_timestamp.isoformat() if e.scale_timestamp else None,
             }
@@ -387,6 +557,152 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
                 "events": event_list,
             }
         )
+
+
+class SessionEventEditView(LoginRequiredMixin, View):
+    """Dedicated edit page for a weighing event (mobile-friendly): PLU select and weight."""
+
+    def get(self, request, session_pk, event_pk):
+        session = get_object_or_404(
+            DisassemblySession, pk=session_pk, is_active=True
+        )
+        event = get_object_or_404(
+            WeighingEvent, pk=event_pk, session=session, is_active=True
+        )
+        product_names = get_product_display_names([event.plu_code], site=session.site)
+        event.display_product_name = (
+            event.product_display_override
+            or product_names.get(event.plu_code)
+            or f"PLU {normalize_plu_code(event.plu_code)}"
+        )
+        # Fetch all active PLUItems (catalog may be on Default site; session may use different site)
+        plu_items = list(
+            PLUItem.objects.filter(is_active=True).order_by("plu_code")
+        )
+        event_norm = normalize_plu_code(event.plu_code)
+        selected_plu_code = event.plu_code
+        for item in plu_items:
+            if normalize_plu_code(item.plu_code) == event_norm:
+                selected_plu_code = item.plu_code
+                break
+        weight_kg = round(event.weight_grams / 1000, 2)
+        session_animals = list(session.animals.order_by("id"))
+        if not session_animals and session.animal_id:
+            session_animals = [session.animal]
+        return render(
+            request,
+            "scales/session_event_edit.html",
+            {
+                "session": session,
+                "event": event,
+                "plu_items": plu_items,
+                "selected_plu_code": selected_plu_code,
+                "weight_kg": weight_kg,
+                "session_animals": session_animals,
+            },
+        )
+
+
+class SessionEventUpdateView(LoginRequiredMixin, View):
+    """Update a weighing event (PLU/product, weight). Recalculates session total."""
+
+    def post(self, request, session_pk, event_pk):
+        session = get_object_or_404(
+            DisassemblySession, pk=session_pk, is_active=True
+        )
+        event = get_object_or_404(
+            WeighingEvent, pk=event_pk, session=session, is_active=True
+        )
+        plu_code_post = (request.POST.get("plu_code") or "").strip()
+        product_name = (request.POST.get("product_name") or "").strip()
+        weight_str = request.POST.get("weight_grams", "").strip()
+        weight_grams = None
+        if weight_str:
+            try:
+                val = float(weight_str)
+                if "." in weight_str or val < 100:
+                    weight_grams = int(val * 1000)
+                else:
+                    weight_grams = int(val)
+            except (ValueError, TypeError):
+                pass
+
+        update_fields = ["updated_at"]
+        if plu_code_post:
+            plu_norm = normalize_plu_code(plu_code_post)
+            plu_items = list(PLUItem.objects.filter(is_active=True))
+            plu_item = None
+            for item in plu_items:
+                if normalize_plu_code(item.plu_code) == plu_norm:
+                    plu_item = item
+                    break
+            if plu_item:
+                event.plu_code = plu_item.plu_code
+                event.product_name = plu_item.name[:100]
+                event.product_display_override = ""
+                update_fields.extend(["plu_code", "product_name", "product_display_override"])
+            elif "product_name" in request.POST:
+                event.product_display_override = (product_name[:100] if product_name else "")
+                update_fields.append("product_display_override")
+        elif "product_name" in request.POST:
+            event.product_display_override = (product_name[:100] if product_name else "")
+            update_fields.append("product_display_override")
+
+        if len(update_fields) > 1:
+            event.save(update_fields=list(set(update_fields)))
+
+        if weight_grams is not None and weight_grams >= 0:
+            old_weight = event.weight_grams
+            event.weight_grams = weight_grams
+            event.save(update_fields=["weight_grams", "updated_at"])
+            session.total_weight_grams = (
+                session.total_weight_grams - old_weight + weight_grams
+            )
+            session.save(update_fields=["total_weight_grams", "updated_at"])
+
+        assigned_animal_id = request.POST.get("assigned_animal_id", "").strip()
+        session_animals = list(session.animals.order_by("id"))
+        if not session_animals and session.animal_id:
+            session_animals = [session.animal]
+        valid_ids = {str(a.id) for a in session_animals}
+        if assigned_animal_id and assigned_animal_id in valid_ids:
+            event.assigned_animal_id = assigned_animal_id
+            event.allocation_mode = "manual"
+            event.allocated_weight_grams = event.weight_grams
+        else:
+            event.assigned_animal_id = None
+            event.allocation_mode = "split"
+            event.allocated_weight_grams = None
+        event.save(update_fields=["assigned_animal_id", "allocation_mode", "allocated_weight_grams", "updated_at"])
+        maybe_mark_event_animals_disassembled(event)
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": True})
+        messages.success(request, _("Event updated."))
+        return redirect("scales:session_detail", pk=session.pk)
+
+
+class SessionEventDeleteView(LoginRequiredMixin, View):
+    """Soft-delete a weighing event; update session totals and set audit fields."""
+
+    def post(self, request, session_pk, event_pk):
+        session = get_object_or_404(
+            DisassemblySession, pk=session_pk, is_active=True
+        )
+        event = get_object_or_404(
+            WeighingEvent, pk=event_pk, session=session, is_active=True
+        )
+        event.deleted_at = timezone.now()
+        event.deleted_by = (
+            (request.user.get_full_name() or "").strip() or request.user.get_username()
+        )[:100]
+        event.is_active = False
+        event.save(update_fields=["deleted_at", "deleted_by", "is_active", "updated_at"])
+        session.event_count = max(0, session.event_count - 1)
+        session.total_weight_grams = max(0, session.total_weight_grams - event.weight_grams)
+        session.save(update_fields=["event_count", "total_weight_grams", "updated_at"])
+        messages.success(request, _("Event deleted."))
+        return redirect("scales:session_detail", pk=session.pk)
 
 
 class SessionCloseView(LoginRequiredMixin, View):
@@ -470,9 +786,9 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         batch = get_object_or_404(OrphanedBatch, pk=pk, status="pending", is_active=True)
-        events = WeighingEvent.objects.filter(offline_batch_id=batch.batch_id).order_by(
-            "scale_timestamp"
-        )[:200]
+        events = WeighingEvent.objects.filter(
+            offline_batch_id=batch.batch_id, is_active=True
+        ).order_by("scale_timestamp")[:200]
         animals = Animal.objects.filter(
             status__in=["carcass_ready", "disassembled", "slaughtered"]
         ).order_by("-slaughter_date")[:100]
@@ -503,9 +819,14 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
                 event_count=batch.event_count,
                 total_weight_grams=batch.total_weight_grams,
             )
-            WeighingEvent.objects.filter(offline_batch_id=batch.batch_id).update(
-                session=session, animal=animal
+            session.animals.set([animal])
+            reconciled_events = WeighingEvent.objects.filter(
+                offline_batch_id=batch.batch_id, is_active=True
             )
+            reconciled_events.update(session=session, animal=animal)
+            first_reconciled_event = reconciled_events.select_related("session", "animal").first()
+            if first_reconciled_event:
+                maybe_mark_event_animals_disassembled(first_reconciled_event)
             batch.status = "reconciled"
             batch.reconciled_to_session = session
             batch.reconciled_at = timezone.now()

@@ -1,71 +1,101 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n processing_filters %}
 
 {% block title %}{% trans "Session" %} {{ session.id }}{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-start mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">{% trans "Session" %} — {{ session.animal.identification_tag|default:"No animal" }}</h1>
-        <div class="flex gap-3">
+<div class="space-y-4 sm:space-y-6">
+    {# Mobile-first header: stacked on small screens, row on larger #}
+    <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Session" %} — {% with primary=session.get_primary_animal %}{{ primary.identification_tag|default:"No animal" }}{% if session.animals.count > 1 %} (+{{ session.animals.count|add:"-1" }} {% trans "more" %}){% endif %}{% endwith %}</h1>
+        <div class="flex flex-wrap gap-3">
+            {% for a in session.animals.all %}
+            <a href="{% url 'processing:disassembly_detail' a.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">{{ a.identification_tag|default:a.id }} {% trans "Cuts" %}</a>
+            {% empty %}
             {% if session.animal %}
-            <a href="{% url 'processing:disassembly_detail' session.animal.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">{% trans "Manage Manual Cuts" %}</a>
+            <a href="{% url 'processing:disassembly_detail' session.animal.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">{% trans "Manage Manual Cuts" %}</a>
             {% endif %}
-            <a href="{% url 'scales:session_list' %}" class="text-blue-600 hover:text-blue-800">{% trans "Back to list" %}</a>
+            {% endfor %}
+            <a href="{% url 'scales:session_list' %}" class="text-blue-600 hover:text-blue-800 text-sm sm:text-base">{% trans "Back to list" %}</a>
         </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><dt class="text-sm text-gray-500">{% trans "Device" %}</dt><dd class="font-medium">{{ session.device.device_id|default:"—" }}</dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Animal" %}</dt><dd class="font-medium">{{ session.animal.identification_tag|default:"—" }}</dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Operator" %}</dt><dd class="font-medium">{{ session.operator }}</dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Status" %}</dt><dd><span id="session-status-badge" class="px-2 py-1 text-xs font-semibold rounded-full
+    <div class="bg-white shadow rounded-lg p-4 sm:p-6">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Device" %}</dt><dd class="font-medium text-gray-900">{{ session.device.device_id|default:"—" }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Animals" %}</dt><dd class="font-medium text-gray-900">{% for a in session.animals.all %}<a href="{% url 'processing:disassembly_detail' a.pk %}" class="text-blue-600 hover:underline">{{ a.identification_tag|default:a.id }}</a>{% if not forloop.last %}, {% endif %}{% empty %}{{ session.animal.identification_tag|default:"—" }}{% endfor %}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Operator" %}</dt><dd class="font-medium text-gray-900">{{ session.operator }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Status" %}</dt><dd><span id="session-status-badge" class="px-2 py-1 text-xs font-semibold rounded-full
                 {% if session.status == 'active' %}bg-green-100 text-green-800
                 {% elif session.status == 'completed' %}bg-gray-100 text-gray-800
                 {% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ session.get_status_display }}</span></dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Started" %}</dt><dd>{{ session.started_at|date:"Y-m-d H:i:s" }}</dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Events" %}</dt><dd id="session-event-count">{{ session.event_count }}</dd></div>
-            <div><dt class="text-sm text-gray-500">{% trans "Total weight" %}</dt><dd id="session-total-weight">{{ session.total_weight_grams }} g</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Started" %}</dt><dd class="text-gray-900">{{ session.started_at|date:"Y-m-d H:i:s" }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Events" %}</dt><dd id="session-event-count" class="text-gray-900">{{ session.event_count }}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Total weight" %}</dt><dd id="session-total-weight" class="text-gray-900">{{ session.total_weight_grams|grams_to_kg }}</dd></div>
         </dl>
 
         {% if session.status in "pending,active,paused" %}
-        <div id="session-actions" class="mt-4 flex gap-3">
-            <form method="post" action="{% url 'scales:session_close' session.pk %}" class="inline">
+        <div id="session-actions" class="mt-4 flex flex-col sm:flex-row gap-3">
+            <form method="post" action="{% url 'scales:session_close' session.pk %}" class="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
                 {% csrf_token %}
-                <input type="text" name="close_reason" placeholder="{% trans 'Reason (optional)' %}" class="rounded border-gray-300 mr-2 text-gray-900 bg-white">
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">{% trans "Close Session" %}</button>
+                <input type="text" name="close_reason" placeholder="{% trans 'Reason (optional)' %}" class="rounded border-gray-300 px-3 py-2 text-gray-900 bg-white w-full sm:w-auto sm:min-w-[180px]">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2.5 rounded-md hover:bg-green-700 font-medium min-h-[44px] sm:min-h-0">{% trans "Close Session" %}</button>
             </form>
             <form method="post" action="{% url 'scales:session_cancel' session.pk %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">{% trans "Cancel Session" %}</button>
+                <button type="submit" class="bg-red-600 text-white px-4 py-2.5 rounded-md hover:bg-red-700 font-medium w-full sm:w-auto min-h-[44px] sm:min-h-0">{% trans "Cancel Session" %}</button>
             </form>
         </div>
         {% endif %}
     </div>
 
-    <h2 class="text-lg font-semibold text-gray-900 mb-3">{% trans "Weighing events" %}</h2>
-    <div class="bg-white shadow rounded-lg overflow-hidden">
+    <h2 class="text-base sm:text-lg font-semibold text-gray-900">{% trans "Weighing events" %}</h2>
+
+    {# Mobile: card layout. Desktop: table #}
+    <div class="block md:hidden space-y-3" id="session-events-cards">
+        {% for event in events %}
+        <div class="bg-white shadow rounded-lg p-4 border border-gray-200 event-card" data-event-id="{{ event.id }}">
+            <div class="flex justify-between items-start gap-2">
+                <span class="text-sm font-medium text-gray-700 event-product">{{ event.display_product_name|default:event.product_name }}</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-gray-900 whitespace-nowrap event-weight">{{ event.weight_grams|grams_to_kg }}</span>
+                    <a href="{% url 'scales:session_event_edit' session_pk=session.id event_pk=event.id %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">{% trans "Edit" %}</a>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-gray-700">
+                {% trans "Time" %}: {{ event.scale_timestamp|date:"H:i:s" }}
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white shadow rounded-lg p-6 text-center text-gray-700">{% trans "No events yet." %}</div>
+        {% endfor %}
+    </div>
+
+    <div class="hidden md:block bg-white shadow rounded-lg overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Time" %}</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "PLU" %}</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Product" %}</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Weight" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Time" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "PLU" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Product" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Weight" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Actions" %}</th>
                 </tr>
             </thead>
             <tbody id="session-events-tbody" class="bg-white divide-y divide-gray-200">
                 {% for event in events %}
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ event.scale_timestamp|date:"H:i:s" }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ event.plu_code }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ event.product_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ event.weight_grams }} g</td>
+                <tr data-event-id="{{ event.id }}" class="event-row">
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ event.scale_timestamp|date:"H:i:s" }}</td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ event.plu_code }}</td>
+                    <td class="px-4 sm:px-6 py-4 text-sm text-gray-900 event-product">{{ event.display_product_name|default:event.product_name }}</td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium event-weight">{{ event.weight_grams|grams_to_kg }}</td>
+                    <td class="px-4 sm:px-6 py-4 text-right">
+                        <a href="{% url 'scales:session_event_edit' session_pk=session.id event_pk=event.id %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">{% trans "Edit" %}</a>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">{% trans "No events yet." %}</td>
+                    <td colspan="5" class="px-4 sm:px-6 py-4 text-center text-gray-700">{% trans "No events yet." %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -81,13 +111,44 @@
     var eventCountEl = document.getElementById('session-event-count');
     var totalWeightEl = document.getElementById('session-total-weight');
     var tbody = document.getElementById('session-events-tbody');
+    var cardsContainer = document.getElementById('session-events-cards');
     var actionsEl = document.getElementById('session-actions');
     if (!eventsJsonUrl) return;
+
+    function formatKg(grams) {
+        var g = grams != null ? parseInt(grams, 10) : 0;
+        return (g / 1000).toFixed(2) + ' kg';
+    }
 
     function statusClasses(status) {
         if (status === 'active') return 'bg-green-100 text-green-800';
         if (status === 'completed' || status === 'cancelled' || status === 'auto_closed') return 'bg-gray-100 text-gray-800';
         return 'bg-yellow-100 text-yellow-800';
+    }
+
+    var basePath = window.location.pathname.replace(/\/$/, '');
+    function eventEditUrl(id) { return basePath + '/events/' + id + '/edit/'; }
+
+    function renderTableRows(events) {
+        if (!events || events.length === 0) {
+            return '<tr><td colspan="5" class="px-4 sm:px-6 py-4 text-center text-gray-700">{% trans "No events yet." %}</td></tr>';
+        }
+        return events.map(function(e) {
+            var time = e.scale_timestamp ? e.scale_timestamp.split('T')[1].substring(0, 8) : '—';
+            var editUrl = eventEditUrl(e.id);
+            return '<tr data-event-id="' + e.id + '" class="event-row"><td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-800">' + time + '</td><td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + (e.plu_code || '') + '</td><td class="px-4 sm:px-6 py-4 text-sm text-gray-900 event-product">' + (e.product_name || '') + '</td><td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium event-weight">' + formatKg(e.weight_grams) + '</td><td class="px-4 sm:px-6 py-4 text-right"><a href="' + editUrl + '" class="text-blue-600 hover:text-blue-800 text-sm font-medium">{% trans "Edit" %}</a></td></tr>';
+        }).join('');
+    }
+
+    function renderCards(events) {
+        if (!events || events.length === 0) {
+            return '<div class="bg-white shadow rounded-lg p-6 text-center text-gray-700">{% trans "No events yet." %}</div>';
+        }
+        return events.map(function(e) {
+            var time = e.scale_timestamp ? e.scale_timestamp.split('T')[1].substring(0, 8) : '—';
+            var editUrl = eventEditUrl(e.id);
+            return '<div class="bg-white shadow rounded-lg p-4 border border-gray-200 event-card" data-event-id="' + e.id + '"><div class="flex justify-between items-start gap-2"><span class="text-sm font-medium text-gray-700 event-product">' + (e.product_name || '') + '</span><div class="flex items-center gap-2"><span class="text-sm font-semibold text-gray-900 whitespace-nowrap event-weight">' + formatKg(e.weight_grams) + '</span><a href="' + editUrl + '" class="text-blue-600 hover:text-blue-800 text-sm font-medium">{% trans "Edit" %}</a></div></div><div class="mt-2 text-sm text-gray-700">{% trans "Time" %}: ' + time + '</div></div>';
+        }).join('');
     }
 
     function poll() {
@@ -99,17 +160,10 @@
                     statusBadge.className = 'px-2 py-1 text-xs font-semibold rounded-full ' + statusClasses(data.status);
                 }
                 if (eventCountEl) eventCountEl.textContent = data.event_count != null ? data.event_count : 0;
-                if (totalWeightEl) totalWeightEl.textContent = (data.total_weight_grams != null ? data.total_weight_grams : 0) + ' g';
-                if (tbody) {
-                    if (data.events && data.events.length > 0) {
-                        tbody.innerHTML = data.events.map(function(e) {
-                            var time = e.scale_timestamp ? e.scale_timestamp.split('T')[1].substring(0, 8) : '—';
-                            return '<tr><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">' + time + '</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' + (e.plu_code || '') + '</td><td class="px-6 py-4 text-sm text-gray-900">' + (e.product_name || '') + '</td><td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">' + (e.weight_grams || 0) + ' g</td></tr>';
-                        }).join('');
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">{% trans "No events yet." %}</td></tr>';
-                    }
-                }
+                if (totalWeightEl) totalWeightEl.textContent = formatKg(data.total_weight_grams);
+                var events = data.events || [];
+                if (tbody) tbody.innerHTML = renderTableRows(events);
+                if (cardsContainer) cardsContainer.innerHTML = renderCards(events);
                 if (actionsEl && (data.status === 'completed' || data.status === 'cancelled' || data.status === 'auto_closed')) {
                     actionsEl.style.display = 'none';
                     return false;

@@ -588,10 +588,17 @@ class DisassemblyCut(BaseModel):
         blank=True,
         related_name="manual_cuts",
     )
+    source_event = models.ForeignKey(
+        "scales.WeighingEvent",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="derived_disassembly_cuts",
+        help_text=_("Scale event that generated this cut (if auto-synced from scales)."),
+    )
 
     cut_name = models.CharField(
         max_length=100,
-        choices=ALL_CUT_CHOICES,
         help_text=_("Name of the cut (depends on animal type)")
     )
 
@@ -603,6 +610,16 @@ class DisassemblyCut(BaseModel):
 
     def __str__(self):
         return f"{self.animal.identification_tag} - {self.cut_name} ({self.weight_kg} kg)"
+
+    def get_cut_name_display(self):
+        """
+        Backward-compatible display accessor after removing fixed model choices.
+        """
+        return self.cut_name
+
+    @property
+    def is_scale_synced(self):
+        return bool(self.source_event_id)
 
     def save(self, *args, **kwargs):
         from django.core.exceptions import ValidationError

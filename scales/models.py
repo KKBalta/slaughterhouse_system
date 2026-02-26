@@ -97,7 +97,7 @@ class PLUItem(BaseModel):
 
 
 class DisassemblySession(BaseModel):
-    """Session linking scale events to an animal — source of truth for Edge."""
+    """Session linking scale events to one or more animals — source of truth for Edge."""
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("active", "Active"),
@@ -115,6 +115,12 @@ class DisassemblySession(BaseModel):
         null=True,
         blank=True,
         related_name="scale_sessions",
+    )
+    animals = models.ManyToManyField(
+        "processing.Animal",
+        related_name="disassembly_session_animals",
+        blank=True,
+        help_text="All animals in this session (multi-animal scaling).",
     )
     device = models.ForeignKey(
         ScaleDevice,
@@ -148,10 +154,21 @@ class DisassemblySession(BaseModel):
             ),
         ]
 
+    def get_primary_animal(self):
+        """First animal for backward compatibility; prefers animal FK then first in animals."""
+        if self.animal_id:
+            return self.animal
+        return self.animals.order_by("id").first()
+
     def __str__(self):
-        animal_str = (
-            self.animal.identification_tag if self.animal else "No animal"
-        )
+        primary = self.get_primary_animal()
+        if primary:
+            animal_str = primary.identification_tag
+            count = self.animals.count()
+            if count > 1:
+                animal_str = f"{animal_str} +{count - 1}"
+        else:
+            animal_str = "No animal"
         return f"Session {str(self.id)[:8]} - {animal_str} ({self.status})"
 
 
@@ -181,8 +198,29 @@ class WeighingEvent(BaseModel):
         blank=True,
         related_name="weighing_events",
     )
+    ALLOCATION_MODES = [
+        ("split", "Split"),
+        ("manual", "Manual"),
+    ]
+    allocation_mode = models.CharField(
+        max_length=20, choices=ALLOCATION_MODES, default="split"
+    )
+    assigned_animal = models.ForeignKey(
+        "processing.Animal",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="weighing_events_assigned",
+        help_text="When set (manual mode), this event is fully allocated to this animal.",
+    )
+    allocated_weight_grams = models.IntegerField(
+        null=True, blank=True, help_text="Cached weight allocated to assigned_animal for display."
+    )
     plu_code = models.CharField(max_length=20)
     product_name = models.CharField(max_length=100)
+    product_display_override = models.CharField(
+        max_length=100, blank=True
+    )  # Manual override for display; when set, used instead of catalog
     weight_grams = models.IntegerField()
     barcode = models.CharField(max_length=50)
     scale_timestamp = models.DateTimeField()
@@ -192,12 +230,15 @@ class WeighingEvent(BaseModel):
         max_length=100, unique=True
     )  # localEventId from Edge (dedup key)
     offline_batch_id = models.CharField(max_length=100, blank=True, null=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.CharField(max_length=100, blank=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["site", "scale_timestamp"]),
             models.Index(fields=["session"]),
             models.Index(fields=["animal"]),
+            models.Index(fields=["assigned_animal"]),
             models.Index(fields=["offline_batch_id"]),
             models.Index(fields=["edge_event_id"]),
         ]

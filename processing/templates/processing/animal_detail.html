@@ -666,6 +666,27 @@
                 {% endif %}
             </div>
 
+            <!-- Scale sessions linked to this animal -->
+            {% if scale_sessions_with_allocation %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Scale sessions" %}</h2>
+                <p class="text-sm text-gray-600 mb-4">{% trans "Sessions where this animal was scaled (total allocated weight and average per event)." %}</p>
+                <ul class="space-y-3">
+                    {% for item in scale_sessions_with_allocation %}
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-gray-100 last:border-0">
+                        <a href="{% url 'scales:session_detail' item.session.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            {% trans "Session" %} {{ item.session.started_at|date:"M d, H:i" }} {% if item.session.device %}({{ item.session.device.device_id }}){% endif %}
+                        </a>
+                        <span class="text-sm text-gray-700">
+                            {% trans "Allocated" %}: <strong>{{ item.total_allocated_grams|grams_to_kg }}</strong>
+                            {% if item.average_grams %} | {% trans "avg" %} {{ item.average_grams }} g/{% trans "event" %}{% endif %}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <!-- Scale Receipt Image Upload -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Scale Receipt" %}</h2>
