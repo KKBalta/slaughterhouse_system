@@ -3,6 +3,7 @@ Scale operations models for CarniTrack Edge integration.
 Bridges Edge devices, scale devices, sessions, and weighing events to processing.Animal.
 """
 from django.db import models
+from django.utils.translation import gettext as _
 from django.db.models import Q
 from core.models import BaseModel
 
@@ -159,6 +160,29 @@ class DisassemblySession(BaseModel):
         if self.animal_id:
             return self.animal
         return self.animals.order_by("id").first()
+
+    def get_short_session_code(self):
+        """Human-friendly session ID: S-YYYYMMDD-XXXXXX (date from started_at, 6 chars of UUID)."""
+        date_part = self.started_at.strftime("%Y%m%d") if self.started_at else "00000000"
+        uuid_part = str(self.id).replace("-", "")[:6] if self.id else "------"
+        return f"S-{date_part}-{uuid_part}"
+
+    def get_animals_summary(self, limit=2):
+        """Localized tag summary: single tag, first N tags + '+M more', or 'No animals'."""
+        animals = sorted(self.animals.all(), key=lambda a: (a.id or 0))
+        tags = [a.identification_tag or "—" for a in animals]
+        if not tags and self.animal_id:
+            tag = self.animal.identification_tag if self.animal else None
+            tags = [tag or "—"] if tag else []
+        if not tags:
+            return _("No animals")
+        if len(tags) == 1:
+            return tags[0]
+        shown = tags[:limit]
+        rest = len(tags) - limit
+        if rest > 0:
+            return ", ".join(shown) + " " + _("+%(count)s more") % {"count": rest}
+        return ", ".join(shown)
 
     def __str__(self):
         primary = self.get_primary_animal()

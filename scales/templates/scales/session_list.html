@@ -27,7 +27,8 @@
         <a href="{% url 'scales:session_detail' session.pk %}" class="block bg-white shadow rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
             <div class="flex justify-between items-start gap-3">
                 <div class="min-w-0 flex-1">
-                    <p class="text-base font-semibold text-gray-900 truncate">{{ session.animal.identification_tag|default:"—" }}</p>
+                    <p class="text-base font-semibold text-gray-900 truncate">{{ session.get_short_session_code }}</p>
+                    <p class="text-sm text-gray-600 mt-0.5 truncate">{{ session.get_animals_summary }}</p>
                     <p class="text-sm text-gray-700 mt-0.5">{{ session.device.device_id|default:"—" }} · {{ session.operator }}</p>
                 </div>
                 <span class="px-2 py-1 text-xs font-semibold rounded-full shrink-0
@@ -50,7 +51,8 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Animal" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Session" %}</th>
+                    <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Affected Animals" %}</th>
                     <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Device" %}</th>
                     <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Operator" %}</th>
                     <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">{% trans "Status" %}</th>
@@ -61,7 +63,8 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for session in sessions %}
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ session.animal.identification_tag|default:"—" }}</td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ session.get_short_session_code }}</td>
+                    <td class="px-4 sm:px-6 py-4 text-sm text-gray-800 max-w-[200px] truncate" title="{{ session.get_animals_summary }}">{{ session.get_animals_summary }}</td>
                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ session.device.device_id|default:"—" }}</td>
                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ session.operator }}</td>
                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -78,7 +81,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="px-4 sm:px-6 py-4 text-center text-gray-700">{% trans "No sessions." %}</td>
+                    <td colspan="7" class="px-4 sm:px-6 py-4 text-center text-gray-700">{% trans "No sessions." %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

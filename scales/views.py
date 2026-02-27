@@ -211,6 +211,7 @@ class SessionListViewModel:
         qs = (
             DisassemblySession.objects.filter(is_active=True)
             .select_related("device", "animal", "site")
+            .prefetch_related("animals")
             .order_by("-started_at")
         )
         status = request.GET.get("status")
