@@ -110,11 +110,13 @@
                         </div>
                         <span class="inline-block px-2 py-1 text-xs font-medium rounded-full
                             {% if animal.status == 'received' %} bg-blue-100 text-blue-800
-                            {% elif animal.status == 'slaughtered' %} bg-orange-100 text-orange-800
-                            {% elif animal.status == 'carcass_ready' %} bg-yellow-100 text-yellow-800
+                            {% elif animal.status == 'slaughtered' %} bg-yellow-100 text-yellow-800
+                            {% elif animal.status == 'carcass_ready' %} bg-green-100 text-green-800
                             {% elif animal.status == 'disassembled' %} bg-purple-100 text-purple-800
                             {% elif animal.status == 'packaged' %} bg-indigo-100 text-indigo-800
-                            {% elif animal.status == 'delivered' %} bg-green-100 text-green-800
+                            {% elif animal.status == 'delivered' %} bg-emerald-100 text-emerald-800
+                            {% elif animal.status == 'returned' %} bg-orange-100 text-orange-800
+                            {% elif animal.status == 'disposed' %} bg-red-100 text-red-800
                             {% else %} bg-gray-100 text-gray-800
                             {% endif %}">
                             {{ animal.get_status_display }}
@@ -168,11 +170,13 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     {% if animal.status == 'received' %} bg-blue-100 text-blue-800
-                                    {% elif animal.status == 'slaughtered' %} bg-orange-100 text-orange-800
-                                    {% elif animal.status == 'carcass_ready' %} bg-yellow-100 text-yellow-800
+                                    {% elif animal.status == 'slaughtered' %} bg-yellow-100 text-yellow-800
+                                    {% elif animal.status == 'carcass_ready' %} bg-green-100 text-green-800
                                     {% elif animal.status == 'disassembled' %} bg-purple-100 text-purple-800
                                     {% elif animal.status == 'packaged' %} bg-indigo-100 text-indigo-800
-                                    {% elif animal.status == 'delivered' %} bg-green-100 text-green-800
+                                    {% elif animal.status == 'delivered' %} bg-emerald-100 text-emerald-800
+                                    {% elif animal.status == 'returned' %} bg-orange-100 text-orange-800
+                                    {% elif animal.status == 'disposed' %} bg-red-100 text-red-800
                                     {% else %} bg-gray-100 text-gray-800
                                     {% endif %}">
                                     {{ animal.get_status_display }}

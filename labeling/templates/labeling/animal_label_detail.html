@@ -89,6 +89,8 @@
                             {% elif label.animal.status == 'disassembled' %}bg-purple-100 text-purple-800
                             {% elif label.animal.status == 'packaged' %}bg-indigo-100 text-indigo-800
                             {% elif label.animal.status == 'delivered' %}bg-emerald-100 text-emerald-800
+                            {% elif label.animal.status == 'returned' %}bg-orange-100 text-orange-800
+                            {% elif label.animal.status == 'disposed' %}bg-red-100 text-red-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
                             {{ label.animal.get_status_display }}
                         </span>

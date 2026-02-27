@@ -4,9 +4,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns
 from django.views.i18n import set_language
+from django.views.generic import RedirectView
 
 # Non-translatable URLs (admin, API endpoints, etc.)
 urlpatterns = [
+    # Redirect root favicon requests to static favicon (browsers request these automatically)
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'theme/img/favicon.png', permanent=False)),
+    path('apple-touch-icon.png', RedirectView.as_view(url=settings.STATIC_URL + 'theme/img/favicon.png', permanent=False)),
+    path('apple-touch-icon-precomposed.png', RedirectView.as_view(url=settings.STATIC_URL + 'theme/img/favicon.png', permanent=False)),
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),  # Include the i18n URLs for set_language
     path('reporting/', include('reporting.urls')),  # Add reporting URLs here temporarily

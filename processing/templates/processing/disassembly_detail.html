@@ -17,7 +17,11 @@
                 {% endif %}
             </p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
+            <a href="{% url 'scales:session_create' %}?animal_id={{ animal.pk }}"
+               class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                {% trans "Start Scale Session" %}
+            </a>
             <a href="{% url 'processing:disassembly_dashboard' %}" 
                class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm">
                 {% trans "Back to Dashboard" %}
@@ -437,8 +441,14 @@
                     <div>
                         <span class="text-gray-500">{% trans "Status" %}:</span>
                         <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full
-                            {% if animal.status == 'carcass_ready' %}bg-yellow-100 text-yellow-800
-                            {% elif animal.status == 'disassembled' %}bg-green-100 text-green-800
+                            {% if animal.status == 'received' %}bg-blue-100 text-blue-800
+                            {% elif animal.status == 'slaughtered' %}bg-yellow-100 text-yellow-800
+                            {% elif animal.status == 'carcass_ready' %}bg-green-100 text-green-800
+                            {% elif animal.status == 'disassembled' %}bg-purple-100 text-purple-800
+                            {% elif animal.status == 'packaged' %}bg-indigo-100 text-indigo-800
+                            {% elif animal.status == 'delivered' %}bg-emerald-100 text-emerald-800
+                            {% elif animal.status == 'returned' %}bg-orange-100 text-orange-800
+                            {% elif animal.status == 'disposed' %}bg-red-100 text-red-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
                             {{ animal.get_status_display }}
                         </span>
@@ -525,6 +535,10 @@
             <div class="bg-white shadow rounded-lg p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Quick Actions" %}</h3>
                 <div class="space-y-2">
+                    <a href="{% url 'scales:session_create' %}?animal_id={{ animal.pk }}"
+                       class="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm text-center font-medium">
+                        {% trans "Start Scale Session" %}
+                    </a>
                     <a href="{% url 'processing:animal_detail' animal.pk %}" 
                        class="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm text-center">
                         {% trans "View Full Animal Details" %}

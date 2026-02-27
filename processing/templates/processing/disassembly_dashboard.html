@@ -213,7 +213,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ animal.identification_tag }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ animal.get_animal_type_display }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-purple-100 text-purple-800{% elif animal.status == 'carcass_ready' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
                         {% if animal.active_scale_sessions %}
                         <span class="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800" title="{% trans 'Scale session in progress' %}">{% trans "Session Active" %}</span>
                         {% endif %}
@@ -252,7 +252,7 @@
                     <div class="font-semibold text-gray-900 text-base mb-1">{{ animal.identification_tag }}</div>
                     <div class="text-sm text-gray-800">{{ animal.get_animal_type_display }}</div>
                 </div>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if animal.status == 'disassembled' %}bg-purple-100 text-purple-800{% elif animal.status == 'carcass_ready' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ animal.get_status_display }}</span>
                 {% if animal.active_scale_sessions %}
                 <span class="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">{% trans "Session Active" %}</span>
                 {% endif %}

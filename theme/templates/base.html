@@ -5,31 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% trans "POMET Slaughterhouse" %}{% endblock %}</title>
+    <link rel="icon" href="{% static 'theme/img/favicon.png' %}" type="image/png">
+    <link rel="apple-touch-icon" href="{% static 'theme/img/favicon.png' %}">
+    <link rel="apple-touch-icon-precomposed" href="{% static 'theme/img/favicon.png' %}">
     {% tailwind_css %}
 </head>
 <body class="bg-gray-100 font-sans leading-normal tracking-normal">
 
     {% block navbar %}
     <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="/" class="text-2xl font-bold text-gray-800">POMET</a>
-                    </div>
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <a href="/" class="min-w-0 flex items-center justify-center sm:justify-start">
+                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">POMET</span>
+                    </a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Language Switcher -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     {% include 'components/language_switcher.html' %}
-                    
+
                     {% if user.is_authenticated %}
-                        <a href="{% url 'dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{% trans "Dashboard" %}</a>
-                        <form action="{% url 'logout' %}" method="post" class="inline">
+                        <a href="{% url 'dashboard' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">{% trans "Dashboard" %}</a>
+                        <form action="{% url 'logout' %}" method="post" class="flex-1 sm:flex-none">
                             {% csrf_token %}
-                            <button type="submit" class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300">{% trans "Logout" %}</button>
+                            <button type="submit" class="inline-flex w-full justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">{% trans "Logout" %}</button>
                         </form>
                     {% else %}
-                        <a href="{% url 'login' %}" class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{% trans "Login" %}</a>
+                        <a href="{% url 'login' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">{% trans "Login" %}</a>
                     {% endif %}
                 </div>
             </div>
