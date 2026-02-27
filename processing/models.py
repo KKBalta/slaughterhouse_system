@@ -227,6 +227,25 @@ class Animal(BaseModel):
             return self.slaughter_order.service_package.includes_disassembly and not self.is_boneless_disassembly()
         return False
 
+    def is_eligible_for_disassembly(self):
+        """
+        Check if this animal can be shown in DisassemblyDetailView.
+        Mirrors the view's queryset: disassembled, or carcass_ready with hot_carcass_weight,
+        and service package must include disassembly.
+        """
+        if not self.slaughter_order or not self.slaughter_order.service_package:
+            return False
+        if not self.slaughter_order.service_package.includes_disassembly:
+            return False
+        if self.status == 'disassembled':
+            return True
+        if self.status == 'carcass_ready':
+            return self.individual_weight_logs.filter(
+                weight_type='hot_carcass_weight',
+                is_group_weight=False
+            ).exists()
+        return False
+
     def __str__(self):
         return f"{self.get_animal_type_display()} - {self.identification_tag}"
 

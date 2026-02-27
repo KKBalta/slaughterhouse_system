@@ -1064,6 +1064,24 @@ class DisassemblyDetailView(LoginRequiredMixin, DetailView):
     template_name = 'processing/disassembly_detail.html'
     context_object_name = 'animal'
     
+    def get_object(self, queryset=None):
+        """Return 404 with helpful message when animal exists but isn't eligible for disassembly."""
+        from django.http import Http404
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        if pk is None:
+            raise Http404(_("No animal found matching the query"))
+        if queryset is None:
+            queryset = self.get_queryset()
+        try:
+            return queryset.get(pk=pk)
+        except self.model.DoesNotExist:
+            # Animal may exist but not be eligible (e.g. order lacks disassembly service)
+            if Animal.objects.filter(pk=pk).exists():
+                raise Http404(
+                    _("This animal is not eligible for disassembly. The order may not include the disassembly service, or hot carcass weight may not be logged yet.")
+                )
+            raise Http404(_("No animal found matching the query"))
+    
     def get_queryset(self):
         # Only show animals eligible for disassembly
         from django.db.models import Q

@@ -10,9 +10,11 @@
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Session" %} — {% with primary=session.get_primary_animal %}{{ primary.identification_tag|default:"No animal" }}{% if session.animals.count > 1 %} (+{{ session.animals.count|add:"-1" }} {% trans "more" %}){% endif %}{% endwith %}</h1>
         <div class="flex flex-wrap gap-3">
             {% for a in session.animals.all %}
+            {% if a.is_eligible_for_disassembly %}
             <a href="{% url 'processing:disassembly_detail' a.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">{{ a.identification_tag|default:a.id }} {% trans "Cuts" %}</a>
+            {% endif %}
             {% empty %}
-            {% if session.animal %}
+            {% if session.animal and session.animal.is_eligible_for_disassembly %}
             <a href="{% url 'processing:disassembly_detail' session.animal.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">{% trans "Manage Manual Cuts" %}</a>
             {% endif %}
             {% endfor %}
@@ -23,7 +25,7 @@
     <div class="bg-white shadow rounded-lg p-4 sm:p-6">
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><dt class="text-sm font-medium text-gray-700">{% trans "Device" %}</dt><dd class="font-medium text-gray-900">{{ session.device.device_id|default:"—" }}</dd></div>
-            <div><dt class="text-sm font-medium text-gray-700">{% trans "Animals" %}</dt><dd class="font-medium text-gray-900">{% for a in session.animals.all %}<a href="{% url 'processing:disassembly_detail' a.pk %}" class="text-blue-600 hover:underline">{{ a.identification_tag|default:a.id }}</a>{% if not forloop.last %}, {% endif %}{% empty %}{{ session.animal.identification_tag|default:"—" }}{% endfor %}</dd></div>
+            <div><dt class="text-sm font-medium text-gray-700">{% trans "Animals" %}</dt><dd class="font-medium text-gray-900">{% for a in session.animals.all %}{% if a.is_eligible_for_disassembly %}<a href="{% url 'processing:disassembly_detail' a.pk %}" class="text-blue-600 hover:underline">{{ a.identification_tag|default:a.id }}</a>{% else %}{{ a.identification_tag|default:a.id }}{% endif %}{% if not forloop.last %}, {% endif %}{% empty %}{{ session.animal.identification_tag|default:"—" }}{% endfor %}</dd></div>
             <div><dt class="text-sm font-medium text-gray-700">{% trans "Operator" %}</dt><dd class="font-medium text-gray-900">{{ session.operator }}</dd></div>
             <div><dt class="text-sm font-medium text-gray-700">{% trans "Status" %}</dt><dd><span id="session-status-badge" class="px-2 py-1 text-xs font-semibold rounded-full
                 {% if session.status == 'active' %}bg-green-100 text-green-800

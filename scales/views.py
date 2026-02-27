@@ -10,6 +10,18 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.db import models as db_models
+from django.db.models import Prefetch, Q
+
+# Queryset filter for animals eligible for disassembly (scale session + cuts page)
+DISASSEMBLY_ELIGIBLE_FILTER = Q(
+    Q(status="disassembled")
+    | Q(
+        status="carcass_ready",
+        individual_weight_logs__weight_type="hot_carcass_weight",
+        individual_weight_logs__is_group_weight=False,
+    )
+) & Q(slaughter_order__service_package__includes_disassembly=True)
+
 from django import forms
 from django.http import JsonResponse
 
@@ -258,18 +270,17 @@ class SessionCreateForm(forms.Form):
 
 
 class SessionCreateAnimalSearchJsonView(LoginRequiredMixin, View):
-    """Search animals eligible for scale session (carcass_ready, disassembled, slaughtered)."""
+    """Search animals eligible for scale session and disassembly (carcass_ready with hot weight, or disassembled)."""
 
     def get(self, request):
         query = request.GET.get("q", "").strip()
         if len(query) < 2:
             return JsonResponse({"animals": []})
-        from django.db.models import Q
 
+        # Only animals eligible for disassembly: order includes disassembly, and either
+        # disassembled or carcass_ready with hot_carcass_weight logged
         animals = (
-            Animal.objects.filter(
-                status__in=["carcass_ready", "disassembled", "slaughtered"]
-            )
+            Animal.objects.filter(DISASSEMBLY_ELIGIBLE_FILTER)
             .filter(
                 Q(identification_tag__icontains=query)
                 | Q(slaughter_order__slaughter_order_no__icontains=query)
@@ -278,7 +289,8 @@ class SessionCreateAnimalSearchJsonView(LoginRequiredMixin, View):
                 | Q(animal_type__icontains=query)
             )
             .select_related("slaughter_order", "slaughter_order__client")
-            .order_by("-slaughter_date")[:30]
+            .order_by("-slaughter_date")
+            .distinct()[:30]
         )
         out = []
         for a in animals:
@@ -329,10 +341,9 @@ class SessionCreateView(LoginRequiredMixin, View):
         if not animal_ids:
             return []
         animals = list(
-            Animal.objects.filter(
-                pk__in=animal_ids,
-                status__in=["carcass_ready", "disassembled", "slaughtered"],
-            )
+            Animal.objects.filter(pk__in=animal_ids)
+            .filter(DISASSEMBLY_ELIGIBLE_FILTER)
+            .distinct()
         )
         return [
             {"id": str(a.pk), "identification_tag": a.identification_tag or str(a.pk)[:8]}
@@ -349,10 +360,9 @@ class SessionCreateView(LoginRequiredMixin, View):
             parsed_uuid = parse_animal_uuid_from_qr_url(qr_url)
             if parsed_uuid:
                 try:
-                    Animal.objects.get(
-                        pk=parsed_uuid,
-                        status__in=["carcass_ready", "disassembled", "slaughtered"],
-                    )
+                    Animal.objects.filter(
+                        pk=parsed_uuid
+                    ).filter(DISASSEMBLY_ELIGIBLE_FILTER).distinct().get()
                     existing_ids = request.GET.getlist("animal_id")
                     if str(parsed_uuid) not in existing_ids:
                         existing_ids.append(str(parsed_uuid))
@@ -415,10 +425,9 @@ class SessionCreateView(LoginRequiredMixin, View):
                 },
             )
         animals = list(
-            Animal.objects.filter(
-                pk__in=animal_ids,
-                status__in=["carcass_ready", "disassembled", "slaughtered"],
-            )
+            Animal.objects.filter(pk__in=animal_ids)
+            .filter(DISASSEMBLY_ELIGIBLE_FILTER)
+            .distinct()
         )
         if len(animals) != len(animal_ids):
             sites, selected_site_id = self._get_sites_and_selected_site_id(request)
@@ -495,8 +504,16 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return DisassemblySession.objects.filter(is_active=True).select_related(
-            "device", "animal", "site"
-        ).prefetch_related("animals")
+            "device", "animal", "animal__slaughter_order", "animal__slaughter_order__service_package", "site"
+        ).prefetch_related(
+            "animal__individual_weight_logs",
+            Prefetch(
+                "animals",
+                queryset=Animal.objects.select_related(
+                    "slaughter_order", "slaughter_order__service_package"
+                ).prefetch_related("individual_weight_logs"),
+            ),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
