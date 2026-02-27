@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from reception.models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
-from processing.models import Animal, DisassemblyCut
+from processing.models import Animal, DisassemblyCut, WeightLog
 from labeling.models import AnimalLabel
 from labeling.utils import create_cut_label
 from django.utils import timezone
@@ -42,6 +42,14 @@ class DisassemblyTest(TestCase):
         self.animal.perform_slaughter()
         self.animal.prepare_carcass()
         self.animal.save()
+
+        # perform_disassembly requires hot_carcass_weight to be logged
+        WeightLog.objects.create(
+            animal=self.animal,
+            weight=150.0,
+            weight_type='hot_carcass_weight',
+            is_group_weight=False
+        )
 
     def test_add_disassembly_cut(self):
         """Test adding a disassembly cut to an animal."""
@@ -116,22 +124,23 @@ class DisassemblyTest(TestCase):
         self.assertIn('3.5', label.prn_content)
 
     def test_disassembly_cut_form_choices(self):
-        """Test that DisassemblyCutForm filters choices based on animal type."""
+        """Test that DisassemblyCutForm provides PLU catalog choices."""
         from processing.forms import DisassemblyCutForm
         
-        # Test with Cattle (Big Cut)
+        # Form uses PLU catalog (get_embedded_plu_map) - same choices for all animal types
         form_cattle = DisassemblyCutForm(animal=self.animal)
-        choices_cattle = [c[0] for c in form_cattle.fields['cut_name'].widget.choices]
-        self.assertIn('ribeye', choices_cattle)
-        self.assertNotIn('leg', choices_cattle) # 'leg' is a small cut
+        choices_cattle = [c[0] for c in form_cattle.fields['cut_name'].widget.choices if c[0]]
+        self.assertGreater(len(choices_cattle), 0, "Form should have cut name choices")
+        # ANTREKOT (ribeye) is in the PLU catalog
+        self.assertIn('ANTREKOT', choices_cattle)
         
-        # Test with Sheep (Small Cut)
+        # Sheep gets same PLU catalog (no animal-type filtering)
         sheep = Animal.objects.create(
             slaughter_order=self.order,
             animal_type='sheep',
             identification_tag='SHEEP-FORM-TEST'
         )
         form_sheep = DisassemblyCutForm(animal=sheep)
-        choices_sheep = [c[0] for c in form_sheep.fields['cut_name'].widget.choices]
-        self.assertIn('leg', choices_sheep)
-        self.assertNotIn('ribeye', choices_sheep) # 'ribeye' is a big cut
+        choices_sheep = [c[0] for c in form_sheep.fields['cut_name'].widget.choices if c[0]]
+        self.assertGreater(len(choices_sheep), 0)
+        self.assertIn('ANTREKOT', choices_sheep)

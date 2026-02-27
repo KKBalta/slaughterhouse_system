@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from reception.models import SlaughterOrder, ServicePackage
 from users.models import ClientProfile
@@ -103,6 +103,14 @@ class ProcessingModelTest(TestCase):
 
         animal.prepare_carcass()
         self.assertEqual(animal.status, 'carcass_ready')
+
+        # perform_disassembly requires hot_carcass_weight to be logged
+        WeightLog.objects.create(
+            animal=animal,
+            weight=150.0,
+            weight_type='hot_carcass_weight',
+            is_group_weight=False
+        )
 
         # Test conditional transition
         animal.perform_disassembly()
@@ -239,6 +247,7 @@ class ProcessingModelTest(TestCase):
                 is_group_weight=True
             )
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_weight_log_form_validation(self):
         """Test BatchWeightLogForm validation"""
         from .forms import BatchWeightLogForm
@@ -283,6 +292,7 @@ class ProcessingModelTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('Average weight per animal seems unusually low', str(form.errors))
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_weight_log_form_multiple_batches_validation(self):
         """Test that BatchWeightLogForm properly handles cumulative validation across multiple batches"""
         from .forms import BatchWeightLogForm
@@ -341,8 +351,9 @@ class ProcessingModelTest(TestCase):
         form = BatchWeightLogForm(data=invalid_data)
         self.assertFalse(form.is_valid())
         self.assertIn('Cannot log weight for 10 animals', str(form.errors))
-        self.assertIn('Only 3 animals are available for weighing', str(form.errors))
+        self.assertIn('Only 3 animals are available', str(form.errors))
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_weight_log_cumulative_validation(self):
         """Test that BatchWeightLogForm prevents cumulative animal count from exceeding available animals"""
         from .forms import BatchWeightLogForm

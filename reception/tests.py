@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from .models import SlaughterOrder, ServicePackage
 from .forms import BatchAnimalForm
@@ -111,6 +111,7 @@ class BatchAnimalFormTest(TestCase):
         form = BatchAnimalForm(data=form_data)
         self.assertTrue(form.is_valid())
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_animal_form_invalid_quantity_too_high(self):
         """Test form with quantity exceeding maximum"""
         form_data = {
@@ -226,6 +227,7 @@ class BatchAnimalFormTest(TestCase):
         skip_photos_attrs = form.fields['skip_photos'].widget.attrs
         self.assertIn('h-4', skip_photos_attrs.get('class', ''))
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_animal_form_field_labels(self):
         """Test that form fields have correct labels"""
         form = BatchAnimalForm()
@@ -236,6 +238,7 @@ class BatchAnimalFormTest(TestCase):
         self.assertEqual(form.fields['received_date'].label, 'Received Date & Time')
         self.assertEqual(form.fields['skip_photos'].label, 'Skip Photos for Batch')
 
+    @override_settings(LANGUAGE_CODE='en')
     def test_batch_animal_form_help_text(self):
         """Test that form fields have appropriate help text"""
         form = BatchAnimalForm()

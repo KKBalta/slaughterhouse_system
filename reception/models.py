@@ -57,12 +57,17 @@ class SlaughterOrder(BaseModel):
         - When creating 12th order on 2026-07-01, it tries ORD-20260108-0012 again → DUPLICATE ERROR
         
         Fix: Use order_datetime for both date string and count to ensure consistency.
+        
+        BUG FIX (2026-02-27):
+        order_datetime can be passed as datetime.date (e.g. date.today() in tests).
+        date objects have no .date() method - only datetime does. Handle both types.
         """
         if not self.slaughter_order_no:
             # Use order_datetime instead of timezone.now() to ensure consistency
             # This prevents timezone mismatches where server time differs from order time
             if self.order_datetime:
-                order_date = self.order_datetime.date()
+                # Handle both datetime (has .date()) and date (use as-is)
+                order_date = self.order_datetime.date() if hasattr(self.order_datetime, 'date') else self.order_datetime
                 date_str = order_date.strftime('%Y%m%d')
             else:
                 # Fallback to current date if order_datetime is not set
@@ -78,4 +83,5 @@ class SlaughterOrder(BaseModel):
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name
-        return f"Order {self.slaughter_order_no} for {client_display} on {self.order_datetime.date()}"
+        order_date = self.order_datetime.date() if hasattr(self.order_datetime, 'date') else self.order_datetime
+        return f"Order {self.slaughter_order_no} for {client_display} on {order_date}"

@@ -94,10 +94,18 @@ class ReceptionServiceTest(TestCase):
         self.assertEqual(order.status, SlaughterOrder.Status.IN_PROGRESS)
 
         # Test COMPLETED status
+        from processing.models import WeightLog
         for animal in order.animals.all():
             if animal.status == 'received':
                 animal.perform_slaughter()
             animal.prepare_carcass()
+            # perform_disassembly requires hot_carcass_weight to be logged
+            WeightLog.objects.create(
+                animal=animal,
+                weight=150.0,
+                weight_type='hot_carcass_weight',
+                is_group_weight=False
+            )
             # Our test service package includes disassembly and delivery
             animal.perform_disassembly()
             animal.perform_packaging()
