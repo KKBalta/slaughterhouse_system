@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from processing.models import Animal  # Add Animal import
@@ -10,6 +10,9 @@ from processing.services import create_animal
 from users.models import ClientProfile
 
 from .models import ServicePackage, SlaughterOrder
+
+# Maximum retry attempts for order creation under race conditions
+MAX_ORDER_CREATION_RETRIES = 10
 
 
 def generate_order_number(order_datetime=None) -> str:
@@ -20,9 +23,10 @@ def generate_order_number(order_datetime=None) -> str:
     that also includes the order creation. The caller is responsible for ensuring
     proper transaction boundaries to prevent race conditions.
 
-    The function uses select_for_update() to lock existing orders for the date,
-    but the lock is only effective if the caller's transaction includes the
-    actual order creation.
+    The function uses select_for_update() to lock existing orders for the date.
+    This prevents race conditions when there are existing orders, but when no
+    orders exist for the date, the caller must handle potential IntegrityError
+    with retry logic.
 
     Args:
         order_datetime: The datetime for the order. If None, uses current time.
@@ -45,6 +49,8 @@ def generate_order_number(order_datetime=None) -> str:
     # This prevents race conditions when multiple threads try to generate
     # order numbers simultaneously. The lock is held until the transaction
     # commits (which should include the order creation in the caller).
+    # NOTE: When no orders exist for the date, select_for_update() locks nothing,
+    # so the caller must handle IntegrityError with retry logic.
     last_order = (
         SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
         .select_for_update()
@@ -75,7 +81,6 @@ def generate_order_number(order_datetime=None) -> str:
     return order_number
 
 
-@transaction.atomic
 def create_slaughter_order(
     client_id: str,
     service_package_id: str,
@@ -89,6 +94,10 @@ def create_slaughter_order(
     Creates a new SlaughterOrder and all its associated animals.
     Handles both registered and walk-in clients.
     Generates order number atomically to prevent race conditions.
+
+    Uses retry logic to handle the edge case where multiple threads try to create
+    the first order of the day simultaneously (when select_for_update has no rows
+    to lock).
     """
     client_profile = None
     if client_id:
@@ -96,25 +105,43 @@ def create_slaughter_order(
 
     service_package = ServicePackage.objects.get(id=service_package_id)
 
-    # Generate order number in service layer (not in model save())
-    # This ensures atomic generation with proper database locking
-    order_number = generate_order_number(order_datetime)
+    # Retry loop to handle race conditions when creating orders
+    # This is necessary because select_for_update() cannot lock rows that don't exist yet
+    last_exception = None
+    for attempt in range(MAX_ORDER_CREATION_RETRIES):
+        try:
+            with transaction.atomic():
+                # Generate order number within the transaction
+                # select_for_update() will lock existing orders for this date
+                order_number = generate_order_number(order_datetime)
 
-    order = SlaughterOrder.objects.create(
-        client=client_profile,
-        service_package=service_package,
-        order_datetime=order_datetime,
-        client_name=client_name if not client_profile else "",
-        client_phone=client_phone if not client_profile else "",
-        destination=destination,
-        slaughter_order_no=order_number,  # Set explicitly to avoid save() method generation
+                order = SlaughterOrder.objects.create(
+                    client=client_profile,
+                    service_package=service_package,
+                    order_datetime=order_datetime,
+                    client_name=client_name if not client_profile else "",
+                    client_phone=client_phone if not client_profile else "",
+                    destination=destination,
+                    slaughter_order_no=order_number,
+                )
+
+                for animal_data in animals_data:
+                    create_animal(order=order, **animal_data)
+
+                order.refresh_from_db()
+                return order
+
+        except IntegrityError as e:
+            # Duplicate key error - another thread created an order with this number
+            # Retry with a fresh transaction and new order number
+            last_exception = e
+            continue
+
+    # If we exhausted all retries, raise the last exception
+    raise ValidationError(
+        f"Failed to create order after {MAX_ORDER_CREATION_RETRIES} attempts due to high concurrency. "
+        f"Last error: {last_exception}"
     )
-
-    for animal_data in animals_data:
-        create_animal(order=order, **animal_data)
-
-    order.refresh_from_db()
-    return order
 
 
 @transaction.atomic
