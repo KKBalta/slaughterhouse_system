@@ -522,6 +522,7 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
             WeighingEvent.objects.filter(
                 session=self.object, is_active=True, deleted_at__isnull=True
             )
+            .select_related("assigned_animal")
             .order_by("-scale_timestamp")[:100]
         )
         plu_codes = [e.plu_code for e in events]
@@ -547,6 +548,7 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
             WeighingEvent.objects.filter(
                 session=session, is_active=True, deleted_at__isnull=True
             )
+            .select_related("assigned_animal")
             .order_by("-scale_timestamp")[:100]
         )
         plu_codes = [e.plu_code for e in events]
@@ -562,6 +564,10 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
                 ),
                 "weight_grams": e.weight_grams,
                 "scale_timestamp": e.scale_timestamp.isoformat() if e.scale_timestamp else None,
+                "allocation_mode": e.allocation_mode,
+                "assigned_animal_tag": (
+                    e.assigned_animal.identification_tag if e.assigned_animal else None
+                ),
             }
             for e in events
         ]

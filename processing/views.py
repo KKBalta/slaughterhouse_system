@@ -1323,6 +1323,20 @@ class AddDisassemblyCutView(LoginRequiredMixin, View):
 
 class EditDisassemblyCutView(LoginRequiredMixin, View):
     """View for editing an existing disassembly cut"""
+    @staticmethod
+    def _render_disassembly_detail_with_edit_context(request, animal, form, cut):
+        """
+        Reuse DisassemblyDetailView context so edit mode keeps all sidebar/session
+        widgets working (active session banner, allocation summary, hot carcass stats, etc.).
+        """
+        detail_view = DisassemblyDetailView()
+        detail_view.request = request
+        detail_view.object = animal
+        context = detail_view.get_context_data()
+        context["disassembly_form"] = form
+        context["editing_cut"] = cut
+        return render(request, "processing/disassembly_detail.html", context)
+
     def get(self, request, pk, cut_pk):
         animal = get_object_or_404(Animal, pk=pk)
         cut = get_object_or_404(DisassemblyCut, pk=cut_pk, animal=animal)
@@ -1330,21 +1344,9 @@ class EditDisassemblyCutView(LoginRequiredMixin, View):
             messages.error(request, _('Scale-origin cuts are read-only. Edit the source event in Scale Session.'))
             return redirect('processing:disassembly_detail', pk=animal.pk)
         from .forms import DisassemblyCutForm
-        from labeling.models import AnimalLabel
-        
+
         form = DisassemblyCutForm(instance=cut, animal=animal)
-        cuts = animal.disassembly_cuts.all().order_by('-created_at')
-        # Attach labels directly to cuts for easier template access
-        for c in cuts:
-            c.label = AnimalLabel.objects.filter(cut=c, label_type='cut').order_by('-print_date').first()
-        
-        return render(request, 'processing/disassembly_detail.html', {
-            'animal': animal,
-            'disassembly_form': form,
-            'editing_cut': cut,
-            'disassembly_cuts': cuts,
-            'can_proceed_to_disassembly': animal.can_proceed_to_disassembly(),
-        })
+        return self._render_disassembly_detail_with_edit_context(request, animal, form, cut)
     
     def post(self, request, pk, cut_pk):
         animal = get_object_or_404(Animal, pk=pk)
@@ -1368,19 +1370,7 @@ class EditDisassemblyCutView(LoginRequiredMixin, View):
                 for error in errors:
                     messages.error(request, f'{field_label}: {error}')
         
-        from labeling.models import AnimalLabel
-        cuts = animal.disassembly_cuts.all().order_by('-created_at')
-        # Attach labels directly to cuts for easier template access
-        for c in cuts:
-            c.label = AnimalLabel.objects.filter(cut=c, label_type='cut').order_by('-print_date').first()
-        
-        return render(request, 'processing/disassembly_detail.html', {
-            'animal': animal,
-            'disassembly_form': form,
-            'editing_cut': cut,
-            'disassembly_cuts': cuts,
-            'can_proceed_to_disassembly': animal.can_proceed_to_disassembly(),
-        })
+        return self._render_disassembly_detail_with_edit_context(request, animal, form, cut)
 
 class DeleteDisassemblyCutView(LoginRequiredMixin, View):
     """View for deleting an existing disassembly cut"""
