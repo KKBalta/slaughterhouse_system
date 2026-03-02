@@ -302,3 +302,281 @@ class TestWeightLogValidation:
         with pytest.raises(Exception):
             log.full_clean()
             log.save()
+
+
+# ============================================================================
+# JSON / redirect view tests (no template rendering)
+# ============================================================================
+
+
+def _auth_post_request(user, post_data=None):
+    """Build an authenticated POST request for view tests (avoids login/session in test env)."""
+    from django.contrib.messages.storage.fallback import FallbackStorage
+    from django.test import RequestFactory
+
+    factory = RequestFactory()
+    request = factory.post("/", post_data or {})
+    request.user = user
+    request.session = {}
+    request._messages = FallbackStorage(request)
+    return request
+
+
+@pytest.mark.django_db
+class TestAnimalSearchView:
+    """Tests for AnimalSearchView JSON response."""
+
+    def test_search_empty_query_returns_empty_list(self, client):
+        """Short query returns empty animals list."""
+        from django.urls import reverse
+
+        url = reverse("processing:animal_search")
+        resp = client.get(url, {"q": "a"})
+        assert resp.status_code == 200
+        assert resp["Content-Type"] == "application/json"
+        data = resp.json()
+        assert data["animals"] == []
+
+    def test_search_no_query_returns_empty_list(self, client):
+        """No q param returns empty list."""
+        from django.urls import reverse
+
+        url = reverse("processing:animal_search")
+        resp = client.get(url)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["animals"] == []
+
+    def test_search_returns_matching_animals(self, client, animal_factory):
+        """Query matching identification_tag returns JSON with animals."""
+        from django.urls import reverse
+
+        animal = animal_factory(identification_tag="UNIQUE-TAG-123")
+        animal.slaughter_order.save()  # ensure slaughter_order_no exists
+        url = reverse("processing:animal_search")
+        resp = client.get(url, {"q": "UNIQUE-TAG"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["animals"]) >= 1
+        found = next(a for a in data["animals"] if a["identification_tag"] == "UNIQUE-TAG-123")
+        assert found["status"] == "received"
+        assert "detail_url" in found
+
+
+@pytest.mark.django_db
+class TestMarkAnimalSlaughteredView:
+    """Tests for MarkAnimalSlaughteredView POST + redirect."""
+
+    def test_post_marks_slaughtered_and_redirects(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import MarkAnimalSlaughteredView
+
+        animal = animal_factory(status="received")
+        request = _auth_post_request(admin_user)
+        view = MarkAnimalSlaughteredView.as_view()
+        resp = view(request, pk=animal.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        updated = Animal.objects.get(pk=animal.pk)
+        assert updated.status == "slaughtered"
+        assert updated.slaughter_date is not None
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        url = reverse("processing:mark_slaughtered", kwargs={"pk": animal.pk})
+        resp = client.post(url)
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestAnimalWeightLogView:
+    """Tests for AnimalWeightLogView POST + redirect."""
+
+    def test_post_valid_weight_redirects(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import AnimalWeightLogView
+
+        animal = animal_factory()
+        animal.perform_slaughter()
+        animal.save()
+        request = _auth_post_request(admin_user, {"weight_type": "hot_carcass_weight", "weight": "250.00"})
+        view = AnimalWeightLogView.as_view()
+        resp = view(request, pk=animal.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        assert WeightLog.objects.filter(animal=animal, weight_type="hot_carcass_weight").exists()
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        url = reverse("processing:animal_weights", kwargs={"pk": animal.pk})
+        resp = client.post(url, {"weight_type": "live_weight", "weight": "300"})
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestLeatherWeightLogView:
+    """Tests for LeatherWeightLogView POST + redirect."""
+
+    def test_post_valid_leather_weight_redirects(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import LeatherWeightLogView
+
+        animal = animal_factory()
+        animal.perform_slaughter()
+        animal.save()
+        request = _auth_post_request(admin_user, {"leather_weight_kg": "12.5"})
+        view = LeatherWeightLogView.as_view()
+        resp = view(request, pk=animal.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        assert Animal.objects.get(pk=animal.pk).leather_weight_kg == Decimal("12.5")
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        url = reverse("processing:leather_weight", kwargs={"pk": animal.pk})
+        resp = client.post(url, {"leather_weight_kg": "10"})
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestOrderStatusUpdateView:
+    """Tests for OrderStatusUpdateView POST + redirect."""
+
+    def test_post_redirects_to_dashboard(self, admin_user, slaughter_order_factory):
+        from django.urls import reverse
+
+        from processing.views import OrderStatusUpdateView
+
+        order = slaughter_order_factory()
+        order.save()
+        request = _auth_post_request(admin_user)
+        view = OrderStatusUpdateView.as_view()
+        resp = view(request, order_pk=order.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:dashboard")
+        assert resp.url.endswith(expected) or expected in resp.url
+
+    def test_post_requires_login(self, client, slaughter_order_factory):
+        from django.urls import reverse
+
+        order = slaughter_order_factory()
+        url = reverse("processing:order_status_update", kwargs={"order_pk": order.pk})
+        resp = client.post(url)
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestAddDisassemblyCutView:
+    """Tests for AddDisassemblyCutView POST + redirect."""
+
+    def test_post_valid_cut_redirects(self, admin_user, animal_factory, weight_log_factory):
+        from django.urls import reverse
+
+        from processing.views import AddDisassemblyCutView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.prepare_carcass()
+        animal.save()
+        weight_log_factory(animal=animal, weight_type="hot_carcass_weight", weight=200.0)
+        request = _auth_post_request(admin_user, {"cut_name": "ANTREKOT", "weight_kg": "5.50"})
+        view = AddDisassemblyCutView.as_view()
+        resp = view(request, pk=animal.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:disassembly_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        assert DisassemblyCut.objects.filter(animal=animal, cut_name="ANTREKOT").exists()
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        url = reverse("processing:add_disassembly_cut", kwargs={"pk": animal.pk})
+        resp = client.post(url, {"cut_name": "ANTREKOT", "weight_kg": "5"})
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestEditDisassemblyCutView:
+    """Tests for EditDisassemblyCutView POST + redirect."""
+
+    def test_post_valid_update_redirects(self, admin_user, animal_factory, weight_log_factory):
+        from django.urls import reverse
+
+        from processing.views import EditDisassemblyCutView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.prepare_carcass()
+        animal.save()
+        weight_log_factory(animal=animal, weight_type="hot_carcass_weight", weight=200.0)
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg=Decimal("5.00"))
+        request = _auth_post_request(admin_user, {"cut_name": "ANTREKOT", "weight_kg": "7.25"})
+        view = EditDisassemblyCutView.as_view()
+        resp = view(request, pk=animal.pk, cut_pk=cut.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:disassembly_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        assert DisassemblyCut.objects.get(pk=cut.pk).weight_kg == Decimal("7.25")
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg=Decimal("5.00"))
+        url = reverse("processing:edit_disassembly_cut", kwargs={"pk": animal.pk, "cut_pk": cut.pk})
+        resp = client.post(url, {"cut_name": "ANTREKOT", "weight_kg": "6"})
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestDeleteDisassemblyCutView:
+    """Tests for DeleteDisassemblyCutView POST + redirect."""
+
+    def test_post_deletes_cut_and_redirects(self, admin_user, animal_factory, weight_log_factory):
+        from django.urls import reverse
+
+        from processing.views import DeleteDisassemblyCutView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.prepare_carcass()
+        animal.save()
+        weight_log_factory(animal=animal, weight_type="hot_carcass_weight", weight=200.0)
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg=Decimal("5.00"))
+        cut_pk = cut.pk
+        request = _auth_post_request(admin_user)
+        view = DeleteDisassemblyCutView.as_view()
+        resp = view(request, pk=animal.pk, cut_pk=cut.pk)
+        assert resp.status_code == 302
+        expected = reverse("processing:disassembly_detail", kwargs={"pk": animal.pk})
+        assert resp.url.endswith(expected) or expected in resp.url
+        assert not DisassemblyCut.objects.filter(pk=cut_pk).exists()
+
+    def test_post_requires_login(self, client, animal_factory):
+        from django.urls import reverse
+
+        animal = animal_factory()
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg=Decimal("5.00"))
+        url = reverse("processing:delete_disassembly_cut", kwargs={"pk": animal.pk, "cut_pk": cut.pk})
+        resp = client.post(url)
+        assert resp.status_code == 302
+        assert "/login/" in resp.url or "login" in resp.url.lower()

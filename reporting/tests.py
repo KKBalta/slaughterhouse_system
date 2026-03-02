@@ -9,7 +9,7 @@ from django.utils import timezone
 from processing.models import Animal, CattleDetails, WeightLog
 from reception.models import ServicePackage, SlaughterOrder
 from reporting.models import GeneratedReport, Report
-from reporting.services import ExcelReportGenerator, ReportDataAggregator
+from reporting.services import ExcelReportGenerator, PDFReportGenerator, ReportDataAggregator
 from users.models import User
 
 
@@ -230,6 +230,98 @@ class ReportDataAggregatorTest(TestCase):
         offal_status, bowels_status = aggregator._get_offal_bowels_status(self.animal1)
         self.assertEqual(offal_status, "YARIM")
 
+    def _make_aggregation_record(
+        self,
+        client_name="Client A",
+        animal_type="KUZU",
+        quantity=1,
+        live_weight=40.0,
+        hot_carcass_weight=20.0,
+        offal_status="SAĞLAM",
+        bowels_status="SAĞLAM",
+        leather_weight=3.0,
+        sakatat_weight=1.0,
+        destination="Dest",
+        description="",
+        identification_tag="",
+    ):
+        """Build a record in the shape expected by _aggregate_identical_records."""
+        return {
+            "client_name": client_name,
+            "animal_type": animal_type,
+            "quantity": quantity,
+            "live_weight": live_weight,
+            "hot_carcass_weight": hot_carcass_weight,
+            "offal_status": offal_status,
+            "bowels_status": bowels_status,
+            "leather_weight": leather_weight,
+            "sakatat_weight": sakatat_weight,
+            "destination": destination,
+            "description": description,
+            "identification_tag": identification_tag,
+        }
+
+    def test_aggregate_identical_records_empty(self):
+        """_aggregate_identical_records returns empty list for empty input."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        result = aggregator._aggregate_identical_records([])
+        self.assertEqual(result, [])
+
+    def test_aggregate_identical_records_merges_small_animal_identical(self):
+        """Identical small-animal records (KUZU) are merged and quantity summed; weights multiplied by quantity."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        rec = self._make_aggregation_record(animal_type="KUZU", quantity=1)
+        daily_data = [rec, rec.copy()]
+        result = aggregator._aggregate_identical_records(daily_data)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["quantity"], 2)
+        self.assertEqual(result[0]["live_weight"], 80.0)  # 40 * 2
+        self.assertEqual(result[0]["hot_carcass_weight"], 40.0)  # 20 * 2
+        self.assertEqual(result[0]["leather_weight"], 6.0)  # 3 * 2
+
+    def test_aggregate_identical_records_keeps_different_animal_types_separate(self):
+        """Records with different animal_type stay as separate rows."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        daily_data = [
+            self._make_aggregation_record(animal_type="KUZU"),
+            self._make_aggregation_record(animal_type="DANA"),
+        ]
+        result = aggregator._aggregate_identical_records(daily_data)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["animal_type"], "KUZU")
+        self.assertEqual(result[1]["animal_type"], "DANA")
+
+    def test_aggregate_identical_records_keeps_different_weights_separate(self):
+        """Records differing in hot_carcass_weight stay as separate rows."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        daily_data = [
+            self._make_aggregation_record(animal_type="KUZU", hot_carcass_weight=20.0),
+            self._make_aggregation_record(animal_type="KUZU", hot_carcass_weight=22.0),
+        ]
+        result = aggregator._aggregate_identical_records(daily_data)
+        self.assertEqual(len(result), 2)
+
+    def test_aggregate_identical_records_large_animal_uses_identification_tag(self):
+        """For non-small animals (e.g. SIGIR), identification_tag is part of key so same type different tag = 2 rows."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        daily_data = [
+            self._make_aggregation_record(animal_type="SIGIR", identification_tag="T1"),
+            self._make_aggregation_record(animal_type="SIGIR", identification_tag="T2"),
+        ]
+        result = aggregator._aggregate_identical_records(daily_data)
+        self.assertEqual(len(result), 2)
+
+    def test_aggregate_identical_records_single_record_unchanged(self):
+        """Single record is returned unchanged; weights not multiplied when quantity is 1."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        rec = self._make_aggregation_record(quantity=1, live_weight=50.0, hot_carcass_weight=25.0, leather_weight=4.0)
+        result = aggregator._aggregate_identical_records([rec])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["quantity"], 1)
+        self.assertEqual(result[0]["live_weight"], 50.0)
+        self.assertEqual(result[0]["hot_carcass_weight"], 25.0)
+        self.assertEqual(result[0]["leather_weight"], 4.0)
+
 
 class ExcelReportGeneratorTest(TestCase):
     """Test the ExcelReportGenerator service"""
@@ -324,6 +416,140 @@ class ExcelReportGeneratorTest(TestCase):
         self.assertEqual(ws.cell(row=summary_start_row + 2, column=2).value, 1)
         self.assertEqual(ws.cell(row=summary_start_row + 2, column=3).value, 25.0)
         self.assertEqual(ws.cell(row=summary_start_row + 2, column=4).value, 1)
+
+
+class PDFReportGeneratorTest(TestCase):
+    """Test the PDFReportGenerator service"""
+
+    def setUp(self):
+        self.report_data = {
+            "start_date": "01.01.2024",
+            "end_date": "01.01.2024",
+            "daily_data": [
+                {
+                    "client_name": "Test Client",
+                    "quantity": 1,
+                    "animal_type": "SIGIR",
+                    "hot_carcass_weight": 200.0,
+                    "offal_status": "SAĞLAM",
+                    "bowels_status": "SAĞLAM",
+                    "leather_weight": 25.0,
+                    "destination": "Test Destination",
+                    "description": "",
+                    "identification_tag": "TAG-001",
+                }
+            ],
+            "summary": {
+                "buyukbas": {"kesim": 1, "deri": 25.0, "bagirsak": 1, "sakatat": 1},
+                "kuzu": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
+                "oglak": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
+                "koyun": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
+                "keci": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
+            },
+        }
+
+    def test_pdf_generator_initialization(self):
+        """Test PDF generator initialization."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator.report_data, self.report_data)
+
+    def test_convert_turkish_chars_empty(self):
+        """_convert_turkish_chars returns empty string for empty input."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._convert_turkish_chars(""), "")
+        self.assertEqual(generator._convert_turkish_chars(None), None)
+
+    def test_convert_turkish_chars_converts_all(self):
+        """_convert_turkish_chars converts Turkish letters to ASCII."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._convert_turkish_chars("ĞÜŞİÖÇ ğüşışöç"), "GUSIOC gusisoc")
+        self.assertEqual(generator._convert_turkish_chars("SAĞLAM"), "SAGLAM")
+        self.assertEqual(generator._convert_turkish_chars("İzmir"), "Izmir")
+
+    def test_convert_turkish_chars_plain_unchanged(self):
+        """_convert_turkish_chars leaves ASCII text unchanged."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._convert_turkish_chars("Hello World"), "Hello World")
+
+    def test_truncate_text_empty(self):
+        """_truncate_text returns empty string for empty/None."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._truncate_text(""), "")
+        self.assertEqual(generator._truncate_text(None), "")
+
+    def test_truncate_text_short_unchanged(self):
+        """_truncate_text leaves short text unchanged."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._truncate_text("Short", max_length=20), "Short")
+
+    def test_truncate_text_long_truncated(self):
+        """_truncate_text truncates long text with ellipsis."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._truncate_text("This is a long text", max_length=15), "This is a lo...")
+
+    def test_truncate_text_non_string(self):
+        """_truncate_text converts non-string to str then truncates."""
+        generator = PDFReportGenerator(self.report_data)
+        # str(12345) = "12345"; when max_length=4, returns text[:1] + "..." = "1..."
+        self.assertEqual(generator._truncate_text(12345, max_length=4), "1...")
+
+    def test_wrap_text_empty(self):
+        """_wrap_text returns empty string for empty/None."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._wrap_text(""), "")
+        self.assertEqual(generator._wrap_text(None), "")
+
+    def test_wrap_text_short_unchanged(self):
+        """_wrap_text leaves short text as single line."""
+        generator = PDFReportGenerator(self.report_data)
+        self.assertEqual(generator._wrap_text("Short", max_chars_per_line=15), "Short")
+
+    def test_wrap_text_wraps_long_line(self):
+        """_wrap_text wraps at word boundaries."""
+        generator = PDFReportGenerator(self.report_data)
+        text = "One Two Three Four Five"
+        result = generator._wrap_text(text, max_chars_per_line=10)
+        self.assertIn("\n", result)
+        lines = result.split("\n")
+        for line in lines:
+            self.assertLessEqual(len(line), 10)
+
+    def test_wrap_text_long_single_word_truncated(self):
+        """_wrap_text truncates a single word longer than max_chars_per_line."""
+        generator = PDFReportGenerator(self.report_data)
+        result = generator._wrap_text("VeryLongWordWithoutSpaces", max_chars_per_line=8)
+        self.assertEqual(result, "VeryL...")
+
+    def test_generate_daily_slaughter_pdf_returns_path(self):
+        """generate_daily_slaughter_pdf returns a file path."""
+        generator = PDFReportGenerator(self.report_data)
+        path = generator.generate_daily_slaughter_pdf()
+        self.assertIsInstance(path, str)
+        self.assertTrue(path.endswith(".pdf"))
+
+    def test_generate_daily_slaughter_pdf_file_exists(self):
+        """generate_daily_slaughter_pdf creates a file that exists."""
+        import os
+
+        generator = PDFReportGenerator(self.report_data)
+        path = generator.generate_daily_slaughter_pdf()
+        self.assertTrue(os.path.isfile(path))
+
+    def test_generate_daily_slaughter_pdf_valid_pdf(self):
+        """generate_daily_slaughter_pdf produces valid PDF (magic bytes)."""
+        generator = PDFReportGenerator(self.report_data)
+        path = generator.generate_daily_slaughter_pdf()
+        with open(path, "rb") as f:
+            header = f.read(5)
+        self.assertEqual(header, b"%PDF-")
+
+    def test_generate_daily_slaughter_pdf_empty_daily_data(self):
+        """generate_daily_slaughter_pdf works with empty daily_data."""
+        data = {"start_date": "01.01.2024", "end_date": "01.01.2024", "daily_data": [], "summary": {}}
+        generator = PDFReportGenerator(data)
+        path = generator.generate_daily_slaughter_pdf()
+        self.assertIsInstance(path, str)
+        self.assertTrue(path.endswith(".pdf"))
 
 
 class ManagementCommandTest(TestCase):

@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_fsm",
+    "tailwind",
+    "theme",
     "widget_tweaks",
     # Local Apps
     "users",
@@ -144,6 +146,7 @@ STORAGES = {
 # Other settings
 # -------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+TAILWIND_APP_NAME = "theme"
 AUTH_USER_MODEL = "users.User"
 
 # Site URL for QR codes and external links

@@ -26,8 +26,8 @@ from users.models import ClientProfile
 
 User = get_user_model()
 
-# Skip view tests that require template rendering
-SKIP_VIEW_TESTS = True
+# View tests enabled (set to True to skip when templates not available in test environment)
+SKIP_VIEW_TESTS = False
 SKIP_REASON = "View tests skipped - templates not available in test environment"
 
 
