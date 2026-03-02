@@ -23,7 +23,7 @@ jobs:
       - name: Run Ruff Linter
         uses: astral-sh/ruff-action@v3
         with:
-          args: "check . --fix --output-format=github"
+          args: "check . --output-format=github"
 
       - name: Run Ruff Formatter Check
         uses: astral-sh/ruff-action@v3
