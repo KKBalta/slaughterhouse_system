@@ -37,14 +37,17 @@ def generate_order_number(order_datetime=None) -> str:
         order_date = timezone.now().date()
         date_str = order_date.strftime("%Y%m%d")
 
-    # Use select_for_update() to lock the last order for this date
-    # This prevents race conditions in high-concurrency scenarios
-    last_order = (
-        SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
-        .select_for_update()
-        .order_by("-slaughter_order_no")
-        .first()
-    )
+    # select_for_update() requires an open transaction (e.g. when save() is called
+    # from TransactionTestCase or pytest django_db(transaction=True)).
+    with transaction.atomic():
+        # Use select_for_update() to lock the last order for this date
+        # This prevents race conditions in high-concurrency scenarios
+        last_order = (
+            SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
+            .select_for_update()
+            .order_by("-slaughter_order_no")
+            .first()
+        )
 
     if last_order:
         # Extract the number from the last order

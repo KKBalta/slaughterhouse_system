@@ -3,7 +3,7 @@ import unittest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
 from core.models import ServicePackage
@@ -399,66 +399,6 @@ class ReceptionServiceTest(TestCase):
         self.assertIn("MAX-001", tags)
         self.assertIn("MAX-100", tags)
 
-    @unittest.skipIf(
-        "sqlite" in str(settings.DATABASES.get("default", {}).get("ENGINE", "")).lower(),
-        "Concurrent tests not supported with SQLite (table locking)",
-    )
-    def test_concurrent_order_creation_race_condition(self):
-        """
-        Test that concurrent order creation generates unique order numbers.
-        This test verifies that the race condition fix works correctly.
-
-        Note: This test requires PostgreSQL - SQLite has table-level locking
-        that prevents concurrent access.
-        """
-        from concurrent.futures import ThreadPoolExecutor
-
-        order_datetime = timezone.now()
-        orders = []
-        errors = []
-
-        def create_order():
-            try:
-                order = create_slaughter_order(
-                    client_id=None,
-                    service_package_id=str(self.service_package.id),
-                    order_datetime=order_datetime,
-                    animals_data=[],
-                    client_name="Test Client",
-                    client_phone="1234567890",
-                )
-                orders.append(order.slaughter_order_no)
-            except Exception as e:
-                errors.append(str(e))
-
-        # Create 20 orders concurrently
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [executor.submit(create_order) for _ in range(20)]
-            [f.result() for f in futures]
-
-        # Verify all order numbers are unique
-        self.assertEqual(
-            len(set(orders)),
-            len(orders),
-            f"All order numbers should be unique. Got duplicates: {[x for x in orders if orders.count(x) > 1]}",
-        )
-
-        # Verify format: ORD-YYYYMMDD-NNNN
-        for order_no in orders:
-            self.assertTrue(order_no.startswith("ORD-"), f"Order number should start with 'ORD-': {order_no}")
-            parts = order_no.split("-")
-            self.assertEqual(len(parts), 3, f"Order number should have 3 parts: {order_no}")
-            self.assertEqual(len(parts[1]), 8, f"Date part should be 8 digits: {order_no}")
-            self.assertEqual(len(parts[2]), 4, f"Sequence part should be 4 digits: {order_no}")
-
-        # Verify sequential numbering
-        numbers = [int(order_no.split("-")[-1]) for order_no in sorted(orders)]
-        expected_numbers = list(range(1, len(orders) + 1))
-        self.assertEqual(numbers, expected_numbers, f"Order numbers should be sequential: {numbers}")
-
-        # Verify no errors occurred
-        self.assertEqual(len(errors), 0, f"No errors should occur during concurrent creation: {errors}")
-
     def test_generate_order_number_function(self):
         """Test the generate_order_number function directly"""
         from django.db import transaction
@@ -496,3 +436,73 @@ class ReceptionServiceTest(TestCase):
         date_part_1 = order_no_1.split("-")[1]
         date_part_2 = order_no_2.split("-")[1]
         self.assertEqual(date_part_1, date_part_2, "Both order numbers should have the same date prefix")
+
+
+class ReceptionConcurrentOrderTest(TransactionTestCase):
+    """
+    Concurrent order creation test. Uses TransactionTestCase so that setUp
+    commits data and worker threads can see ServicePackage.
+    """
+
+    @unittest.skipIf(
+        "sqlite" in str(settings.DATABASES.get("default", {}).get("ENGINE", "")).lower(),
+        "Concurrent tests not supported with SQLite (table locking)",
+    )
+    def test_concurrent_order_creation_race_condition(self):
+        """
+        Test that concurrent order creation generates unique order numbers.
+        This test verifies that the race condition fix works correctly.
+
+        Note: This test requires PostgreSQL - SQLite has table-level locking
+        that prevents concurrent access.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
+        service_package = ServicePackage.objects.create(
+            name="Full Service Concurrent", includes_disassembly=True, includes_delivery=True
+        )
+        order_datetime = timezone.now()
+        orders = []
+        errors = []
+
+        def create_order():
+            try:
+                order = create_slaughter_order(
+                    client_id=None,
+                    service_package_id=str(service_package.id),
+                    order_datetime=order_datetime,
+                    animals_data=[],
+                    client_name="Test Client",
+                    client_phone="1234567890",
+                )
+                orders.append(order.slaughter_order_no)
+            except Exception as e:
+                errors.append(str(e))
+
+        # Create 20 orders concurrently
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(create_order) for _ in range(20)]
+            [f.result() for f in futures]
+
+        # Verify all order numbers are unique
+        self.assertEqual(
+            len(set(orders)),
+            len(orders),
+            f"All order numbers should be unique. Got duplicates: {[x for x in orders if orders.count(x) > 1]}",
+        )
+
+        # Verify format: ORD-YYYYMMDD-NNNN
+        for order_no in orders:
+            self.assertTrue(order_no.startswith("ORD-"), f"Order number should start with 'ORD-': {order_no}")
+            parts = order_no.split("-")
+            self.assertEqual(len(parts), 3, f"Order number should have 3 parts: {order_no}")
+            self.assertEqual(len(parts[1]), 8, f"Date part should be 8 digits: {order_no}")
+            self.assertEqual(len(parts[2]), 4, f"Sequence part should be 4 digits: {order_no}")
+
+        # Verify sequential numbering
+        numbers = [int(order_no.split("-")[-1]) for order_no in sorted(orders)]
+        expected_numbers = list(range(1, len(orders) + 1))
+        self.assertEqual(numbers, expected_numbers, f"Order numbers should be sequential: {numbers}")
+
+        # Verify no errors occurred
+        self.assertEqual(len(errors), 0, f"No errors should occur during concurrent creation: {errors}")
