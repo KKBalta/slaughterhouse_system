@@ -108,7 +108,7 @@ def create_slaughter_order(
     # Retry loop to handle race conditions when creating orders
     # This is necessary because select_for_update() cannot lock rows that don't exist yet
     last_exception = None
-    for attempt in range(MAX_ORDER_CREATION_RETRIES):
+    for _attempt in range(MAX_ORDER_CREATION_RETRIES):
         try:
             with transaction.atomic():
                 # Generate order number within the transaction

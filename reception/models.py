@@ -71,7 +71,7 @@ class SlaughterOrder(BaseModel):
             from .services import MAX_ORDER_CREATION_RETRIES, generate_order_number
 
             last_exception = None
-            for attempt in range(MAX_ORDER_CREATION_RETRIES):
+            for _attempt in range(MAX_ORDER_CREATION_RETRIES):
                 try:
                     with transaction.atomic():
                         self.slaughter_order_no = generate_order_number(self.order_datetime)
@@ -86,8 +86,7 @@ class SlaughterOrder(BaseModel):
 
             # Exhausted retries
             raise IntegrityError(
-                f"Failed to save order after {MAX_ORDER_CREATION_RETRIES} attempts. "
-                f"Last error: {last_exception}"
+                f"Failed to save order after {MAX_ORDER_CREATION_RETRIES} attempts. Last error: {last_exception}"
             )
         else:
             super().save(*args, **kwargs)
