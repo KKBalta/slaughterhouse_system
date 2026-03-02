@@ -30,16 +30,22 @@ def parse_animal_uuid_from_qr_url(url_or_uuid: str):
         uuid.UUID if a valid UUID is found, None otherwise.
     """
     if not url_or_uuid or not isinstance(url_or_uuid, str):
+        logger.debug("[QR] parse_animal_uuid_from_qr_url: invalid input type=%s", type(url_or_uuid).__name__)
         return None
     text = url_or_uuid.strip()
     if not text:
+        logger.debug("[QR] parse_animal_uuid_from_qr_url: empty after strip")
         return None
     match = UUID_PATTERN.search(text)
     if not match:
+        logger.debug("[QR] parse_animal_uuid_from_qr_url: no UUID match in text (len=%d, preview=%r)", len(text), text[:80])
         return None
     try:
-        return uuid.UUID(match.group(0))
-    except (ValueError, TypeError):
+        result = uuid.UUID(match.group(0))
+        logger.debug("[QR] parse_animal_uuid_from_qr_url: parsed uuid=%s from text (len=%d)", result, len(text))
+        return result
+    except (ValueError, TypeError) as e:
+        logger.warning("[QR] parse_animal_uuid_from_qr_url: UUID validation failed match=%r error=%s", match.group(0), e)
         return None
 
 

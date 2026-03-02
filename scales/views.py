@@ -1,6 +1,9 @@
 """Template-based views for scale session management and PLU/orphaned batch management."""
+import logging
 from datetime import timedelta
 from urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -353,11 +356,29 @@ class SessionCreateView(LoginRequiredMixin, View):
 
     def get(self, request):
         sites, site_id = self._get_sites_and_selected_site_id(request)
-        initial_animals = self._build_initial_animals(request.GET.getlist("animal_id"))
+        requested_animal_ids = request.GET.getlist("animal_id")
+        initial_animals = self._build_initial_animals(requested_animal_ids)
+
+        # Validation: animal_id from QR scan but not eligible for disassembly
+        included_ids = {a["id"] for a in initial_animals}
+        for aid in requested_animal_ids:
+            if aid not in included_ids:
+                try:
+                    animal = Animal.objects.get(pk=aid)
+                    messages.error(
+                        request,
+                        _("Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight.") % {"tag": animal.identification_tag or str(aid)[:8]},
+                    )
+                except Animal.DoesNotExist:
+                    messages.error(
+                        request,
+                        _("Animal not found. The scanned QR code may be invalid."),
+                    )
 
         # Support pasted QR URL: parse to animal UUID and redirect with current + new animal_id
         qr_url = request.GET.get("qr_url")
         if qr_url:
+            logger.info("[QR] qr_url param received (len=%d, preview=%r)", len(qr_url), qr_url[:100])
             parsed_uuid = parse_animal_uuid_from_qr_url(qr_url)
             if parsed_uuid:
                 try:
@@ -370,14 +391,24 @@ class SessionCreateView(LoginRequiredMixin, View):
                     qparams = [("site_id", site_id)]
                     for aid in existing_ids:
                         qparams.append(("animal_id", aid))
+                    logger.info("[QR] qr_url redirect with animal_id uuid=%s", parsed_uuid)
                     return redirect(f"{request.path}?{urlencode(qparams)}")
                 except Animal.DoesNotExist:
-                    messages.warning(
-                        request,
-                        _("Animal not found or not eligible for scale session."),
-                    )
+                    logger.warning("[QR] animal not found or not eligible uuid=%s", parsed_uuid)
+                    try:
+                        animal = Animal.objects.get(pk=parsed_uuid)
+                        messages.error(
+                            request,
+                            _("Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight.") % {"tag": animal.identification_tag or str(parsed_uuid)[:8]},
+                        )
+                    except Animal.DoesNotExist:
+                        messages.error(
+                            request,
+                            _("Animal not found or not eligible for scale session."),
+                        )
             else:
-                messages.warning(
+                logger.warning("[QR] qr_url parse failed, no UUID extracted (qr_url len=%d)", len(qr_url))
+                messages.error(
                     request,
                     _("Could not find animal from this QR code."),
                 )

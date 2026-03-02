@@ -87,9 +87,18 @@
 (function() {
     var UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
     function parseAnimalUuidFromText(text) {
-        if (!text || typeof text !== 'string') return null;
-        var match = text.trim().match(UUID_REGEX);
-        return match ? match[0] : null;
+        if (!text || typeof text !== 'string') {
+            console.warn('[QR] parseAnimalUuidFromText: invalid input', { type: typeof text, value: text });
+            return null;
+        }
+        var trimmed = text.trim();
+        var match = trimmed.match(UUID_REGEX);
+        if (match) {
+            console.log('[QR] parseAnimalUuidFromText: parsed UUID', { raw: trimmed.substring(0, 80), uuid: match[0] });
+            return match[0];
+        }
+        console.warn('[QR] parseAnimalUuidFromText: no UUID found in text', { raw: trimmed.substring(0, 120), length: trimmed.length });
+        return null;
     }
 
     var section = document.getElementById('qr-animal-section');
@@ -119,6 +128,7 @@
     }
 
     function onScanSuccess(decodedText) {
+        console.log('[QR] onScanSuccess: raw decoded text', { length: (decodedText || '').length, preview: (decodedText || '').substring(0, 100) });
         if (scanHandled) return;
         var uuid = parseAnimalUuidFromText(decodedText);
         if (uuid) {
@@ -131,14 +141,17 @@
             params.set('site_id', siteId);
             var existing = params.getAll('animal_id');
             if (existing.indexOf(uuid) === -1) params.append('animal_id', uuid);
+            console.log('[QR] redirecting with animal_id', { uuid: uuid, url: currentPath + '?' + params.toString() });
             window.location.href = currentPath + '?' + params.toString();
         } else {
+            console.warn('[QR] scan failed: no UUID parsed from decoded text', { decodedText: (decodedText || '').substring(0, 150) });
             statusEl.textContent = '{% trans "No animal ID in this QR code. Try scanning the animal label." %}';
             statusEl.classList.remove('hidden');
         }
     }
 
     document.getElementById('btn-scan-qr').addEventListener('click', function() {
+        console.log('[QR] scan button clicked');
         scanHandled = false;
         modal.classList.remove('hidden');
         statusEl.classList.add('hidden');
@@ -146,6 +159,7 @@
         readerEl.innerHTML = '';
 
         if (typeof Html5Qrcode === 'undefined') {
+            console.error('[QR] Html5Qrcode library not loaded');
             statusEl.textContent = '{% trans "Scanner could not load. Please refresh the page." %}';
             statusEl.classList.remove('hidden');
             return;
@@ -159,8 +173,10 @@
                 var back = cameras.find(function(c) { return /back|rear|environment/i.test(c.label || ''); });
                 cameraId = (back || cameras[0]).id;
             }
+            console.log('[QR] starting scanner', { cameraId: cameraId, camerasCount: cameras ? cameras.length : 0 });
             return scanner.start(cameraId, config, onScanSuccess, function() {});
-        }).catch(function() {
+        }).catch(function(err) {
+            console.error('[QR] camera/scanner error', err);
             statusEl.textContent = '{% trans "Camera access denied or not available." %}';
             statusEl.classList.remove('hidden');
         });
@@ -322,11 +338,14 @@
         var raw = animalsSectionEl.getAttribute('data-initial-animals') || '[]';
         try {
             var initialAnimals = JSON.parse(raw);
+            console.log('[QR] initial animals parsed', { count: initialAnimals.length, rawPreview: raw.substring(0, 100) });
             initialAnimals.forEach(function(a) {
                 if (a && a.id) selected[a.id] = a;
             });
             renderChips();
-        } catch (e) {}
+        } catch (e) {
+            console.error('[QR] failed to parse data-initial-animals JSON', { raw: raw, error: e.message });
+        }
     })();
 })();
 </script>
