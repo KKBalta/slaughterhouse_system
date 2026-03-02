@@ -3,6 +3,13 @@ Pytest configuration and fixtures for the slaughterhouse system.
 
 This file provides shared fixtures and configuration for all test modules.
 Updated to use factory-boy DjangoModelFactory pattern per official docs.
+
+Factory duplication: This module provides both (1) factory-boy DjangoModelFactory
+classes (UserFactory, SlaughterOrderFactory, etc.) and (2) legacy pytest fixtures
+(user_factory, slaughter_order_factory, etc.) that create instances via ORM.
+The legacy fixtures are kept for backward compatibility with existing tests;
+new tests should prefer the DjangoModelFactory classes via the *_factory_fixture
+fixtures or by importing the factory classes directly.
 """
 
 import os
@@ -166,7 +173,8 @@ def weight_log_factory_fixture(db):
 
 # ============================================================================
 # Legacy Factory Fixtures (backward compatibility)
-# These match the original API for existing tests
+# These match the original API for existing tests. See module docstring for
+# factory duplication note (DjangoModelFactory vs legacy create_* functions).
 # ============================================================================
 
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import threading
 from datetime import timedelta
@@ -16,6 +17,8 @@ from users.views import manager_or_admin_required
 
 from .models import GeneratedReport
 from .services import ExcelReportGenerator, PDFReportGenerator, ReportDataAggregator
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -46,14 +49,15 @@ def generate_report(request):
             aggregator = ReportDataAggregator(start_date_obj, end_date_obj)
             report_data = aggregator.get_all_data()
 
-            # Debug: Print report data to console
-            print(f"DEBUG: Report data for {start_date} to {end_date}:")
-            print(f"Daily data count: {len(report_data.get('daily_data', []))}")
-            print(f"Summary data: {report_data.get('summary', {})}")
-
-            # If no data found, still generate the report but it will be empty
+            logger.debug(
+                "Report data for %s to %s: daily_data count=%s, summary=%s",
+                start_date,
+                end_date,
+                len(report_data.get("daily_data", [])),
+                report_data.get("summary", {}),
+            )
             if not report_data.get("daily_data"):
-                print("DEBUG: No data found for the selected date range - generating empty report")
+                logger.debug("No data found for the selected date range - generating empty report")
 
             if output_format == "excel":
                 # Generate Excel report
@@ -81,11 +85,8 @@ def generate_report(request):
                         os.unlink(tmp_file.name)
                         return response
                 except Exception as excel_error:
-                    print(f"Excel Generation Error: {excel_error}")
-                    import traceback
-
-                    traceback.print_exc()
-                    return HttpResponse(f"Excel generation failed: {str(excel_error)}", status=500)
+                    logger.exception("Excel generation failed")
+                    return HttpResponse("An error occurred processing your request.", status=500)
             elif output_format == "pdf":
                 # Generate PDF report
                 try:
@@ -103,16 +104,14 @@ def generate_report(request):
                     os.unlink(pdf_path)
                     return response
                 except Exception as pdf_error:
-                    print(f"PDF Generation Error: {pdf_error}")
-                    import traceback
-
-                    traceback.print_exc()
-                    return HttpResponse(f"PDF generation failed: {str(pdf_error)}", status=500)
+                    logger.exception("PDF generation failed")
+                    return HttpResponse("An error occurred processing your request.", status=500)
             else:
                 return HttpResponse("Invalid output format. Please select Excel or PDF.", status=400)
 
-        except Exception as e:
-            return HttpResponse(f"Error generating report: {str(e)}", status=500)
+        except Exception:
+            logger.exception("Error generating report")
+            return HttpResponse("An error occurred processing your request.", status=500)
 
     return HttpResponse("Method not allowed", status=405)
 
@@ -138,8 +137,7 @@ def generate_daily_reports_api(request):
                     system_user=system_user,
                 )
             except CommandError as e:
-                # Log error for monitoring
-                print(f"Daily report generation failed: {e}")
+                logger.exception("Daily report generation failed: %s", e)
 
         # Start background thread
         thread = threading.Thread(target=run_command)
@@ -150,8 +148,9 @@ def generate_daily_reports_api(request):
             {"status": "success", "message": "Daily report generation started", "report_types": report_types}
         )
 
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    except Exception:
+        logger.exception("Daily reports API request failed")
+        return JsonResponse({"status": "error", "message": "An error occurred processing your request."}, status=500)
 
 
 @login_required
@@ -188,8 +187,11 @@ def test_report_generation(request):
                 os.unlink(tmp_file.name)
                 return response
 
-        except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        except Exception:
+            logger.exception("Test report generation failed")
+            return JsonResponse(
+                {"status": "error", "message": "An error occurred processing your request."}, status=500
+            )
 
     return render(request, "reporting/test_report.html")
 

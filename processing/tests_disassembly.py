@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import FieldError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -107,9 +108,11 @@ class DisassemblyTest(TestCase):
             # Check if PRN content contains cut info
             self.assertIn("RIBEYE", label.prn_content)
             self.assertIn("3.5", label.prn_content)
-        except Exception as e:
+        except (AttributeError, FieldError) as e:
             # Skip if AnimalLabel schema has changed
             self.skipTest(f"Label creation skipped due to schema change: {e}")
+        except Exception:
+            raise
 
     def test_disassembly_cut_form_choices(self):
         """Test that DisassemblyCutForm provides PLU catalog choices."""

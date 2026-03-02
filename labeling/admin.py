@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
@@ -128,7 +128,7 @@ class AnimalLabelAdmin(admin.ModelAdmin):
                 updated_count += 1
 
             except Exception as e:
-                self.message_user(request, f"Error regenerating PDF for {animal_label}: {str(e)}", level="ERROR")
+                self.message_user(request, f"Error regenerating PDF for {animal_label}: {str(e)}", level=messages.ERROR)
 
         self.message_user(request, f"Successfully regenerated {updated_count} PDF files.")
 
@@ -148,7 +148,7 @@ class AnimalLabelAdmin(admin.ModelAdmin):
                     animal_label.save()
                     deleted_count += 1
                 except Exception as e:
-                    self.message_user(request, f"Error deleting PDF for {animal_label}: {str(e)}", level="ERROR")
+                    self.message_user(request, f"Error deleting PDF for {animal_label}: {str(e)}", level=messages.ERROR)
 
         self.message_user(request, f"Successfully deleted {deleted_count} PDF files.")
 

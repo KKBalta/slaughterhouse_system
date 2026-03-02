@@ -202,11 +202,9 @@ class TestGenerateAnimalLabelData:
         assert "qr_url" in data
         assert "qr_data" in data
 
-    def test_no_slaughter_date_uses_bilinmiyor(self, db):
-        from conftest import AnimalFactory, SlaughterOrderFactory
-
-        order = SlaughterOrderFactory.create()
-        animal = AnimalFactory.create(slaughter_order=order, slaughter_date=None)
+    def test_no_slaughter_date_uses_bilinmiyor(self, db, animal_factory_fixture, slaughter_order_factory_fixture):
+        order = slaughter_order_factory_fixture.create()
+        animal = animal_factory_fixture.create(slaughter_order=order, slaughter_date=None)
         data = generate_animal_label_data(animal)
         assert data["kesim_tarihi"] == "Bilinmiyor"
         assert data["stt"] == "Bilinmiyor"
@@ -226,14 +224,13 @@ class TestGenerateAnimalLabelData:
 
 @pytest.mark.django_db
 class TestGenerateCutLabelData:
-    def test_returns_expected_keys(self, db):
+    def test_returns_expected_keys(self, db, animal_factory_fixture, slaughter_order_factory_fixture):
         from decimal import Decimal
 
-        from conftest import AnimalFactory, SlaughterOrderFactory
         from processing.models import DisassemblyCut
 
-        order = SlaughterOrderFactory.create()
-        animal = AnimalFactory.create(slaughter_order=order, animal_type="cattle")
+        order = slaughter_order_factory_fixture.create()
+        animal = animal_factory_fixture.create(slaughter_order=order, animal_type="cattle")
         animal.perform_slaughter()
         animal.save()
         cut = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("5.50"))
@@ -267,14 +264,13 @@ class TestGenerateTsplPrnLabel:
 
 @pytest.mark.django_db
 class TestGenerateCutPrnLabel:
-    def test_returns_string_with_tspl_commands(self, db):
+    def test_returns_string_with_tspl_commands(self, db, animal_factory_fixture, slaughter_order_factory_fixture):
         from decimal import Decimal
 
-        from conftest import AnimalFactory, SlaughterOrderFactory
         from processing.models import DisassemblyCut
 
-        order = SlaughterOrderFactory.create()
-        animal = AnimalFactory.create(slaughter_order=order, animal_type="cattle")
+        order = slaughter_order_factory_fixture.create()
+        animal = animal_factory_fixture.create(slaughter_order=order, animal_type="cattle")
         animal.perform_slaughter()
         animal.save()
         cut = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("3.0"))

@@ -635,13 +635,13 @@ class TestWeightLogValidation:
         """Test that negative weights are rejected or handled."""
         animal = animal_factory()
 
-        # Try logging negative weight - may raise exception or be handled
+        # Negative weights should be rejected with ValidationError or ValueError
         try:
             result = log_individual_weight(animal=animal, weight_type="live_weight", weight=-100.0)
-            # If no exception, the service may handle it differently
-            # Just verify the function was called and returned something
+            # If no exception, service accepted the weight; assert it returned a WeightLog
             assert result is not None
-        except (ValidationError, ValueError, Exception):
+            assert result.weight_type == "live_weight"
+        except (ValidationError, ValueError):
             # Expected - negative weights should be rejected
             pass
 

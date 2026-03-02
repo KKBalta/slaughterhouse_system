@@ -53,7 +53,10 @@ class InventoryMovementTest(TestCase):
         """Set up test data."""
         self.user = User.objects.create_user(username="inv_move_user", password="testpass123", role=User.Role.CLIENT)
         self.profile = ClientProfile.objects.create(
-            user=self.user, account_type="INDIVIDUAL", phone_number="1234567890", address="Test Address"
+            user=self.user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="1234567890",
+            address="Test Address",
         )
         self.service = ServicePackage.objects.create(name="Move Test Package", includes_disassembly=True)
         self.order = SlaughterOrder.objects.create(
@@ -116,7 +119,10 @@ class DispositionUpdateTest(TestCase):
         """Set up test data."""
         self.user = User.objects.create_user(username="disp_test_user", password="testpass123", role=User.Role.CLIENT)
         self.profile = ClientProfile.objects.create(
-            user=self.user, account_type="INDIVIDUAL", phone_number="1234567890", address="Test Address"
+            user=self.user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="1234567890",
+            address="Test Address",
         )
         self.service = ServicePackage.objects.create(name="Disposition Test Package", includes_disassembly=True)
         self.order = SlaughterOrder.objects.create(

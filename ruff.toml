@@ -56,7 +56,6 @@ ignore = [
     "B008",   # Do not perform function calls in argument defaults
     "B904",   # Within an except clause, raise exceptions with raise ... from err
     "B017",   # Do not assert blind exception (common in tests)
-    "DJ001", # Avoid null=True on CharField (legacy Django models)
 ]
 
 # Allow fix for all enabled rules (when `--fix` is provided)
@@ -69,6 +68,12 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [lint.per-file-ignores]
 # Ignore specific rules in specific files
 "*/migrations/*" = ["E501", "F401"]
+# Legacy models with null=True on CharField (DJ001)
+"users/models.py" = ["DJ001"]
+"scales/models.py" = ["DJ001"]
+"processing/models.py" = ["DJ001"]
+"reception/models.py" = ["DJ001"]
+"reporting/models.py" = ["DJ001"]
 "conftest.py" = ["E501", "F401", "F811"]
 "*/tests*.py" = ["S101", "F841", "B017"]  # Allow assert, unused vars in tests
 "*/tests.py" = ["S101", "F841", "B017"]

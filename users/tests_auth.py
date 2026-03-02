@@ -8,6 +8,7 @@ Tests cover:
 - Session security
 """
 
+import os
 import unittest
 
 import pytest
@@ -17,8 +18,9 @@ from django.urls import reverse
 
 from users.models import ClientProfile
 
-# View tests enabled (set to True to skip when templates not available in test environment)
-SKIP_VIEW_TESTS = False
+# View tests: skip when SKIP_VIEW_TESTS env is set (e.g. in CI when templates missing).
+# Set SKIP_VIEW_TESTS=true to skip; run locally with templates to exercise view tests.
+SKIP_VIEW_TESTS = os.environ.get("SKIP_VIEW_TESTS", "false").lower() == "true"
 SKIP_REASON = "View tests skipped - templates not available in test environment"
 
 
@@ -67,7 +69,7 @@ class LoginTest(AuthenticationTestMixin, TestCase):
         """Test that login page loads correctly."""
         # Note: users app doesn't have namespace, so use 'login' directly
         response = self.test_client.get(reverse("login"))
-        # Accept 200 or 302 (redirect) - template may not be available in test env
+        # 200 = page rendered; 302 = redirect (e.g. i18n or missing template)
         self.assertIn(response.status_code, [200, 302])
 
     def test_valid_login(self):

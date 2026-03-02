@@ -291,11 +291,9 @@ class ProcessingModelTest(TestCase):
         self.assertFalse(form.is_valid())
         # Check error message contains relevant info - exact format may vary
         errors_str = str(form.errors)
-        self.assertTrue(
-            "Cannot log weight for 10 animals" in errors_str
-            or "10 animals" in errors_str
-            or "available" in errors_str.lower(),
-            f"Expected error about too many animals but got: {errors_str}",
+        self.assertIn("animals", errors_str.lower(), msg=f"Expected error about animals but got: {errors_str}")
+        self.assertIn(
+            "available", errors_str.lower(), msg=f"Expected error about available count but got: {errors_str}"
         )
 
     @override_settings(LANGUAGE_CODE="en")

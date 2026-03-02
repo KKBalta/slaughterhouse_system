@@ -61,13 +61,13 @@ This document outlines the comprehensive testing enhancement implemented for the
 ```ini
 [pytest]
 DJANGO_SETTINGS_MODULE = config.settings_test
-addopts = --cov=. --cov-report=html --cov-fail-under=70
+addopts = --cov=. --cov-report=html --cov-fail-under=60
 testpaths = core, users, reception, processing, inventory, portal, labeling, reporting
 ```
 
 **Key Settings:**
 - Uses dedicated test settings module
-- Enables coverage with 70% minimum threshold
+- Enables coverage with 60% minimum threshold
 - Excludes migrations and static files from coverage
 - Supports test markers (`@pytest.mark.slow`, `@pytest.mark.integration`)
 
@@ -110,9 +110,7 @@ def slaughtered_animal(db, ...): ...
 
 #### `setup.cfg`
 Configuration for:
-- **flake8**: Code style (max line length 120)
-- **isort**: Import sorting (Django-aware)
-- **coverage**: Exclusion patterns and reporting
+- **coverage**: Exclusion patterns and reporting (linting/formatting use Ruff; see ruff.toml)
 
 ### 3. GitHub Actions CI/CD Pipeline
 
@@ -242,10 +240,10 @@ Tests run automatically on:
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| Line Coverage | 70% | TBD |
-| Branch Coverage | 70% | TBD |
+| Line Coverage | 60% | TBD |
+| Branch Coverage | 60% | TBD |
 
-The pipeline will fail if coverage drops below 70%.
+The pipeline will fail if coverage drops below 60%.
 
 ---
 

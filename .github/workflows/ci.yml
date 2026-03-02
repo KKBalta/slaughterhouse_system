@@ -59,6 +59,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: theme/static_src/package-lock.json
+
       - name: Build Tailwind CSS
         run: |
           cd theme/static_src && npm ci && npm run build
@@ -138,6 +145,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: theme/static_src/package-lock.json
+
       - name: Build Tailwind CSS
         run: |
           cd theme/static_src && npm ci && npm run build
@@ -177,6 +191,7 @@ jobs:
 
   # ============================================================================
   # Security Scanning
+  # Fail on critical findings; set continue-on-error for known/acceptable issues.
   # ============================================================================
   security:
     name: Security Scan

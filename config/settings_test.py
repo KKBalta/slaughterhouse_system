@@ -171,7 +171,8 @@ LOGOUT_REDIRECT_URL = "/logged-out/"
 # Test-specific optimizations
 # -------------------------
 
-# Disable password hashing for faster tests
+# MD5 hasher is for test speed only; never use in production.
+# Django's default (PBKDF2) is used in production (config/settings.py).
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]

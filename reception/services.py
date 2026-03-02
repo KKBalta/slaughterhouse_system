@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime
 
@@ -11,8 +12,16 @@ from users.models import ClientProfile
 
 from .models import ServicePackage, SlaughterOrder
 
+logger = logging.getLogger(__name__)
+
 # Maximum retry attempts for order creation under race conditions
 MAX_ORDER_CREATION_RETRIES = 10
+
+
+def _is_slaughter_order_no_unique_violation(exc: IntegrityError) -> bool:
+    """Return True if the IntegrityError is due to slaughter_order_no unique constraint."""
+    msg = str(exc).lower()
+    return "slaughter_order_no" in msg or ("unique" in msg and "order" in msg)
 
 
 def generate_order_number(order_datetime=None) -> str:
@@ -49,10 +58,9 @@ def generate_order_number(order_datetime=None) -> str:
     if order_datetime:
         # Handle both datetime (has .date()) and date (use as-is)
         order_date = order_datetime.date() if hasattr(order_datetime, "date") else order_datetime
-        date_str = order_date.strftime("%Y%m%d")
     else:
         order_date = timezone.now().date()
-        date_str = order_date.strftime("%Y%m%d")
+    date_str = order_date.strftime("%Y%m%d")
 
     # Use select_for_update() to lock all orders for this date.
     # This prevents race conditions when multiple threads try to generate
@@ -141,16 +149,20 @@ def create_slaughter_order(
                 return order
 
         except IntegrityError as e:
-            # Duplicate key error - another thread created an order with this number
-            # Retry with a fresh transaction and new order number
+            # Only retry on slaughter_order_no unique constraint violation (first-order-of-day race).
+            # Re-raise other IntegrityErrors (FK, null, other constraints) so they are not masked.
+            if not _is_slaughter_order_no_unique_violation(e):
+                raise
             last_exception = e
             continue
 
-    # If we exhausted all retries, raise the last exception
-    raise ValidationError(
-        f"Failed to create order after {MAX_ORDER_CREATION_RETRIES} attempts due to high concurrency. "
-        f"Last error: {last_exception}"
+    # Exhausted retries; log full exception server-side, raise user-safe message
+    logger.error(
+        "Order creation failed after %d attempts (concurrency race on slaughter_order_no)",
+        MAX_ORDER_CREATION_RETRIES,
+        exc_info=(type(last_exception), last_exception, last_exception.__traceback__),
     )
+    raise ValidationError("Failed to create order after multiple attempts due to high concurrency. Please try again.")
 
 
 @transaction.atomic

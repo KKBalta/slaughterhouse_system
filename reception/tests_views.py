@@ -7,10 +7,11 @@ Tests cover:
 - Client selection
 - Animal addition to orders
 
-Note: View tests that require template rendering are skipped in CI environments
-without the full template setup.
+Note: View tests that require template rendering are skipped when
+SKIP_VIEW_TESTS=true (e.g. in CI without full template setup).
 """
 
+import os
 import unittest
 
 import pytest
@@ -26,8 +27,8 @@ from users.models import ClientProfile
 
 User = get_user_model()
 
-# View tests enabled (set to True to skip when templates not available in test environment)
-SKIP_VIEW_TESTS = False
+# Skip view tests when templates are not available (e.g. CI); set SKIP_VIEW_TESTS=true to skip
+SKIP_VIEW_TESTS = os.environ.get("SKIP_VIEW_TESTS", "false").lower() == "true"
 SKIP_REASON = "View tests skipped - templates not available in test environment"
 
 
@@ -254,6 +255,7 @@ class OrderCancellationViewTest(ReceptionViewTestMixin, TestCase):
     def test_cancel_pending_order(self):
         """Test cancelling a pending order."""
         response = self.test_client.post(reverse("reception:slaughter_order_cancel", kwargs={"pk": self.order.pk}))
+        self.assertIn(response.status_code, [200, 302], "Cancel view should return 200 or redirect 302")
 
         self.order.refresh_from_db()
         if response.status_code == 302:
@@ -262,6 +264,7 @@ class OrderCancellationViewTest(ReceptionViewTestMixin, TestCase):
     def test_cancel_disposes_animals(self):
         """Test that cancelling order disposes animals."""
         response = self.test_client.post(reverse("reception:slaughter_order_cancel", kwargs={"pk": self.order.pk}))
+        self.assertIn(response.status_code, [200, 302], "Cancel view should return 200 or redirect 302")
 
         # Reload from DB (FSM doesn't support refresh_from_db)
         from processing.models import Animal
@@ -358,7 +361,7 @@ class TestOrderStatusTransitions:
         """Test that order status updates based on animal statuses."""
         order = slaughter_order_factory()
         animal1 = animal_factory(slaughter_order=order)
-        animal_factory(slaughter_order=order)  # Second animal needed for order
+        _ = animal_factory(slaughter_order=order)  # Second animal needed for order
 
         # Slaughter one animal
         animal1.perform_slaughter()

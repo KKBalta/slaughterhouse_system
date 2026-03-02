@@ -48,6 +48,7 @@ class SlaughterOrderAdmin(admin.ModelAdmin):
 
             self.message_user(
                 request,
-                f"Successfully converted {order.client_name}. Username: {username}, Password: {password}",
+                f"Successfully converted {order.client_name}. Username: {username}. "
+                "User must set password via password reset.",
                 level=messages.SUCCESS,
             )

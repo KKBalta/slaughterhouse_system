@@ -156,7 +156,7 @@ class ReportDataAggregator:
         try:
             weight_log = animal.individual_weight_logs.filter(weight_type=weight_type).first()
             return float(weight_log.weight) if weight_log else 0
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
             return 0
 
     def _get_offal_bowels_status(self, animal):
@@ -421,7 +421,8 @@ class ExcelReportGenerator:
 
             summary_row += 1
 
-        # Auto-adjust column widths with a larger cap and explicit width for ID column
+        # Auto-adjust column widths with a larger cap and explicit width for ID column.
+        # Cell.value can be None or non-string; catch TypeError/AttributeError for column-width logic only.
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
@@ -429,7 +430,7 @@ class ExcelReportGenerator:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except Exception:
+                except (TypeError, AttributeError):
                     pass
             adjusted_width = min(max_length + 2, 30)
             ws.column_dimensions[column_letter].width = adjusted_width
@@ -437,7 +438,7 @@ class ExcelReportGenerator:
         # Column 5 is HAYVAN KİMLİK NO explicitly widen for long tags (moved due to removed column)
         try:
             ws.column_dimensions[get_column_letter(5)].width = max(ws.column_dimensions[get_column_letter(5)].width, 25)
-        except Exception:
+        except (TypeError, AttributeError, KeyError):
             ws.column_dimensions[get_column_letter(5)].width = 25
 
         return wb

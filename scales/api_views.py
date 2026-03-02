@@ -5,6 +5,7 @@ Contract per DJANGO_CLOUD_INTEGRATION_SPEC.md.
 
 import hashlib
 import json
+import logging
 import uuid
 from datetime import datetime
 
@@ -26,6 +27,8 @@ from .models import (
     WeighingEvent,
 )
 from .utils import maybe_mark_event_animals_disassembled
+
+logger = logging.getLogger(__name__)
 
 # Default config returned to Edge
 DEFAULT_CONFIG = {
@@ -546,13 +549,14 @@ def edge_post_event_batch(request):
                         "status": "accepted",
                     }
                 )
-        except Exception as e:
+        except Exception:
+            logger.exception("Edge batch event failed for localEventId=%s", local_event_id)
             results.append(
                 {
                     "localEventId": local_event_id,
                     "cloudEventId": "",
                     "status": "failed",
-                    "error": str(e),
+                    "error": "Internal server error",
                 }
             )
 

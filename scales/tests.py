@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
+from core.models import ServicePackage
 from processing.models import Animal, WeightLog
-from reception.models import ServicePackage, SlaughterOrder
+from reception.models import SlaughterOrder
 from scales.models import DisassemblySession, EdgeDevice, ScaleDevice, Site, WeighingEvent
 from scales.utils import get_event_allocation, get_session_per_animal_summary, maybe_mark_event_animals_disassembled
 from users.models import ClientProfile
