@@ -2,9 +2,11 @@
 Edge API views — JSON endpoints called by CarniTrack Edge (Bun).
 Contract per DJANGO_CLOUD_INTEGRATION_SPEC.md.
 """
+import hashlib
+import json
 import uuid
 from datetime import datetime
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -179,6 +181,27 @@ def edge_register(request):
     })
 
 
+def _compute_sessions_etag(payload):
+    """Compute ETag from sessions payload for conditional GET."""
+    payload_str = json.dumps(payload, sort_keys=True)
+    hash_val = hashlib.md5(payload_str.encode()).hexdigest()[:16]
+    return f'"sessions-{hash_val}"'
+
+
+def _sessions_response_with_etag(request, payload, etag):
+    """Return 304 if client ETag matches, else 200 with payload and ETag headers."""
+    client_etag = request.META.get("HTTP_IF_NONE_MATCH", "").strip()
+    if client_etag == etag:
+        response = HttpResponse(status=304)
+        response["ETag"] = etag
+        response["Cache-Control"] = "no-cache"
+        return response
+    response = JsonResponse(payload)
+    response["ETag"] = etag
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
 # ---------- GET /sessions ----------
 @csrf_exempt
 @require_edge_id
@@ -196,7 +219,9 @@ def edge_sessions(request):
             message="Session poll with empty device list",
             level="warning",
         )
-        return JsonResponse({"sessions": []})
+        payload = {"sessions": []}
+        etag = _compute_sessions_etag(payload)
+        return _sessions_response_with_etag(request, payload, etag)
 
     sessions = (
         DisassemblySession.objects.filter(
@@ -225,7 +250,9 @@ def edge_sessions(request):
         message=f"Session poll returned {len(out)} session(s)",
         payload={"device_ids": device_ids, "session_count": len(out)},
     )
-    return JsonResponse({"sessions": out})
+    payload = {"sessions": out}
+    etag = _compute_sessions_etag(payload)
+    return _sessions_response_with_etag(request, payload, etag)
 
 
 # ---------- POST /events (single) ----------
