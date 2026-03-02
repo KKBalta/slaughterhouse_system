@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import FieldError
+from django.core.exceptions import FieldError
 from django.test import TestCase
 from django.utils import timezone
 
