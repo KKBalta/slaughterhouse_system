@@ -158,7 +158,7 @@ class DisassemblySession(BaseModel):
 
     def get_animals_summary(self, limit=2):
         """Localized tag summary: single tag, first N tags + '+M more', or 'No animals'."""
-        animals = sorted(self.animals.all(), key=lambda a: (a.id or 0))
+        animals = sorted(self.animals.all(), key=lambda a: a.id or 0)
         tags = [a.identification_tag or "—" for a in animals]
         if not tags and self.animal_id:
             tag = self.animal.identification_tag if self.animal else None
