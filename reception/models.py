@@ -61,12 +61,21 @@ class SlaughterOrder(BaseModel):
         - (2026-01-08): Moved order number generation to service layer with select_for_update()
           to prevent race conditions in high-concurrency scenarios
         - (2026-02-27): order_datetime can be date or datetime; service layer handles both
+        - (2026-03-02): Fixed race condition by keeping order number generation and save
+          in the same transaction to maintain the select_for_update() lock
         """
+        from django.db import transaction
+
         if not self.slaughter_order_no:
             from .services import generate_order_number
 
-            self.slaughter_order_no = generate_order_number(self.order_datetime)
-        super().save(*args, **kwargs)
+            # Wrap order number generation and save in the same transaction
+            # to maintain the select_for_update() lock until the order is created
+            with transaction.atomic():
+                self.slaughter_order_no = generate_order_number(self.order_datetime)
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name

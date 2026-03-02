@@ -15,10 +15,14 @@ from .models import ServicePackage, SlaughterOrder
 def generate_order_number(order_datetime=None) -> str:
     """
     Generates a unique order number for a given date.
-    Uses database-level locking with select_for_update() to prevent race conditions.
 
-    This function should be called within a transaction.atomic() context to ensure
-    proper locking behavior.
+    IMPORTANT: This function must be called within a transaction.atomic() context
+    that also includes the order creation. The caller is responsible for ensuring
+    proper transaction boundaries to prevent race conditions.
+
+    The function uses select_for_update() to lock existing orders for the date,
+    but the lock is only effective if the caller's transaction includes the
+    actual order creation.
 
     Args:
         order_datetime: The datetime for the order. If None, uses current time.
@@ -37,17 +41,16 @@ def generate_order_number(order_datetime=None) -> str:
         order_date = timezone.now().date()
         date_str = order_date.strftime("%Y%m%d")
 
-    # select_for_update() requires an open transaction (e.g. when save() is called
-    # from TransactionTestCase or pytest django_db(transaction=True)).
-    with transaction.atomic():
-        # Use select_for_update() to lock the last order for this date
-        # This prevents race conditions in high-concurrency scenarios
-        last_order = (
-            SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
-            .select_for_update()
-            .order_by("-slaughter_order_no")
-            .first()
-        )
+    # Use select_for_update() to lock all orders for this date.
+    # This prevents race conditions when multiple threads try to generate
+    # order numbers simultaneously. The lock is held until the transaction
+    # commits (which should include the order creation in the caller).
+    last_order = (
+        SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
+        .select_for_update()
+        .order_by("-slaughter_order_no")
+        .first()
+    )
 
     if last_order:
         # Extract the number from the last order
