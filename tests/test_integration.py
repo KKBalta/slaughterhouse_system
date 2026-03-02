@@ -102,9 +102,7 @@ class TestCompleteSlaughterWorkflow:
         assert animal.status == "carcass_ready"
 
         # 7. Create carcass in inventory
-        Carcass.objects.create(
-            animal=animal, hot_carcass_weight=Decimal("300.00"), disposition="returned_to_owner"
-        )
+        Carcass.objects.create(animal=animal, hot_carcass_weight=Decimal("300.00"), disposition="returned_to_owner")
 
         # 8. Perform disassembly (add cuts)
         animal.perform_disassembly()
