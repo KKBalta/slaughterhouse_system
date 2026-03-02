@@ -6,7 +6,6 @@ Updated to use factory-boy DjangoModelFactory pattern per official docs.
 """
 
 import os
-from datetime import date, datetime
 from decimal import Decimal
 
 import factory

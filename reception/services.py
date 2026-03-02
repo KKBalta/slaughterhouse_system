@@ -36,7 +36,16 @@ def generate_order_number(order_datetime=None) -> str:
 
     Raises:
         ValidationError: If order number generation fails
+        RuntimeError: If called outside an atomic transaction block
     """
+    from django.db import connection
+
+    if not connection.in_atomic_block:
+        raise RuntimeError(
+            "generate_order_number() must be called within a transaction.atomic() context. "
+            "Use create_slaughter_order() service function for proper atomic order creation."
+        )
+
     if order_datetime:
         # Handle both datetime (has .date()) and date (use as-is)
         order_date = order_datetime.date() if hasattr(order_datetime, "date") else order_datetime

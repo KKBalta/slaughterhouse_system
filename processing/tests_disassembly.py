@@ -100,8 +100,8 @@ class DisassemblyTest(TestCase):
             self.assertIsInstance(label, AnimalLabel)
             self.assertEqual(label.label_type, "cut")
             self.assertEqual(label.animal, self.animal)
-            self.assertTrue(len(label.prn_content) > 0)
-            self.assertTrue(len(label.bat_content) > 0)
+            self.assertGreater(len(label.prn_content), 0)
+            self.assertGreater(len(label.bat_content), 0)
             self.assertTrue(label.pdf_file)
 
             # Check if PRN content contains cut info

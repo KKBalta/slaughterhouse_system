@@ -229,7 +229,7 @@ class AddAnimalToOrderViewTest(ReceptionViewTestMixin, TestCase):
         self.order.status = SlaughterOrder.Status.IN_PROGRESS
         self.order.save()
 
-        response = self.test_client.post(
+        self.test_client.post(
             reverse("reception:add_animal_to_order", kwargs={"order_pk": self.order.pk}),
             {"animal_type": "cattle", "identification_tag": "SHOULD-FAIL-001"},
         )
@@ -358,7 +358,7 @@ class TestOrderStatusTransitions:
         """Test that order status updates based on animal statuses."""
         order = slaughter_order_factory()
         animal1 = animal_factory(slaughter_order=order)
-        animal2 = animal_factory(slaughter_order=order)
+        animal_factory(slaughter_order=order)  # Second animal needed for order
 
         # Slaughter one animal
         animal1.perform_slaughter()

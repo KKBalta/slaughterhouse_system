@@ -102,7 +102,7 @@ class TestCompleteSlaughterWorkflow:
         assert animal.status == "carcass_ready"
 
         # 7. Create carcass in inventory
-        carcass = Carcass.objects.create(
+        Carcass.objects.create(
             animal=animal, hot_carcass_weight=Decimal("300.00"), disposition="returned_to_owner"
         )
 
@@ -112,8 +112,8 @@ class TestCompleteSlaughterWorkflow:
 
         assert animal.status == "disassembled"
 
-        cut1 = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("15.5"))
-        cut2 = DisassemblyCut.objects.create(animal=animal, cut_name="tenderloin", weight_kg=Decimal("8.0"))
+        DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("15.5"))
+        DisassemblyCut.objects.create(animal=animal, cut_name="tenderloin", weight_kg=Decimal("8.0"))
 
         # 9. Perform packaging
         animal.perform_packaging()
