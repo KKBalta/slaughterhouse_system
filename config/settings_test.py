@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'core',
     'labeling',
     'reporting',
+    'scales',
 ]
 
 MIDDLEWARE = [
