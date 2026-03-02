@@ -2,27 +2,29 @@
 Edge API views — JSON endpoints called by CarniTrack Edge (Bun).
 Contract per DJANGO_CLOUD_INTEGRATION_SPEC.md.
 """
+
 import hashlib
 import json
 import uuid
 from datetime import datetime
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from django.db import transaction
-from django.core.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 
+from .middleware import parse_json_body, require_edge_id
 from .models import (
-    Site,
-    EdgeDevice,
-    ScaleDevice,
     DisassemblySession,
-    WeighingEvent,
-    OrphanedBatch,
-    OfflineBatchAck,
     EdgeActivityLog,
+    EdgeDevice,
+    OfflineBatchAck,
+    OrphanedBatch,
+    ScaleDevice,
+    Site,
+    WeighingEvent,
 )
-from .middleware import require_edge_id, parse_json_body
 from .utils import maybe_mark_event_animals_disassembled
 
 # Default config returned to Edge
@@ -173,12 +175,14 @@ def edge_register(request):
             payload={"version": version, "mode": "first_registration"},
         )
 
-    return JsonResponse({
-        "edgeId": str(edge.id),
-        "siteId": str(site.id),
-        "siteName": site.name,
-        "config": DEFAULT_CONFIG,
-    })
+    return JsonResponse(
+        {
+            "edgeId": str(edge.id),
+            "siteId": str(site.id),
+            "siteName": site.name,
+            "config": DEFAULT_CONFIG,
+        }
+    )
 
 
 def _compute_sessions_etag(payload):
@@ -223,27 +227,26 @@ def edge_sessions(request):
         etag = _compute_sessions_etag(payload)
         return _sessions_response_with_etag(request, payload, etag)
 
-    sessions = (
-        DisassemblySession.objects.filter(
-            device__edge=request.edge_device,
-            device__device_id__in=device_ids,
-            status__in=["pending", "active", "paused"],
-            is_active=True,
-        )
-        .select_related("device", "animal")
-    )
+    sessions = DisassemblySession.objects.filter(
+        device__edge=request.edge_device,
+        device__device_id__in=device_ids,
+        status__in=["pending", "active", "paused"],
+        is_active=True,
+    ).select_related("device", "animal")
     out = []
     for s in sessions:
         animal = s.animal
-        out.append({
-            "cloudSessionId": str(s.id),
-            "deviceId": s.device.device_id if s.device else "",
-            "animalId": str(animal.id) if animal else None,
-            "animalTag": animal.identification_tag if animal else None,
-            "animalSpecies": _species_for_animal(animal) if animal else None,
-            "operatorId": s.operator or None,
-            "status": s.status if s.status in {"pending", "active", "paused"} else "paused",
-        })
+        out.append(
+            {
+                "cloudSessionId": str(s.id),
+                "deviceId": s.device.device_id if s.device else "",
+                "animalId": str(animal.id) if animal else None,
+                "animalTag": animal.identification_tag if animal else None,
+                "animalSpecies": _species_for_animal(animal) if animal else None,
+                "operatorId": s.operator or None,
+                "status": s.status if s.status in {"pending", "active", "paused"} else "paused",
+            }
+        )
     _log_edge_activity(
         action="sessions_poll",
         request=request,
@@ -292,10 +295,12 @@ def edge_post_event(request):
             message=f"Duplicate edge event skipped: {local_event_id}",
             payload={"localEventId": local_event_id},
         )
-        return JsonResponse({
-            "cloudEventId": str(existing.id),
-            "status": "duplicate",
-        })
+        return JsonResponse(
+            {
+                "cloudEventId": str(existing.id),
+                "status": "duplicate",
+            }
+        )
 
     # Resolve scale device (create if needed for this edge)
     scale_device = ScaleDevice.objects.filter(
@@ -401,10 +406,12 @@ def edge_post_event(request):
         },
     )
 
-    return JsonResponse({
-        "cloudEventId": str(event.id),
-        "status": "accepted",
-    })
+    return JsonResponse(
+        {
+            "cloudEventId": str(event.id),
+            "status": "accepted",
+        }
+    )
 
 
 # ---------- POST /events/batch ----------
@@ -432,12 +439,14 @@ def edge_post_event_batch(request):
         received_ts = _parse_iso(ev.get("receivedAt"))
 
         if not local_event_id:
-            results.append({
-                "localEventId": "",
-                "cloudEventId": "",
-                "status": "failed",
-                "error": "localEventId required",
-            })
+            results.append(
+                {
+                    "localEventId": "",
+                    "cloudEventId": "",
+                    "status": "failed",
+                    "error": "localEventId required",
+                }
+            )
             continue
 
         if scale_ts is None:
@@ -449,11 +458,13 @@ def edge_post_event_batch(request):
             with transaction.atomic():
                 existing = WeighingEvent.objects.filter(edge_event_id=local_event_id).first()
                 if existing:
-                    results.append({
-                        "localEventId": local_event_id,
-                        "cloudEventId": str(existing.id),
-                        "status": "duplicate",
-                    })
+                    results.append(
+                        {
+                            "localEventId": local_event_id,
+                            "cloudEventId": str(existing.id),
+                            "status": "duplicate",
+                        }
+                    )
                     continue
 
                 scale_device = ScaleDevice.objects.filter(
@@ -506,7 +517,9 @@ def edge_post_event_batch(request):
                     session.last_event_at = timezone.now()
                     if session.status == "pending":
                         session.status = "active"
-                    session.save(update_fields=["total_weight_grams", "event_count", "last_event_at", "status", "updated_at"])
+                    session.save(
+                        update_fields=["total_weight_grams", "event_count", "last_event_at", "status", "updated_at"]
+                    )
 
                 if offline_mode and offline_batch_id:
                     batch, _ = OrphanedBatch.objects.get_or_create(
@@ -526,18 +539,22 @@ def edge_post_event_batch(request):
                     batch.ended_at = timezone.now()
                     batch.save(update_fields=["event_count", "total_weight_grams", "ended_at", "updated_at"])
 
-                results.append({
-                    "localEventId": local_event_id,
-                    "cloudEventId": str(event.id),
-                    "status": "accepted",
-                })
+                results.append(
+                    {
+                        "localEventId": local_event_id,
+                        "cloudEventId": str(event.id),
+                        "status": "accepted",
+                    }
+                )
         except Exception as e:
-            results.append({
-                "localEventId": local_event_id,
-                "cloudEventId": "",
-                "status": "failed",
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "localEventId": local_event_id,
+                    "cloudEventId": "",
+                    "status": "failed",
+                    "error": str(e),
+                }
+            )
 
     accepted = sum(1 for row in results if row.get("status") == "accepted")
     duplicate = sum(1 for row in results if row.get("status") == "duplicate")
@@ -592,11 +609,13 @@ def edge_offline_batch_ack(request):
             message=f"Duplicate batch ACK: {batch_id}",
             payload={"batchId": batch_id},
         )
-        return JsonResponse({
-            "batchId": batch_id,
-            "status": "already_received",
-            "receivedAt": existing.received_at.isoformat(),
-        })
+        return JsonResponse(
+            {
+                "batchId": batch_id,
+                "status": "already_received",
+                "receivedAt": existing.received_at.isoformat(),
+            }
+        )
 
     OfflineBatchAck.objects.create(
         batch_id=batch_id,
@@ -622,11 +641,13 @@ def edge_offline_batch_ack(request):
         },
     )
 
-    return JsonResponse({
-        "batchId": batch_id,
-        "status": "received",
-        "receivedAt": now.isoformat(),
-    })
+    return JsonResponse(
+        {
+            "batchId": batch_id,
+            "status": "received",
+            "receivedAt": now.isoformat(),
+        }
+    )
 
 
 # ---------- GET /config ----------
@@ -768,7 +789,9 @@ def edge_heartbeat(request):
         payload={"devices": device_summary[:20]},
     )
 
-    return JsonResponse({
-        "ok": True,
-        "serverTime": timezone.now().isoformat(),
-    })
+    return JsonResponse(
+        {
+            "ok": True,
+            "serverTime": timezone.now().isoformat(),
+        }
+    )

@@ -2,14 +2,17 @@
 Scale operations models for CarniTrack Edge integration.
 Bridges Edge devices, scale devices, sessions, and weighing events to processing.Animal.
 """
+
 from django.db import models
-from django.utils.translation import gettext as _
 from django.db.models import Q
+from django.utils.translation import gettext as _
+
 from core.models import BaseModel
 
 
 class Site(BaseModel):
     """Multi-tenant: different butcher shops/plants."""
+
     name = models.CharField(max_length=200)
     address = models.TextField(blank=True)
     api_key = models.CharField(max_length=100, unique=True, blank=True, null=True)
@@ -20,9 +23,8 @@ class Site(BaseModel):
 
 class EdgeDevice(BaseModel):
     """Edge computers registered with Cloud (CarniTrack Edge)."""
-    site = models.ForeignKey(
-        Site, on_delete=models.CASCADE, related_name="edges"
-    )
+
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="edges")
     name = models.CharField(max_length=200, blank=True)
     is_online = models.BooleanField(default=False)
     last_seen_at = models.DateTimeField(null=True, blank=True)
@@ -34,28 +36,19 @@ class EdgeDevice(BaseModel):
 
 class ScaleDevice(BaseModel):
     """DP-401 scales connected to Edges."""
-    edge = models.ForeignKey(
-        EdgeDevice, on_delete=models.CASCADE, related_name="scales"
-    )
+
+    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name="scales")
     device_id = models.CharField(max_length=50)  # e.g. "SCALE-01" (local to site)
     global_device_id = models.CharField(max_length=100, unique=True)  # e.g. "SITE01-SCALE-01"
     name = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=200, blank=True)
-    device_type = models.CharField(
-        max_length=50, default="disassembly"
-    )  # disassembly | retail | receiving
-    status = models.CharField(
-        max_length=50, default="unknown"
-    )  # online | idle | stale | disconnected | unknown
+    device_type = models.CharField(max_length=50, default="disassembly")  # disassembly | retail | receiving
+    status = models.CharField(max_length=50, default="unknown")  # online | idle | stale | disconnected | unknown
     last_heartbeat_at = models.DateTimeField(null=True, blank=True)
     last_event_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["edge", "device_id"], name="scales_scaledevice_edge_device_id"
-            )
-        ]
+        constraints = [models.UniqueConstraint(fields=["edge", "device_id"], name="scales_scaledevice_edge_device_id")]
 
     def __str__(self):
         return f"{self.device_id} @ {self.edge.name or self.edge.id}"
@@ -63,6 +56,7 @@ class ScaleDevice(BaseModel):
 
 class PLUItem(BaseModel):
     """Master product catalog for scale PLU codes (seeded from plu_clean.txt)."""
+
     CATEGORY_CHOICES = [
         ("Dana", "Dana"),
         ("Kuzu", "Kuzu"),
@@ -75,9 +69,7 @@ class PLUItem(BaseModel):
     )  # null for global PLU catalog (single-site)
     plu_code = models.CharField(max_length=20)
     name = models.CharField(max_length=100)
-    name_turkish = models.CharField(
-        max_length=16, blank=True
-    )  # 16-char limit for scale label
+    name_turkish = models.CharField(max_length=16, blank=True)  # 16-char limit for scale label
     barcode = models.CharField(max_length=50, blank=True)
     price_cents = models.IntegerField(default=0)
     unit_type = models.CharField(max_length=10, default="kg")  # kg | piece
@@ -99,6 +91,7 @@ class PLUItem(BaseModel):
 
 class DisassemblySession(BaseModel):
     """Session linking scale events to one or more animals — source of truth for Edge."""
+
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("active", "Active"),
@@ -107,9 +100,7 @@ class DisassemblySession(BaseModel):
         ("cancelled", "Cancelled"),
         ("auto_closed", "Auto-closed"),
     ]
-    site = models.ForeignKey(
-        Site, on_delete=models.CASCADE, related_name="scale_sessions"
-    )
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="scale_sessions")
     animal = models.ForeignKey(
         "processing.Animal",
         on_delete=models.SET_NULL,
@@ -131,9 +122,7 @@ class DisassemblySession(BaseModel):
         related_name="sessions",
     )
     operator = models.CharField(max_length=100)
-    status = models.CharField(
-        max_length=50, choices=STATUS_CHOICES, default="pending"
-    )
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="pending")
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True, blank=True)
     last_event_at = models.DateTimeField(null=True, blank=True)
@@ -198,9 +187,8 @@ class DisassemblySession(BaseModel):
 
 class WeighingEvent(BaseModel):
     """Individual weighing/print events from scales."""
-    site = models.ForeignKey(
-        Site, on_delete=models.CASCADE, related_name="weighing_events"
-    )
+
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="weighing_events")
     session = models.ForeignKey(
         DisassemblySession,
         on_delete=models.SET_NULL,
@@ -226,9 +214,7 @@ class WeighingEvent(BaseModel):
         ("split", "Split"),
         ("manual", "Manual"),
     ]
-    allocation_mode = models.CharField(
-        max_length=20, choices=ALLOCATION_MODES, default="split"
-    )
+    allocation_mode = models.CharField(max_length=20, choices=ALLOCATION_MODES, default="split")
     assigned_animal = models.ForeignKey(
         "processing.Animal",
         on_delete=models.SET_NULL,
@@ -250,9 +236,7 @@ class WeighingEvent(BaseModel):
     scale_timestamp = models.DateTimeField()
     edge_received_at = models.DateTimeField()
     cloud_received_at = models.DateTimeField(auto_now_add=True)
-    edge_event_id = models.CharField(
-        max_length=100, unique=True
-    )  # localEventId from Edge (dedup key)
+    edge_event_id = models.CharField(max_length=100, unique=True)  # localEventId from Edge (dedup key)
     offline_batch_id = models.CharField(max_length=100, blank=True, null=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     deleted_by = models.CharField(max_length=100, blank=True)
@@ -274,17 +258,14 @@ class WeighingEvent(BaseModel):
 
 class OrphanedBatch(BaseModel):
     """Batches of events captured while Edge was offline, pending reconciliation."""
+
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("reconciled", "Reconciled"),
         ("ignored", "Ignored"),
     ]
-    site = models.ForeignKey(
-        Site, on_delete=models.CASCADE, related_name="orphaned_batches"
-    )
-    edge = models.ForeignKey(
-        EdgeDevice, on_delete=models.CASCADE, related_name="orphaned_batches"
-    )
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="orphaned_batches")
+    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name="orphaned_batches")
     device = models.ForeignKey(
         ScaleDevice,
         on_delete=models.SET_NULL,
@@ -297,9 +278,7 @@ class OrphanedBatch(BaseModel):
     ended_at = models.DateTimeField(null=True, blank=True)
     event_count = models.IntegerField(default=0)
     total_weight_grams = models.IntegerField(default=0)
-    status = models.CharField(
-        max_length=50, choices=STATUS_CHOICES, default="pending"
-    )
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="pending")
     reconciled_to_session = models.ForeignKey(
         DisassemblySession,
         on_delete=models.SET_NULL,
@@ -316,6 +295,7 @@ class OrphanedBatch(BaseModel):
 
 class OfflineBatchAck(BaseModel):
     """Tracks offline batch ACKs for idempotency. Edge sends ACK after uploading events."""
+
     batch_id = models.CharField(max_length=100, unique=True, db_index=True)
     received_at = models.DateTimeField()
     edge = models.ForeignKey(

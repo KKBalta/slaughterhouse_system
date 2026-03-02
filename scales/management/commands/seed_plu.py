@@ -2,11 +2,12 @@
 Seed PLUItem from embedded catalog (scales.plu_catalog) or optional --file.
 Format: PLU_CODE NAME per line. Category is auto-derived from product name prefix.
 """
+
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from scales.models import Site, PLUItem
+from scales.models import PLUItem, Site
 from scales.plu_catalog import PLU_CATALOG
 
 
@@ -47,7 +48,7 @@ class Command(BaseCommand):
             if not file_path.exists():
                 self.stderr.write(self.style.ERROR(f"File not found: {file_path}"))
                 return
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 lines = f.readlines()
         else:
             lines = PLU_CATALOG.splitlines()
@@ -91,6 +92,4 @@ class Command(BaseCommand):
             else:
                 updated += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(f"PLU seed done: {created} created, {updated} updated.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"PLU seed done: {created} created, {updated} updated."))

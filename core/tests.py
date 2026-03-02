@@ -1,6 +1,8 @@
-from django.test import TestCase
 from django.db import IntegrityError
+from django.test import TestCase
+
 from .models import ServicePackage
+
 
 class CoreModelTest(TestCase):
     def test_service_package_soft_delete_restore(self):
@@ -20,7 +22,7 @@ class CoreModelTest(TestCase):
             name="Premium Package",
             description="Includes everything.",
             includes_disassembly=True,
-            includes_delivery=True
+            includes_delivery=True,
         )
         self.assertEqual(package.name, "Premium Package")
         self.assertTrue(package.includes_disassembly)

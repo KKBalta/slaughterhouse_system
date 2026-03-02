@@ -1,14 +1,15 @@
 from django.contrib import admin
+
 from .models import (
-    Site,
-    EdgeDevice,
-    ScaleDevice,
-    PLUItem,
     DisassemblySession,
-    WeighingEvent,
-    OrphanedBatch,
-    OfflineBatchAck,
     EdgeActivityLog,
+    EdgeDevice,
+    OfflineBatchAck,
+    OrphanedBatch,
+    PLUItem,
+    ScaleDevice,
+    Site,
+    WeighingEvent,
 )
 
 

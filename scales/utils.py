@@ -1,6 +1,7 @@
 """
 Utilities for the scales app.
 """
+
 import logging
 import re
 import uuid
@@ -12,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 # UUID v4 pattern (8-4-4-4-12 hex, case-insensitive)
-UUID_PATTERN = re.compile(
-    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-)
+UUID_PATTERN = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
 
 def parse_animal_uuid_from_qr_url(url_or_uuid: str):
@@ -38,14 +37,18 @@ def parse_animal_uuid_from_qr_url(url_or_uuid: str):
         return None
     match = UUID_PATTERN.search(text)
     if not match:
-        logger.debug("[QR] parse_animal_uuid_from_qr_url: no UUID match in text (len=%d, preview=%r)", len(text), text[:80])
+        logger.debug(
+            "[QR] parse_animal_uuid_from_qr_url: no UUID match in text (len=%d, preview=%r)", len(text), text[:80]
+        )
         return None
     try:
         result = uuid.UUID(match.group(0))
         logger.debug("[QR] parse_animal_uuid_from_qr_url: parsed uuid=%s from text (len=%d)", result, len(text))
         return result
     except (ValueError, TypeError) as e:
-        logger.warning("[QR] parse_animal_uuid_from_qr_url: UUID validation failed match=%r error=%s", match.group(0), e)
+        logger.warning(
+            "[QR] parse_animal_uuid_from_qr_url: UUID validation failed match=%r error=%s", match.group(0), e
+        )
         return None
 
 
@@ -212,9 +215,9 @@ def get_session_per_animal_summary(session):
             return []
 
     events = list(
-        WeighingEvent.objects.filter(
-            session=session, is_active=True, deleted_at__isnull=True
-        ).order_by("scale_timestamp")
+        WeighingEvent.objects.filter(session=session, is_active=True, deleted_at__isnull=True).order_by(
+            "scale_timestamp"
+        )
     )
 
     totals = {str(a.id): 0 for a in animals}
@@ -223,7 +226,9 @@ def get_session_per_animal_summary(session):
 
     for ev in events:
         alloc = get_event_allocation(ev, animals)
-        assigned_id = getattr(ev, "assigned_animal_id", None) or (ev.assigned_animal.id if getattr(ev, "assigned_animal", None) else None)
+        assigned_id = getattr(ev, "assigned_animal_id", None) or (
+            ev.assigned_animal.id if getattr(ev, "assigned_animal", None) else None
+        )
         for aid, grams in alloc.items():
             if aid not in totals:
                 continue
@@ -239,12 +244,14 @@ def get_session_per_animal_summary(session):
         total = totals.get(aid, 0)
         eff = effective_count.get(aid, 0) or 0
         avg = round(total / eff, 2) if eff else None
-        result.append({
-            "animal": a,
-            "total_allocated_grams": total,
-            "effective_event_count": round(eff, 2),
-            "average_grams": avg,
-        })
+        result.append(
+            {
+                "animal": a,
+                "total_allocated_grams": total,
+                "effective_event_count": round(eff, 2),
+                "average_grams": avg,
+            }
+        )
     return result
 
 

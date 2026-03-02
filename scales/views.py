@@ -1,19 +1,19 @@
 """Template-based views for scale session management and PLU/orphaned batch management."""
+
 import logging
 from datetime import timedelta
 from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import UserPassesTestMixin
-from django.views.generic import TemplateView, ListView, DetailView, View
 from django.contrib import messages
-from django.utils import timezone
-from django.utils.translation import gettext as _
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models as db_models
 from django.db.models import Prefetch, Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.views.generic import DetailView, ListView, TemplateView, View
 
 # Queryset filter for animals eligible for disassembly (scale session + cuts page)
 DISASSEMBLY_ELIGIBLE_FILTER = Q(
@@ -29,21 +29,22 @@ from django import forms
 from django.http import JsonResponse
 
 from processing.models import Animal
-from .utils import (
-    parse_animal_uuid_from_qr_url,
-    get_product_display_names,
-    normalize_plu_code,
-    maybe_mark_event_animals_disassembled,
-)
+
 from .models import (
-    Site,
-    EdgeDevice,
-    ScaleDevice,
     DisassemblySession,
-    WeighingEvent,
+    EdgeActivityLog,
+    EdgeDevice,
     OrphanedBatch,
     PLUItem,
-    EdgeActivityLog,
+    ScaleDevice,
+    Site,
+    WeighingEvent,
+)
+from .utils import (
+    get_product_display_names,
+    maybe_mark_event_animals_disassembled,
+    normalize_plu_code,
+    parse_animal_uuid_from_qr_url,
 )
 
 # ---------- Connectivity (60s freshness) ----------
@@ -87,9 +88,7 @@ class ScalesDashboardView(LoginRequiredMixin, TemplateView):
             status__in=["pending", "active", "paused"],
             is_active=True,
         ).select_related("device", "animal", "site")[:20]
-        context["pending_batches"] = OrphanedBatch.objects.filter(
-            status="pending", is_active=True
-        ).count()
+        context["pending_batches"] = OrphanedBatch.objects.filter(status="pending", is_active=True).count()
         return context
 
 
@@ -115,19 +114,13 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
             edges = edges.filter(site=selected_site)
         selected_edge = edges.filter(id=edge_id).first() if edge_id else None
 
-        printers = (
-            ScaleDevice.objects.filter(is_active=True)
-            .select_related("edge", "edge__site")
-            .order_by("device_id")
-        )
+        printers = ScaleDevice.objects.filter(is_active=True).select_related("edge", "edge__site").order_by("device_id")
         if selected_edge:
             printers = printers.filter(edge=selected_edge)
         elif selected_site:
             printers = printers.filter(edge__site=selected_site)
 
-        recent_logs = EdgeActivityLog.objects.select_related(
-            "site", "edge", "device"
-        ).order_by("-created_at")
+        recent_logs = EdgeActivityLog.objects.select_related("site", "edge", "device").order_by("-created_at")
         if selected_site:
             recent_logs = recent_logs.filter(site=selected_site)
         if selected_edge:
@@ -163,21 +156,20 @@ class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
             return JsonResponse({"edges": []})
         site = Site.objects.filter(id=site_id).first()
         site_name = site.name if site else ""
-        edges = (
-            EdgeDevice.objects.filter(site_id=site_id, is_active=True)
-            .order_by("name", "created_at")
-        )
+        edges = EdgeDevice.objects.filter(site_id=site_id, is_active=True).order_by("name", "created_at")
         out = []
         for edge in edges:
-            out.append({
-                "id": str(edge.id),
-                "name": edge.name or f"Edge {str(edge.id)[:8]}",
-                "site_name": site_name,
-                "is_online": is_edge_online(edge),
-                "last_seen_at": edge.last_seen_at.isoformat() if edge.last_seen_at else None,
-                "last_seen_age_seconds": _age_seconds(edge.last_seen_at),
-                "version": edge.version,
-            })
+            out.append(
+                {
+                    "id": str(edge.id),
+                    "name": edge.name or f"Edge {str(edge.id)[:8]}",
+                    "site_name": site_name,
+                    "is_online": is_edge_online(edge),
+                    "last_seen_at": edge.last_seen_at.isoformat() if edge.last_seen_at else None,
+                    "last_seen_age_seconds": _age_seconds(edge.last_seen_at),
+                    "version": edge.version,
+                }
+            )
         return JsonResponse({"edges": out})
 
 
@@ -186,23 +178,22 @@ class PrintersByEdgeJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
         edge_id = request.GET.get("edge_id")
         if not edge_id:
             return JsonResponse({"printers": []})
-        printers = (
-            ScaleDevice.objects.filter(edge_id=edge_id, is_active=True)
-            .order_by("device_id")
-        )
+        printers = ScaleDevice.objects.filter(edge_id=edge_id, is_active=True).order_by("device_id")
         out = []
         for printer in printers:
-            out.append({
-                "id": str(printer.id),
-                "device_id": printer.device_id,
-                "global_device_id": printer.global_device_id,
-                "device_type": printer.device_type,
-                "status": printer.status,
-                "is_online": is_device_online(printer),
-                "last_heartbeat_at": printer.last_heartbeat_at.isoformat() if printer.last_heartbeat_at else None,
-                "last_heartbeat_age_seconds": _age_seconds(printer.last_heartbeat_at),
-                "last_event_at": printer.last_event_at.isoformat() if printer.last_event_at else None,
-            })
+            out.append(
+                {
+                    "id": str(printer.id),
+                    "device_id": printer.device_id,
+                    "global_device_id": printer.global_device_id,
+                    "device_type": printer.device_type,
+                    "status": printer.status,
+                    "is_online": is_device_online(printer),
+                    "last_heartbeat_at": printer.last_heartbeat_at.isoformat() if printer.last_heartbeat_at else None,
+                    "last_heartbeat_age_seconds": _age_seconds(printer.last_heartbeat_at),
+                    "last_event_at": printer.last_event_at.isoformat() if printer.last_event_at else None,
+                }
+            )
         return JsonResponse({"printers": out})
 
 
@@ -262,12 +253,13 @@ class SessionCreateForm(forms.Form):
                     device__isnull=False,
                     status__in=["pending", "active", "paused"],
                     is_active=True,
-                )
-                .values_list("device_id", flat=True)
+                ).values_list("device_id", flat=True)
             )
-            self.fields["device"].queryset = ScaleDevice.objects.filter(
-                edge__site_id=site_id, is_active=True
-            ).exclude(id__in=busy_device_ids).select_related("edge")
+            self.fields["device"].queryset = (
+                ScaleDevice.objects.filter(edge__site_id=site_id, is_active=True)
+                .exclude(id__in=busy_device_ids)
+                .select_related("edge")
+            )
         for key, value in initial.items():
             if key in self.fields and value is not None:
                 self.fields[key].initial = value
@@ -307,15 +299,17 @@ class SessionCreateAnimalSearchJsonView(LoginRequiredMixin, View):
                     ) or client_info
                 else:
                     client_info = getattr(a.slaughter_order, "client_name", None) or client_info
-            out.append({
-                "id": str(a.pk),
-                "identification_tag": a.identification_tag or "",
-                "animal_type_display": a.get_animal_type_display(),
-                "order_number": a.slaughter_order.slaughter_order_no if a.slaughter_order else "",
-                "client_info": client_info,
-                "status": a.status,
-                "status_display": a.get_status_display(),
-            })
+            out.append(
+                {
+                    "id": str(a.pk),
+                    "identification_tag": a.identification_tag or "",
+                    "animal_type_display": a.get_animal_type_display(),
+                    "order_number": a.slaughter_order.slaughter_order_no if a.slaughter_order else "",
+                    "client_info": client_info,
+                    "status": a.status,
+                    "status_display": a.get_status_display(),
+                }
+            )
         return JsonResponse({"animals": out})
 
 
@@ -329,11 +323,7 @@ class SessionCreateView(LoginRequiredMixin, View):
             return sites, selected
 
         # Prefer site that currently has an online edge; then any site with an edge.
-        preferred = (
-            sites.filter(edges__is_active=True, edges__is_online=True)
-            .distinct()
-            .first()
-        )
+        preferred = sites.filter(edges__is_active=True, edges__is_online=True).distinct().first()
         if not preferred:
             preferred = sites.filter(edges__is_active=True).distinct().first()
         if not preferred:
@@ -344,15 +334,8 @@ class SessionCreateView(LoginRequiredMixin, View):
     def _build_initial_animals(animal_ids):
         if not animal_ids:
             return []
-        animals = list(
-            Animal.objects.filter(pk__in=animal_ids)
-            .filter(DISASSEMBLY_ELIGIBLE_FILTER)
-            .distinct()
-        )
-        return [
-            {"id": str(a.pk), "identification_tag": a.identification_tag or str(a.pk)[:8]}
-            for a in animals
-        ]
+        animals = list(Animal.objects.filter(pk__in=animal_ids).filter(DISASSEMBLY_ELIGIBLE_FILTER).distinct())
+        return [{"id": str(a.pk), "identification_tag": a.identification_tag or str(a.pk)[:8]} for a in animals]
 
     def get(self, request):
         sites, site_id = self._get_sites_and_selected_site_id(request)
@@ -367,7 +350,10 @@ class SessionCreateView(LoginRequiredMixin, View):
                     animal = Animal.objects.get(pk=aid)
                     messages.error(
                         request,
-                        _("Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight.") % {"tag": animal.identification_tag or str(aid)[:8]},
+                        _(
+                            "Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight."
+                        )
+                        % {"tag": animal.identification_tag or str(aid)[:8]},
                     )
                 except Animal.DoesNotExist:
                     messages.error(
@@ -382,9 +368,7 @@ class SessionCreateView(LoginRequiredMixin, View):
             parsed_uuid = parse_animal_uuid_from_qr_url(qr_url)
             if parsed_uuid:
                 try:
-                    Animal.objects.filter(
-                        pk=parsed_uuid
-                    ).filter(DISASSEMBLY_ELIGIBLE_FILTER).distinct().get()
+                    Animal.objects.filter(pk=parsed_uuid).filter(DISASSEMBLY_ELIGIBLE_FILTER).distinct().get()
                     existing_ids = request.GET.getlist("animal_id")
                     if str(parsed_uuid) not in existing_ids:
                         existing_ids.append(str(parsed_uuid))
@@ -399,7 +383,10 @@ class SessionCreateView(LoginRequiredMixin, View):
                         animal = Animal.objects.get(pk=parsed_uuid)
                         messages.error(
                             request,
-                            _("Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight.") % {"tag": animal.identification_tag or str(parsed_uuid)[:8]},
+                            _(
+                                "Animal %(tag)s is not eligible for scale session. It must be carcass-ready with hot carcass weight."
+                            )
+                            % {"tag": animal.identification_tag or str(parsed_uuid)[:8]},
                         )
                     except Animal.DoesNotExist:
                         messages.error(
@@ -456,11 +443,7 @@ class SessionCreateView(LoginRequiredMixin, View):
                     "initial_animals": initial_animals,
                 },
             )
-        animals = list(
-            Animal.objects.filter(pk__in=animal_ids)
-            .filter(DISASSEMBLY_ELIGIBLE_FILTER)
-            .distinct()
-        )
+        animals = list(Animal.objects.filter(pk__in=animal_ids).filter(DISASSEMBLY_ELIGIBLE_FILTER).distinct())
         if len(animals) != len(animal_ids):
             sites, selected_site_id = self._get_sites_and_selected_site_id(request)
             messages.error(request, _("One or more selected animals are invalid or not eligible."))
@@ -485,7 +468,9 @@ class SessionCreateView(LoginRequiredMixin, View):
             tag_display = primary.identification_tag if primary else "—"
             messages.error(
                 request,
-                _("Device %(device)s already has an active session (animal: %(tag)s). Close it before starting a new one.")
+                _(
+                    "Device %(device)s already has an active session (animal: %(tag)s). Close it before starting a new one."
+                )
                 % {"device": device.device_id, "tag": tag_display},
             )
             sites, selected_site_id = self._get_sites_and_selected_site_id(request)
@@ -535,24 +520,26 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "session"
 
     def get_queryset(self):
-        return DisassemblySession.objects.filter(is_active=True).select_related(
-            "device", "animal", "animal__slaughter_order", "animal__slaughter_order__service_package", "site"
-        ).prefetch_related(
-            "animal__individual_weight_logs",
-            Prefetch(
-                "animals",
-                queryset=Animal.objects.select_related(
-                    "slaughter_order", "slaughter_order__service_package"
-                ).prefetch_related("individual_weight_logs"),
-            ),
+        return (
+            DisassemblySession.objects.filter(is_active=True)
+            .select_related(
+                "device", "animal", "animal__slaughter_order", "animal__slaughter_order__service_package", "site"
+            )
+            .prefetch_related(
+                "animal__individual_weight_logs",
+                Prefetch(
+                    "animals",
+                    queryset=Animal.objects.select_related(
+                        "slaughter_order", "slaughter_order__service_package"
+                    ).prefetch_related("individual_weight_logs"),
+                ),
+            )
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         events = list(
-            WeighingEvent.objects.filter(
-                session=self.object, is_active=True, deleted_at__isnull=True
-            )
+            WeighingEvent.objects.filter(session=self.object, is_active=True, deleted_at__isnull=True)
             .select_related("assigned_animal")
             .order_by("-scale_timestamp")[:100]
         )
@@ -572,13 +559,9 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
     """Return session events and summary as JSON for polling (e.g. from disassembly detail)."""
 
     def get(self, request, pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=pk, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=pk, is_active=True)
         events = list(
-            WeighingEvent.objects.filter(
-                session=session, is_active=True, deleted_at__isnull=True
-            )
+            WeighingEvent.objects.filter(session=session, is_active=True, deleted_at__isnull=True)
             .select_related("assigned_animal")
             .order_by("-scale_timestamp")[:100]
         )
@@ -596,9 +579,7 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
                 "weight_grams": e.weight_grams,
                 "scale_timestamp": e.scale_timestamp.isoformat() if e.scale_timestamp else None,
                 "allocation_mode": e.allocation_mode,
-                "assigned_animal_tag": (
-                    e.assigned_animal.identification_tag if e.assigned_animal else None
-                ),
+                "assigned_animal_tag": (e.assigned_animal.identification_tag if e.assigned_animal else None),
             }
             for e in events
         ]
@@ -618,12 +599,8 @@ class SessionEventEditView(LoginRequiredMixin, View):
     """Dedicated edit page for a weighing event (mobile-friendly): PLU select and weight."""
 
     def get(self, request, session_pk, event_pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=session_pk, is_active=True
-        )
-        event = get_object_or_404(
-            WeighingEvent, pk=event_pk, session=session, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
         product_names = get_product_display_names([event.plu_code], site=session.site)
         event.display_product_name = (
             event.product_display_override
@@ -631,9 +608,7 @@ class SessionEventEditView(LoginRequiredMixin, View):
             or f"PLU {normalize_plu_code(event.plu_code)}"
         )
         # Fetch all active PLUItems (catalog may be on Default site; session may use different site)
-        plu_items = list(
-            PLUItem.objects.filter(is_active=True).order_by("plu_code")
-        )
+        plu_items = list(PLUItem.objects.filter(is_active=True).order_by("plu_code"))
         event_norm = normalize_plu_code(event.plu_code)
         selected_plu_code = event.plu_code
         for item in plu_items:
@@ -662,12 +637,8 @@ class SessionEventUpdateView(LoginRequiredMixin, View):
     """Update a weighing event (PLU/product, weight). Recalculates session total."""
 
     def post(self, request, session_pk, event_pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=session_pk, is_active=True
-        )
-        event = get_object_or_404(
-            WeighingEvent, pk=event_pk, session=session, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
         plu_code_post = (request.POST.get("plu_code") or "").strip()
         product_name = (request.POST.get("product_name") or "").strip()
         weight_str = request.POST.get("weight_grams", "").strip()
@@ -697,10 +668,10 @@ class SessionEventUpdateView(LoginRequiredMixin, View):
                 event.product_display_override = ""
                 update_fields.extend(["plu_code", "product_name", "product_display_override"])
             elif "product_name" in request.POST:
-                event.product_display_override = (product_name[:100] if product_name else "")
+                event.product_display_override = product_name[:100] if product_name else ""
                 update_fields.append("product_display_override")
         elif "product_name" in request.POST:
-            event.product_display_override = (product_name[:100] if product_name else "")
+            event.product_display_override = product_name[:100] if product_name else ""
             update_fields.append("product_display_override")
 
         if len(update_fields) > 1:
@@ -710,9 +681,7 @@ class SessionEventUpdateView(LoginRequiredMixin, View):
             old_weight = event.weight_grams
             event.weight_grams = weight_grams
             event.save(update_fields=["weight_grams", "updated_at"])
-            session.total_weight_grams = (
-                session.total_weight_grams - old_weight + weight_grams
-            )
+            session.total_weight_grams = session.total_weight_grams - old_weight + weight_grams
             session.save(update_fields=["total_weight_grams", "updated_at"])
 
         assigned_animal_id = request.POST.get("assigned_animal_id", "").strip()
@@ -741,16 +710,10 @@ class SessionEventDeleteView(LoginRequiredMixin, View):
     """Soft-delete a weighing event; update session totals and set audit fields."""
 
     def post(self, request, session_pk, event_pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=session_pk, is_active=True
-        )
-        event = get_object_or_404(
-            WeighingEvent, pk=event_pk, session=session, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
         event.deleted_at = timezone.now()
-        event.deleted_by = (
-            (request.user.get_full_name() or "").strip() or request.user.get_username()
-        )[:100]
+        event.deleted_by = ((request.user.get_full_name() or "").strip() or request.user.get_username())[:100]
         event.is_active = False
         event.save(update_fields=["deleted_at", "deleted_by", "is_active", "updated_at"])
         session.event_count = max(0, session.event_count - 1)
@@ -762,9 +725,7 @@ class SessionEventDeleteView(LoginRequiredMixin, View):
 
 class SessionCloseView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=pk, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=pk, is_active=True)
         if session.status not in ("pending", "active", "paused"):
             messages.warning(request, _("Session is already closed."))
             return redirect("scales:session_detail", pk=pk)
@@ -781,9 +742,7 @@ class SessionCloseView(LoginRequiredMixin, View):
 
 class SessionCancelView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        session = get_object_or_404(
-            DisassemblySession, pk=pk, is_active=True
-        )
+        session = get_object_or_404(DisassemblySession, pk=pk, is_active=True)
         if session.status not in ("pending", "active", "paused"):
             messages.warning(request, _("Session is already closed."))
             return redirect("scales:session_detail", pk=pk)
@@ -808,10 +767,7 @@ class PLUListView(LoginRequiredMixin, ListView):
             qs = qs.filter(category=category)
         search = self.request.GET.get("search")
         if search:
-            qs = qs.filter(
-                db_models.Q(plu_code__icontains=search)
-                | db_models.Q(name__icontains=search)
-            )
+            qs = qs.filter(db_models.Q(plu_code__icontains=search) | db_models.Q(name__icontains=search))
         return qs
 
     def get_context_data(self, **kwargs):
@@ -841,12 +797,12 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         batch = get_object_or_404(OrphanedBatch, pk=pk, status="pending", is_active=True)
-        events = WeighingEvent.objects.filter(
-            offline_batch_id=batch.batch_id, is_active=True
-        ).order_by("scale_timestamp")[:200]
-        animals = Animal.objects.filter(
-            status__in=["carcass_ready", "disassembled", "slaughtered"]
-        ).order_by("-slaughter_date")[:100]
+        events = WeighingEvent.objects.filter(offline_batch_id=batch.batch_id, is_active=True).order_by(
+            "scale_timestamp"
+        )[:200]
+        animals = Animal.objects.filter(status__in=["carcass_ready", "disassembled", "slaughtered"]).order_by(
+            "-slaughter_date"
+        )[:100]
         return render(
             request,
             self.template_name,
@@ -861,6 +817,7 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
             return redirect("scales:orphaned_batch_reconcile", pk=pk)
         animal = get_object_or_404(Animal, pk=animal_id)
         from django.db import transaction
+
         with transaction.atomic():
             session = DisassemblySession.objects.create(
                 site=batch.site,
@@ -875,9 +832,7 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
                 total_weight_grams=batch.total_weight_grams,
             )
             session.animals.set([animal])
-            reconciled_events = WeighingEvent.objects.filter(
-                offline_batch_id=batch.batch_id, is_active=True
-            )
+            reconciled_events = WeighingEvent.objects.filter(offline_batch_id=batch.batch_id, is_active=True)
             reconciled_events.update(session=session, animal=animal)
             first_reconciled_event = reconciled_events.select_related("session", "animal").first()
             if first_reconciled_event:
@@ -886,6 +841,8 @@ class OrphanedBatchReconcileView(LoginRequiredMixin, View):
             batch.reconciled_to_session = session
             batch.reconciled_at = timezone.now()
             batch.reconciled_by = request.user.get_full_name() or str(request.user)
-            batch.save(update_fields=["status", "reconciled_to_session", "reconciled_at", "reconciled_by", "updated_at"])
+            batch.save(
+                update_fields=["status", "reconciled_to_session", "reconciled_at", "reconciled_by", "updated_at"]
+            )
         messages.success(request, _("Batch reconciled to animal %(tag)s.") % {"tag": animal.identification_tag})
         return redirect("scales:orphaned_batch_list")

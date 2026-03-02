@@ -2,12 +2,13 @@
 Edge API authentication: validate X-Edge-Id (and optionally X-Site-Id) for Edge requests.
 Registration endpoint does not require a pre-existing edge; others do after first registration.
 """
+
 import json
 import uuid
 from functools import wraps
 
-from django.http import JsonResponse
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 
 from .models import EdgeDevice
 

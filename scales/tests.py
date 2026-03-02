@@ -1,18 +1,14 @@
 """Tests for scales app: multi-animal sessions, allocation, backward compatibility."""
+
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
-from scales.models import Site, ScaleDevice, EdgeDevice, DisassemblySession, WeighingEvent
-from scales.utils import (
-    get_event_allocation,
-    get_session_per_animal_summary,
-    maybe_mark_event_animals_disassembled,
-)
 from processing.models import Animal, WeightLog
-from reception.models import SlaughterOrder
+from reception.models import ServicePackage, SlaughterOrder
+from scales.models import DisassemblySession, EdgeDevice, ScaleDevice, Site, WeighingEvent
+from scales.utils import get_event_allocation, get_session_per_animal_summary, maybe_mark_event_animals_disassembled
 from users.models import ClientProfile
-from reception.models import ServicePackage
 
 User = get_user_model()
 
@@ -44,11 +40,14 @@ class AllocationUtilsTest(TestCase):
         )
         user = User.objects.create_user(username="test", password="test", role=User.Role.CLIENT)
         self.client_profile = ClientProfile.objects.create(
-            user=user, account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number="123", address="Addr",
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="123",
+            address="Addr",
         )
         self.service_package = ServicePackage.objects.create(
-            name="Pkg", includes_disassembly=True,
+            name="Pkg",
+            includes_disassembly=True,
         )
         self.order = SlaughterOrder.objects.create(
             client=self.client_profile,
@@ -61,6 +60,7 @@ class AllocationUtilsTest(TestCase):
 
     def test_get_event_allocation_split(self):
         """Split: weight divided evenly; remainder to first animals by id order."""
+
         class MockEvent:
             weight_grams = 1000
             assigned_animal_id = None
@@ -78,6 +78,7 @@ class AllocationUtilsTest(TestCase):
 
     def test_get_event_allocation_manual(self):
         """Manual: full weight to assigned_animal only."""
+
         class MockEvent:
             weight_grams = 600
             assigned_animal_id = None
@@ -166,12 +167,16 @@ class MultiAnimalSessionTest(TestCase):
         )
         user = User.objects.create_user(username="test2", password="test", role=User.Role.CLIENT)
         cp = ClientProfile.objects.create(
-            user=user, account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number="456", address="Addr",
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="456",
+            address="Addr",
         )
         pkg = ServicePackage.objects.create(name="Pkg2", includes_disassembly=True)
         self.order = SlaughterOrder.objects.create(
-            client=cp, order_datetime=timezone.now(), service_package=pkg,
+            client=cp,
+            order_datetime=timezone.now(),
+            service_package=pkg,
         )
         self.a1 = _make_animal(self.order, "A1")
         self.a2 = _make_animal(self.order, "A2")

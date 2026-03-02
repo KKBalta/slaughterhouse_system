@@ -1,13 +1,15 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
 from core.models import BaseModel
+
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        ADMIN = "ADMIN", 'Admin'
-        MANAGER = "MANAGER", 'Manager'
-        OPERATOR = "OPERATOR", 'Operator'
-        CLIENT = "CLIENT", 'Client'
+        ADMIN = "ADMIN", "Admin"
+        MANAGER = "MANAGER", "Manager"
+        OPERATOR = "OPERATOR", "Operator"
+        CLIENT = "CLIENT", "Client"
 
     base_role = Role.ADMIN
 
@@ -18,14 +20,17 @@ class User(AbstractUser):
             self.role = self.base_role
         return super().save(*args, **kwargs)
 
+
 class ClientProfile(BaseModel):
     class AccountType(models.TextChoices):
-        INDIVIDUAL = "INDIVIDUAL", 'Individual'
-        ENTERPRISE = "ENTERPRISE", 'Enterprise'
+        INDIVIDUAL = "INDIVIDUAL", "Individual"
+        ENTERPRISE = "ENTERPRISE", "Enterprise"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='client_profile', null=True, blank=True) # Made nullable for one-time clients
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="client_profile", null=True, blank=True
+    )  # Made nullable for one-time clients
     account_type = models.CharField(max_length=20, choices=AccountType.choices)
-    
+
     # Fields for all account types
     contact_person = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20)

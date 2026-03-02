@@ -1,5 +1,7 @@
 import uuid
+
 from django.db import models
+
 
 class BaseModel(models.Model):
     """
@@ -10,6 +12,7 @@ class BaseModel(models.Model):
     - Automatic creation and update timestamps.
     - A soft-delete mechanism.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
@@ -28,27 +31,22 @@ class BaseModel(models.Model):
         self.is_active = True
         self.save()
 
+
 class ServicePackage(BaseModel):
     """
     Defines a collection of services that a client can request.
     This model is crucial for enabling the modularity of the system, allowing different workflows based on selected services.
     """
+
     name = models.CharField(
-        max_length=100,
-        unique=True,
-        help_text="A descriptive name for the service package (e.g., \"Slaughter Only\")."
+        max_length=100, unique=True, help_text='A descriptive name for the service package (e.g., "Slaughter Only").'
     )
-    description = models.TextField(
-        blank=True,
-        help_text="A detailed description of what the service package includes."
-    )
+    description = models.TextField(blank=True, help_text="A detailed description of what the service package includes.")
     includes_disassembly = models.BooleanField(
-        default=False,
-        help_text="Indicates if this package includes the disassembly process."
+        default=False, help_text="Indicates if this package includes the disassembly process."
     )
     includes_delivery = models.BooleanField(
-        default=False,
-        help_text="Indicates if this package includes delivery services."
+        default=False, help_text="Indicates if this package includes delivery services."
     )
     # Add other boolean fields for specific services as needed
 

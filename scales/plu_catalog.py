@@ -2,6 +2,7 @@
 Embedded PLU product catalog for scale seeding.
 Format: PLU_CODE NAME per line. Update this when the catalog changes.
 """
+
 PLU_CATALOG = """
 00001 KIYMA
 00002 DANA BEŞLİ SET

@@ -23,14 +23,12 @@ jobs:
       - name: Run Ruff Linter
         uses: astral-sh/ruff-action@v3
         with:
-          args: "check --output-format=github"
-        continue-on-error: true
+          args: "check . --fix --output-format=github"
 
       - name: Run Ruff Formatter Check
         uses: astral-sh/ruff-action@v3
         with:
           args: "format --check --diff"
-        continue-on-error: true
 
   # ============================================================================
   # Unit Tests with SQLite

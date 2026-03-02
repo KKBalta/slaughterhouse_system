@@ -1,5 +1,7 @@
 """Edge API URL configuration (no i18n prefix)."""
+
 from django.urls import path
+
 from . import api_views
 
 urlpatterns = [
