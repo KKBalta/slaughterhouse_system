@@ -33,6 +33,11 @@ urlpatterns = [
         views.SessionEventDeleteView.as_view(),
         name="session_event_delete",
     ),
+    path(
+        "sessions/<uuid:session_pk>/events/<uuid:event_pk>/reactivate/",
+        views.SessionEventReactivateView.as_view(),
+        name="session_event_reactivate",
+    ),
     path("sessions/<uuid:pk>/close/", views.SessionCloseView.as_view(), name="session_close"),
     path("sessions/<uuid:pk>/cancel/", views.SessionCancelView.as_view(), name="session_cancel"),
     path("plu/", views.PLUListView.as_view(), name="plu_list"),

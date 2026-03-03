@@ -9,15 +9,17 @@ from django.views.generic import DetailView, ListView, View
 
 from processing.models import Animal
 
-from .models import AnimalLabel, LabelTemplate
+from .models import AnimalLabel, CustomLabel, LabelTemplate
 from .utils import (
     create_animal_label,
+    create_custom_label,
     create_printer_troubleshooting_guide,
     generate_bat_file_content,
     generate_enhanced_printer_config_bat,
     generate_pdf_label,
     generate_tspl_prn_label,
     get_animal_label_download_data,
+    get_custom_label_download_data,
 )
 
 
@@ -382,3 +384,126 @@ class TestEnhancedBatView(LoginRequiredMixin, View):
 
             error_info = f"Error generating enhanced BAT: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             return HttpResponse(error_info, content_type="text/plain")
+
+
+# ============================================
+# Custom Label Views
+# ============================================
+
+
+class CustomLabelListView(LoginRequiredMixin, ListView):
+    """List all custom labels."""
+
+    model = CustomLabel
+    template_name = "labeling/custom_label_list.html"
+    context_object_name = "labels"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return CustomLabel.objects.all().order_by("-print_date")
+
+
+class CustomLabelCreateView(LoginRequiredMixin, View):
+    """Create a new custom label with manual data entry."""
+
+    def get(self, request):
+        from .forms import CustomLabelForm
+
+        form = CustomLabelForm()
+        return self._render_form(request, form)
+
+    def post(self, request):
+        from .forms import CustomLabelForm
+
+        form = CustomLabelForm(request.POST)
+
+        if form.is_valid():
+            try:
+                label_data = {
+                    "uretici": form.cleaned_data["uretici"],
+                    "kupe_no": form.cleaned_data["kupe_no"],
+                    "tuccar": form.cleaned_data.get("tuccar", ""),
+                    "kesim_tarihi": form.cleaned_data["kesim_tarihi"],
+                    "stt": form.cleaned_data["stt"],
+                    "siparis_no": form.cleaned_data.get("siparis_no", ""),
+                    "cinsi": form.cleaned_data["cinsi"],
+                    "weight": form.cleaned_data["weight"],
+                    "sakatat_status": form.cleaned_data.get("sakatat_status", "0.51"),
+                    "qr_data": form.cleaned_data.get("qr_data", ""),
+                }
+
+                custom_label = create_custom_label(label_data=label_data, user=request.user)
+
+                messages.success(
+                    request, _("Custom label created successfully! You can now download and print the label.")
+                )
+                return redirect("labeling:custom_label_detail", pk=custom_label.pk)
+
+            except Exception as e:
+                messages.error(request, _("Error creating label: %(error)s") % {"error": str(e)})
+                return self._render_form(request, form)
+
+        return self._render_form(request, form)
+
+    def _render_form(self, request, form):
+        from django.shortcuts import render
+
+        return render(request, "labeling/custom_label_form.html", {"form": form})
+
+
+class CustomLabelDetailView(LoginRequiredMixin, DetailView):
+    """Display details of a custom label with download options."""
+
+    model = CustomLabel
+    template_name = "labeling/custom_label_detail.html"
+    context_object_name = "label"
+
+
+class DownloadCustomLabelView(LoginRequiredMixin, View):
+    """Download custom label in BAT, PRN, or PDF format."""
+
+    def get(self, request, pk, format_type="bat"):
+        custom_label = get_object_or_404(CustomLabel, id=pk)
+
+        try:
+            download_data = get_custom_label_download_data(custom_label, format_type)
+
+            if format_type.lower() in ["bat", "prn"]:
+                response = HttpResponse(download_data["content"], content_type=download_data["content_type"])
+                response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
+                return response
+
+            elif format_type.lower() == "pdf":
+                if custom_label.pdf_file and default_storage.exists(custom_label.pdf_file.name):
+                    response = FileResponse(
+                        default_storage.open(custom_label.pdf_file.name, "rb"),
+                        content_type=download_data["content_type"],
+                    )
+                    response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
+                    return response
+                else:
+                    messages.error(request, _("PDF file not found."))
+                    return redirect("labeling:custom_label_detail", pk=pk)
+
+        except Exception as e:
+            messages.error(request, _("Error downloading label: %(error)s") % {"error": str(e)})
+            return redirect("labeling:custom_label_detail", pk=pk)
+
+
+@login_required
+def delete_custom_label(request, pk):
+    """Delete a custom label."""
+    custom_label = get_object_or_404(CustomLabel, id=pk)
+
+    try:
+        if custom_label.pdf_file:
+            if default_storage.exists(custom_label.pdf_file.name):
+                default_storage.delete(custom_label.pdf_file.name)
+
+        custom_label.delete()
+        messages.success(request, _("Custom label deleted successfully."))
+
+    except Exception as e:
+        messages.error(request, _("Error deleting label: %(error)s") % {"error": str(e)})
+
+    return redirect("labeling:custom_label_list")

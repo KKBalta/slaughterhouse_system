@@ -596,11 +596,13 @@ class SessionEventsJsonView(LoginRequiredMixin, View):
 
 
 class SessionEventEditView(LoginRequiredMixin, View):
-    """Dedicated edit page for a weighing event (mobile-friendly): PLU select and weight."""
+    """Dedicated edit page for a weighing event (mobile-friendly): PLU select and weight.
+    Allows editing inactive or soft-deleted events so users can fix weight and reactivate.
+    """
 
     def get(self, request, session_pk, event_pk):
-        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
-        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
+        session = get_object_or_404(DisassemblySession, pk=session_pk)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session)
         product_names = get_product_display_names([event.plu_code], site=session.site)
         event.display_product_name = (
             event.product_display_override
@@ -629,16 +631,20 @@ class SessionEventEditView(LoginRequiredMixin, View):
                 "selected_plu_code": selected_plu_code,
                 "weight_kg": weight_kg,
                 "session_animals": session_animals,
+                "event_inactive": not event.is_active,
             },
         )
 
 
 class SessionEventUpdateView(LoginRequiredMixin, View):
-    """Update a weighing event (PLU/product, weight). Recalculates session total."""
+    """Update a weighing event (PLU/product, weight). Recalculates session total.
+    Allows updating inactive/soft-deleted events and reactivates them on save.
+    """
 
     def post(self, request, session_pk, event_pk):
-        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
-        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
+        session = get_object_or_404(DisassemblySession, pk=session_pk)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session)
+        event_was_inactive = not event.is_active
         plu_code_post = (request.POST.get("plu_code") or "").strip()
         product_name = (request.POST.get("product_name") or "").strip()
         weight_str = request.POST.get("weight_grams", "").strip()
@@ -681,8 +687,12 @@ class SessionEventUpdateView(LoginRequiredMixin, View):
             old_weight = event.weight_grams
             event.weight_grams = weight_grams
             event.save(update_fields=["weight_grams", "updated_at"])
-            session.total_weight_grams = session.total_weight_grams - old_weight + weight_grams
-            session.save(update_fields=["total_weight_grams", "updated_at"])
+            if event_was_inactive:
+                session.total_weight_grams += weight_grams
+                session.event_count = max(0, session.event_count) + 1
+            else:
+                session.total_weight_grams = session.total_weight_grams - old_weight + weight_grams
+            session.save(update_fields=["total_weight_grams", "event_count", "updated_at"])
 
         assigned_animal_id = request.POST.get("assigned_animal_id", "").strip()
         session_animals = list(session.animals.order_by("id"))
@@ -697,21 +707,36 @@ class SessionEventUpdateView(LoginRequiredMixin, View):
             event.assigned_animal_id = None
             event.allocation_mode = "split"
             event.allocated_weight_grams = None
-        event.save(update_fields=["assigned_animal_id", "allocation_mode", "allocated_weight_grams", "updated_at"])
+        update_fields_event = ["assigned_animal_id", "allocation_mode", "allocated_weight_grams", "updated_at"]
+        if event_was_inactive:
+            event.is_active = True
+            event.deleted_at = None
+            event.deleted_by = ""
+            update_fields_event.extend(["is_active", "deleted_at", "deleted_by"])
+        event.save(update_fields=update_fields_event)
         maybe_mark_event_animals_disassembled(event)
 
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse({"ok": True})
         messages.success(request, _("Event updated."))
-        return redirect("scales:session_detail", pk=session.pk)
+        if session.is_active:
+            return redirect("scales:session_detail", pk=session.pk)
+        return redirect("scales:session_list")
 
 
 class SessionEventDeleteView(LoginRequiredMixin, View):
-    """Soft-delete a weighing event; update session totals and set audit fields."""
+    """Soft-delete a weighing event; update session totals and set audit fields.
+    If the event is already inactive (soft-deleted), redirect with info message instead of 404.
+    """
 
     def post(self, request, session_pk, event_pk):
-        session = get_object_or_404(DisassemblySession, pk=session_pk, is_active=True)
-        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session, is_active=True)
+        session = get_object_or_404(DisassemblySession, pk=session_pk)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session)
+        if not event.is_active:
+            messages.info(request, _("This event is already deleted."))
+            if session.is_active:
+                return redirect("scales:session_detail", pk=session.pk)
+            return redirect("scales:session_list")
         event.deleted_at = timezone.now()
         event.deleted_by = ((request.user.get_full_name() or "").strip() or request.user.get_username())[:100]
         event.is_active = False
@@ -720,7 +745,34 @@ class SessionEventDeleteView(LoginRequiredMixin, View):
         session.total_weight_grams = max(0, session.total_weight_grams - event.weight_grams)
         session.save(update_fields=["event_count", "total_weight_grams", "updated_at"])
         messages.success(request, _("Event deleted."))
-        return redirect("scales:session_detail", pk=session.pk)
+        if session.is_active:
+            return redirect("scales:session_detail", pk=session.pk)
+        return redirect("scales:session_list")
+
+
+class SessionEventReactivateView(LoginRequiredMixin, View):
+    """Reactivate a soft-deleted weighing event; add it back to session totals."""
+
+    def post(self, request, session_pk, event_pk):
+        session = get_object_or_404(DisassemblySession, pk=session_pk)
+        event = get_object_or_404(WeighingEvent, pk=event_pk, session=session)
+        if event.is_active:
+            messages.info(request, _("This event is already active."))
+        else:
+            event.is_active = True
+            event.deleted_at = None
+            event.deleted_by = ""
+            event.save(update_fields=["is_active", "deleted_at", "deleted_by", "updated_at"])
+            session.event_count = (session.event_count or 0) + 1
+            session.total_weight_grams = (session.total_weight_grams or 0) + event.weight_grams
+            session.save(update_fields=["event_count", "total_weight_grams", "updated_at"])
+            messages.success(request, _("Event reactivated."))
+        next_url = request.POST.get("next") or request.GET.get("next")
+        if next_url:
+            return redirect(next_url)
+        if session.is_active:
+            return redirect("scales:session_detail", pk=session.pk)
+        return redirect("scales:session_list")
 
 
 class SessionCloseView(LoginRequiredMixin, View):

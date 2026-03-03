@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Create Custom Label" %}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{% trans "Create Custom Label" %}</h1>
+                <p class="text-gray-600">{% trans "Enter label information manually to create a hot carcass label" %}</p>
+            </div>
+            <a href="{% url 'labeling:custom_label_list' %}" 
+               class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
+                {% trans "Back to List" %}
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-3 rounded-md text-sm mb-2
+                    {% if message.tags == 'success' %} bg-green-100 border border-green-400 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-100 border border-red-400 text-red-800
+                    {% else %} bg-blue-100 border border-blue-400 text-blue-800
+                    {% endif %}"
+                     role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="mb-4 p-3 rounded-md bg-red-100 border border-red-400 text-red-800 text-sm">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Üretici -->
+                <div>
+                    <label for="{{ form.uretici.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.uretici.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.uretici }}
+                    {% if form.uretici.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.uretici.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Küpe No -->
+                <div>
+                    <label for="{{ form.kupe_no.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.kupe_no.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.kupe_no }}
+                    {% if form.kupe_no.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.kupe_no.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Tüccar -->
+                <div>
+                    <label for="{{ form.tuccar.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.tuccar.label }}
+                    </label>
+                    {{ form.tuccar }}
+                    {% if form.tuccar.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.tuccar.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Sipariş No -->
+                <div>
+                    <label for="{{ form.siparis_no.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.siparis_no.label }}
+                    </label>
+                    {{ form.siparis_no }}
+                    {% if form.siparis_no.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.siparis_no.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Kesim Tarihi -->
+                <div>
+                    <label for="{{ form.kesim_tarihi.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.kesim_tarihi.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.kesim_tarihi }}
+                    {% if form.kesim_tarihi.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.kesim_tarihi.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Son Tüketim Tarihi -->
+                <div>
+                    <label for="{{ form.stt.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.stt.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.stt }}
+                    {% if form.stt.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.stt.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">{% trans "Usually slaughter date + 10 days" %}</p>
+                </div>
+
+                <!-- Cinsi -->
+                <div>
+                    <label for="{{ form.cinsi.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.cinsi.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.cinsi }}
+                    {% if form.cinsi.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.cinsi.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Ağırlık -->
+                <div>
+                    <label for="{{ form.weight.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.weight.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.weight }}
+                    {% if form.weight.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.weight.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Sakatat Durumu -->
+                <div>
+                    <label for="{{ form.sakatat_status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.sakatat_status.label }}
+                    </label>
+                    {{ form.sakatat_status }}
+                    {% if form.sakatat_status.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.sakatat_status.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- QR Verisi -->
+                <div>
+                    <label for="{{ form.qr_data.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.qr_data.label }}
+                    </label>
+                    {{ form.qr_data }}
+                    {% if form.qr_data.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.qr_data.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">{% trans "Optional URL or data for QR code" %}</p>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end space-x-4">
+                <a href="{% url 'labeling:custom_label_list' %}" 
+                   class="bg-gray-200 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-300 transition-colors">
+                    {% trans "Cancel" %}
+                </a>
+                <button type="submit" 
+                        class="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 transition-colors">
+                    {% trans "Create Label" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const kesimTarihiInput = document.getElementById('{{ form.kesim_tarihi.id_for_label }}');
+    const sttInput = document.getElementById('{{ form.stt.id_for_label }}');
+    
+    if (kesimTarihiInput && sttInput) {
+        kesimTarihiInput.addEventListener('change', function() {
+            if (this.value) {
+                const kesimDate = new Date(this.value);
+                kesimDate.setDate(kesimDate.getDate() + 10);
+                sttInput.value = kesimDate.toISOString().split('T')[0];
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

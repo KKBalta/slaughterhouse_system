@@ -6,11 +6,23 @@
 {% block content %}
 <div class="space-y-4 sm:space-y-6 max-w-xl mx-auto px-4">
     <div class="flex flex-col gap-3">
+        {% if session.is_active %}
         <a href="{% url 'scales:session_detail' pk=session.id %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base inline-flex items-center gap-1">
             ← {% trans "Back to session" %}
         </a>
+        {% else %}
+        <a href="{% url 'scales:session_list' %}" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base inline-flex items-center gap-1">
+            ← {% trans "Back to sessions" %}
+        </a>
+        {% endif %}
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Edit weighing event" %}</h1>
     </div>
+
+    {% if event_inactive %}
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800" role="alert">
+        {% trans "This event is currently inactive (e.g. deleted or excluded). You can change the weight and save to reactivate it and fix allocation." %}
+    </div>
+    {% endif %}
 
     <div class="bg-white shadow rounded-lg p-4 sm:p-5 border border-gray-200">
         <dl class="grid grid-cols-1 gap-3 mb-6">

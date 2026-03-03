@@ -949,6 +949,369 @@ def create_cut_label(cut, label_type="cut", user=None, printer_config=None):
     return animal_label
 
 
+def generate_tspl_prn_label_from_data(label_data: dict) -> str:
+    """
+    Generate TSPL/PRN commands for a custom label from a data dictionary.
+    Uses the same template format as animal labels (100mm x 260mm, 4 labels per sheet).
+
+    Args:
+        label_data: Dictionary containing all label fields:
+            - uretici: Producer name
+            - kupe_no: Ear tag number
+            - tuccar: Trader name
+            - kesim_tarihi: Slaughter date (DD.MM.YYYY format)
+            - stt: Expiration date (DD.MM.YYYY format)
+            - siparis_no: Order number
+            - cinsi: Animal type
+            - weight: Weight in kg
+            - sakatat_status: Offal status value
+            - qr_data: QR code data (optional)
+    """
+    company_info = get_company_info()
+
+    # Ensure required fields have defaults
+    uretici = truncate_to_first_two_words(label_data.get("uretici", ""))
+    kupe_no = validate_animal_identification_for_batch(label_data.get("kupe_no", ""))["sanitized_name"]
+    tuccar = truncate_to_first_two_words(label_data.get("tuccar", ""))
+    kesim_tarihi = label_data.get("kesim_tarihi", "")
+    stt = label_data.get("stt", "")
+    siparis_no = label_data.get("siparis_no", "")
+    cinsi = label_data.get("cinsi", "")
+    weight = str(int(float(label_data.get("weight", 0))))
+    sakatat_status = label_data.get("sakatat_status", "0.51")
+    qr_data = label_data.get("qr_data", "")
+
+    # TSPL template matching the animal label format (100mm x 260mm, 4 labels per sheet)
+    tspl_template = f'''SIZE 97.5 mm, 260 mm
+GAP 3 mm, 0 mm
+DIRECTION 0,0
+REFERENCE 0,0
+OFFSET 0 mm
+SET PEEL OFF
+SET CUTTER OFF
+SET PARTIAL_CUTTER OFF
+SET TEAR ON
+CLS
+CODEPAGE 1254
+TEXT 766,64,"0",90,9,9,"Kupe No"
+TEXT 666,279,"ROMAN.TTF",90,1,10,"{kesim_tarihi}"
+TEXT 630,279,"ROMAN.TTF",90,1,10,"{stt}"
+TEXT 739,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 714,791, 1, 93
+TEXT 768,1583,"0",90,14,11,"{company_info["company_name"]}"
+TEXT 736,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
+TEXT 704,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
+TEXT 672,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
+TEXT 640,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 773,279,"0",90,10,11,"{kupe_no}"
+TEXT 724,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
+TEXT 732,64,"0",90,9,9,"Uretici Unvani"
+TEXT 739,279,"0",90,10,11,"{uretici}"
+TEXT 698,64,"0",90,9,9,"Tuccar Unvani"
+TEXT 664,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 628,64,"0",90,9,9,"Son Tuketim Tar."
+TEXT 705,279,"0",90,10,11,"{tuccar}"
+TEXT 692,791,"0",90,25,14,"{weight}"
+TEXT 761,944,"ROMAN.TTF",180,1,9,"SAKATAT {sakatat_status}"
+QRCODE 770,601,L,4,A,90,M2,S7,"{qr_data}"
+TEXT 766,255,"0",90,9,9,":"
+TEXT 732,255,"0",90,9,9,":"
+TEXT 698,255,"0",90,9,9,":"
+TEXT 664,255,"0",90,9,9,":"
+TEXT 628,255,"0",90,9,9,":"
+TEXT 769,986,"0",180,9,9,"{siparis_no}"
+TEXT 566,64,"0",90,9,9,"Kupe No"
+TEXT 466,279,"ROMAN.TTF",90,1,10,"{kesim_tarihi}"
+TEXT 430,279,"ROMAN.TTF",90,1,10,"{stt}"
+TEXT 539,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 514,791, 1, 93
+TEXT 568,1583,"0",90,14,11,"{company_info["company_name"]}"
+TEXT 536,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
+TEXT 504,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
+TEXT 472,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
+TEXT 440,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 573,279,"0",90,10,11,"{kupe_no}"
+TEXT 524,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
+TEXT 532,64,"0",90,9,9,"Uretici Unvani"
+TEXT 539,279,"0",90,10,11,"{uretici}"
+TEXT 498,64,"0",90,9,9,"Tuccar Unvani"
+TEXT 464,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 428,64,"0",90,9,9,"Son Tuketim Tar."
+TEXT 505,279,"0",90,10,11,"{tuccar}"
+TEXT 492,791,"0",90,25,14,"{weight}"
+TEXT 561,944,"ROMAN.TTF",180,1,9,"SAKATAT {sakatat_status}"
+QRCODE 570,601,L,4,A,90,M2,S7,"{qr_data}"
+TEXT 566,255,"0",90,9,9,":"
+TEXT 532,255,"0",90,9,9,":"
+TEXT 498,255,"0",90,9,9,":"
+TEXT 464,255,"0",90,9,9,":"
+TEXT 428,255,"0",90,9,9,":"
+TEXT 584,986,"0",180,9,9,"{siparis_no}"
+TEXT 366,64,"0",90,9,9,"Kupe No"
+TEXT 266,279,"ROMAN.TTF",90,1,10,"{kesim_tarihi}"
+TEXT 230,279,"ROMAN.TTF",90,1,10,"{stt}"
+TEXT 339,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 314,791, 1, 93
+TEXT 368,1583,"0",90,14,11,"{company_info["company_name"]}"
+TEXT 336,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
+TEXT 304,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
+TEXT 272,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
+TEXT 240,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 373,279,"0",90,10,11,"{kupe_no}"
+TEXT 324,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
+TEXT 332,64,"0",90,9,9,"Uretici Unvani"
+TEXT 339,279,"0",90,10,11,"{uretici}"
+TEXT 298,64,"0",90,9,9,"Tuccar Unvani"
+TEXT 264,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 228,64,"0",90,9,9,"Son Tuketim Tar."
+TEXT 305,279,"0",90,10,11,"{tuccar}"
+TEXT 292,791,"0",90,25,14,"{weight}"
+TEXT 361,944,"ROMAN.TTF",180,1,9,"SAKATAT {sakatat_status}"
+QRCODE 370,601,L,4,A,90,M2,S7,"{qr_data}"
+TEXT 366,255,"0",90,9,9,":"
+TEXT 332,255,"0",90,9,9,":"
+TEXT 298,255,"0",90,9,9,":"
+TEXT 264,255,"0",90,9,9,":"
+TEXT 228,255,"0",90,9,9,":"
+TEXT 384,986,"0",180,9,9,"{siparis_no}"
+TEXT 167,64,"0",90,9,9,"Kupe No"
+TEXT 67,279,"ROMAN.TTF",90,1,10,"{kesim_tarihi}"
+TEXT 31,279,"ROMAN.TTF",90,1,10,"{stt}"
+TEXT 140,791,"ROMAN.TTF",90,1,10,"NET KG"
+BAR 115,791, 1, 93
+TEXT 169,1583,"0",90,14,11,"{company_info["company_name"]}"
+TEXT 137,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
+TEXT 105,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
+TEXT 73,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
+TEXT 41,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 174,279,"0",90,10,11,"{kupe_no}"
+TEXT 125,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
+TEXT 133,64,"0",90,9,9,"Uretici Unvani"
+TEXT 140,279,"0",90,10,11,"{uretici}"
+TEXT 99,64,"0",90,9,9,"Tuccar Unvani"
+TEXT 65,64,"0",90,9,9,"Kesim Tarihi"
+TEXT 29,64,"0",90,9,9,"Son Tuketim Tar."
+TEXT 106,279,"0",90,10,11,"{tuccar}"
+TEXT 93,791,"0",90,25,14,"{weight}"
+TEXT 162,944,"ROMAN.TTF",180,1,9,"SAKATAT {sakatat_status}"
+QRCODE 171,601,L,4,A,90,M2,S7,"{qr_data}"
+TEXT 167,255,"0",90,9,9,":"
+TEXT 133,255,"0",90,9,9,":"
+TEXT 99,255,"0",90,9,9,":"
+TEXT 65,255,"0",90,9,9,":"
+TEXT 29,255,"0",90,9,9,":"
+TEXT 185,986,"0",180,9,9,"{siparis_no}"
+PRINT 1,1
+'''
+
+    # Convert Unix line endings to Windows line endings for TSC printer compatibility
+    tspl_template = tspl_template.replace("\n", "\r\n")
+
+    return tspl_template
+
+
+def generate_pdf_label_from_data(label_data: dict) -> BytesIO:
+    """
+    Generate PDF label from a data dictionary (for custom labels).
+
+    Args:
+        label_data: Dictionary containing all label fields
+    """
+    company_info = get_company_info()
+
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, height - 50, "CUSTOM LABEL - HOT CARCASS")
+    c.setFont("Helvetica", 10)
+
+    y_position = height - 80
+    line_height = 20
+
+    # Producer information
+    c.drawString(50, y_position, f"ETIKET URETICI: {label_data.get('uretici', '')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"KUP NO: {label_data.get('kupe_no', '')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"TUCCAR ADI: {label_data.get('tuccar', '')}")
+    y_position -= line_height * 2
+
+    # Slaughter information
+    c.drawString(50, y_position, f"KESIM TARIHI: {label_data.get('kesim_tarihi', '')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"STT: {label_data.get('stt', '')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"SIPARIS NO: {label_data.get('siparis_no', '')}")
+    y_position -= line_height * 2
+
+    # Animal information
+    c.drawString(50, y_position, f"CINSI: {label_data.get('cinsi', '')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"AGIRLIK: {label_data.get('weight', '')} KG")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"SAKATAT: {label_data.get('sakatat_status', '0.51')}")
+    y_position -= line_height
+
+    c.drawString(50, y_position, f"ISLETME ONAY NO: {company_info['license_no']}")
+    y_position -= line_height * 3
+
+    # Generate QR code if qr_data is provided
+    qr_data = label_data.get("qr_data", "")
+    if qr_data:
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+            qr_img.save(tmp_file.name, format="PNG")
+            c.drawImage(tmp_file.name, 50, y_position - 100, width=100, height=100)
+            os.unlink(tmp_file.name)
+
+    c.save()
+    buffer.seek(0)
+
+    return buffer
+
+
+def create_custom_label(label_data: dict, user=None, printer_config=None):
+    """
+    Create a CustomLabel instance with generated TSPL/PRN and .bat content.
+
+    Args:
+        label_data: Dictionary containing all label fields:
+            - uretici: Producer name
+            - kupe_no: Ear tag number
+            - tuccar: Trader name
+            - kesim_tarihi: Slaughter date (date object or DD.MM.YYYY string)
+            - stt: Expiration date (date object or DD.MM.YYYY string)
+            - siparis_no: Order number
+            - cinsi: Animal type
+            - weight: Weight in kg
+            - sakatat_status: Offal status value
+            - qr_data: QR code data (optional)
+        user: User who created the label
+        printer_config: Printer configuration dict for .bat file generation
+    """
+    from django.core.files.base import ContentFile
+
+    from .models import CustomLabel
+
+    # Default printer config if none provided
+    if printer_config is None:
+        printer_config = {"port": "LPT1"}
+
+    # Format dates if they are date objects
+    kesim_tarihi = label_data.get("kesim_tarihi", "")
+    stt = label_data.get("stt", "")
+
+    if hasattr(kesim_tarihi, "strftime"):
+        kesim_tarihi_str = kesim_tarihi.strftime("%d.%m.%Y")
+    else:
+        kesim_tarihi_str = str(kesim_tarihi)
+
+    if hasattr(stt, "strftime"):
+        stt_str = stt.strftime("%d.%m.%Y")
+    else:
+        stt_str = str(stt)
+
+    # Build label data dict for PRN generation
+    prn_label_data = {
+        "uretici": label_data.get("uretici", ""),
+        "kupe_no": label_data.get("kupe_no", ""),
+        "tuccar": label_data.get("tuccar", ""),
+        "kesim_tarihi": kesim_tarihi_str,
+        "stt": stt_str,
+        "siparis_no": label_data.get("siparis_no", ""),
+        "cinsi": label_data.get("cinsi", ""),
+        "weight": label_data.get("weight", 0),
+        "sakatat_status": label_data.get("sakatat_status", "0.51"),
+        "qr_data": label_data.get("qr_data", ""),
+    }
+
+    # Generate TSPL/PRN content
+    prn_content = generate_tspl_prn_label_from_data(prn_label_data)
+
+    # Generate dynamic filename
+    sanitized_tag = validate_and_sanitize_english_name(label_data.get("kupe_no", "CUSTOM"))
+    dynamic_filename = f"custom_label_{sanitized_tag}.prn"
+
+    # Generate .bat file content
+    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
+
+    # Generate PDF content
+    pdf_buffer = generate_pdf_label_from_data(prn_label_data)
+
+    # Create CustomLabel instance
+    custom_label = CustomLabel(
+        uretici=label_data.get("uretici", ""),
+        kupe_no=label_data.get("kupe_no", ""),
+        tuccar=label_data.get("tuccar", ""),
+        kesim_tarihi=label_data.get("kesim_tarihi"),
+        stt=label_data.get("stt"),
+        siparis_no=label_data.get("siparis_no", ""),
+        cinsi=label_data.get("cinsi", ""),
+        weight=label_data.get("weight", 0),
+        sakatat_status=label_data.get("sakatat_status", "0.51"),
+        qr_data=label_data.get("qr_data", ""),
+        prn_content=prn_content,
+        bat_content=bat_content,
+        printed_by=user,
+    )
+
+    # Save to get the ID
+    custom_label.save()
+
+    # Save PDF file
+    pdf_filename = f"custom_label_{sanitized_tag}_{custom_label.id}.pdf"
+    custom_label.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
+
+    return custom_label
+
+
+def get_custom_label_download_data(custom_label, format_type="bat"):
+    """
+    Get download data for custom label in specified format.
+
+    Args:
+        custom_label: CustomLabel instance
+        format_type: 'bat', 'prn', or 'pdf'
+    """
+    sanitized_tag = validate_and_sanitize_english_name(custom_label.kupe_no or "CUSTOM")
+
+    if format_type.lower() == "bat":
+        return {
+            "content": custom_label.bat_content,
+            "filename": f"print_custom_label_{sanitized_tag}.bat",
+            "content_type": "application/octet-stream",
+        }
+    elif format_type.lower() == "prn":
+        return {
+            "content": custom_label.prn_content,
+            "filename": f"custom_label_{sanitized_tag}.prn",
+            "content_type": "text/plain",
+        }
+    elif format_type.lower() == "pdf":
+        if custom_label.pdf_file:
+            return {
+                "file": custom_label.pdf_file,
+                "filename": f"custom_label_{sanitized_tag}.pdf",
+                "content_type": "application/pdf",
+            }
+        else:
+            raise ValueError("PDF file not found for this label")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+
+
 def generate_cut_pdf_label(cut) -> BytesIO:
     """
     Generate PDF label for a disassembly cut.

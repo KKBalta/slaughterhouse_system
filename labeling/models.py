@@ -168,3 +168,61 @@ class AnimalLabel(BaseModel):
                     f"AL-{self.animal.identification_tag}-{self.label_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
                 )
         super().save(*args, **kwargs)
+
+
+class CustomLabel(BaseModel):
+    """
+    Standalone custom labels for hot carcass identification.
+    Allows manual entry of all label fields without linking to an Animal record.
+    """
+
+    ANIMAL_TYPE_CHOICES = [
+        ("SIGIR", "Sığır"),
+        ("KOYUN", "Koyun"),
+        ("KECI", "Keçi"),
+        ("KUZU", "Kuzu"),
+        ("OGLAK", "Oğlak"),
+        ("BUZA", "Buzağı"),
+        ("DUVE", "Düve"),
+        ("DANA", "Dana"),
+    ]
+
+    label_code = models.CharField(max_length=100, unique=True, help_text="Unique identifier for this label.")
+    uretici = models.CharField(max_length=100, verbose_name="Üretici Ünvanı", help_text="Producer name")
+    kupe_no = models.CharField(max_length=100, verbose_name="Küpe No", help_text="Ear tag / identification number")
+    tuccar = models.CharField(max_length=100, blank=True, verbose_name="Tüccar Ünvanı", help_text="Trader name")
+    kesim_tarihi = models.DateField(verbose_name="Kesim Tarihi", help_text="Slaughter date")
+    stt = models.DateField(
+        verbose_name="Son Tüketim Tarihi", help_text="Expiration date (usually slaughter date + 10 days)"
+    )
+    siparis_no = models.CharField(max_length=50, blank=True, verbose_name="Sipariş No", help_text="Order number")
+    cinsi = models.CharField(max_length=20, choices=ANIMAL_TYPE_CHOICES, verbose_name="Cinsi", help_text="Animal type")
+    weight = models.DecimalField(
+        max_digits=10, decimal_places=2, verbose_name="Ağırlık (kg)", help_text="Net weight in kg"
+    )
+    sakatat_status = models.CharField(
+        max_length=10, default="0.51", verbose_name="Sakatat Durumu", help_text="Offal status value"
+    )
+    qr_data = models.CharField(max_length=500, blank=True, verbose_name="QR Verisi", help_text="Optional QR code data")
+    prn_content = models.TextField(blank=True, help_text="TSPL/PRN code for this label.")
+    bat_content = models.TextField(blank=True, help_text=".bat file content for easy printing.")
+    pdf_file = models.FileField(
+        upload_to="custom_labels/pdf/", blank=True, null=True, help_text="PDF file for this label."
+    )
+    print_date = models.DateTimeField(auto_now_add=True, help_text="When the label was created.")
+    printed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, help_text="The user who created the label."
+    )
+
+    class Meta:
+        ordering = ["-print_date"]
+        verbose_name = "Custom Label"
+        verbose_name_plural = "Custom Labels"
+
+    def __str__(self):
+        return f"Custom Label {self.label_code} - {self.kupe_no}"
+
+    def save(self, *args, **kwargs):
+        if not self.label_code:
+            self.label_code = f"CUSTOM-{self.kupe_no}-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)

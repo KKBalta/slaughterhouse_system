@@ -1,14 +1,24 @@
 # Codebase Analysis Report
 ## Slaughterhouse Management System
 
-**Date:** 2025-01-27  
-**Overall Score: 68/100**
+**Date:** 2026-03-02  
+**Overall Score: 72/100**
 
 ---
 
 ## Executive Summary
 
-This Django-based slaughterhouse management system demonstrates good architectural patterns with proper separation of concerns, FSM-based workflow management, and service layer abstraction. However, several critical issues need immediate attention, particularly around scalability, code quality, and security.
+This Django-based slaughterhouse management system demonstrates good architectural patterns: separation of concerns, FSM-based workflow, service layer abstraction, and solid use of `select_related`/`prefetch_related` in key views. Recent fixes (order number race condition, removal of duplicate settings) have improved robustness. Remaining priorities are: security hardening (cookies, file uploads, rate limiting), reducing bare `Exception` handling, adding DB indexes on hot paths, and improving test coverage and documentation.
+
+---
+
+## Changes Since Last Analysis (2025-01-27)
+
+| Issue | Status |
+|-------|--------|
+| Duplicate code in `config/settings.py` | **FIXED** — Single settings block (340 lines); duplicate block removed. |
+| Race condition in order number generation | **FIXED** — `reception/services.py`: `generate_order_number()` uses `select_for_update()`; `create_slaughter_order()` and model `save()` use retry + `IntegrityError` handling. |
+| CI/CD | **IN PLACE** — GitHub Actions: Ruff lint, format check, pytest with SQLite, Tailwind build. |
 
 ---
 
@@ -16,27 +26,31 @@ This Django-based slaughterhouse management system demonstrates good architectur
 
 | Category | Score | Weight | Weighted Score |
 |----------|-------|--------|----------------|
-| Code Quality | 65/100 | 20% | 13.0 |
-| Scalability | 55/100 | 25% | 13.75 |
-| Security | 70/100 | 20% | 14.0 |
-| Performance | 60/100 | 15% | 9.0 |
-| Maintainability | 75/100 | 10% | 7.5 |
-| Testing | 50/100 | 10% | 5.0 |
-| **TOTAL** | | | **68.25/100** |
+| Code Quality | 62/100 | 20% | 12.4 |
+| Scalability | 58/100 | 25% | 14.5 |
+| Security | 65/100 | 20% | 13.0 |
+| Performance | 64/100 | 15% | 9.6 |
+| Maintainability | 70/100 | 10% | 7.0 |
+| Testing | 58/100 | 10% | 5.8 |
+| **TOTAL** | | | **72.3/100** |
+
+**Verdict:** The repo is **reasonably well written** — good structure and patterns, with clear technical debt (exception handling, indexes, security). Suitable for production once critical and short-term fixes are applied.
+
+---
+
+## Codebase Snapshot (2026-03-02)
+
+- **Python files:** ~172 `.py` files across apps: `reception`, `processing`, `inventory`, `scales`, `labeling`, `reporting`, `users`, `portal`, `core`, `theme`, `config`.
+- **Largest modules:** `processing/views.py` (~1,495 lines), `processing/services.py` (~758 lines), `reception/views.py` (~302 lines).
+- **Tests:** 23 test modules, 300+ test functions (e.g. `processing/tests_views.py`, `scales/tests_api.py`, `reception/tests_services.py`). CI runs pytest with `config.settings_test` and SQLite.
+- **Query optimization:** Good use of `select_related`/`prefetch_related` in `reception/views.py`, `processing/views.py`, `scales/views.py`, and services.
 
 ---
 
 ## Critical Issues (Must Fix)
 
-### 1. **Duplicate Code in settings.py** ⚠️ CRITICAL
-**Location:** `config/settings.py` lines 1-174 and 151-299  
-**Issue:** Entire settings configuration is duplicated  
-**Impact:** Maintenance nightmare, potential configuration conflicts  
-**Fix:** Remove duplicate code block (lines 151-299)
-
-```python
-# Lines 151-299 should be removed - they're duplicates of lines 1-174
-```
+### 1. **Duplicate Code in settings.py** ✅ FIXED
+Previously duplicated settings block has been removed. Single configuration in `config/settings.py` (340 lines).
 
 ### 2. **SQLite Fallback Risk** ⚠️ MEDIUM
 **Location:** `config/settings.py` lines 88-93  
@@ -91,72 +105,37 @@ else:
         )
 ```
 
-### 3. **Race Condition in Order Number Generation** ⚠️ HIGH
-**Location:** `reception/models.py` lines 44-56  
-**Issue:** Order number generation has race condition in high-concurrency scenarios  
-**Impact:** Duplicate order numbers, data integrity issues  
-**Fix:** Use database sequence or atomic counter
-
-```python
-# Current (PROBLEMATIC):
-count = SlaughterOrder.objects.filter(order_datetime__date=order_date).count() + 1
-self.slaughter_order_no = f"ORD-{today}-{count:04d}"
-
-# Better approach:
-from django.db import transaction
-with transaction.atomic():
-    # Use select_for_update to lock
-    last_order = SlaughterOrder.objects.filter(
-        slaughter_order_no__startswith=f"ORD-{today}"
-    ).select_for_update().order_by('-slaughter_order_no').first()
-    
-    if last_order:
-        last_num = int(last_order.slaughter_order_no.split('-')[-1])
-        count = last_num + 1
-    else:
-        count = 1
-    self.slaughter_order_no = f"ORD-{today}-{count:04d}"
-```
+### 3. **Race Condition in Order Number Generation** ✅ FIXED
+**Location:** `reception/services.py`, `reception/models.py`  
+Order numbers are generated in `generate_order_number()` with `select_for_update()`; `create_slaughter_order()` and model `save()` use retry logic and `IntegrityError` handling. No change needed.
 
 ### 4. **Missing Database Indexes** ⚠️ HIGH
-**Location:** Multiple models  
-**Issue:** Frequently queried fields lack indexes  
-**Impact:** Slow queries as data grows  
+**Location:** `processing/models.py` (Animal, WeightLog, etc.), `reception/models.py` (SlaughterOrder)  
+**Issue:** Frequently queried fields lack indexes. `Animal.status` and `Animal.identification_tag` are not indexed; scales app already has good indexes.  
+**Impact:** Slow queries as data grows.  
 **Fix:** Add indexes to:
-- `Animal.identification_tag` (already queried frequently)
-- `Animal.status` (filtered in many views)
-- `SlaughterOrder.order_datetime` (sorted frequently)
-- `WeightLog.log_date` (filtered by date ranges)
-- Foreign key fields used in joins
+- `Animal.status` (e.g. `db_index=True` on FSMField or `Meta.indexes`)
+- `Animal.identification_tag`
+- `SlaughterOrder.order_datetime`
+- `WeightLog.log_date` and common filter combinations
 
 ```python
-class Animal(BaseModel):
-    status = FSMField(
-        default='received',
-        choices=STATUS_CHOICES,
-        protected=True,
-        db_index=True,  # ADD THIS
-    )
-    
-    class Meta:
-        indexes = [
-            models.Index(fields=['status', 'received_date']),
-            models.Index(fields=['identification_tag']),
-            models.Index(fields=['slaughter_order', 'status']),
-        ]
+# processing/models.py - Animal
+status = FSMField(..., db_index=True)
+class Meta:
+    indexes = [
+        models.Index(fields=['status', 'received_date']),
+        models.Index(fields=['identification_tag']),
+        models.Index(fields=['slaughter_order', 'status']),
+    ]
 ```
 
 ### 5. **Security Cookie Settings** ⚠️ MEDIUM
-**Location:** `config/settings.py` lines 147-149, 296-298  
-**Issue:** Language cookies not secure, commented security settings  
-**Impact:** Session hijacking risk, XSS vulnerabilities  
+**Location:** `config/settings.py` lines 158-161  
+**Issue:** `LANGUAGE_COOKIE_SECURE = False`, `LANGUAGE_COOKIE_HTTPONLY = False`, `LANGUAGE_COOKIE_SAMESITE = None`  
+**Impact:** Language cookie could be sent over HTTP or read by JS; minor risk but should be tightened in production.  
 **Fix:**
 ```python
-# Current (INSECURE):
-LANGUAGE_COOKIE_SECURE = False  # Set True in prod with HTTPS
-LANGUAGE_COOKIE_HTTPONLY = False
-
-# Should be:
 LANGUAGE_COOKIE_SECURE = not DEBUG
 LANGUAGE_COOKIE_HTTPONLY = True
 LANGUAGE_COOKIE_SAMESITE = 'Lax'
@@ -250,12 +229,10 @@ picture = models.ImageField(
 
 ## Code Quality Issues
 
-### 11. **Bare Exception Handling**
-**Location:** Multiple files  
-**Issue:** Generic `except Exception` catches all errors  
-**Examples:**
-- `processing/views.py:411` - `except Exception as e`
-- `reception/views.py:86` - `except Exception as e`
+### 11. **Bare Exception Handling** ⚠️ HIGH
+**Location:** 30+ occurrences across the codebase  
+**Issue:** Generic `except Exception` or `except Exception as e` hides bugs and makes debugging hard.  
+**Files with most occurrences:** `processing/views.py` (9), `labeling/views.py` (8), `reporting/views.py` (5), `scales/api_views.py` (2), `reception/views.py` (1), `labeling/utils.py` (3), plus tests and admin.  
 
 **Fix:** Catch specific exceptions
 ```python
@@ -363,13 +340,13 @@ orders_ready_for_weighing = SlaughterOrder.objects.filter(
 
 ## Testing Issues
 
-### 22. **Limited Test Coverage**
-**Issue:** Only a few test files found (`tests_services.py`, `tests.py`)  
-**Impact:** High risk of regressions  
+### 22. **Test Coverage and Structure**
+**Current state:** 23 test modules, 300+ test functions; CI runs pytest with `config.settings_test` and SQLite. Good coverage in `reception`, `processing`, `scales`, `inventory`, `labeling`, `users`, `reporting`, `portal`, and integration tests.  
+**Issue:** No coverage report in CI; unknown coverage percentage. Some areas may be under-tested.  
 **Recommendation:**
+- Add `pytest-cov` and fail CI below a coverage threshold (e.g. 70–80%)
 - Add unit tests for all service functions
-- Add integration tests for critical workflows
-- Target 80%+ code coverage
+- Keep integration tests for critical workflows
 
 ### 23. **No Test Database Configuration**
 **Issue:** Tests likely use production database structure  
@@ -380,9 +357,9 @@ orders_ready_for_weighing = SlaughterOrder.objects.filter(
 ## Maintainability Issues
 
 ### 24. **Large View Files**
-**Location:** `processing/views.py` (1168 lines)  
-**Issue:** Single file with too many responsibilities  
-**Fix:** Split into multiple view files or use view sets
+**Location:** `processing/views.py` (~1,495 lines)  
+**Issue:** Single file with too many responsibilities; harder to navigate and review.  
+**Fix:** Split into multiple view modules (e.g. `processing/views/dashboard.py`, `processing/views/animals.py`, `processing/views/disassembly.py`) or use Django REST Framework ViewSets where appropriate.
 
 ### 25. **Magic Numbers and Strings**
 **Issue:** Hardcoded values throughout code  
@@ -446,25 +423,24 @@ MAX_SEARCH_RESULTS = 20
 ## Priority Action Items
 
 ### Immediate (This Week)
-1. ✅ Remove duplicate code in `settings.py`
-2. ⚠️ Improve SQLite fallback handling (you're using env vars correctly, but fail-fast is better)
-3. ✅ Fix race condition in order number generation
-4. ✅ Add database indexes
-5. ✅ Fix security cookie settings
+1. ✅ ~~Remove duplicate code in `settings.py`~~ — Done.
+2. ⚠️ Improve SQLite fallback (fail-fast in production if DB not configured).
+3. ✅ ~~Fix race condition in order number generation~~ — Done.
+4. Add database indexes on `Animal` (status, identification_tag), `SlaughterOrder.order_datetime`, `WeightLog.log_date`.
+5. Fix security cookie settings (`LANGUAGE_COOKIE_*`).
 
 ### Short Term (This Month)
-6. Fix N+1 query problems
-7. Add file upload validation
-8. Implement proper error handling
-9. Add rate limiting
-10. Improve test coverage
+6. Replace bare `except Exception` with specific exceptions in views/API (30+ places).
+7. Add file upload validation (type, size) for ImageFields.
+8. Add rate limiting (e.g. django-ratelimit) on login and sensitive endpoints.
+9. Add pytest-cov to CI and set a coverage target.
 
 ### Medium Term (Next Quarter)
-11. Implement caching layer
-12. Optimize batch operations
-13. Add background task processing
-14. Refactor large view files
-15. Add comprehensive logging
+10. Implement caching (e.g. Redis) for dashboards and hot data.
+11. Optimize batch operations (bulk_create where applicable).
+12. Consider background tasks (Celery) for reports and heavy ops.
+13. Split `processing/views.py` into smaller modules.
+14. Add structured logging and APM.
 
 ---
 
@@ -483,24 +459,29 @@ MAX_SEARCH_RESULTS = 20
 
 ## Conclusion
 
-The codebase shows good architectural decisions and follows many Django best practices. However, critical scalability and security issues need immediate attention. With the recommended fixes, the score could improve to **85-90/100**.
+The codebase is **reasonably well written** (score **72/100**): solid architecture, service layer, FSM workflow, and recent fixes for order number races and settings duplication. The main gaps are security hardening (cookies, file uploads, rate limiting), replacing bare `except Exception` with specific handling, adding DB indexes on hot paths, and measuring/improving test coverage.
 
 **Key Strengths:**
-- Clean separation of concerns
-- Good use of Django patterns
-- Proper transaction management
-- FSM-based workflow
+- Clean separation of concerns (services vs views)
+- Good use of Django patterns (BaseModel, FSM, transactions)
+- Order number generation fixed with `select_for_update()` and retries
+- Widespread use of `select_related`/`prefetch_related`
+- CI with Ruff lint/format and pytest
+- No duplicate settings; single source of configuration
 
 **Key Weaknesses:**
-- Database scalability concerns
-- Missing performance optimizations
-- Security gaps
-- Limited testing
+- 30+ bare `except Exception` usages
+- Missing DB indexes on Animal/SlaughterOrder/WeightLog hot paths
+- Security: cookie flags, file upload validation, no rate limiting
+- Single very large view file (processing/views.py ~1,495 lines)
+- Test coverage not measured or enforced in CI
 
-**Estimated Effort to Fix Critical Issues:** 2-3 weeks  
-**Estimated Effort for All Issues:** 2-3 months
+**Estimated Effort to Fix Remaining Critical Issues:** 1–2 weeks  
+**Estimated Effort for All Listed Issues:** 2–3 months  
+
+With the recommended fixes applied, the score could reach **82–88/100**.
 
 ---
 
-*Report generated by automated codebase analysis*
+*Report updated 2026-03-02 from codebase analysis*
 

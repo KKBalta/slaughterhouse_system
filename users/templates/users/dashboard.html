@@ -342,20 +342,19 @@
                 class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="p-4">
                     <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
                                 </path>
                             </svg>
                         </div>
-                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Labeling" %}</h3>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Custom Labels" %}</h3>
                     </div>
-                    <p class="text-sm text-gray-600 mb-4">{% trans "Print labels and barcodes" %}</p>
-                    <a href="#"
-                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
-                        title="Coming Soon">
-                        {% trans "Label Manager" %}
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Create and print custom hot carcass labels" %}</p>
+                    <a href="{% url 'labeling:custom_label_list' %}"
+                        class="w-full bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Custom Labels" %}
                     </a>
                 </div>
             </div>

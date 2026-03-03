@@ -10,6 +10,11 @@
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3">
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{% trans "Disassembly Management" %}</h1>
         <div class="flex flex-wrap items-center gap-2">
+            <a href="{% url 'scales:session_list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium shadow-md" style="background-color: #1e3a5f; color: white;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                {% trans "View Sessions" %}
+                {% if active_sessions %}<span class="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full" style="background-color: rgba(255,255,255,0.3); color: white;">{{ active_sessions|length }}</span>{% endif %}
+            </a>
             <a href="{% url 'scales:session_create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 {% trans "Start Scale Session" %}
@@ -27,6 +32,51 @@
             {% trans "Start a scale session for an animal below (choose device and operator), then use the scale or add manual cuts on the animal's disassembly page." %}
             <a href="{% url 'scales:session_create' %}" class="ml-1 font-semibold text-blue-700 hover:text-blue-900 underline">{% trans "Go to Start Session" %}</a>
         </p>
+    </div>
+
+    <!-- Active Sessions -->
+    <div class="mb-4 sm:mb-6 bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                {% trans "Active Sessions" %}
+                {% if active_sessions %}<span class="text-sm font-normal text-gray-600">({{ active_sessions|length }})</span>{% endif %}
+            </h2>
+            <a href="{% url 'scales:session_list' %}" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1">
+                {% trans "View all sessions" %}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+        {% if active_sessions %}
+        <div class="divide-y divide-gray-100">
+            {% for session in active_sessions %}
+            <a href="{% url 'scales:session_detail' session.pk %}" class="flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-6 py-4 hover:bg-emerald-50/50 transition-colors group">
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="font-mono text-sm font-semibold text-gray-900">{{ session.get_short_session_code }}</span>
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full shrink-0
+                            {% if session.status == 'active' %}bg-emerald-100 text-emerald-800
+                            {% elif session.status == 'paused' %}bg-amber-100 text-amber-800
+                            {% else %}bg-slate-100 text-slate-700{% endif %}">{{ session.get_status_display }}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 truncate">{{ session.get_animals_summary }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ session.device.device_id|default:"—" }} · {{ session.operator }} · {{ session.started_at|date:"M d, H:i" }}</p>
+                </div>
+                <span class="text-emerald-600 font-medium text-sm group-hover:text-emerald-800 shrink-0 flex items-center gap-1">
+                    {% trans "Open" %}
+                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="px-4 sm:px-6 py-8 text-center">
+            <p class="text-gray-500 text-sm">{% trans "No active sessions." %}</p>
+            <a href="{% url 'scales:session_create' %}" class="mt-2 inline-block text-emerald-600 hover:text-emerald-800 font-medium text-sm">{% trans "Start a session" %}</a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Search -->

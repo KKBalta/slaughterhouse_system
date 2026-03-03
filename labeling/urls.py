@@ -32,4 +32,14 @@ urlpatterns = [
     # Label Templates
     path("templates/", views.LabelTemplateListView.as_view(), name="label_template_list"),
     path("templates/<uuid:pk>/", views.LabelTemplateDetailView.as_view(), name="label_template_detail"),
+    # Custom Labels
+    path("custom/", views.CustomLabelListView.as_view(), name="custom_label_list"),
+    path("custom/create/", views.CustomLabelCreateView.as_view(), name="custom_label_create"),
+    path("custom/<uuid:pk>/", views.CustomLabelDetailView.as_view(), name="custom_label_detail"),
+    path(
+        "custom/<uuid:pk>/download/<str:format_type>/",
+        views.DownloadCustomLabelView.as_view(),
+        name="download_custom_label",
+    ),
+    path("custom/<uuid:pk>/delete/", views.delete_custom_label, name="delete_custom_label"),
 ]

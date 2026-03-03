@@ -1137,6 +1137,19 @@ class DisassemblyDashboardView(LoginRequiredMixin, ListView):
         context["selected_animal"] = selected_animal
         context["current_search"] = self.request.GET.get("search", "")
 
+        # Active scale sessions for the Active Sessions section
+        from scales.models import DisassemblySession
+
+        context["active_sessions"] = (
+            DisassemblySession.objects.filter(
+                status__in=["pending", "active", "paused"],
+                is_active=True,
+            )
+            .select_related("device", "animal", "site")
+            .prefetch_related("animals")
+            .order_by("-started_at")[:15]
+        )
+
         # Add form for selected animal
         if selected_animal:
             from .forms import DisassemblyCutForm
@@ -1356,8 +1369,18 @@ class DisassemblyDetailView(LoginRequiredMixin, DetailView):
             .order_by("-log_date")
             .first()
         )
-        context["hot_carcass_weight"] = hot_carcass_log.weight if hot_carcass_log else None
+        hot_carcass_weight = hot_carcass_log.weight if hot_carcass_log else None
+        context["hot_carcass_weight"] = hot_carcass_weight
         context["hot_carcass_log_date"] = hot_carcass_log.log_date if hot_carcass_log else None
+
+        # Yield total: only include cuts from active scale events or manual cuts (exclude inactive events)
+        total_yield_kg = sum(
+            float(c.weight_kg)
+            for c in cuts
+            if c.source_event_id is None or (c.source_event and c.source_event.is_active)
+        )
+        context["total_yield_kg"] = total_yield_kg
+        context["yield_percent"] = (total_yield_kg / float(hot_carcass_weight) * 100) if hot_carcass_weight else None
 
         return context
 
