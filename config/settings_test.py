@@ -132,7 +132,9 @@ STATICFILES_DIRS = []
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media_test")
 
-# Use simple storage backend for tests
+# Use simple storage backend for tests (no manifest – avoids "Missing staticfiles
+# manifest entry" when templates reference {% static %} and collectstatic not run).
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
