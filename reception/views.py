@@ -296,9 +296,7 @@ class BatchAddAnimalsToOrderView(LoginRequiredMixin, View):
 def search_clients(request):
     if "term" in request.GET:
         term = request.GET["term"]
-        clients = ClientProfile.objects.filter(
-            Q(user__username__icontains=term) | Q(phone_number__icontains=term)
-        )[:10]
+        clients = ClientProfile.objects.filter(Q(user__username__icontains=term) | Q(phone_number__icontains=term))[:10]
         results = [{"id": client.pk, "text": client.user.username} for client in clients]
         return JsonResponse(results, safe=False)
     return JsonResponse([], safe=False)
