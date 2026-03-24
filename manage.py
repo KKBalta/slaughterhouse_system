@@ -28,13 +28,11 @@ def _load_env_file(path: Path) -> None:
 def _preload_optional_dotenv() -> None:
     """Use a specific env file before settings load (optional).
 
-    Resolution order: ``DOTENV_FILE``, then ``CARNITRACK_ENV`` / ``ENV`` (e.g. ``.env.staging``),
-    then ``.env.dev`` if that file exists in the project root (local dev default).
-
-    Examples::
+    One line (do not break after ``python``):
 
         CARNITRACK_ENV=staging python manage.py createsuperuser
-        DOTENV_FILE=.env.staging python manage.py migrate
+
+    Or: DOTENV_FILE=.env.staging python manage.py migrate
     """
     root = Path(__file__).resolve().parent
     path_str = os.environ.get("DOTENV_FILE", "").strip()
@@ -48,10 +46,6 @@ def _preload_optional_dotenv() -> None:
             candidate = root / f".env.{slug}"
             if candidate.is_file():
                 path_str = str(candidate)
-    if not path_str:
-        dev_env = root / ".env.dev"
-        if dev_env.is_file():
-            path_str = str(dev_env)
     if not path_str:
         return
     path = Path(path_str)
