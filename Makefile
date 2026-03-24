@@ -104,7 +104,8 @@ tailwind-build:
 install-deps: pip-install tailwind-build
 
 db-setup-dev:
-	@bash scripts/setup_local_postgres_dev.sh
+	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi
+	@bash scripts/setup_local_postgres_from_env.sh "$(DEV_ENV)"
 
 migrate-dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV)"; exit 1; fi
