@@ -27,10 +27,16 @@ STAGING_PROXY_PORT        ?= 5433
 CLOUD_SQL_PROXY_V1 ?= ./cloud_sql_proxy
 CLOUD_SQL_PROXY_V2 ?= cloud-sql-proxy
 
-.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev
+TAILWIND_DIR ?= theme/static_src
+
+.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps
 
 help:
 	@echo "CarniTrack Makefile"
+	@echo ""
+	@echo "  make install-deps       First-time setup: pip install -r requirements.txt + Tailwind build ($(TAILWIND_DIR))"
+	@echo "  make pip-install        pip install -r requirements.txt (uses .venv when present)"
+	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci && npm run build"
 	@echo ""
 	@echo "  make dev                Django runserver — local Postgres ($(DEV_ENV))"
 	@echo "  make staging            Django runserver — GCP Cloud SQL staging via proxy ($(STAGING_ENV))"
@@ -47,7 +53,8 @@ help:
 	@echo "  make proxy-v2           Cloud SQL Proxy v2 (prod) → 127.0.0.1:$(PROXY_PORT)"
 	@echo "  make proxy-staging      Cloud SQL Proxy v1 (staging) → 127.0.0.1:$(STAGING_PROXY_PORT)"
 	@echo ""
-	@echo "First time (dev):     cp env/examples/.env.dev.example .env.dev && make db-setup-dev && make migrate-dev && make dev"
+	@echo "First time (dev):     python3.11 -m venv .venv  # optional but recommended"
+	@echo "                      make install-deps && cp env/examples/.env.dev.example .env.dev && make db-setup-dev && make migrate-dev && make dev"
 	@echo "First time (staging): cp env/examples/.env.staging.example .env.staging  # fill in DB_PASSWORD, then:"
 	@echo "                      make migrate-staging && make staging"
 	@echo ""
@@ -86,6 +93,15 @@ proxy-v2:
 
 proxy-staging:
 	$(CLOUD_SQL_PROXY_V1) -instances=$(STAGING_CLOUDSQL_INSTANCE)=tcp:$(STAGING_PROXY_PORT)
+
+pip-install:
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -r requirements.txt
+
+tailwind-build:
+	cd $(TAILWIND_DIR) && npm ci && npm run build
+
+install-deps: pip-install tailwind-build
 
 db-setup-dev:
 	@bash scripts/setup_local_postgres_dev.sh

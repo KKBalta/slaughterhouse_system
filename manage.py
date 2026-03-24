@@ -37,10 +37,7 @@ def _preload_optional_dotenv() -> None:
     root = Path(__file__).resolve().parent
     path_str = os.environ.get("DOTENV_FILE", "").strip()
     if not path_str:
-        slug = (
-            os.environ.get("CARNITRACK_ENV", "").strip()
-            or os.environ.get("ENV", "").strip()
-        )
+        slug = os.environ.get("CARNITRACK_ENV", "").strip() or os.environ.get("ENV", "").strip()
         if slug == "env.staging":
             slug = "staging"
         elif slug == "env.dev":
@@ -63,12 +60,7 @@ def main():
     _preload_optional_dotenv()
     argv = sys.argv
     has_explicit_settings = any(arg.startswith("--settings=") for arg in argv)
-    if (
-        len(argv) > 1
-        and argv[1] == "test"
-        and not has_explicit_settings
-        and "DJANGO_SETTINGS_MODULE" not in os.environ
-    ):
+    if len(argv) > 1 and argv[1] == "test" and not has_explicit_settings and "DJANGO_SETTINGS_MODULE" not in os.environ:
         os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings_test"
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")

@@ -12,7 +12,29 @@ Django 5 application for slaughterhouse operations: reception, processing, inven
 
 ## Development quickstart
 
-From a fresh clone:
+From a fresh clone, set up Python and frontend assets first. The Makefile prefers `.venv/bin/python` when `.venv` exists (you do not need to activate the venv for `make` targets).
+
+**1. Virtual environment, pip, and Tailwind (one command)**
+
+```bash
+python3.11 -m venv .venv
+make install-deps
+```
+
+This runs `pip install -r requirements.txt` and `npm ci && npm run build` in `theme/static_src` (same pattern as CI).
+
+Equivalent manual steps:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cd theme/static_src && npm ci && npm run build && cd ../..
+```
+
+You can also run `make pip-install` or `make tailwind-build` separately. Use `npm run dev` in `theme/static_src` for Tailwind watch mode while editing styles.
+
+**2. Database and run server**
 
 ```bash
 cp env/examples/.env.dev.example .env.dev
@@ -61,11 +83,7 @@ Tests use `config.settings_test` (see `pytest.ini`).
   pytest -m integration
   ```
 
-Before running tests locally, build Tailwind once if templates need compiled CSS:
-
-```bash
-cd theme/static_src && npm ci && npm run build
-```
+Before running tests locally, ensure dependencies and CSS are built: `make install-deps` or at least `make tailwind-build`.
 
 ## Environments
 
@@ -91,6 +109,9 @@ Specs, reports, and notes are in **`docs/`** (for example `docs/DJANGO_CLOUD_INT
 
 | Target               | Description |
 | -------------------- | ----------- |
+| `make install-deps`  | `pip install -r requirements.txt` + `npm ci` / `npm run build` for Tailwind. |
+| `make pip-install`   | Install Python packages from `requirements.txt`. |
+| `make tailwind-build`| Build Tailwind assets under `theme/static_src`. |
 | `make dev`           | Run Django with `.env.dev` (local Postgres). |
 | `make staging`       | Start staging Cloud SQL Proxy on 5433, run Django with `.env.staging`, stop proxy on exit. |
 | `make production-local` | Gunicorn on `:8080` with `.env.production`; run `make proxy` separately for prod DB. |

@@ -16,6 +16,17 @@ Example: `feature/slaughter-batch-export`, `fix/inventory-qty-rounding`.
 - Releases and production promotion flow **`develop` → `main`** as your team agrees.
 - Keep PRs focused; reference issues when applicable.
 
+## Local setup (dependencies)
+
+After cloning, create a venv and install Python and frontend build tooling (matches CI):
+
+```bash
+python3.11 -m venv .venv
+make install-deps
+```
+
+This runs `pip install -r requirements.txt` and `npm ci && npm run build` under `theme/static_src`. See [README.md](README.md) for the full dev quickstart.
+
 ## Code style
 
 - Python is linted and formatted with **Ruff** in CI (`ruff check .`, `ruff format --check`).
