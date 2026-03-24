@@ -37,6 +37,7 @@ ENV DEBUG=False
 ENV ALLOWED_HOSTS=localhost
 ENV CSRF_TRUSTED_ORIGINS=https://localhost
 ENV USE_CLOUD_SQL=False
+ENV USE_SQLITE=True
 ENV SECRET_KEY=dummy-build-secret
 
 # Install Tailwind dependencies (with better error handling)

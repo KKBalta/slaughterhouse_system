@@ -1,6 +1,6 @@
 """
 Edge API views — JSON endpoints called by CarniTrack Edge (Bun).
-Contract per DJANGO_CLOUD_INTEGRATION_SPEC.md.
+Contract per docs/DJANGO_CLOUD_INTEGRATION_SPEC.md.
 """
 
 import hashlib

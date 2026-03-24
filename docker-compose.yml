@@ -1,0 +1,24 @@
+# Dev-only PostgreSQL — optional alternative to a native Postgres install.
+# Aligns with env/examples/.env.dev.example (carnitrack_dev / carnitrack_dev on port 5432).
+#
+#   docker compose up -d
+#   cp env/examples/.env.dev.example .env.dev
+#   make migrate-dev && make dev
+#
+# If the DB is empty, you can still run make db-setup-dev (creates role/DB via
+# psql) or rely on this compose file’s POSTGRES_* which already match env/examples/.env.dev.example.
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: carnitrack_dev
+      POSTGRES_USER: carnitrack_dev
+      POSTGRES_PASSWORD: carnitrack_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

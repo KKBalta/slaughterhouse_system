@@ -93,12 +93,17 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments / local secrets (never commit)
 .env
+.env.dev
+.env.staging
+.env.production
 .env.local
 .env.*.local
+env.yaml
 .venv
-env/
+# Virtualenv named "env" at repo root only — do not use plain "env/" (would hide env/examples/)
+/env/
 venv/
 ENV/
 env.bak/
@@ -134,23 +139,36 @@ dmypy.json
 Thumbs.db
 
 # Project specific
+# Local DB exports (see db_exports/README.md)
+db_exports/*
+!db_exports/README.md
+/prod.dump
+/prod.sql
 staticfiles/
 staticfiles_test/
 media/
 media_test/
 *.prn
 *.bat
-env.yaml
-.env
 
-# Test artifacts
-htmlcov/
-.coverage
-coverage.xml
-junit.xml
+# Cloud SQL Auth Proxy binaries (downloaded to repo root; see Makefile)
+cloud_sql_proxy
+cloud_sql_proxy.exe
+cloud-sql-proxy
+cloud-sql-proxy.exe
+
+# Frontend (Tailwind theme)
+node_modules/
 
 # Local development
 *.local.py
 
 carnitrack_credentials.txt
-.env.production
+deployment_info.txt
+
+# docs/ — non-.md assets moved from repo root (specs/reports *.md stay tracked)
+docs/pytest.ini
+docs/*.btw
+docs/plu_clean.txt
+docs/mermaid.txt
+docs/logo.txt
