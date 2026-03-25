@@ -57,15 +57,6 @@ class CustomLoginView(LoginView):
             from django.utils.http import url_has_allowed_host_and_scheme
 
             allowed_hosts = {self.request.get_host()}
-            # Also allow the site URL from settings
-            from django.conf import settings
-
-            if hasattr(settings, "SITE_URL"):
-                from urllib.parse import urlparse
-
-                parsed = urlparse(settings.SITE_URL)
-                if parsed.netloc:
-                    allowed_hosts.add(parsed.netloc)
 
             if url_has_allowed_host_and_scheme(next_url, allowed_hosts=allowed_hosts):
                 return next_url

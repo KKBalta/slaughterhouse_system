@@ -11,7 +11,10 @@ from core.models import BaseModel
 
 
 class Site(BaseModel):
-    """Multi-tenant: different butcher shops/plants."""
+    """
+    Per-tenant site (one default Site is auto-created per tenant schema; see tenants.signals).
+    Edge devices, PLU catalog, and sessions reference this model within the tenant schema.
+    """
 
     name = models.CharField(max_length=200)
     address = models.TextField(blank=True)

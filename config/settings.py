@@ -12,9 +12,12 @@ from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
-DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Multi-tenant mode uses PostgreSQL + django-tenants. SQLite is only for legacy / Docker collectstatic.
+USE_SQLITE = config("USE_SQLITE", default=False, cast=bool)
+USE_MULTITENANT = not USE_SQLITE
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
@@ -26,17 +29,24 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 
 # Application definition
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
+SHARED_APPS = [
+    "django_tenants",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.admin",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "tenants",
+    "tailwind",
+    "widget_tweaks",
+    "theme",
+    "storages",
+]
+
+TENANT_APPS = [
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "django.contrib.sessions",
     "django_fsm",
-    "tailwind",  # Django Tailwind
-    "widget_tweaks",  # Form tweaks in templates
-    # Local Apps
     "users",
     "reception",
     "processing",
@@ -45,23 +55,63 @@ INSTALLED_APPS = [
     "core",
     "labeling",
     "reporting",
-    "scales",  # Scale operations (CarniTrack Edge)
-    "theme",  # Tailwind theme app
+    "scales",
 ]
 
-INSTALLED_APPS += ["storages"]
+_LEGACY_INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_fsm",
+    "tailwind",
+    "widget_tweaks",
+    "users",
+    "reception",
+    "processing",
+    "inventory",
+    "portal",
+    "core",
+    "labeling",
+    "reporting",
+    "scales",
+    "theme",
+    "storages",
+]
 
-MIDDLEWARE = [
+if USE_MULTITENANT:
+    INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+else:
+    INSTALLED_APPS = _LEGACY_INSTALLED_APPS
+
+_MULTITENANT_MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Static files in production
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",  # i18n
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+_LEGACY_MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+MIDDLEWARE = _MULTITENANT_MIDDLEWARE if USE_MULTITENANT else _LEGACY_MIDDLEWARE
 
 ROOT_URLCONF = "config.urls"
 
@@ -82,6 +132,9 @@ TEMPLATES = [
     },
 ]
 
+if USE_MULTITENANT:
+    TEMPLATES[0]["OPTIONS"]["context_processors"].append("tenants.context_processors.tenant_context")
+
 WSGI_APPLICATION = "config.wsgi.application"
 
 # -------------------------
@@ -96,7 +149,7 @@ if config("USE_CLOUD_SQL", default=False, cast=bool):
     if config("DB_HOST", default=""):
         # TCP mode: DB_HOST is set (e.g., 127.0.0.1 for local proxy)
         DATABASES["default"] = {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django_tenants.postgresql_backend",
             "NAME": config("DB_NAME"),
             "USER": config("DB_USER"),
             "PASSWORD": config("DB_PASSWORD"),
@@ -106,7 +159,7 @@ if config("USE_CLOUD_SQL", default=False, cast=bool):
     else:
         # Unix socket mode: Cloud Run with mounted /cloudsql directory
         DATABASES["default"] = {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django_tenants.postgresql_backend",
             "NAME": config("DB_NAME"),
             "USER": config("DB_USER"),
             "PASSWORD": config("DB_PASSWORD"),
@@ -117,7 +170,7 @@ if config("USE_CLOUD_SQL", default=False, cast=bool):
 # Local Postgres (development: Homebrew / Docker Postgres on your machine)
 elif config("USE_LOCAL_POSTGRES", default=False, cast=bool):
     DATABASES["default"] = {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django_tenants.postgresql_backend",
         "NAME": config("DB_NAME", default="carnitrack_dev"),
         "USER": config("DB_USER", default="postgres"),
         "PASSWORD": config("DB_PASSWORD"),
@@ -137,6 +190,13 @@ else:
         "USE_LOCAL_POSTGRES=True (local PostgreSQL, see env/examples/.env.dev.example), or "
         "USE_SQLITE=True (legacy only; used in the Docker image build)."
     )
+
+if USE_MULTITENANT:
+    DATABASE_ROUTERS = ["django_tenants.routers.TenantSyncRouter"]
+    TENANT_MODEL = "tenants.Client"
+    TENANT_DOMAIN_MODEL = "tenants.Domain"
+    PUBLIC_SCHEMA_URLCONF = "config.urls_public"
+    SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 
 def _default_database_context_label():
@@ -211,10 +271,13 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 USE_GCS = config("USE_GCS", default=False, cast=bool)  # Changed default to False
 
 if USE_GCS:
-    # Production: Use Google Cloud Storage
+    # Production: Use Google Cloud Storage (tenant-prefixed keys when multitenant)
+    _gcs_backend = (
+        "tenants.storage.TenantGCSStorage" if USE_MULTITENANT else "storages.backends.gcloud.GoogleCloudStorage"
+    )
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "BACKEND": _gcs_backend,
         },
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
@@ -265,15 +328,34 @@ else:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
-# Site URL for QR codes and external links
-SITE_URL = config("SITE_URL", default="https://carnitrack-app-1000671720976.europe-west1.run.app")
+REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
 
-# Company Information for Labels
-COMPANY_NAME = "GUNDOGDULAR GIDA"
-COMPANY_FULL_NAME = "SAN VE TUR. TIC. LTD STI"
-COMPANY_ADDRESS = "BOZALAN - EZINE / CANAKKALE"
-LICENSE_NO = "17-0509"
-OPERATION_NO = "4290056890"
+if USE_MULTITENANT:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+            "KEY_FUNCTION": "django_tenants.cache.make_key",
+            "REVERSE_KEY_FUNCTION": "django_tenants.cache.reverse_key",
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+# Fallback base URL (QR codes / links) when not multitenant or tenant domain unknown; also honors legacy SITE_URL env.
+_SITE_URL_LEGACY = config("SITE_URL", default="")
+SITE_URL_FALLBACK = config("SITE_URL_FALLBACK", default=_SITE_URL_LEGACY or "http://localhost:8000")
+TENANT_BASE_DOMAIN = config("TENANT_BASE_DOMAIN", default="carnitrack.samperlabs.com")
 
 # Printer Settings
 PRINTER_TURKISH_MODE = config("PRINTER_TURKISH_MODE", default="unicode")  # 'unicode', 'ascii', or 'codepage1254'
@@ -316,7 +398,9 @@ def print_settings_report():
     print(f"🔑 SECRET_KEY: {'SET' if SECRET_KEY else 'MISSING!'}")
     print(f"🌍 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     print(f"🔒 CSRF_TRUSTED_ORIGINS: {CSRF_TRUSTED_ORIGINS}")
-    print(f"🌐 SITE_URL: {SITE_URL}")
+    print(f"🌐 SITE_URL_FALLBACK: {SITE_URL_FALLBACK}")
+    if USE_MULTITENANT:
+        print(f"🔴 REDIS_URL: {'SET' if REDIS_URL else 'MISSING'}")
 
     # Database
     db_conf = DATABASES["default"]
@@ -354,14 +438,6 @@ def print_settings_report():
     print(f"  TIME_ZONE: {TIME_ZONE}")
     print(f"  USE_I18N: {USE_I18N}")
     print(f"  USE_TZ: {USE_TZ}")
-
-    # Company Information
-    print("\n🏢 Company Information:")
-    print(f"  COMPANY_NAME: {COMPANY_NAME}")
-    print(f"  COMPANY_FULL_NAME: {COMPANY_FULL_NAME}")
-    print(f"  COMPANY_ADDRESS: {COMPANY_ADDRESS}")
-    print(f"  LICENSE_NO: {LICENSE_NO}")
-    print(f"  OPERATION_NO: {OPERATION_NO}")
 
     # Printer Settings
     print("\n🖨️ Printer Settings:")

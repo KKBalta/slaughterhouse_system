@@ -176,10 +176,10 @@ class TestGetCompanyInfo:
         assert "operation_no" in info
 
     def test_respects_test_settings(self):
-        # settings_test.py sets COMPANY_NAME etc.
+        # settings_test.py sets COMPANY_* / LICENSE_NO for non-multitenant tests
         info = get_company_info()
         assert info["company_name"] is not None
-        assert info["license_no"] == getattr(settings, "LICENSE_NO", "00-0000") or info["license_no"]
+        assert info["license_no"] == getattr(settings, "LICENSE_NO", "00-0000")
 
 
 # ---------------------------------------------------------------------------

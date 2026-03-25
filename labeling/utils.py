@@ -6,6 +6,8 @@ import qrcode
 from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
+
+from tenants.tenant_helpers import get_tenant_site_url
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -174,7 +176,7 @@ def generate_animal_label_data(animal) -> dict:
     from django.utils.translation import get_language
 
     current_language = get_language() or "tr"  # Default to Turkish
-    base_url = getattr(settings, "SITE_URL", "https://carnitrack-app-1000671720976.europe-west1.run.app")
+    base_url = get_tenant_site_url()
     qr_url = f"{base_url}/{current_language}/processing/animals/{animal.id}/"
 
     # Use only the URL for QR code data
@@ -182,6 +184,7 @@ def generate_animal_label_data(animal) -> dict:
 
     # Get printer compatibility mode
     compat_mode = get_printer_compatibility_mode()
+    company_info = get_company_info()
 
     return {
         "uretici": format_turkish_text_for_printer(uretici, compat_mode),
@@ -196,7 +199,7 @@ def generate_animal_label_data(animal) -> dict:
             bowels_status_value, compat_mode
         ),  # Changed from karkas_status
         "sakatat_status": format_turkish_text_for_printer(sakatat_status_value, compat_mode),
-        "isletme_onay_no": "17-0509",  # Fixed approval number
+        "isletme_onay_no": company_info["license_no"],
         "qr_url": qr_url,
         "qr_data": qr_data,
     }
@@ -279,8 +282,14 @@ def format_turkish_text_for_printer(text: str, compatibility_mode: str = "unicod
 
 def get_printer_compatibility_mode() -> str:
     """
-    Get printer compatibility mode from settings.
+    Prefer tenant printer mode when in a tenant schema; otherwise global settings.
     """
+    if getattr(settings, "USE_MULTITENANT", False):
+        from django.db import connection
+
+        tenant = getattr(connection, "tenant", None)
+        if tenant is not None and getattr(tenant, "printer_turkish_mode", None):
+            return tenant.printer_turkish_mode
     return getattr(settings, "PRINTER_TURKISH_MODE", "unicode")
 
 
@@ -476,10 +485,11 @@ def generate_cut_label_data(cut) -> dict:
     from django.utils.translation import get_language
 
     current_language = get_language() or "tr"
-    base_url = getattr(settings, "SITE_URL", "https://carnitrack-app-1000671720976.europe-west1.run.app")
+    base_url = get_tenant_site_url()
     qr_url = f"{base_url}/{current_language}/processing/animals/{animal.id}/"
 
     compat_mode = get_printer_compatibility_mode()
+    company_info = get_company_info()
 
     return {
         "uretici": format_turkish_text_for_printer(uretici, compat_mode),
@@ -491,7 +501,7 @@ def generate_cut_label_data(cut) -> dict:
         "cinsi": cinsi,
         "cut_name": format_turkish_text_for_printer(cut_name, compat_mode),
         "weight": weight,
-        "isletme_onay_no": "17-0509",
+        "isletme_onay_no": company_info["license_no"],
         "qr_url": qr_url,
         "qr_data": qr_url,
     }
@@ -1839,9 +1849,28 @@ def validate_animal_identification_for_batch(identification_tag: str) -> dict:
 
 def get_company_info() -> dict:
     """
-    Get company information for labels from settings or defaults.
+    Company info for labels: current tenant (Client) when in a tenant schema; else settings fallbacks.
     """
     compat_mode = get_printer_compatibility_mode()
+    if getattr(settings, "USE_MULTITENANT", False):
+        from django.db import connection
+        from django_tenants.utils import get_public_schema_name
+
+        tenant = getattr(connection, "tenant", None)
+        if tenant is not None and tenant.schema_name != get_public_schema_name():
+            return {
+                "company_name": format_turkish_text_for_printer(
+                    tenant.company_name or "", compat_mode
+                ),
+                "company_full_name": format_turkish_text_for_printer(
+                    tenant.company_full_name or "", compat_mode
+                ),
+                "company_address": format_turkish_text_for_printer(
+                    tenant.company_address or "", compat_mode
+                ),
+                "license_no": tenant.license_no or "",
+                "operation_no": tenant.operation_no or "",
+            }
     return {
         "company_name": format_turkish_text_for_printer(
             getattr(settings, "COMPANY_NAME", "GUNDOGDULAR GIDA"), compat_mode

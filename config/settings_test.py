@@ -151,10 +151,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 TAILWIND_APP_NAME = "theme"
 AUTH_USER_MODEL = "users.User"
 
-# Site URL for QR codes and external links
-SITE_URL = "http://testserver"
+# Fallback when tenant URL is not used (SQLite tests)
+SITE_URL_FALLBACK = "http://testserver"
 
-# Company Information for Labels (test values)
+# Company Information for Labels (test values; single-tenant test settings)
 COMPANY_NAME = "TEST COMPANY"
 COMPANY_FULL_NAME = "TEST COMPANY LTD"
 COMPANY_ADDRESS = "TEST ADDRESS"
