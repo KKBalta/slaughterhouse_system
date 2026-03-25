@@ -1,10 +1,11 @@
 {% load static tailwind_tags i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% trans "POMET Slaughterhouse" %}{% endblock %}</title>
+    <title>{% block title %}{% if tenant %}{{ tenant.name }}{% else %}{% trans "CarniTrack" %}{% endif %}{% endblock %}</title>
     <link rel="icon" href="{% static 'theme/img/favicon.png' %}" type="image/png">
     <link rel="apple-touch-icon" href="{% static 'theme/img/favicon.png' %}">
     <link rel="apple-touch-icon-precomposed" href="{% static 'theme/img/favicon.png' %}">
@@ -17,8 +18,11 @@
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0">
                 <div class="flex items-center justify-center sm:justify-start">
-                    <a href="/" class="min-w-0 flex items-center justify-center sm:justify-start">
-                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">POMET</span>
+                    <a href="/" class="min-w-0 flex items-center justify-center sm:justify-start gap-2">
+                        {% if tenant and tenant.logo %}
+                            <img src="{{ tenant.logo.url }}" alt="{{ tenant.name }}" class="h-9 w-auto max-w-[200px] object-contain sm:h-10">
+                        {% endif %}
+                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{% if tenant %}{{ tenant.name }}{% else %}{% trans "CarniTrack" %}{% endif %}</span>
                     </a>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">

@@ -140,7 +140,9 @@ Called when Edge starts and connects to Cloud for the first time, or on reconnec
     "sessionPollIntervalMs": 5000,
     "heartbeatIntervalMs": 30000,
     "workHoursStart": "06:00",
-    "workHoursEnd": "18:00"
+    "workHoursEnd": "18:00",
+    "timezone": "Europe/Istanbul",
+    "baseUrl": "https://your-tenant.carnitrack.samperlabs.com"
   }
 }
 ```
@@ -422,14 +424,21 @@ Called on startup to check connectivity and retrieve configuration. Also serves 
   "heartbeatIntervalMs": 30000,
   "workHoursStart": "06:00",
   "workHoursEnd": "18:00",
-  "timezone": "Europe/Istanbul"
+  "timezone": "Europe/Istanbul",
+  "baseUrl": "https://your-tenant.carnitrack.samperlabs.com"
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `baseUrl` | Canonical HTTPS origin for this tenant (same host the Edge should use for all `/api/v1/edge/*` calls). |
+
+**Multi-tenant routing:** The Edge API is **schema-scoped per hostname**. `TenantMainMiddleware` must resolve the tenant from the request host (e.g. `https://gundogdular.carnitrack.samperlabs.com`) before the Edge device row is queried. If the Edge calls the old generic Cloud Run URL or the public landing host only, the app may resolve the **public** schema (no `EdgeDevice`/`WeighingEvent` tables there) and return 404 or empty data. **Reconfigure each Edge** so `CLOUD_API_URL` (or equivalent) points at `https://{tenant-slug}.carnitrack.samperlabs.com` (or your configured `TENANT_BASE_DOMAIN`). Use the `baseUrl` returned from `GET /edge/config` and `POST /edge/register` (`config.baseUrl`) to align the client with the tenant origin.
 
 **Django Action:**
 
 - Look up Edge from `X-Edge-Id` header
-- Return configuration for this Edge
+- Return configuration for this Edge (including `baseUrl` and per-tenant `timezone` when multitenant mode is enabled)
 - This endpoint must respond quickly (under 5 seconds) as it's used for connection detection
 
 ---

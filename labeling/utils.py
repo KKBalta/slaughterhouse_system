@@ -6,10 +6,10 @@ import qrcode
 from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
-
-from tenants.tenant_helpers import get_tenant_site_url
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+
+from tenants.tenant_helpers import get_tenant_site_url
 
 
 def generate_label_content(item_type: str, item_id: str, label_template) -> dict:
@@ -1849,7 +1849,8 @@ def validate_animal_identification_for_batch(identification_tag: str) -> dict:
 
 def get_company_info() -> dict:
     """
-    Company info for labels: current tenant (Client) when in a tenant schema; else settings fallbacks.
+    Company info for labels: current tenant (Client) when in a tenant schema; otherwise optional
+    settings overrides (no legacy hardcoded client defaults).
     """
     compat_mode = get_printer_compatibility_mode()
     if getattr(settings, "USE_MULTITENANT", False):
@@ -1873,14 +1874,14 @@ def get_company_info() -> dict:
             }
     return {
         "company_name": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_NAME", "GUNDOGDULAR GIDA"), compat_mode
+            getattr(settings, "COMPANY_NAME", ""), compat_mode
         ),
         "company_full_name": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_FULL_NAME", "SAN VE TUR. TIC. LTD STI"), compat_mode
+            getattr(settings, "COMPANY_FULL_NAME", ""), compat_mode
         ),
         "company_address": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_ADDRESS", "BOZALAN - EZINE / ÇANAKKALE"), compat_mode
+            getattr(settings, "COMPANY_ADDRESS", ""), compat_mode
         ),
-        "license_no": getattr(settings, "LICENSE_NO", "17-0509"),
-        "operation_no": getattr(settings, "OPERATION_NO", "4290056890"),
+        "license_no": getattr(settings, "LICENSE_NO", ""),
+        "operation_no": getattr(settings, "OPERATION_NO", ""),
     }

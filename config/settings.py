@@ -357,9 +357,6 @@ _SITE_URL_LEGACY = config("SITE_URL", default="")
 SITE_URL_FALLBACK = config("SITE_URL_FALLBACK", default=_SITE_URL_LEGACY or "http://localhost:8000")
 TENANT_BASE_DOMAIN = config("TENANT_BASE_DOMAIN", default="carnitrack.samperlabs.com")
 
-# Printer Settings
-PRINTER_TURKISH_MODE = config("PRINTER_TURKISH_MODE", default="unicode")  # 'unicode', 'ascii', or 'codepage1254'
-
 # Tailwind
 TAILWIND_APP_NAME = "theme"
 
@@ -381,6 +378,15 @@ if not DEBUG:
 LOGIN_URL = "/login/"  # Will be automatically prefixed with language by i18n_patterns
 LOGIN_REDIRECT_URL = "/dashboard/"  # Default redirect after successful login
 LOGOUT_REDIRECT_URL = "/logged-out/"  # Redirect after logout
+
+if USE_MULTITENANT:
+    AUTHENTICATION_BACKENDS = [
+        "tenants.auth_backends.PlatformAdminBackend",
+        "tenants.auth_backends.PublicSchemaSafeModelBackend",
+    ]
+    PLATFORM_ADMIN_LOGIN_URL = "/platform-admin/login/"
+else:
+    AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 
 
 # -------------------------
@@ -439,9 +445,8 @@ def print_settings_report():
     print(f"  USE_I18N: {USE_I18N}")
     print(f"  USE_TZ: {USE_TZ}")
 
-    # Printer Settings
-    print("\n🖨️ Printer Settings:")
-    print(f"  TURKISH_CHARACTER_MODE: {PRINTER_TURKISH_MODE}")
+    # Printer Settings (per-tenant via Client.printer_turkish_mode)
+    print("\n🖨️ Printer Settings: configured per-tenant (Client.printer_turkish_mode)")
 
     # Logging & Security
     print("\n🔐 Security:")

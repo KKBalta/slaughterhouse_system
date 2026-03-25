@@ -154,14 +154,7 @@ AUTH_USER_MODEL = "users.User"
 # Fallback when tenant URL is not used (SQLite tests)
 SITE_URL_FALLBACK = "http://testserver"
 
-# Company Information for Labels (test values; single-tenant test settings)
-COMPANY_NAME = "TEST COMPANY"
-COMPANY_FULL_NAME = "TEST COMPANY LTD"
-COMPANY_ADDRESS = "TEST ADDRESS"
-LICENSE_NO = "00-0000"
-OPERATION_NO = "0000000000"
-
-# Printer Settings
+# Printer Settings (per-tenant in multitenant mode; kept here as test fallback for SQLite runs)
 PRINTER_TURKISH_MODE = "unicode"
 
 # Authentication Settings

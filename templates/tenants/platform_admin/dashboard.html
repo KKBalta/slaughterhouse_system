@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Platform admin — Tenants</title>
+    <style>
+        :root {
+            --fg: #1a1a1a; --muted: #5c5c5c; --border: #e0e0e0;
+            --accent: #0d47a1; --danger: #b71c1c; --success: #1b5e20;
+            --success-bg: #e8f5e9; --danger-bg: #ffebee;
+            --warn-bg: #fff8e1; --warn-fg: #e65100;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; background: #f5f5f5; color: var(--fg); }
+        .wrap { max-width: 60rem; margin: 0 auto; }
+
+        /* Header */
+        header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .meta { font-size: 0.875rem; color: var(--muted); }
+
+        /* Messages */
+        .messages { list-style: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .msg { padding: 0.65rem 1rem; border-radius: 6px; font-size: 0.9rem; }
+        .msg.success { background: var(--success-bg); color: var(--success); }
+        .msg.error { background: var(--danger-bg); color: var(--danger); }
+
+        /* Create form panel */
+        details { margin-bottom: 1.5rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        details summary { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9375rem; user-select: none; }
+        details summary:hover { background: #fafafa; }
+        .create-body { padding: 1rem; border-top: 1px solid var(--border); }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
+        @media (max-width: 540px) { .fields { grid-template-columns: 1fr; } }
+        .field { display: flex; flex-direction: column; gap: 0.3rem; }
+        .field.full { grid-column: 1 / -1; }
+        label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+        input[type="text"], input[type="email"] {
+            padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 0.9375rem; width: 100%;
+        }
+        input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+        .help { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+        .errorlist { list-style: none; padding: 0; margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--danger); }
+        .form-actions { margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; }
+        .btn-primary {
+            padding: 0.55rem 1.25rem; background: var(--accent); color: #fff;
+            border: none; border-radius: 4px; font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+        }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .non-field-errors { background: var(--danger-bg); color: var(--danger); padding: 0.6rem 0.9rem; border-radius: 4px; font-size: 0.875rem; margin-bottom: 0.75rem; }
+
+        /* Tenant table */
+        table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        th, td { text-align: left; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9375rem; }
+        th { background: #fafafa; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+        tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge.active { background: var(--success-bg); color: var(--success); }
+        .badge.inactive { background: var(--danger-bg); color: var(--danger); }
+        .empty { padding: 2rem; text-align: center; color: var(--muted); background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+
+        /* Inline forms */
+        form.inline { display: inline; margin: 0; }
+        button.link { background: none; border: none; cursor: pointer; font-size: 0.875rem; text-decoration: underline; padding: 0; }
+        button.link.deactivate { color: var(--danger); }
+        button.link.activate { color: var(--success); }
+        button.link.signout { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>Tenants</h1>
+                <p class="meta">Signed in as {{ platform_admin.email }}</p>
+            </div>
+            <form class="inline" method="post" action="{% url 'platform_admin_logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="link signout">Sign out</button>
+            </form>
+        </header>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="msg {{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {# ── Create Tenant ── #}
+        <details {% if create_form.errors %}open{% endif %}>
+            <summary>+ Provision new tenant</summary>
+            <div class="create-body">
+                {% if create_form.non_field_errors %}
+                    <div class="non-field-errors">{{ create_form.non_field_errors }}</div>
+                {% endif %}
+                <form method="post" action="{% url 'platform_admin_dashboard' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_action" value="create_tenant">
+                    <div class="fields">
+                        <div class="field">
+                            <label for="{{ create_form.schema_name.id_for_label }}">{{ create_form.schema_name.label }}</label>
+                            {{ create_form.schema_name }}
+                            <span class="help">{{ create_form.schema_name.help_text }}</span>
+                            {% if create_form.schema_name.errors %}<ul class="errorlist">{% for e in create_form.schema_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ create_form.name.id_for_label }}">{{ create_form.name.label }}</label>
+                            {{ create_form.name }}
+                            {% if create_form.name.errors %}<ul class="errorlist">{% for e in create_form.name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ create_form.company_name.id_for_label }}">{{ create_form.company_name.label }}</label>
+                            {{ create_form.company_name }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ create_form.contact_email.id_for_label }}">{{ create_form.contact_email.label }}</label>
+                            {{ create_form.contact_email }}
+                        </div>
+                        <div class="field full">
+                            <label for="{{ create_form.domain.id_for_label }}">{{ create_form.domain.label }}</label>
+                            {{ create_form.domain }}
+                            <span class="help">{{ create_form.domain.help_text }}</span>
+                            {% if create_form.domain.errors %}<ul class="errorlist">{% for e in create_form.domain.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Provision tenant</button>
+                        <span style="font-size:0.8rem;color:var(--muted)">Creates PostgreSQL schema and runs migrations automatically.</span>
+                    </div>
+                </form>
+            </div>
+        </details>
+
+        {# ── Tenant list ── #}
+        {% if tenants %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Schema</th>
+                        <th>Slug</th>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Admin user</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tenants %}
+                        <tr>
+                            <td><code>{{ t.schema_name }}</code></td>
+                            <td>{{ t.slug }}</td>
+                            <td>{{ t.name }}</td>
+                            <td>{{ t.company_name|default:"—" }}</td>
+                            <td>
+                                {% if t.is_active %}
+                                    <span class="badge active">Active</span>
+                                {% else %}
+                                    <span class="badge inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'tenant_create_superuser' t.schema_name %}">Create superuser</a>
+                            </td>
+                            <td>
+                                <form class="inline" method="post" action="{% url 'toggle_tenant_active' t.schema_name %}">
+                                    {% csrf_token %}
+                                    {% if t.is_active %}
+                                        <button type="submit" class="link deactivate"
+                                            onclick="return confirm('Deactivate {{ t.schema_name }}?')">Deactivate</button>
+                                    {% else %}
+                                        <button type="submit" class="link activate">Activate</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty">No tenants yet. Use "Provision new tenant" above to get started.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

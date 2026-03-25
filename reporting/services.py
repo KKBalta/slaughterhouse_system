@@ -588,8 +588,21 @@ class PDFReportGenerator:
             fontName="Helvetica-Bold",
         )
 
-        # Add company header
-        company_info = "GUNDOGDULAR GIDA SAN VE TUR. TIC. LTD STI - BOZALAN - EZINE / CANAKKALE"
+        # Add company header (tenant-specific when multitenant)
+        from labeling.utils import get_company_info
+
+        info = get_company_info()
+        company_info = " — ".join(
+            part
+            for part in (
+                (info.get("company_name") or "").strip(),
+                (info.get("company_full_name") or "").strip(),
+                (info.get("company_address") or "").strip(),
+            )
+            if part
+        )
+        if not company_info:
+            company_info = " "
         company_para = Paragraph(company_info, company_style)
         story.append(company_para)
         story.append(Spacer(1, 10))

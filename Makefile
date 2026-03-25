@@ -29,7 +29,10 @@ CLOUD_SQL_PROXY_V2 ?= cloud-sql-proxy
 
 TAILWIND_DIR ?= theme/static_src
 
-.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps
+# Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
+SCHEMA ?= dev
+
+.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev
 
 help:
 	@echo "CarniTrack Makefile"
@@ -46,6 +49,7 @@ help:
 	@echo ""
 	@echo "  make db-setup-dev       Create local Postgres role+DB from $(DEV_ENV)"
 	@echo "  make migrate-dev        Run migrations using $(DEV_ENV)"
+	@echo "  make tenant-superuser-dev  createsuperuser in tenant DB (SCHEMA=$(SCHEMA) by default; needs a Client + Domain)"
 	@echo "  make migrate-staging    Run migrations using $(STAGING_ENV)"
 	@echo "  make import-prod-dev    Wipe dev DB + load db_exports/prod.sql (destructive)"
 	@echo ""
@@ -110,6 +114,11 @@ db-setup-dev:
 migrate-dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV)"; exit 1; fi
 	bash -c 'set -a; . "$(DEV_ENV)"; set +a; $(MANAGE) migrate'
+
+# Per-tenant Django admin login: auth_user exists only in tenant schemas (not public).
+tenant-superuser-dev:
+	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV)"; exit 1; fi
+	bash -c 'set -a; . "$(DEV_ENV)"; set +a; $(MANAGE) create_tenant_superuser --schema="$(SCHEMA)"'
 
 migrate-staging:
 	@if [ ! -f "$(STAGING_ENV)" ]; then echo "Missing $(STAGING_ENV)"; exit 1; fi

@@ -30,7 +30,7 @@ from .utils import maybe_mark_event_animals_disassembled
 
 logger = logging.getLogger(__name__)
 
-# Default config returned to Edge
+# Default config returned to Edge (baseUrl/timezone filled per request in multitenant mode)
 DEFAULT_CONFIG = {
     "sessionPollIntervalMs": 5000,
     "heartbeatIntervalMs": 30000,
@@ -38,6 +38,31 @@ DEFAULT_CONFIG = {
     "workHoursEnd": "18:00",
     "timezone": "Europe/Istanbul",
 }
+
+
+def _edge_runtime_config(request):
+    """
+    Default Edge tuning plus tenant base URL and timezone.
+    Edge devices must call the API on ``{tenant}.carnitrack.samperlabs.com`` (or your
+    TENANT_BASE_DOMAIN) so TenantMainMiddleware resolves the correct schema; ``baseUrl``
+    echoes the canonical HTTPS origin for that tenant.
+    """
+    from django.conf import settings
+
+    from tenants.tenant_helpers import get_tenant_site_url
+
+    cfg = dict(DEFAULT_CONFIG)
+    cfg["baseUrl"] = get_tenant_site_url()
+    if getattr(settings, "USE_MULTITENANT", False):
+        from django.db import connection
+        from django_tenants.utils import get_public_schema_name
+
+        tenant = getattr(connection, "tenant", None)
+        if tenant is not None and tenant.schema_name != get_public_schema_name():
+            tz = getattr(tenant, "timezone", None) or cfg.get("timezone")
+            if tz:
+                cfg["timezone"] = tz
+    return cfg
 
 
 def _parse_iso(s):
@@ -183,7 +208,7 @@ def edge_register(request):
             "edgeId": str(edge.id),
             "siteId": str(site.id),
             "siteName": site.name,
-            "config": DEFAULT_CONFIG,
+            "config": _edge_runtime_config(request),
         }
     )
 
@@ -663,14 +688,8 @@ def edge_config(request):
     edge = request.edge_device
     edge.last_seen_at = timezone.now()
     edge.save(update_fields=["last_seen_at", "updated_at"])
-    payload = {
-        "edgeId": str(edge.id),
-        "sessionPollIntervalMs": DEFAULT_CONFIG["sessionPollIntervalMs"],
-        "heartbeatIntervalMs": DEFAULT_CONFIG["heartbeatIntervalMs"],
-        "workHoursStart": DEFAULT_CONFIG["workHoursStart"],
-        "workHoursEnd": DEFAULT_CONFIG["workHoursEnd"],
-        "timezone": DEFAULT_CONFIG["timezone"],
-    }
+    payload = _edge_runtime_config(request)
+    payload["edgeId"] = str(edge.id)
     return JsonResponse(payload)
 
 

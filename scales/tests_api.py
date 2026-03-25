@@ -70,6 +70,7 @@ class TestEdgeRegister:
         assert data["siteName"] == "New Plant"
         assert "config" in data
         assert data["config"]["timezone"] == "Europe/Istanbul"
+        assert data["config"]["baseUrl"] == "http://testserver"
 
         edge_uuid = uuid.UUID(data["edgeId"])
         edge = EdgeDevice.objects.get(id=edge_uuid)
@@ -457,6 +458,7 @@ class TestEdgeConfig:
         assert data["edgeId"] == str(edge_device.id)
         assert "sessionPollIntervalMs" in data
         assert data["timezone"] == "Europe/Istanbul"
+        assert data["baseUrl"] == "http://testserver"
 
     def test_config_method_not_allowed(self, api_client, edge_device):
         resp = api_client.post(_edge_url("config"), HTTP_X_EDGE_ID=str(edge_device.id))
