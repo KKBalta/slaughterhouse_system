@@ -1,12 +1,19 @@
 import secrets
+import json
 from functools import wraps
 
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_http_methods
 from django.views.generic.edit import CreateView
 
 from .forms import ClientProfileRegisterForm, UserRegistrationForm
@@ -63,6 +70,75 @@ class CustomLoginView(LoginView):
 
         # Default redirect to dashboard
         return reverse_lazy("dashboard")
+
+
+@require_GET
+@ensure_csrf_cookie
+def csrf_token_api(request):
+    return JsonResponse({"csrfToken": get_token(request)})
+
+
+@require_http_methods(["POST"])
+def session_login_api(request):
+    # Accept JSON body (SPA) and x-www-form-urlencoded (fallback).
+    payload = {}
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({"detail": "Invalid JSON body."}, status=400)
+    else:
+        payload = request.POST
+
+    username = payload.get("username") or payload.get("email")
+    password = payload.get("password")
+    if not username or not password:
+        return JsonResponse({"detail": "username/email and password are required."}, status=400)
+
+    user = authenticate(request, username=username, password=password)
+    if user is None or not user.is_active:
+        return JsonResponse({"detail": "Invalid credentials."}, status=401)
+
+    login(request, user)
+    return JsonResponse(
+        {
+            "authenticated": True,
+            "user": {
+                "id": user.id,
+                "username": user.get_username(),
+                "email": getattr(user, "email", ""),
+            },
+        }
+    )
+
+
+@require_http_methods(["POST"])
+def session_logout_api(request):
+    logout(request)
+    return JsonResponse({"authenticated": False})
+
+
+@require_GET
+def session_me_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"authenticated": False}, status=401)
+    return JsonResponse(
+        {
+            "authenticated": True,
+            "user": {
+                "id": request.user.id,
+                "username": request.user.get_username(),
+                "email": getattr(request.user, "email", ""),
+            },
+        }
+    )
+
+
+# Local dev ergonomics: browsers can block cross-origin CSRF cookie flows on localhost
+# variants; keep production strict by only relaxing in DEBUG.
+if settings.DEBUG:
+    session_login_api = csrf_exempt(session_login_api)
+    session_logout_api = csrf_exempt(session_logout_api)
 
 
 class CustomLogoutView(LogoutView):

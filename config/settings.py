@@ -27,6 +27,13 @@ DEBUG = config("DEBUG", cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
+SESSION_COOKIE_DOMAIN = config("SESSION_COOKIE_DOMAIN", default=None)
+CSRF_COOKIE_DOMAIN = config("CSRF_COOKIE_DOMAIN", default=SESSION_COOKIE_DOMAIN or None)
+SESSION_COOKIE_SAMESITE = config("SESSION_COOKIE_SAMESITE", default="Lax")
+CSRF_COOKIE_SAMESITE = config("CSRF_COOKIE_SAMESITE", default="Lax")
+CSRF_COOKIE_HTTPONLY = config("CSRF_COOKIE_HTTPONLY", default=False, cast=bool)
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())
+CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
 
 # Application definition
 SHARED_APPS = [
@@ -35,6 +42,7 @@ SHARED_APPS = [
     "django.contrib.admin",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "tenants",
     "tailwind",
     "widget_tweaks",
@@ -65,6 +73,7 @@ _LEGACY_INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "django_fsm",
     "tailwind",
     "widget_tweaks",
@@ -88,6 +97,7 @@ else:
 
 _MULTITENANT_MIDDLEWARE = [
     "django_tenants.middleware.main.TenantMainMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -100,6 +110,7 @@ _MULTITENANT_MIDDLEWARE = [
 ]
 
 _LEGACY_MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -329,19 +340,53 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
+# If Redis is down at startup: when True, use in-process LocMemCache (dev/single-worker only).
+# Default follows DEBUG so local dev tolerates stopped Redis; set False in production.
+REDIS_FALLBACK_TO_LOCMEM = config("REDIS_FALLBACK_TO_LOCMEM", default=DEBUG, cast=bool)
 
 if USE_MULTITENANT:
-    CACHES = {
-        "default": {
-            "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": REDIS_URL,
-            "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            },
-            "KEY_FUNCTION": "django_tenants.cache.make_key",
-            "REVERSE_KEY_FUNCTION": "django_tenants.cache.reverse_key",
+    # Sessions use the default cache; keys are prefixed with the current PostgreSQL schema
+    # (django_tenants.cache.make_key), so public (platform admin) and each tenant stay isolated.
+    _TENANT_CACHE_KEY_FN = "django_tenants.cache.make_key"
+    _TENANT_CACHE_REVERSE_KEY_FN = "django_tenants.cache.reverse_key"
+
+    from tenants.redis_support import is_redis_reachable
+
+    _redis_up = is_redis_reachable(REDIS_URL)
+
+    if _redis_up:
+        CACHES = {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": REDIS_URL,
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                },
+                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+            }
         }
-    }
+    elif REDIS_FALLBACK_TO_LOCMEM:
+        logging.getLogger(__name__).warning(
+            "Redis unreachable at %s — using LocMemCache for cache/sessions. "
+            "Sessions are not shared across processes (fine for runserver; do not use this mode "
+            "behind multi-worker Gunicorn). Start Redis or fix REDIS_URL.",
+            REDIS_URL,
+        )
+        CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "carnitrack-mt-cache",
+                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+            }
+        }
+    else:
+        raise ImproperlyConfigured(
+            f"Redis at {REDIS_URL} is unreachable and REDIS_FALLBACK_TO_LOCMEM=False. "
+            "Start Redis, set REDIS_URL, or enable REDIS_FALLBACK_TO_LOCMEM only for local debugging."
+        )
+
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
     SESSION_CACHE_ALIAS = "default"
 else:

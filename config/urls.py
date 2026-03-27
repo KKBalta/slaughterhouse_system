@@ -20,6 +20,7 @@ urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Include the i18n URLs for set_language
     path("reporting/", include("reporting.urls")),  # Add reporting URLs here temporarily
     path("api/v1/edge/", include("scales.api_urls")),  # CarniTrack Edge API
+    path("api/v1/auth/", include("users.api_urls")),  # Session auth endpoints for external frontend
 ]
 
 # Translatable URLs

@@ -24,9 +24,9 @@
 
 ### Repository Cleanup
 
-- [ ] Verify `django-tenants` compatibility with Django 5.2.5 (check release notes / test install)
+- [x] Verify `django-tenants` compatibility with Django 5.2.x — **done:** `django-tenants==3.10.1` + `Django==5.2.5` in `requirements.txt`; exercised in local dev / test runs (re-check release notes on major upgrades).
 - [ ] Keep `env/examples/` templates up to date for developer onboarding
-- [ ] Remove unused deps from `requirements.txt`: `dj-database-url`, `cloud-sql-python-connector`
+- [x] Remove unused deps from `requirements.txt` — **`dj-database-url` and `cloud-sql-python-connector` removed** (DB config uses `python-decouple` + explicit `DATABASES` only; Cloud SQL via proxy/socket, no connector package).
 - [ ] Rename GCP project references from "carnitrack" to reflect SamperLabs ownership where needed
 
 ---
@@ -104,6 +104,10 @@
 - [ ] Set `REVERSE_KEY_FUNCTION = "django_tenants.cache.reverse_key"`
 - [ ] Set `SESSION_ENGINE = "django.contrib.sessions.backends.cache"`
 - [ ] Set `SESSION_CACHE_ALIAS = "default"`
+
+**Local dev (pre-prod):** `REDIS_URL=redis://127.0.0.1:6379/0` (e.g. `brew services start redis`). Multitenant mode stores sessions in Redis; `django_tenants.cache.make_key` prefixes keys with `connection.schema_name`, so **public** (`platform-admin`) and each **tenant** (`users_user` logins on subdomains) get **separate** session cache namespaces. Browsers only send the session cookie to the host that set it, which adds another layer of isolation between tenant hostnames.
+
+**Redis down at startup:** If `REDIS_FALLBACK_TO_LOCMEM` is True (defaults to `DEBUG`), settings fall back to **LocMemCache** with the same tenant key functions — fine for `runserver`; **not** for multi-worker Gunicorn. In production keep Redis up and set `REDIS_FALLBACK_TO_LOCMEM=False` (default when `DEBUG=False`).
 
 ### 1.5 Add Tenant Middleware
 

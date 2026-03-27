@@ -11,6 +11,7 @@ Django==5.2.5
 django-tenants==3.10.1
 django-redis==5.4.0
 redis==5.2.1
+django-cors-headers==4.4.0
 django-fsm==3.0.0
 django-tailwind==4.2.0
 django-widget-tweaks==1.5.0
@@ -36,9 +37,7 @@ urllib3==2.5.0
 gunicorn>=21.0.0
 whitenoise>=6.5.0
 python-decouple>=3.8
-dj-database-url>=2.1.0
 psycopg2-binary>=2.9.7
-cloud-sql-python-connector[pg8000]>=1.4.0
 
 # Storage backend (correct extras!)
 django-storages[google]==1.14.4
