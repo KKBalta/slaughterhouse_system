@@ -16,10 +16,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "test-secret-key-for-ci-only-not-for-production"
 DEBUG = True
 
+# SQLite tests do not run the full django-tenants stack; views use getattr(..., False) where possible.
+# Tests and tenants.services import tenants.models → django_tenants.DomainMixin, which requires
+# TENANT_MODEL / TENANT_DOMAIN_MODEL at import time. (tenants app is not in INSTALLED_APPS: its migrations
+# are PostgreSQL-specific; tenant-registration URLs use lazy view imports.)
+USE_MULTITENANT = False
+TENANT_MODEL = "tenants.Client"
+TENANT_DOMAIN_MODEL = "tenants.Domain"
+
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
 
 # Application definition
+# Note: do not list django_tenants here — its AppConfig requires TENANT_APPS / SHARED_APPS.
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -31,6 +40,7 @@ INSTALLED_APPS = [
     "tailwind",
     "theme",
     "widget_tweaks",
+    "tenants",
     # Local Apps
     "users",
     "reception",
@@ -51,8 +61,12 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "tenants.middleware.ClearLegacyMessagesCookieMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Match production: session-only flash storage (see config/settings.py).
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
 ROOT_URLCONF = "config.urls"
 

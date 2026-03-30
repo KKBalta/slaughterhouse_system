@@ -1,28 +1,28 @@
 {% load static tailwind_tags i18n %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% if tenant %}{{ tenant.name }}{% else %}{% trans "CarniTrack" %}{% endif %}{% endblock %}</title>
+    <title>{% block title %}{% if tenant %}{{ tenant.name|upper }}{% else %}{% trans "CarniTrack" %}{% endif %}{% endblock %}</title>
     <link rel="icon" href="{% static 'theme/img/favicon.png' %}" type="image/png">
     <link rel="apple-touch-icon" href="{% static 'theme/img/favicon.png' %}">
     <link rel="apple-touch-icon-precomposed" href="{% static 'theme/img/favicon.png' %}">
     {% tailwind_css %}
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+<body class="bg-slate-100 text-slate-900 font-sans leading-normal tracking-normal antialiased">
 
     {% block navbar %}
-    <nav class="bg-white shadow-lg">
+    <nav class="bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0">
                 <div class="flex items-center justify-center sm:justify-start">
                     <a href="/" class="min-w-0 flex items-center justify-center sm:justify-start gap-2">
                         {% if tenant and tenant.logo %}
-                            <img src="{{ tenant.logo.url }}" alt="{{ tenant.name }}" class="h-9 w-auto max-w-[200px] object-contain sm:h-10">
+                            <img src="{{ tenant.logo.url }}" alt="{{ tenant.name|upper }}" class="h-9 w-auto max-w-[200px] object-contain sm:h-10">
                         {% endif %}
-                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{% if tenant %}{{ tenant.name }}{% else %}{% trans "CarniTrack" %}{% endif %}</span>
+                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{% if tenant %}{{ tenant.name|upper }}{% else %}{% trans "CarniTrack" %}{% endif %}</span>
                     </a>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -43,14 +43,15 @@
     </nav>
     {% endblock navbar %}
 
-    <main class="py-10">
+    <main class="py-10 text-slate-900">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             {% if messages %}
-                <div class="mb-8">
+                <div id="django-messages-container" class="mb-8 space-y-2">
                     {% for message in messages %}
-                        <div class="p-4 rounded-md 
+                        <div class="js-message-alert p-4 rounded-md transition-opacity duration-300
                             {% if message.tags == 'success' %} bg-green-100 border border-green-400 text-green-700
                             {% elif message.tags == 'error' %} bg-red-100 border border-red-400 text-red-700
+                            {% elif 'warning' in message.tags %} bg-yellow-100 border border-yellow-400 text-yellow-800
                             {% else %} bg-blue-100 border border-blue-400 text-blue-700
                             {% endif %}"
                              role="alert">
@@ -60,13 +61,42 @@
                 </div>
             {% endif %}
             
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+            <div class="rounded-xl bg-white shadow-sm">
+                <div class="bg-white p-4 text-slate-900 sm:p-6">
                     {% block content %}{% endblock %}
                 </div>
             </div>
         </div>
     </main>
 
+    <script>
+    (function () {
+        var DISMISS_MS = 4000;
+        var FADE_MS = 300;
+        function removeMessageContainer() {
+            var root = document.getElementById('django-messages-container');
+            if (root) {
+                root.remove();
+            }
+        }
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                removeMessageContainer();
+            }
+        });
+        document.querySelectorAll('.js-message-alert').forEach(function (el) {
+            window.setTimeout(function () {
+                el.style.opacity = '0';
+                window.setTimeout(function () {
+                    el.remove();
+                    var root = document.getElementById('django-messages-container');
+                    if (root && root.childElementCount === 0) {
+                        root.remove();
+                    }
+                }, FADE_MS);
+            }, DISMISS_MS);
+        });
+    })();
+    </script>
 </body>
 </html>

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load i18n %}
+
+{% block title %}
+  {% if mode == 'add' %}{% trans "Add client" %}{% else %}{% trans "Edit client" %}{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-gray-900">
+            {% if mode == 'add' %}{% trans "Add client" %}{% else %}{% trans "Edit client" %}{% endif %}
+        </h2>
+        <a href="{% url 'client_profile_list' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500">{% trans "Back to list" %}</a>
+    </div>
+
+    <form method="post" class="space-y-6" id="client-staff-form">
+        {% csrf_token %}
+        {% if profile_form.non_field_errors %}
+            <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
+                {{ profile_form.non_field_errors }}
+            </div>
+        {% endif %}
+        {% if cred_form and cred_form.non_field_errors %}
+            <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
+                {{ cred_form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">{% trans "Profile" %}</h3>
+
+        <div>
+            <label for="{{ profile_form.account_type.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.account_type.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.account_type class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.account_type.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.account_type.errors }}</p>{% endif %}
+        </div>
+
+        <div id="enterprise-fields" style="display:none;">
+            <label for="{{ profile_form.company_name.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.company_name.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.company_name class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.company_name.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.company_name.errors }}</p>{% endif %}
+            <label for="{{ profile_form.tax_id.id_for_label }}" class="block text-sm font-medium text-gray-700 mt-4">{{ profile_form.tax_id.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.tax_id class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.tax_id.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.tax_id.errors }}</p>{% endif %}
+        </div>
+
+        <div id="contact-person-block">
+            <label for="{{ profile_form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.contact_person.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.contact_person class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.contact_person.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.contact_person.errors }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label for="{{ profile_form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.phone_number.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.phone_number class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.phone_number.errors }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="{{ profile_form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.address.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.address class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.address.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.address.errors }}</p>{% endif %}
+        </div>
+
+        {% if cred_form %}
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide pt-2">{% trans "Login" %}</h3>
+        <div>
+            <label for="{{ cred_form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.username.label }}</label>
+            <div class="mt-1">
+                {% render_field cred_form.username class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if cred_form.username.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.username.errors }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="{{ cred_form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.email.label }}</label>
+            <div class="mt-1">
+                {% render_field cred_form.email class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if cred_form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.email.errors }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="{{ cred_form.new_password1.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.new_password1.label }}</label>
+            <div class="mt-1">
+                {% render_field cred_form.new_password1 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if cred_form.new_password1.help_text %}<p class="mt-1 text-xs text-gray-500">{{ cred_form.new_password1.help_text }}</p>{% endif %}
+            {% if cred_form.new_password1.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.new_password1.errors }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="{{ cred_form.new_password2.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.new_password2.label }}</label>
+            <div class="mt-1">
+                {% render_field cred_form.new_password2 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if cred_form.new_password2.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.new_password2.errors }}</p>{% endif %}
+        </div>
+        {% else %}
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">{% trans "This profile has no login account. Only profile fields can be edited." %}</p>
+        {% endif %}
+
+        <div>
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {% if mode == 'add' %}{% trans "Create client" %}{% else %}{% trans "Save changes" %}{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var accountTypeField = document.getElementById('{{ profile_form.account_type.id_for_label }}');
+        var enterpriseFields = document.getElementById('enterprise-fields');
+        function syncEnterpriseVisibility() {
+            if (!accountTypeField || !enterpriseFields) return;
+            enterpriseFields.style.display = accountTypeField.value === 'ENTERPRISE' ? '' : 'none';
+        }
+        if (accountTypeField) {
+            accountTypeField.addEventListener('change', syncEnterpriseVisibility);
+        }
+        syncEnterpriseVisibility();
+    });
+</script>
+{% endblock %}

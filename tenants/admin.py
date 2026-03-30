@@ -1,7 +1,15 @@
 from django import forms
 from django.contrib import admin
 
-from tenants.models import Client, Domain, PlatformAdmin
+from tenants.models import Client, Domain, EmailTenantMembership, PlatformAdmin, TenantRegistrationRequest
+
+
+@admin.register(TenantRegistrationRequest)
+class TenantRegistrationRequestAdmin(admin.ModelAdmin):
+    list_display = ("company_name", "derived_schema_name", "owner_email", "status", "created_at")
+    list_filter = ("status",)
+    search_fields = ("company_name", "derived_schema_name", "owner_email")
+    readonly_fields = ("id", "owner_password_hash", "status_token_hash", "created_at", "updated_at")
 
 
 @admin.register(Client)
@@ -15,6 +23,15 @@ class ClientAdmin(admin.ModelAdmin):
 class DomainAdmin(admin.ModelAdmin):
     list_display = ("domain", "tenant", "is_primary")
     search_fields = ("domain",)
+
+
+@admin.register(EmailTenantMembership)
+class EmailTenantMembershipAdmin(admin.ModelAdmin):
+    list_display = ("email_normalized", "tenant", "tenant_user_id", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("email_normalized", "tenant__schema_name")
+    raw_id_fields = ("tenant",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 class PlatformAdminForm(forms.ModelForm):

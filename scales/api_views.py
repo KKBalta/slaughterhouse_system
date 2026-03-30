@@ -43,8 +43,8 @@ DEFAULT_CONFIG = {
 def _edge_runtime_config(request):
     """
     Default Edge tuning plus tenant base URL and timezone.
-    Edge devices must call the API on ``{tenant}.carnitrack.samperlabs.com`` (or your
-    TENANT_BASE_DOMAIN) so TenantMainMiddleware resolves the correct schema; ``baseUrl``
+    Edge devices must call the API on ``{tenant}.<TENANT_BASE_DOMAIN>`` so TenantMainMiddleware
+    resolves the correct schema; ``baseUrl``
     echoes the canonical HTTPS origin for that tenant.
     """
     from django.conf import settings

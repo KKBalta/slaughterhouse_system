@@ -97,6 +97,7 @@ class SlaughterOrderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["service_package"].queryset = ServicePackage.objects.all()
         self.fields["service_package"].empty_label = _("Select service package")
+        self.fields["service_package"].label_from_instance = lambda obj: obj.localized_name()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -211,6 +212,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["service_package"].queryset = ServicePackage.objects.all()
         self.fields["service_package"].empty_label = _("Select service package")
+        self.fields["service_package"].label_from_instance = lambda obj: obj.localized_name()
 
         # Pre-populate client fields if instance exists
         if self.instance and self.instance.pk:

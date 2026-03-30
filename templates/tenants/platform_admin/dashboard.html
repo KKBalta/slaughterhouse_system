@@ -36,10 +36,16 @@
         .field { display: flex; flex-direction: column; gap: 0.3rem; }
         .field.full { grid-column: 1 / -1; }
         label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-        input[type="text"], input[type="email"] {
+        input[type="text"], input[type="email"], textarea {
             padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: 4px;
             font-size: 0.9375rem; width: 100%;
         }
+        textarea { min-height: 4rem; resize: vertical; }
+        .btn-danger { padding: 0.45rem 0.9rem; background: var(--danger); color: #fff; border: none; border-radius: 4px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+        .btn-danger:hover { filter: brightness(1.05); }
+        .pending-panel { margin-bottom: 1.5rem; background: var(--warn-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .pending-panel h2 { font-size: 1rem; margin: 0 0 0.75rem; color: var(--warn-fg); }
+        .reg-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
         input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
         .help { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
         .errorlist { list-style: none; padding: 0; margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--danger); }
@@ -75,6 +81,7 @@
             <div>
                 <h1>Tenants</h1>
                 <p class="meta">Signed in as {{ platform_admin.email }}</p>
+                <p class="meta" style="margin-top:0.5rem;max-width:42rem">Each row links to that tenant’s app on its hostname (e.g. <code>http://{slug}.localhost:8000</code> when <code>TENANT_BASE_DOMAIN=localhost</code> and <code>PUBLIC_TENANT_HTTP_PORT=8000</code>).</p>
             </div>
             <form class="inline" method="post" action="{% url 'platform_admin_logout' %}">
                 {% csrf_token %}
@@ -83,11 +90,57 @@
         </header>
 
         {% if messages %}
-            <ul class="messages">
+            <ul id="django-messages-container" class="messages">
                 {% for message in messages %}
-                    <li class="msg {{ message.tags }}">{{ message }}</li>
+                    <li class="msg {{ message.tags }} js-message-alert transition-opacity" style="transition: opacity 0.3s ease">{{ message }}</li>
                 {% endfor %}
             </ul>
+        {% endif %}
+
+        {# ── Pending tenant registrations ── #}
+        {% if pending_registrations %}
+        <div class="pending-panel">
+            <h2>Pending tenant registrations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Schema (preview)</th>
+                        <th>Owner email</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in pending_registrations %}
+                    <tr>
+                        <td>
+                            <strong>{{ r.company_name }}</strong>
+                            {% if r.company_full_name %}<br><span class="meta">{{ r.company_full_name }}</span>{% endif %}
+                            {% if r.company_address %}<br><span class="meta">{{ r.company_address|truncatechars:80 }}</span>{% endif %}
+                        </td>
+                        <td><code>{{ r.derived_schema_name }}</code></td>
+                        <td>{{ r.owner_email }}</td>
+                        <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <div class="reg-actions">
+                                <form class="inline" method="post" action="{% url 'tenant_registration_approve' r.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-primary">Approve</button>
+                                </form>
+                                <form class="inline" method="post" action="{% url 'tenant_registration_reject' r.id %}" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;" onsubmit="return confirm('Reject this registration?');">
+                                    {% csrf_token %}
+                                    <input type="text" name="rejection_reason" placeholder="Reason (optional)" style="max-width:14rem;font-size:0.85rem;">
+                                    <button type="submit" class="btn-danger">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="meta" style="margin:0.75rem 0 0;">Approving creates the tenant schema, domain, and an OWNER user (no Django /admin/ access).</p>
+        </div>
         {% endif %}
 
         {# ── Create Tenant ── #}
@@ -136,10 +189,11 @@
         </details>
 
         {# ── Tenant list ── #}
-        {% if tenants %}
+        {% if tenant_rows %}
             <table>
                 <thead>
                     <tr>
+                        <th>Tenant URL</th>
                         <th>Schema</th>
                         <th>Slug</th>
                         <th>Name</th>
@@ -150,8 +204,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for t in tenants %}
+                    {% for row in tenant_rows %}
+                        {% with t=row.tenant %}
                         <tr>
+                            <td><a href="{{ row.app_url }}/" target="_blank" rel="noopener noreferrer">{{ row.app_url }}</a></td>
                             <td><code>{{ t.schema_name }}</code></td>
                             <td>{{ t.slug }}</td>
                             <td>{{ t.name }}</td>
@@ -164,7 +220,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'tenant_create_superuser' t.schema_name %}">Create superuser</a>
+                                <a href="{% url 'tenant_create_superuser' t.schema_name %}">Create admin user</a>
                             </td>
                             <td>
                                 <form class="inline" method="post" action="{% url 'toggle_tenant_active' t.schema_name %}">
@@ -176,8 +232,15 @@
                                         <button type="submit" class="link activate">Activate</button>
                                     {% endif %}
                                 </form>
+                                <form class="inline" method="post" action="{% url 'tenant_hard_delete' t.schema_name %}" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;max-width:18rem"
+                                      onsubmit="return confirm('Permanently delete tenant «{{ t.schema_name }}»? This runs DROP SCHEMA … CASCADE and cannot be undone.');">
+                                    {% csrf_token %}
+                                    <input type="text" name="confirm_schema" placeholder="{{ t.schema_name }}" autocomplete="off" aria-label="Type schema name to confirm deletion" style="flex:1;min-width:6rem;font-size:0.8rem;padding:0.3rem 0.45rem;border:1px solid var(--border);border-radius:4px">
+                                    <button type="submit" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;white-space:nowrap">Delete forever</button>
+                                </form>
                             </td>
                         </tr>
+                        {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -185,5 +248,23 @@
             <p class="empty">No tenants yet. Use "Provision new tenant" above to get started.</p>
         {% endif %}
     </div>
+    <script>
+    (function () {
+        var DISMISS_MS = 4000;
+        var FADE_MS = 300;
+        document.querySelectorAll('.js-message-alert').forEach(function (el) {
+            window.setTimeout(function () {
+                el.style.opacity = '0';
+                window.setTimeout(function () {
+                    el.remove();
+                    var root = document.getElementById('django-messages-container');
+                    if (root && root.childElementCount === 0) {
+                        root.remove();
+                    }
+                }, FADE_MS);
+            }, DISMISS_MS);
+        });
+    })();
+    </script>
 </body>
 </html>

@@ -1,6 +1,61 @@
 from django.db import migrations, models
 
 
+def _apply_slug(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                ALTER TABLE tenants_client
+                    ADD COLUMN IF NOT EXISTS slug varchar(63) NOT NULL DEFAULT '';
+                """
+            )
+            cursor.execute("UPDATE tenants_client SET slug = schema_name WHERE slug = '';")
+            cursor.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS tenants_client_slug_key
+                    ON tenants_client (slug);
+                """
+            )
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS tenants_client_slug_8a691f8f_like
+                    ON tenants_client (slug varchar_pattern_ops);
+                """
+            )
+    elif schema_editor.connection.vendor == "sqlite":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute(
+                "ALTER TABLE tenants_client ADD COLUMN slug varchar(63) NOT NULL DEFAULT '';"
+            )
+            cursor.execute("UPDATE tenants_client SET slug = schema_name WHERE slug = '';")
+            cursor.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS tenants_client_slug_key ON tenants_client (slug);"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS tenants_client_slug_8a691f8f_like ON tenants_client (slug);"
+            )
+    else:
+        raise NotImplementedError(
+            f"Unsupported database for tenants 0002: {schema_editor.connection.vendor}"
+        )
+
+
+def _reverse_slug(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("ALTER TABLE tenants_client DROP COLUMN IF EXISTS slug;")
+    elif schema_editor.connection.vendor == "sqlite":
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("DROP INDEX IF EXISTS tenants_client_slug_8a691f8f_like;")
+            cursor.execute("DROP INDEX IF EXISTS tenants_client_slug_key;")
+            cursor.execute("ALTER TABLE tenants_client DROP COLUMN slug;")
+    else:
+        raise NotImplementedError(
+            f"Unsupported database for tenants 0002 reverse: {schema_editor.connection.vendor}"
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -8,10 +63,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Use SeparateDatabaseAndState so Django's migration state tracks the slug
-        # field correctly, while raw SQL handles the actual DDL. This avoids a
-        # double-deferred-index bug in Django's PostgreSQL SchemaEditor for
-        # SlugField(unique=True) when split across AddField + AlterField.
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AddField(
@@ -26,18 +77,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             database_operations=[
-                migrations.RunSQL(
-                    sql="""
-                        ALTER TABLE tenants_client
-                            ADD COLUMN IF NOT EXISTS slug varchar(63) NOT NULL DEFAULT '';
-                        UPDATE tenants_client SET slug = schema_name WHERE slug = '';
-                        CREATE UNIQUE INDEX IF NOT EXISTS tenants_client_slug_key
-                            ON tenants_client (slug);
-                        CREATE INDEX IF NOT EXISTS tenants_client_slug_8a691f8f_like
-                            ON tenants_client (slug varchar_pattern_ops);
-                    """,
-                    reverse_sql="ALTER TABLE tenants_client DROP COLUMN IF EXISTS slug;",
-                ),
+                migrations.RunPython(_apply_slug, _reverse_slug),
             ],
         ),
         migrations.CreateModel(

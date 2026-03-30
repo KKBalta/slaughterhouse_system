@@ -21,6 +21,8 @@ urlpatterns = [
     path("reporting/", include("reporting.urls")),  # Add reporting URLs here temporarily
     path("api/v1/edge/", include("scales.api_urls")),  # CarniTrack Edge API
     path("api/v1/auth/", include("users.api_urls")),  # Session auth endpoints for external frontend
+    path("api/v1/clients/", include("users.client_api_urls")),  # Staff: client profiles (list + detail/PATCH)
+    path("api/v1/tenant-registration/", include("tenants.api_urls")),  # Public tenant signup (same routes as urls_public)
 ]
 
 # Translatable URLs

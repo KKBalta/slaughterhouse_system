@@ -4,18 +4,21 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django_tenants.utils import tenant_context
 
+from tenants.email_index import build_tenant_api_base_url
 from tenants.forms import (
     CreateTenantForm,
     CreateTenantSuperuserForm,
     PlatformAdminAuthenticationForm,
     PlatformAdminSetupForm,
 )
-from tenants.models import Client, Domain, PlatformAdmin
+from tenants.models import Client, Domain, PlatformAdmin, TenantRegistrationRequest
+from tenants.services import approve_registration, hard_delete_tenant, provision_tenant, reject_registration
 
 
 def public_landing(request):
@@ -30,8 +33,13 @@ class PlatformAdminLoginView(LoginView):
     def get_login_url(self):
         return "/platform-admin/login/"
 
-    def get_success_url(self):
+    def get_default_redirect_url(self):
         return str(reverse_lazy("platform_admin_dashboard"))
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["public_site_url"] = getattr(settings, "SITE_URL_FALLBACK", "") or ""
+        return ctx
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and isinstance(request.user, PlatformAdmin):
@@ -58,37 +66,85 @@ def platform_admin_dashboard(request):
         create_form = CreateTenantForm(request.POST)
         if create_form.is_valid():
             schema = create_form.cleaned_data["schema_name"]
-            base_domain = getattr(settings, "TENANT_BASE_DOMAIN", "carnitrack.samperlabs.com")
+            base_domain = settings.TENANT_BASE_DOMAIN
             domain_name = create_form.cleaned_data.get("domain") or f"{schema}.{base_domain}"
-
-            tenant = Client(
+            provision_tenant(
                 schema_name=schema,
                 name=create_form.cleaned_data["name"],
                 company_name=create_form.cleaned_data.get("company_name", ""),
                 contact_email=create_form.cleaned_data.get("contact_email", ""),
+                domain_name=domain_name,
             )
-            tenant.save()
-            Domain.objects.create(domain=domain_name, tenant=tenant, is_primary=True)
             messages.success(request, f'Tenant "{schema}" provisioned at {domain_name}.')
             return redirect("platform_admin_dashboard")
 
-    tenants = Client.objects.all().order_by("schema_name")
+    pending_regs = (
+        TenantRegistrationRequest.objects.filter(status=TenantRegistrationRequest.Status.PENDING)
+        .select_related("reviewed_by")
+        .order_by("created_at")
+    )
+
+    tenants_qs = Client.objects.all().prefetch_related("domains").order_by("schema_name")
+    tenant_rows = [{"tenant": t, "app_url": build_tenant_api_base_url(t)} for t in tenants_qs]
     return render(
         request,
         "tenants/platform_admin/dashboard.html",
         {
-            "tenants": tenants,
+            "tenant_rows": tenant_rows,
             "platform_admin": request.user,
             "create_form": create_form,
+            "pending_registrations": pending_regs,
         },
     )
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_registration_approve(request, registration_id):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    reg = get_object_or_404(
+        TenantRegistrationRequest,
+        pk=registration_id,
+        status=TenantRegistrationRequest.Status.PENDING,
+    )
+    try:
+        approve_registration(reg, request.user)
+        messages.success(
+            request,
+            f'Approved registration "{reg.company_name}" — tenant «{reg.derived_schema_name}» provisioned.',
+        )
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+    return redirect("platform_admin_dashboard")
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_registration_reject(request, registration_id):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    reg = get_object_or_404(
+        TenantRegistrationRequest,
+        pk=registration_id,
+        status=TenantRegistrationRequest.Status.PENDING,
+    )
+    reason = (request.POST.get("rejection_reason") or "").strip()
+    try:
+        reject_registration(reg, request.user, reason=reason)
+        messages.success(request, f'Rejected registration for "{reg.company_name}".')
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+    return redirect("platform_admin_dashboard")
 
 
 @login_required(login_url="/platform-admin/login/")
 def tenant_create_superuser(request, schema_name):
     """
-    Provision a Django superuser (tenant auth.User) for one tenant schema.
-    Only available to PlatformAdmin; runs ORM inside the tenant's PostgreSQL schema.
+    Create a User row in the tenant schema (CarniTrack app login on the tenant host).
+    Optional Django /admin/ access via grant_django_admin. Platform admin only.
     """
     guard = _require_platform_admin(request)
     if guard:
@@ -98,12 +154,25 @@ def tenant_create_superuser(request, schema_name):
     primary_domain = tenant.get_primary_domain()
     domain_hint = primary_domain.domain if primary_domain else ""
 
+    User = get_user_model()
+    lang_code = getattr(settings, "LANGUAGE_CODE", "tr") or "tr"
+    tenant_login_url = f"{build_tenant_api_base_url(tenant).rstrip('/')}/{lang_code}/login/"
+
+    existing_users = []
+    with tenant_context(tenant):
+        existing_users = list(
+            User.objects.order_by("username").values(
+                "username", "email", "role", "is_active", "is_staff", "is_superuser"
+            )
+        )
+
     form = CreateTenantSuperuserForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         username = form.cleaned_data["username"].strip()
         email = form.cleaned_data["email"].strip().lower()
         password = form.cleaned_data["password1"]
-        User = get_user_model()
+        account_kind = form.cleaned_data.get("account_kind") or "app_admin"
+        grant_django = account_kind == "django_superuser"
         try:
             with tenant_context(tenant):
                 if User.objects.filter(username__iexact=username).exists():
@@ -111,24 +180,23 @@ def tenant_create_superuser(request, schema_name):
                 elif User.objects.filter(email__iexact=email).exists():
                     form.add_error("email", "A user with this email already exists in this tenant.")
                 else:
-                    User.objects.create_superuser(
+                    User.objects.create_user(
                         username=username,
                         email=email,
                         password=password,
-                        role=User.Role.ADMIN,
+                        role=User.Role.ADMIN.value,
+                        is_staff=grant_django,
+                        is_superuser=grant_django,
                     )
         except IntegrityError:
             form.add_error(None, "Could not create user (unique constraint). Try a different username or email.")
         else:
             if not form.errors:
-                if domain_hint:
-                    scheme = "http" if ("localhost" in domain_hint or "127.0.0.1" in domain_hint) else "https"
-                    where = f"{scheme}://{domain_hint}/admin/"
-                else:
-                    where = f"the tenant host you configure for schema «{schema_name}», then /admin/"
+                kind_label = "Django superuser + app admin" if grant_django else "tenant app admin (ADMIN)"
                 messages.success(
                     request,
-                    f'Superuser "{username}" created for tenant "{schema_name}". Sign in at {where}',
+                    f'User "{username}" created for tenant "{schema_name}" ({kind_label}). '
+                    f"Sign in at the tenant app login page (not platform-admin): {tenant_login_url}",
                 )
                 return redirect("platform_admin_dashboard")
 
@@ -138,10 +206,37 @@ def tenant_create_superuser(request, schema_name):
         {
             "tenant": tenant,
             "domain_hint": domain_hint,
+            "tenant_login_url": tenant_login_url,
+            "existing_users": existing_users,
             "form": form,
             "platform_admin": request.user,
         },
     )
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_hard_delete(request, schema_name):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    confirm = (request.POST.get("confirm_schema") or "").strip()
+    if confirm != schema_name:
+        messages.error(
+            request,
+            f'Confirmation failed: type the schema name exactly ("{schema_name}") to delete this tenant.',
+        )
+        return redirect("platform_admin_dashboard")
+    try:
+        hard_delete_tenant(schema_name=schema_name)
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+        return redirect("platform_admin_dashboard")
+    messages.success(
+        request,
+        f'Tenant "{schema_name}" was permanently deleted (PostgreSQL schema dropped).',
+    )
+    return redirect("platform_admin_dashboard")
 
 
 @require_POST

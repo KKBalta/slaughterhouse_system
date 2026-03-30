@@ -33,18 +33,33 @@ class ClientSearchView(LoginRequiredMixin, View):
         clients = ClientProfile.objects.filter(
             Q(company_name__icontains=query)
             | Q(contact_person__icontains=query)
+            | Q(phone_number__icontains=query)
+            | Q(user__username__icontains=query)
             | Q(user__first_name__icontains=query)
             | Q(user__last_name__icontains=query)
-        )[:10]  # Limit to 10 results
+        ).select_related("user")[:10]  # Limit to 10 results
 
         client_list = []
         for client in clients:
             if client.account_type == ClientProfile.AccountType.ENTERPRISE:
-                display_name = f"{client.company_name}"
+                display_name = (client.company_name or "").strip() or "—"
                 contact_info = client.contact_person or "No contact person"
             else:
-                display_name = f"{client.user.get_full_name()}" if client.user else client.contact_person
-                contact_info = "Individual"
+                # Individual: prefer profile contact name (registration), then Django name, then login.
+                u = client.user
+                cp = (client.contact_person or "").strip()
+                if u:
+                    full = (u.get_full_name() or "").strip()
+                    display_name = cp or full or u.username
+                    parts = []
+                    if cp and full and cp.lower() != full.lower():
+                        parts.append(full)
+                    if u.username and u.username != display_name:
+                        parts.append(f"@{u.username}")
+                    contact_info = " · ".join(parts) if parts else "Individual"
+                else:
+                    display_name = cp or "—"
+                    contact_info = "Individual"
 
             client_list.append(
                 {

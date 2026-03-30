@@ -6,6 +6,7 @@ from core.models import BaseModel
 
 class User(AbstractUser):
     class Role(models.TextChoices):
+        OWNER = "OWNER", "Owner"
         ADMIN = "ADMIN", "Admin"
         MANAGER = "MANAGER", "Manager"
         OPERATOR = "OPERATOR", "Operator"
@@ -16,7 +17,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=50, choices=Role.choices)
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.role:
+        # Only apply default when role was never set (avoid treating valid values as falsy edge cases).
+        if not self.pk and (self.role is None or self.role == ""):
             self.role = self.base_role
         return super().save(*args, **kwargs)
 

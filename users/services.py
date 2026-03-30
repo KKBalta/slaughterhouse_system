@@ -100,3 +100,13 @@ def archive_client_profile(client_profile: ClientProfile) -> ClientProfile:
     """Archives a client's profile by using the soft-delete method."""
     client_profile.soft_delete()  # This uses the method from BaseModel
     return client_profile
+
+
+@transaction.atomic
+def activate_client_profile(client_profile: ClientProfile) -> ClientProfile:
+    """Restores an archived profile and re-enables login for the linked user, if any."""
+    client_profile.restore()
+    u = client_profile.user
+    if u is not None:
+        reactivate_user(u)
+    return client_profile

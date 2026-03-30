@@ -1,22 +1,77 @@
-import secrets
 import json
+import re
+import secrets
 from functools import wraps
+from urllib.parse import quote
+
+# One-shot CSRF token cache: GET /csrf/ stores the issued token here so that
+# POST /login/ can validate it even when the browser omits the csrftoken cookie
+# (cross-origin fetch without credentials:include discards Set-Cookie responses).
+_CSRF_CACHE_PREFIX = "csrf_api_oneshot:"
+_CSRF_CACHE_TTL = 300  # seconds — matches typical form-fill window
+
+# One-time token so SPAs on http://localhost:3000 can complete login via top-level
+# navigation to the tenant host (first-party Set-Cookie); cross-site fetch cannot.
+_SESSION_BOOTSTRAP_PREFIX = "session_bootstrap:"
+_SESSION_BOOTSTRAP_TTL = 120
+
+
+def _bootstrap_token_cache_set(*, token: str, payload: dict) -> None:
+    """
+    Store bootstrap payload in the *public* schema cache namespace.
+
+    django_tenants prepends connection.schema_name to every cache key; storing under
+    the tenant connection can theoretically diverge between POST /login/ and GET
+    /session-bootstrap/ if anything differs in routing. Public-schema keys are stable.
+    Payload still includes `schema` and is validated against connection.schema_name on GET.
+    """
+    from django.core.cache import cache
+    from django_tenants.utils import get_public_schema_name, schema_context
+
+    with schema_context(get_public_schema_name()):
+        cache.set(
+            f"{_SESSION_BOOTSTRAP_PREFIX}{token}",
+            payload,
+            timeout=_SESSION_BOOTSTRAP_TTL,
+        )
+
+
+def _bootstrap_token_cache_pop(token: str) -> dict | None:
+    """Atomically read and delete bootstrap payload from public-schema cache."""
+    from django.core.cache import cache
+    from django_tenants.utils import get_public_schema_name, schema_context
+
+    with schema_context(get_public_schema_name()):
+        key = f"{_SESSION_BOOTSTRAP_PREFIX}{token}"
+        payload = cache.get(key)
+        if payload is not None:
+            cache.delete(key)
+        return payload
 
 from django.conf import settings
 from django.contrib import messages
+from django.core import signing
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
-from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Count, Q
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
+from django.views.generic import FormView
 from django.views.generic.edit import CreateView
 
-from .forms import ClientProfileRegisterForm, UserRegistrationForm
+from .forms import ClientProfileRegisterForm, ClientUserCredentialsForm, UserRegistrationForm
+from .models import ClientProfile, User
+from .services import activate_client_profile, archive_client_profile, create_user_with_profile, deactivate_user
+
+CLIENT_REGISTER_SESSION_KEY = "client_register_credentials"
+CLIENT_REGISTER_SIGNING_SALT = "client-register-done"
 
 
 # New home view for the landing page
@@ -50,6 +105,15 @@ class CustomLoginView(LoginView):
     fields = "__all__"
     redirect_authenticated_user = True
 
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        # Flash messages are rendered once server-side; without this, the browser's
+        # back-forward cache can restore an old login snapshot that still shows them.
+        if response.status_code == 200:
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response["Pragma"] = "no-cache"
+        return response
+
     def get_success_url(self):
         """
         Redirect to the 'next' parameter if provided, otherwise to dashboard.
@@ -75,11 +139,30 @@ class CustomLoginView(LoginView):
 @require_GET
 @ensure_csrf_cookie
 def csrf_token_api(request):
-    return JsonResponse({"csrfToken": get_token(request)})
+    from django.core.cache import cache
+    token = get_token(request)
+    # Store the issued token so login can validate it even when the browser omits
+    # the csrftoken cookie (credentials:omit on the GET /csrf/ fetch).
+    cache.set(f"{_CSRF_CACHE_PREFIX}{token}", "1", _CSRF_CACHE_TTL)
+    return JsonResponse({"csrfToken": token})
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def session_login_api(request):
+    # Hybrid CSRF guard: accept either the standard double-submit cookie OR a
+    # one-shot cache token issued by GET /csrf/. The cache path handles cross-origin
+    # SPAs that call GET /csrf/ without credentials:include (so the browser discards
+    # the Set-Cookie response and never stores the csrftoken cookie).
+    from django.core.cache import cache
+    x_csrf = request.META.get("HTTP_X_CSRFTOKEN", "")
+    if "csrftoken" not in request.COOKIES:
+        # No cookie — validate against the one-shot cache entry (consumed on use).
+        if not cache.delete(f"{_CSRF_CACHE_PREFIX}{x_csrf}"):
+            return JsonResponse(
+                {"detail": "CSRF token missing or expired. Call GET /api/v1/auth/csrf/ first."},
+                status=403,
+            )
     # Accept JSON body (SPA) and x-www-form-urlencoded (fallback).
     payload = {}
     if request.content_type and "application/json" in request.content_type:
@@ -99,9 +182,52 @@ def session_login_api(request):
     if user is None or not user.is_active:
         return JsonResponse({"detail": "Invalid credentials."}, status=401)
 
-    login(request, user)
-    return JsonResponse(
-        {
+    from django.db import connection as _db_conn
+    from urllib.parse import urlparse
+
+    _needs_bootstrap = False
+    if getattr(settings, "USE_MULTITENANT", False):
+        _oh = (request.META.get("HTTP_ORIGIN") or "").strip()
+        if _oh:
+            try:
+                _origin_host = (urlparse(_oh).hostname or "").lower()
+            except ValueError:
+                _origin_host = ""
+            _api_host = (request.get_host().split(":")[0] or "").lower()
+            _needs_bootstrap = (
+                _origin_host in ("localhost", "127.0.0.1")
+                and _api_host.endswith(".localhost")
+                and _api_host != "localhost"
+            )
+
+    if _needs_bootstrap:
+        _schema = getattr(_db_conn, "schema_name", "") or ""
+        _token = secrets.token_urlsafe(32)
+        _bootstrap_token_cache_set(
+            token=_token,
+            payload={"user_id": user.pk, "schema": _schema},
+        )
+        _bs_path = f"/api/v1/auth/session-bootstrap/?token={_token}"
+        _bootstrap_url = request.build_absolute_uri(_bs_path)
+        payload_out = {
+            "authenticated": True,
+            "session_pending": True,
+            "session_bootstrap_url": _bootstrap_url,
+            "user": {
+                "id": user.id,
+                "username": user.get_username(),
+                "email": getattr(user, "email", ""),
+            },
+        }
+    else:
+        if getattr(settings, "USE_MULTITENANT", False) and not getattr(user, "backend", None):
+            login(request, user, backend="tenants.auth_backends.PublicSchemaSafeModelBackend")
+        else:
+            login(request, user)
+        # Stamp CSRF_COOKIE_USED so Django's CSRF middleware sets the csrftoken cookie
+        # in this response. The SPA can then use it for the subsequent logout POST.
+        get_token(request)
+        payload_out = {
             "authenticated": True,
             "user": {
                 "id": user.id,
@@ -109,7 +235,118 @@ def session_login_api(request):
                 "email": getattr(user, "email", ""),
             },
         }
-    )
+    _post_raw = (payload.get("post_login_redirect") or "").strip().lower()
+    tenant_client = None
+    if getattr(settings, "USE_MULTITENANT", False):
+        from tenants.email_index import build_post_login_redirect_url, get_client_tenant_from_connection
+
+        tenant_client = get_client_tenant_from_connection()
+        if tenant_client is not None:
+            post_login = _post_raw
+            use_api_host = None
+            if post_login in ("django", "django_dashboard", "api", "api_host"):
+                use_api_host = True
+            elif post_login in ("spa", "web", "frontend", "react"):
+                use_api_host = False
+            payload_out["redirect_url"] = build_post_login_redirect_url(
+                tenant_client,
+                use_api_host=use_api_host,
+            )
+    if getattr(settings, "DEBUG", False) and getattr(settings, "USE_MULTITENANT", False):
+        if payload_out.get("session_pending"):
+            payload_out.setdefault("debug", {})["cookie_same_site"] = (
+                "Assign window.location.href = session_bootstrap_url (same tab) to finish login; "
+                "the session cookie is set on that first-party GET to the tenant host."
+            )
+        else:
+            from urllib.parse import urlparse
+
+            _oh = (request.META.get("HTTP_ORIGIN") or "").strip()
+            if _oh and payload_out.get("redirect_url"):
+                try:
+                    _origin_host = (urlparse(_oh).hostname or "").lower()
+                except ValueError:
+                    _origin_host = ""
+                _api_host = (request.get_host().split(":")[0] or "").lower()
+                if _origin_host in ("localhost", "127.0.0.1") and _api_host.endswith(".localhost") and _api_host != "localhost":
+                    from tenants.email_index import build_tenant_web_app_base_url
+
+                    _web = build_tenant_web_app_base_url(tenant_client) if tenant_client is not None else ""
+                    payload_out.setdefault("debug", {})["cookie_same_site"] = (
+                        "The SPA origin is http://localhost:* but the API is on a tenant host "
+                        f"({_api_host}). Browsers treat those as different sites, so the session "
+                        "cookie from POST /login/ is often blocked or not sent on navigation. "
+                        "Run the Vite/Webpack dev server on the tenant web origin instead "
+                        f"(same-site with the API), e.g. {_web or f'http://{_api_host.split('.')[0]}.localhost:3000'} "
+                        "and list that URL in CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS."
+                    )
+    return JsonResponse(payload_out)
+
+
+@csrf_exempt
+@require_GET
+def session_bootstrap_api(request):
+    """
+    Complete session login after POST /login/ when the SPA is cross-site (e.g. localhost:3000
+    vs tenant.localhost:8000). Top-level navigation here sets the session cookie first-party.
+    """
+    from django.contrib.auth import get_user_model
+    from django.db import connection
+    from django.utils.http import url_has_allowed_host_and_scheme
+    from django_tenants.utils import get_public_schema_name
+
+    token = (request.GET.get("token") or "").strip()
+    if not token:
+        return HttpResponse("Missing token.", status=400, content_type="text/plain")
+
+    payload = _bootstrap_token_cache_pop(token)
+    if not payload:
+        return HttpResponse("Login link expired or already used.", status=400, content_type="text/plain")
+    expected_schema = payload.get("schema")
+    current_schema = getattr(connection, "schema_name", None)
+    if not expected_schema or current_schema != expected_schema:
+        return HttpResponse("Invalid link for this site.", status=400, content_type="text/plain")
+
+    if expected_schema == get_public_schema_name():
+        return HttpResponse("Invalid link.", status=400, content_type="text/plain")
+
+    user_id = payload.get("user_id")
+    if not user_id:
+        return HttpResponse("Invalid token.", status=400, content_type="text/plain")
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return HttpResponse("User not found.", status=400, content_type="text/plain")
+
+    if not user.is_active:
+        return HttpResponse("Account inactive.", status=403, content_type="text/plain")
+
+    # Multiple AUTHENTICATION_BACKENDS: user from ORM has no .backend; login() requires it.
+    _tenant_backend = "tenants.auth_backends.PublicSchemaSafeModelBackend"
+    if getattr(settings, "USE_MULTITENANT", False):
+        login(request, user, backend=_tenant_backend)
+    else:
+        login(request, user)
+    get_token(request)
+
+    next_url = request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+
+    if getattr(settings, "USE_MULTITENANT", False):
+        from tenants.email_index import build_post_login_redirect_url, get_client_tenant_from_connection
+
+        tc = get_client_tenant_from_connection()
+        if tc is not None:
+            return redirect(build_post_login_redirect_url(tc, use_api_host=True))
+
+    return redirect("/")
 
 
 @require_http_methods(["POST"])
@@ -120,8 +357,55 @@ def session_logout_api(request):
 
 @require_GET
 def session_me_api(request):
+    from django.db import connection
+
+    _sn = getattr(settings, "SESSION_COOKIE_NAME", "sessionid")
+    _schema = getattr(connection, "schema_name", None)
+    _is_public = False
+    if getattr(settings, "USE_MULTITENANT", False):
+        from django_tenants.utils import get_public_schema_name
+
+        _is_public = _schema == get_public_schema_name()
     if not request.user.is_authenticated:
-        return JsonResponse({"authenticated": False}, status=401)
+
+        payload = {"authenticated": False, "detail": "Not authenticated."}
+        if getattr(settings, "USE_MULTITENANT", False) and _is_public:
+            payload["detail"] = (
+                "Tenant user sessions are not available on this host. "
+                "Call GET /api/v1/auth/me/ on the same origin as POST /api/v1/auth/login/ "
+                "(the tenant api_base_url returned by discover-tenants)."
+            )
+            payload["code"] = "tenant_session_wrong_host"
+        elif getattr(settings, "USE_MULTITENANT", False) and not _is_public and _sn not in request.COOKIES:
+            payload["code"] = "no_session_cookie"
+            payload["detail"] = (
+                "No session cookie on this request. Log in with POST /api/v1/auth/login/ on this host; "
+                "if the response has session_pending, navigate to session_bootstrap_url. "
+                "Use fetch(..., { credentials: 'include' })."
+            )
+        if settings.DEBUG:
+            _hint = (
+                "Call GET /api/v1/auth/me/ on the same host as login (tenant api_base_url) with "
+                "fetch(..., { credentials: 'include' }). Cross-origin SPAs need SESSION_COOKIE_SAMESITE=none in .env."
+            )
+            if getattr(settings, "USE_MULTITENANT", False) and _is_public:
+                _hint = (
+                    "You are on the public API host. Tenant sessions are stored per tenant schema; "
+                    "use the tenant api_base_url for login and /me/ (same host for both)."
+                )
+            elif getattr(settings, "USE_MULTITENANT", False) and not _is_public:
+                _cn = getattr(settings, "SESSION_COOKIE_NAME", "sessionid")
+                if _cn not in request.COOKIES:
+                    _hint = (
+                        "sessionid cookie not sent; use fetch(..., { credentials: 'include' }). "
+                        "Cross-origin SPAs need SESSION_COOKIE_SAMESITE=none and CORS_ALLOWED_ORIGINS."
+                    )
+            payload["debug"] = {
+                "request_host": request.get_host(),
+                "schema_name": getattr(connection, "schema_name", None),
+                "hint": _hint,
+            }
+        return JsonResponse(payload, status=401)
     return JsonResponse(
         {
             "authenticated": True,
@@ -134,39 +418,186 @@ def session_me_api(request):
     )
 
 
-# Local dev ergonomics: browsers can block cross-origin CSRF cookie flows on localhost
-# variants; keep production strict by only relaxing in DEBUG.
-if settings.DEBUG:
-    session_login_api = csrf_exempt(session_login_api)
-    session_logout_api = csrf_exempt(session_logout_api)
+@csrf_exempt
+@require_http_methods(["POST"])
+def discover_tenants_api(request):
+    """
+    Public email-first discovery: returns tenant options for a user email.
+    Does not expose platform-admin accounts. Password login must be done on the
+    selected tenant host (see docs/EMAIL_FIRST_LOGIN.md).
+
+    CSRF is exempt here so cross-origin SPAs can POST without a prior csrftoken
+    cookie (browser + CORS often block that bootstrap). Risk is limited (no
+    session); add rate limiting in production. Login/logout remain CSRF-protected.
+    """
+    if not getattr(settings, "USE_MULTITENANT", False):
+        return JsonResponse({"detail": "Tenant discovery is only available in multi-tenant mode."}, status=400)
+
+    from tenants.email_index import (
+        build_post_login_redirect_url,
+        build_tenant_api_base_url,
+        build_tenant_web_app_base_url,
+        normalize_email as normalize_login_email,
+    )
+
+    payload = {}
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({"detail": "Invalid JSON body."}, status=400)
+    else:
+        payload = request.POST
+
+    email = normalize_login_email(payload.get("email"))
+    if not email:
+        return JsonResponse({"tenants": []})
+
+    from tenants.models import EmailTenantMembership
+
+    qs = (
+        EmailTenantMembership.objects.filter(
+            email_normalized=email,
+            is_active=True,
+            tenant__is_active=True,
+        )
+        .select_related("tenant")
+        .order_by("tenant__schema_name")
+    )
+
+    tenants_payload = []
+    for m in qs:
+        t = m.tenant
+        primary = t.get_primary_domain()
+        host = primary.domain if primary else f"{t.slug or t.schema_name}.localhost"
+        base = build_tenant_api_base_url(t)
+        web_base = build_tenant_web_app_base_url(t)
+        tenants_payload.append(
+            {
+                "schema_name": t.schema_name,
+                "name": t.name,
+                "slug": t.slug or t.schema_name,
+                "primary_domain": host,
+                "api_base_url": base,
+                "auth_login_url": f"{base.rstrip('/')}/api/v1/auth/login/",
+                "web_app_base_url": web_base,
+                "post_login_redirect_url": build_post_login_redirect_url(t),
+            }
+        )
+
+    out: dict = {"tenants": tenants_payload}
+    if not tenants_payload and email:
+        out["discovery_hint"] = (
+            "No tenants are indexed for this email. Each tenant user needs a non-empty email and a "
+            "public EmailTenantMembership row (created automatically on save, or run: "
+            "python manage.py backfill_email_tenant_membership)."
+        )
+    return JsonResponse(out)
 
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")  # Redirect to logged_out page after logout
 
 
-class ClientProfileRegisterView(CreateView):
+def _unique_client_username(base_name: str, phone_last4: str) -> str:
+    """Build a username from name + phone suffix; ensure uniqueness (max 150 chars)."""
+    slug = re.sub(r"[^a-z0-9]", "", (base_name or "client").lower())[:80] or "client"
+    candidate = f"{slug}{phone_last4}"
+    if len(candidate) > 150:
+        candidate = candidate[:150]
+    n = 0
+    while User.objects.filter(username=candidate).exists():
+        n += 1
+        suffix = secrets.token_hex(3) if n > 15 else str(n)
+        candidate = f"{slug}{phone_last4}{suffix}"[:150]
+    return candidate
+
+
+class ClientProfileRegisterView(FormView):
     form_class = ClientProfileRegisterForm
     template_name = "users/client_profile_register.html"
-    success_url = reverse_lazy("login")
+    success_url = reverse_lazy("client_register_done")
 
     def form_valid(self, form):
-        # Generate username and password
         phone = form.cleaned_data["phone_number"]
         account_type = form.cleaned_data["account_type"]
         contact_person = form.cleaned_data.get("contact_person")
         company_name = form.cleaned_data.get("company_name")
-        # Username: company_name or contact_person + last 4 digits of phone
-        if account_type == "ENTERPRISE" and company_name:
-            base_name = company_name.replace(" ", "").lower()
+        if account_type == ClientProfile.AccountType.ENTERPRISE and company_name:
+            base_name = company_name
         else:
-            base_name = (contact_person or "client").replace(" ", "").lower()
-        username = f"{base_name}{phone[-4:]}"
+            base_name = contact_person or "client"
+        phone_last4 = phone[-4:] if len(phone) >= 4 else phone
+        username = _unique_client_username(base_name, phone_last4)
         password = secrets.token_urlsafe(8)
-        # Create user and profile
-        # Optionally, show credentials to user (flash message)
-        messages.success(self.request, f"Your account has been created. Username: {username}, Password: {password}")
-        return super().form_valid(form)
+        profile_data = {
+            "account_type": form.cleaned_data["account_type"],
+            "contact_person": form.cleaned_data.get("contact_person") or "",
+            "phone_number": form.cleaned_data["phone_number"],
+            "address": form.cleaned_data["address"],
+            "company_name": form.cleaned_data.get("company_name") or None,
+            "tax_id": form.cleaned_data.get("tax_id") or None,
+        }
+        create_user_with_profile(username, password, User.Role.CLIENT, **profile_data)
+        # Session backup (optional); primary success payload is signed URL (works across workers / cache session).
+        self.request.session[CLIENT_REGISTER_SESSION_KEY] = {
+            "username": username,
+            "password": password,
+        }
+        self.request.session.modified = True
+        # signing.dumps() already applies TimestampSigner + HMAC; do not wrap in .sign() again.
+        token = signing.dumps(
+            {"username": username, "password": password},
+            salt=CLIENT_REGISTER_SIGNING_SALT,
+        )
+        done_url = reverse("client_register_done") + "?t=" + quote(token, safe="")
+        return HttpResponseRedirect(done_url)
+
+
+def client_register_done_view(request):
+    token = request.GET.get("t")
+    if token:
+        try:
+            data = signing.loads(
+                token,
+                salt=CLIENT_REGISTER_SIGNING_SALT,
+                max_age=600,
+            )
+        except signing.SignatureExpired:
+            messages.error(
+                request,
+                "That confirmation link expired. Please submit the registration form again or sign in if you already have an account.",
+            )
+            return redirect("login")
+        except signing.BadSignature:
+            pass
+        else:
+            if isinstance(data, dict) and data.get("username") and data.get("password") is not None:
+                request.session.pop(CLIENT_REGISTER_SESSION_KEY, None)
+                return render(
+                    request,
+                    "users/client_register_done.html",
+                    {
+                        "username": data["username"],
+                        "password": data["password"],
+                    },
+                )
+
+    creds = request.session.pop(CLIENT_REGISTER_SESSION_KEY, None)
+    if creds:
+        return render(
+            request,
+            "users/client_register_done.html",
+            {
+                "username": creds["username"],
+                "password": creds["password"],
+            },
+        )
+    messages.info(
+        request,
+        "If you just registered, sign in below. Otherwise complete the registration form first.",
+    )
+    return redirect("login")
 
 
 @login_required
@@ -178,23 +609,32 @@ def dashboard_view(request):
 
 
 def is_manager_or_admin(user):
-    """Check if user has MANAGER or ADMIN role"""
-    return user.is_authenticated and user.role in [user.Role.MANAGER, user.Role.ADMIN]
+    """Check if user has MANAGER, ADMIN, or OWNER role"""
+    return user.is_authenticated and user.role in [
+        user.Role.OWNER,
+        user.Role.ADMIN,
+        user.Role.MANAGER,
+    ]
 
 
 def is_admin(user):
-    """Check if user has ADMIN role"""
-    return user.is_authenticated and user.role == user.Role.ADMIN
+    """Tenant admin: OWNER or ADMIN (full app privileges; not Django /admin/)."""
+    return user.is_authenticated and user.role in [user.Role.OWNER, user.Role.ADMIN]
 
 
 def is_manager(user):
-    """Check if user has MANAGER role"""
-    return user.is_authenticated and user.role == user.Role.MANAGER
+    """MANAGER or OWNER — same operational permissions (OWNER is the registration-approved tenant owner)."""
+    return user.is_authenticated and user.role in (user.Role.MANAGER, user.Role.OWNER)
 
 
 def is_operator_or_above(user):
-    """Check if user has OPERATOR, MANAGER, or ADMIN role"""
-    return user.is_authenticated and user.role in [user.Role.OPERATOR, user.Role.MANAGER, user.Role.ADMIN]
+    """OPERATOR and above (includes OWNER, ADMIN, MANAGER)."""
+    return user.is_authenticated and user.role in [
+        user.Role.OWNER,
+        user.Role.ADMIN,
+        user.Role.MANAGER,
+        user.Role.OPERATOR,
+    ]
 
 
 # Decorators using Django's user_passes_test
@@ -202,6 +642,179 @@ manager_or_admin_required = user_passes_test(is_manager_or_admin, login_url="/lo
 admin_required = user_passes_test(is_admin, login_url="/login/")
 manager_required = user_passes_test(is_manager, login_url="/login/")
 operator_or_above_required = user_passes_test(is_operator_or_above, login_url="/login/")
+
+
+@manager_or_admin_required
+def client_profile_list_view(request):
+    """List registered client profiles (staff: owner, admin, manager)."""
+    q = request.GET.get("q", "").strip()
+    status = (request.GET.get("status") or "all").strip().lower()
+    if status not in ("all", "active", "archived"):
+        status = "all"
+
+    qs = ClientProfile.objects.select_related("user").order_by("-created_at")
+    if q:
+        qs = qs.filter(
+            Q(company_name__icontains=q)
+            | Q(contact_person__icontains=q)
+            | Q(phone_number__icontains=q)
+            | Q(user__username__icontains=q)
+            | Q(user__first_name__icontains=q)
+            | Q(user__last_name__icontains=q)
+        )
+    if status == "active":
+        qs = qs.filter(is_active=True)
+    elif status == "archived":
+        qs = qs.filter(is_active=False)
+
+    counts = ClientProfile.objects.aggregate(
+        n_active=Count("id", filter=Q(is_active=True)),
+        n_archived=Count("id", filter=Q(is_active=False)),
+    )
+
+    return render(
+        request,
+        "users/client_profile_list.html",
+        {
+            "clients": qs,
+            "q": q,
+            "status_filter": status,
+            "count_active": counts["n_active"],
+            "count_archived": counts["n_archived"],
+            "count_all": counts["n_active"] + counts["n_archived"],
+        },
+    )
+
+
+def _assert_staff_may_manage_client_profile(profile: ClientProfile) -> None:
+    """Only profiles for client-role users (or walk-in without user) are managed here."""
+    u = profile.user
+    if u is not None and u.role != User.Role.CLIENT:
+        raise PermissionDenied("This account cannot be managed from the client list.")
+
+
+@manager_or_admin_required
+def client_profile_detail_view(request, pk):
+    profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+    _assert_staff_may_manage_client_profile(profile)
+    return render(request, "users/client_profile_detail.html", {"profile": profile})
+
+
+@manager_or_admin_required
+def client_profile_add_view(request):
+    if request.method == "POST":
+        profile_form = ClientProfileRegisterForm(request.POST)
+        cred_form = ClientUserCredentialsForm(request.POST, user_instance=None, require_password=True)
+        if profile_form.is_valid() and cred_form.is_valid():
+            cd = cred_form.cleaned_data
+            pd = profile_form.cleaned_data
+            profile_data = {
+                "account_type": pd["account_type"],
+                "contact_person": pd.get("contact_person") or "",
+                "phone_number": pd["phone_number"],
+                "address": pd["address"],
+                "company_name": pd.get("company_name") or None,
+                "tax_id": pd.get("tax_id") or None,
+            }
+            with transaction.atomic():
+                user = create_user_with_profile(
+                    cd["username"],
+                    cd["new_password1"],
+                    User.Role.CLIENT,
+                    **profile_data,
+                )
+                user.email = cd.get("email") or ""
+                user.save(update_fields=["email"])
+            messages.success(request, "Client created.")
+            return redirect("client_profile_detail", pk=user.client_profile.pk)
+    else:
+        profile_form = ClientProfileRegisterForm()
+        cred_form = ClientUserCredentialsForm(user_instance=None, require_password=True)
+    return render(
+        request,
+        "users/client_profile_form.html",
+        {
+            "profile_form": profile_form,
+            "cred_form": cred_form,
+            "mode": "add",
+            "profile": None,
+        },
+    )
+
+
+@manager_or_admin_required
+def client_profile_edit_view(request, pk):
+    profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+    _assert_staff_may_manage_client_profile(profile)
+    user = profile.user
+    if request.method == "POST":
+        profile_form = ClientProfileRegisterForm(request.POST, instance=profile)
+        cred_form = (
+            ClientUserCredentialsForm(request.POST, user_instance=user) if user else None
+        )
+        profile_ok = profile_form.is_valid()
+        cred_ok = cred_form.is_valid() if cred_form else True
+        if profile_ok and cred_ok:
+            with transaction.atomic():
+                profile_form.save()
+                if user and cred_form:
+                    cd = cred_form.cleaned_data
+                    user.username = cd["username"]
+                    user.email = cd.get("email") or ""
+                    p1 = (cd.get("new_password1") or "").strip()
+                    if p1:
+                        user.set_password(p1)
+                    user.save()
+            messages.success(request, "Client updated.")
+            return redirect("client_profile_detail", pk=profile.pk)
+    else:
+        profile_form = ClientProfileRegisterForm(instance=profile)
+        cred_form = (
+            ClientUserCredentialsForm(
+                initial={"username": user.username, "email": user.email or ""},
+                user_instance=user,
+            )
+            if user
+            else None
+        )
+    return render(
+        request,
+        "users/client_profile_form.html",
+        {
+            "profile_form": profile_form,
+            "cred_form": cred_form,
+            "mode": "edit",
+            "profile": profile,
+        },
+    )
+
+
+@manager_or_admin_required
+@require_http_methods(["POST"])
+def client_profile_activate_view(request, pk):
+    profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+    _assert_staff_may_manage_client_profile(profile)
+    if profile.is_active:
+        messages.info(request, "This client is already active.")
+        return redirect("client_profile_detail", pk=profile.pk)
+    activate_client_profile(profile)
+    messages.success(request, "Client activated and login enabled.")
+    return redirect("client_profile_list")
+
+
+@manager_or_admin_required
+def client_profile_delete_view(request, pk):
+    profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+    _assert_staff_may_manage_client_profile(profile)
+    if request.method == "POST":
+        u = profile.user
+        with transaction.atomic():
+            archive_client_profile(profile)
+            if u:
+                deactivate_user(u)
+        messages.success(request, "Client archived and login disabled.")
+        return redirect("client_profile_list")
+    return render(request, "users/client_profile_confirm_delete.html", {"profile": profile})
 
 
 # Custom decorator for better error handling

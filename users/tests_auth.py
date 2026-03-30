@@ -8,6 +8,7 @@ Tests cover:
 - Session security
 """
 
+import json
 import os
 import unittest
 
@@ -52,6 +53,7 @@ class AuthenticationTestMixin:
         cls.client_profile = ClientProfile.objects.create(
             user=cls.client_user,
             account_type=ClientProfile.AccountType.INDIVIDUAL,
+            contact_person="Auth Test Client",
             phone_number="5551234567",
             address="123 Auth Test St",
         )
@@ -282,7 +284,7 @@ class TestUserRoles:
 
     def test_user_role_choices(self):
         """Test that all expected roles exist."""
-        expected_roles = ["ADMIN", "OPERATOR", "MANAGER", "CLIENT"]
+        expected_roles = ["OWNER", "ADMIN", "OPERATOR", "MANAGER", "CLIENT"]
         actual_roles = [choice[0] for choice in User.Role.choices]
 
         for role in expected_roles:
@@ -341,3 +343,90 @@ class TestClientProfile:
         profile = client_profile_factory(user=user, account_type=ClientProfile.AccountType.INDIVIDUAL)
 
         assert "Individual" in str(profile)
+
+
+class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
+    """Self-service client registration creates a linked User + ClientProfile."""
+
+    def test_post_creates_client_user_and_profile(self):
+        from django.urls import reverse
+
+        url = reverse("client_register")
+        r = self.test_client.post(
+            url,
+            {
+                "account_type": "INDIVIDUAL",
+                "contact_person": "New Client",
+                "phone_number": "5554443322",
+                "address": "100 St",
+            },
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("done", r.url)
+        u = User.objects.get(username__endswith="3322")
+        self.assertEqual(u.role, User.Role.CLIENT)
+        self.assertEqual(u.client_profile.phone_number, "5554443322")
+
+    def test_second_registration_same_phone_gets_unique_username(self):
+        from django.urls import reverse
+
+        url = reverse("client_register")
+        data = {
+            "account_type": "INDIVIDUAL",
+            "contact_person": "Dup Client",
+            "phone_number": "5550000001",
+            "address": "Addr",
+        }
+        self.test_client.post(url, data)
+        self.test_client.post(url, data)
+        self.assertEqual(ClientProfile.objects.filter(phone_number="5550000001").count(), 2)
+        usernames = list(
+            User.objects.filter(client_profile__phone_number="5550000001").values_list("username", flat=True)
+        )
+        self.assertEqual(len(usernames), 2)
+        self.assertNotEqual(usernames[0], usernames[1])
+
+
+class ClientProfileAPITest(AuthenticationTestMixin, TestCase):
+    """Staff JSON API for client profiles."""
+
+    def test_list_redirects_when_anonymous(self):
+        r = self.test_client.get("/api/v1/clients/")
+        self.assertEqual(r.status_code, 302)
+
+    def test_list_forbidden_for_client_role(self):
+        self.test_client.login(username="auth_client", password="SecurePass123!")
+        r = self.test_client.get("/api/v1/clients/")
+        self.assertEqual(r.status_code, 403)
+
+    def test_list_forbidden_for_operator(self):
+        self.test_client.login(username="auth_operator", password="SecurePass123!")
+        r = self.test_client.get("/api/v1/clients/")
+        self.assertEqual(r.status_code, 403)
+
+    def test_list_ok_for_manager(self):
+        self.test_client.login(username="auth_manager", password="SecurePass123!")
+        r = self.test_client.get("/api/v1/clients/")
+        self.assertEqual(r.status_code, 200)
+        payload = json.loads(r.content)
+        self.assertIn("results", payload)
+        self.assertIn("count", payload)
+
+    def test_detail_ok_for_manager(self):
+        self.test_client.login(username="auth_manager", password="SecurePass123!")
+        r = self.test_client.get(f"/api/v1/clients/{self.client_profile.id}/")
+        self.assertEqual(r.status_code, 200)
+        payload = json.loads(r.content)
+        self.assertEqual(payload["id"], str(self.client_profile.id))
+
+    def test_patch_updates_profile(self):
+        self.test_client.login(username="auth_manager", password="SecurePass123!")
+        pid = str(self.client_profile.id)
+        r = self.test_client.patch(
+            f"/api/v1/clients/{pid}/",
+            data=json.dumps({"phone_number": "9998887777"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 200)
+        self.client_profile.refresh_from_db()
+        self.assertEqual(self.client_profile.phone_number, "9998887777")

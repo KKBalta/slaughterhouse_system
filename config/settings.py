@@ -15,6 +15,29 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def _cookie_samesite(value: str | None) -> str | None:
+    """
+    Parse SESSION_COOKIE_SAMESITE / CSRF_COOKIE_SAMESITE from env.
+
+    Use `none` (or `null`) for cross-origin credentialed fetch (SPA on :3000 → tenant API on :8000).
+    This must become the string ``\"none\"`` so Django emits ``SameSite=None`` on Set-Cookie.
+    Returning Python ``None`` means *omit* the attribute (browser default ≈ Lax), which breaks
+    that flow. Production: pair with SESSION_COOKIE_SECURE=True (required by browsers except
+    localhost/127.0.0.1 HTTP in Chromium).
+    """
+    if value is None or not str(value).strip():
+        return "Lax"
+    v = str(value).strip().lower()
+    if v in ("none", "null"):
+        return "none"
+    if v == "lax":
+        return "Lax"
+    if v == "strict":
+        return "Strict"
+    return "Lax"
+
+
 # Multi-tenant mode uses PostgreSQL + django-tenants. SQLite is only for legacy / Docker collectstatic.
 USE_SQLITE = config("USE_SQLITE", default=False, cast=bool)
 USE_MULTITENANT = not USE_SQLITE
@@ -26,14 +49,73 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
+
+
+def _resolve_tenant_base_domain() -> str:
+    """
+    Host suffix for tenant hostnames: {schema}.{TENANT_BASE_DOMAIN}.
+
+    - If TENANT_BASE_DOMAIN is set in the environment, use it.
+    - If unset and DEBUG is True, default to localhost (local dev without extra env).
+    - If unset and not DEBUG, derive from the first ALLOWED_HOSTS entry that looks like
+      a subdomain wildcard (e.g. ".carnitrack.example.com" -> "carnitrack.example.com").
+    - Otherwise raise ImproperlyConfigured so production never silently uses a wrong domain.
+    """
+    explicit = config("TENANT_BASE_DOMAIN", default="").strip()
+    if explicit:
+        return explicit
+    if DEBUG:
+        return "localhost"
+    for host in ALLOWED_HOSTS:
+        h = str(host).strip()
+        if h.startswith(".") and h.count(".") >= 2:
+            return h.lstrip(".")
+    raise ImproperlyConfigured(
+        "TENANT_BASE_DOMAIN is not set. Set TENANT_BASE_DOMAIN in the environment "
+        "(e.g. carnitrack.yourdomain.com), or add a wildcard host to ALLOWED_HOSTS "
+        "(e.g. .carnitrack.yourdomain.com) so tenant hostnames "
+        "{schema}.<suffix> can be derived. When DEBUG is True, localhost is used if unset."
+    )
+
+
+TENANT_BASE_DOMAIN = _resolve_tenant_base_domain()
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 SESSION_COOKIE_DOMAIN = config("SESSION_COOKIE_DOMAIN", default=None)
 CSRF_COOKIE_DOMAIN = config("CSRF_COOKIE_DOMAIN", default=SESSION_COOKIE_DOMAIN or None)
-SESSION_COOKIE_SAMESITE = config("SESSION_COOKIE_SAMESITE", default="Lax")
-CSRF_COOKIE_SAMESITE = config("CSRF_COOKIE_SAMESITE", default="Lax")
+SESSION_COOKIE_SAMESITE = _cookie_samesite(config("SESSION_COOKIE_SAMESITE", default="Lax"))
+CSRF_COOKIE_SAMESITE = _cookie_samesite(config("CSRF_COOKIE_SAMESITE", default="Lax"))
 CSRF_COOKIE_HTTPONLY = config("CSRF_COOKIE_HTTPONLY", default=False, cast=bool)
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
+
+# django-cors-headers: regexes for dev SPAs on *.localhost (pomet.localhost:3000, etc.)
+# so each new tenant subdomain does not require editing CORS_ALLOWED_ORIGINS.
+CORS_ALLOWED_ORIGIN_REGEXES: list[str] = []
+if DEBUG and USE_MULTITENANT and config("CORS_DEV_LOCALHOST_REGEX", default=True, cast=bool):
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^https?://([\w.-]+\.)?localhost(:\d+)?$",
+        r"^https?://127\.0\.0\.1(:\d+)?$",
+    ]
+
+# Django CSRF: wildcard subdomains use http(s)://*.host:port (see CsrfViewMiddleware).
+if DEBUG and USE_MULTITENANT and config("CSRF_DEV_TRUST_LOCALHOST", default=True, cast=bool):
+    _csrf_dev_extra = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://*.localhost:3000",
+        "http://*.localhost:5173",
+        "https://localhost:3000",
+        "https://*.localhost:3000",
+        "https://*.localhost:5173",
+    ]
+    _csrf_seen: set[str] = set()
+    _csrf_merged: list[str] = []
+    for _o in list(CSRF_TRUSTED_ORIGINS) + _csrf_dev_extra:
+        if _o not in _csrf_seen:
+            _csrf_seen.add(_o)
+            _csrf_merged.append(_o)
+    CSRF_TRUSTED_ORIGINS = _csrf_merged
 
 # Application definition
 SHARED_APPS = [
@@ -106,6 +188,7 @@ _MULTITENANT_MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "tenants.middleware.ClearLegacyMessagesCookieMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -119,6 +202,7 @@ _LEGACY_MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "tenants.middleware.ClearLegacyMessagesCookieMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -397,10 +481,23 @@ else:
     }
     SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
+# Flash messages: session only. Default FallbackStorage also uses a signed
+# ``messages`` cookie, which can fail to clear and resurface stale alerts
+# (especially next to cache-backed sessions and tenant cookie domains).
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
+
 # Fallback base URL (QR codes / links) when not multitenant or tenant domain unknown; also honors legacy SITE_URL env.
 _SITE_URL_LEGACY = config("SITE_URL", default="")
 SITE_URL_FALLBACK = config("SITE_URL_FALLBACK", default=_SITE_URL_LEGACY or "http://localhost:8000")
-TENANT_BASE_DOMAIN = config("TENANT_BASE_DOMAIN", default="carnitrack.samperlabs.com")
+# TENANT_BASE_DOMAIN is resolved above (after ALLOWED_HOSTS).
+# Dev: port for tenant API base URLs in email discovery (e.g. http://farm1.localhost:8000).
+PUBLIC_TENANT_HTTP_PORT = config("PUBLIC_TENANT_HTTP_PORT", default="8000")
+# Tenant SPA / web app (email-first login redirect target); dev often :3000, prod same host HTTPS.
+PUBLIC_TENANT_WEB_HTTP_PORT = config("PUBLIC_TENANT_WEB_HTTP_PORT", default="3000")
+TENANT_LOGIN_SUCCESS_REDIRECT_PATH = config("TENANT_LOGIN_SUCCESS_REDIRECT_PATH", default="/dashboard")
+# When True, post-login redirect uses the same origin as api_base_url (Django :8000 in dev).
+# When False (default), uses web_app_base_url (SPA :3000 in dev). Set True while templates are served from Django.
+TENANT_POST_LOGIN_USE_API_HOST = config("TENANT_POST_LOGIN_USE_API_HOST", default=False, cast=bool)
 
 # Tailwind
 TAILWIND_APP_NAME = "theme"
@@ -416,6 +513,27 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = config("SECURE_CONTENT_TYPE_NOSNIFF", default=True, cast=bool)
     SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=True, cast=bool)
     CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=True, cast=bool)
+    # HSTS: off by default so operators opt in after verifying HTTPS works end-to-end.
+    # Enable by setting SECURE_HSTS_SECONDS=31536000 in the production env.
+    SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool)
+    SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=False, cast=bool)
+
+    # Guard: SameSite=None is only valid when the cookie is also Secure.
+    # On a non-localhost host without Secure, browsers silently downgrade to Lax,
+    # breaking cross-origin session/CSRF flows in production.
+    _session_ss = SESSION_COOKIE_SAMESITE  # env none → string "none" (SameSite=None on cookie)
+    _csrf_ss = CSRF_COOKIE_SAMESITE
+    if isinstance(_session_ss, str) and _session_ss.lower() == "none" and not SESSION_COOKIE_SECURE:
+        raise ImproperlyConfigured(
+            "SESSION_COOKIE_SAMESITE=none requires SESSION_COOKIE_SECURE=True in production. "
+            "Browsers reject SameSite=None cookies that are not Secure outside of localhost."
+        )
+    if isinstance(_csrf_ss, str) and _csrf_ss.lower() == "none" and not CSRF_COOKIE_SECURE:
+        raise ImproperlyConfigured(
+            "CSRF_COOKIE_SAMESITE=none requires CSRF_COOKIE_SECURE=True in production. "
+            "Browsers reject SameSite=None cookies that are not Secure outside of localhost."
+        )
 
 # -------------------------
 # Authentication Settings
@@ -452,6 +570,7 @@ def print_settings_report():
     print(f"🌐 SITE_URL_FALLBACK: {SITE_URL_FALLBACK}")
     if USE_MULTITENANT:
         print(f"🔴 REDIS_URL: {'SET' if REDIS_URL else 'MISSING'}")
+        print(f"🏢 TENANT_BASE_DOMAIN: {TENANT_BASE_DOMAIN}")
 
     # Database
     db_conf = DATABASES["default"]

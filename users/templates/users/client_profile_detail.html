@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ profile.get_full_name }} — {% trans "Client" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div class="flex flex-col gap-2">
+            <h1 class="text-3xl font-extrabold text-gray-900">{{ profile.get_full_name }}</h1>
+            {% if profile.is_active %}
+            <span class="inline-flex w-fit items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-blue-200">{% trans "Active" %}</span>
+            {% else %}
+            <span class="inline-flex w-fit items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">{% trans "Archived" %}</span>
+            {% endif %}
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'client_profile_list' %}" class="text-sm font-medium text-gray-600 hover:text-gray-900">{% trans "List" %}</a>
+            <a href="{% url 'client_profile_edit' profile.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{% trans "Edit" %}</a>
+            {% if profile.is_active %}
+            <a href="{% url 'client_profile_delete' profile.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">{% trans "Archive" %}</a>
+            {% else %}
+            <form method="post" action="{% url 'client_profile_activate' profile.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{% trans "Activate" %}</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Account type" %}</dt>
+            <dd class="mt-1 text-gray-900">{{ profile.get_account_type_display }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Phone" %}</dt>
+            <dd class="mt-1 text-gray-900 font-mono">{{ profile.phone_number }}</dd>
+        </div>
+        {% if profile.account_type == 'ENTERPRISE' %}
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Company" %}</dt>
+            <dd class="mt-1 text-gray-900">{{ profile.company_name|default:"—" }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Tax ID" %}</dt>
+            <dd class="mt-1 text-gray-900 font-mono">{{ profile.tax_id|default:"—" }}</dd>
+        </div>
+        {% endif %}
+        <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Contact person" %}</dt>
+            <dd class="mt-1 text-gray-900">{{ profile.contact_person|default:"—" }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Address" %}</dt>
+            <dd class="mt-1 text-gray-900 whitespace-pre-wrap">{{ profile.address }}</dd>
+        </div>
+        {% if profile.user %}
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Username" %}</dt>
+            <dd class="mt-1 text-gray-900 font-mono">{{ profile.user.username }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Email" %}</dt>
+            <dd class="mt-1 text-gray-900">{{ profile.user.email|default:"—" }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Login active" %}</dt>
+            <dd class="mt-1 text-gray-900">{% if profile.user.is_active %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</dd>
+        </div>
+        {% endif %}
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Profile active" %}</dt>
+            <dd class="mt-1 text-gray-900">{% if profile.is_active %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Registered" %}</dt>
+            <dd class="mt-1 text-gray-500">{{ profile.created_at|date:"Y-m-d H:i" }}</dd>
+        </div>
+    </dl>
+</div>
+{% endblock %}

@@ -5,12 +5,13 @@ from .models import ServicePackage
 
 @admin.register(ServicePackage)
 class ServicePackageAdmin(admin.ModelAdmin):
-    list_display = ("name", "includes_disassembly", "includes_delivery", "is_active", "created_at")
+    list_display = ("name", "name_tr", "includes_disassembly", "includes_delivery", "is_active", "created_at")
     list_filter = ("is_active", "includes_disassembly", "includes_delivery", "created_at")
-    search_fields = ("name", "description")
+    search_fields = ("name", "name_tr", "description", "description_tr")
 
     fieldsets = (
         ("Basic Information", {"fields": ("name", "description")}),
+        ("Turkish (optional)", {"fields": ("name_tr", "description_tr")}),
         (
             "Services Included",
             {

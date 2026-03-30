@@ -4,7 +4,7 @@ Django 5 application for slaughterhouse operations: reception, processing, inven
 
 ## Prerequisites
 
-- **Python 3.11** and a virtualenv (the Makefile uses `.venv/bin/python` when present).
+- **Python 3.11** on your PATH as `python3` (the Makefile uses `python3`; override with `make dev PYTHON=/path/to/python` if needed).
 - **Node.js 20** — for building Tailwind assets (`theme/static_src`).
 - **PostgreSQL 15** for local development — either installed locally or via `docker-compose.yml`.
 - **Google Cloud SDK** (`gcloud`) — for staging and production database access through the proxy.
@@ -12,12 +12,11 @@ Django 5 application for slaughterhouse operations: reception, processing, inven
 
 ## Development quickstart
 
-From a fresh clone, set up Python and frontend assets first. The Makefile prefers `.venv/bin/python` when `.venv` exists (you do not need to activate the venv for `make` targets).
+From a fresh clone, set up Python and frontend assets first. Install dependencies with the same `python3` you use to run Django (user-level or system `pip` is fine).
 
-**1. Virtual environment, pip, and Tailwind (one command)**
+**1. pip and Tailwind (one command)**
 
 ```bash
-python3.11 -m venv .venv
 make install-deps
 ```
 
@@ -26,8 +25,6 @@ This runs `pip install -r requirements.txt` and `npm ci && npm run build` in `th
 Equivalent manual steps:
 
 ```bash
-python3.11 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cd theme/static_src && npm ci && npm run build && cd ../..
 ```

@@ -41,7 +41,16 @@ class ServicePackage(BaseModel):
     name = models.CharField(
         max_length=100, unique=True, help_text='A descriptive name for the service package (e.g., "Slaughter Only").'
     )
+    name_tr = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Turkish display name (optional). Used when the active language is Turkish.",
+    )
     description = models.TextField(blank=True, help_text="A detailed description of what the service package includes.")
+    description_tr = models.TextField(
+        blank=True,
+        help_text="Turkish description (optional).",
+    )
     includes_disassembly = models.BooleanField(
         default=False, help_text="Indicates if this package includes the disassembly process."
     )
@@ -49,6 +58,13 @@ class ServicePackage(BaseModel):
         default=False, help_text="Indicates if this package includes delivery services."
     )
     # Add other boolean fields for specific services as needed
+
+    def localized_name(self) -> str:
+        from django.utils.translation import get_language
+
+        if (get_language() or "").startswith("tr") and self.name_tr:
+            return self.name_tr
+        return self.name
 
     def __str__(self):
         return self.name

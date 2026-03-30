@@ -6,6 +6,7 @@ from reception.models import SlaughterOrder
 
 from .models import ClientProfile
 from .services import (
+    activate_client_profile,
     admin_reset_user_password,
     archive_client_profile,
     assign_role_to_user,
@@ -112,6 +113,20 @@ class UsersServiceTest(TestCase):
         self.assertTrue(self.profile.is_active)
         archived_profile = archive_client_profile(client_profile=self.profile)
         self.assertFalse(archived_profile.is_active)
+
+    def test_activate_client_profile_service(self):
+        archive_client_profile(client_profile=self.profile)
+        deactivate_user(self.user)
+        self.profile.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertFalse(self.profile.is_active)
+        self.assertFalse(self.user.is_active)
+
+        activate_client_profile(self.profile)
+        self.profile.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertTrue(self.profile.is_active)
+        self.assertTrue(self.user.is_active)
 
     # --- Edge Case Tests ---
 

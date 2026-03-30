@@ -7,4 +7,9 @@ class TenantsConfig(AppConfig):
     verbose_name = "Tenants"
 
     def ready(self) -> None:
-        import tenants.signals  # noqa: F401
+        from django.conf import settings
+
+        # Importing django_tenants.signals registers a global post_delete handler; skip when not multitenant
+        # (e.g. settings_test + SQLite) so unrelated model deletes do not call get_tenant_model().
+        if getattr(settings, "USE_MULTITENANT", True):
+            import tenants.signals  # noqa: F401

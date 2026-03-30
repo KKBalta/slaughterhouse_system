@@ -30,5 +30,5 @@ def get_tenant_site_url() -> str:
     if domain_obj and domain_obj.domain:
         return f"{scheme}://{domain_obj.domain}"
 
-    base = getattr(settings, "TENANT_BASE_DOMAIN", "carnitrack.samperlabs.com")
+    base = settings.TENANT_BASE_DOMAIN
     return f"{scheme}://{tenant.schema_name}.{base}"

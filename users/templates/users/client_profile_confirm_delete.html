@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Archive client" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h1 class="text-2xl font-extrabold text-gray-900 mb-4">{% trans "Archive this client?" %}</h1>
+    <p class="text-gray-600 mb-2">{% blocktrans with name=profile.get_full_name %}This will deactivate the profile <strong>{{ name }}</strong> and disable login for the linked user.{% endblocktrans %}</p>
+    <p class="text-sm text-gray-500 mb-8">{% trans "Slaughter orders and history are kept; the account can no longer sign in." %}</p>
+    <form method="post" class="flex flex-col sm:flex-row gap-3">
+        {% csrf_token %}
+        <button type="submit" class="flex-1 py-2 px-4 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">{% trans "Yes, archive" %}</button>
+        <a href="{% url 'client_profile_detail' profile.pk %}" class="flex-1 py-2 px-4 rounded-md text-sm font-medium text-center border border-gray-300 text-gray-700 hover:bg-gray-50">{% trans "Cancel" %}</a>
+    </form>
+</div>
+{% endblock %}

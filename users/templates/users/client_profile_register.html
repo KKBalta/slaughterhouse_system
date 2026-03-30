@@ -9,15 +9,8 @@
     <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-8">
       {% trans "Register as a Client" %}
     </h2>
-    <form method="post" class="space-y-6">
+    <form method="post" class="space-y-6" id="client-register-form">
         {% csrf_token %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="p-4 rounded-md bg-green-50 border border-green-200 text-sm text-green-700">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
         {% if form.non_field_errors %}
             <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
                 {{ form.non_field_errors }}
@@ -30,14 +23,7 @@
             <div class="mt-1">
                 {% render_field form.account_type class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
-        </div>
-        <div id="individual-fields" {% if form.data.account_type == 'ENTERPRISE' %}style="display:none;"{% endif %}>
-            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                {{ form.contact_person.label }}
-            </label>
-            <div class="mt-1">
-                {% render_field form.contact_person class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
-            </div>
+            {% if form.account_type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.account_type.errors }}</p>{% endif %}
         </div>
         <div id="enterprise-fields" {% if form.data.account_type != 'ENTERPRISE' %}style="display:none;"{% endif %}>
             <label for="{{ form.company_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
@@ -46,18 +32,24 @@
             <div class="mt-1">
                 {% render_field form.company_name class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
+            {% if form.company_name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.company_name.errors }}</p>{% endif %}
             <label for="{{ form.tax_id.id_for_label }}" class="block text-sm font-medium text-gray-700 mt-4">
                 {{ form.tax_id.label }}
             </label>
             <div class="mt-1">
                 {% render_field form.tax_id class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
-            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700 mt-4">
+            {% if form.tax_id.errors %}<p class="mt-1 text-sm text-red-600">{{ form.tax_id.errors }}</p>{% endif %}
+        </div>
+        {# Single contact_person input — duplicate inputs in hidden blocks overwrite POST data in browsers #}
+        <div id="contact-person-block">
+            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.contact_person.label }}
             </label>
             <div class="mt-1">
                 {% render_field form.contact_person class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
+            {% if form.contact_person.errors %}<p class="mt-1 text-sm text-red-600">{{ form.contact_person.errors }}</p>{% endif %}
         </div>
         <div>
             <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">
@@ -66,6 +58,7 @@
             <div class="mt-1">
                 {% render_field form.phone_number class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
+            {% if form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>{% endif %}
         </div>
         <div>
             <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">
@@ -74,6 +67,7 @@
             <div class="mt-1">
                 {% render_field form.address class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
+            {% if form.address.errors %}<p class="mt-1 text-sm text-red-600">{{ form.address.errors }}</p>{% endif %}
         </div>
         <div>
             <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -83,22 +77,22 @@
     </form>
 </div>
 <script>
-    // Simple JS to toggle fields based on account type
     document.addEventListener('DOMContentLoaded', function() {
         var accountTypeField = document.getElementById('{{ form.account_type.id_for_label }}');
-        var individualFields = document.getElementById('individual-fields');
         var enterpriseFields = document.getElementById('enterprise-fields');
-        if (accountTypeField) {
-            accountTypeField.addEventListener('change', function() {
-                if (this.value === 'ENTERPRISE') {
-                    enterpriseFields.style.display = '';
-                    individualFields.style.display = 'none';
-                } else {
-                    enterpriseFields.style.display = 'none';
-                    individualFields.style.display = '';
-                }
-            });
+        var form = document.getElementById('client-register-form');
+        function syncEnterpriseVisibility() {
+            if (!accountTypeField || !enterpriseFields) return;
+            if (accountTypeField.value === 'ENTERPRISE') {
+                enterpriseFields.style.display = '';
+            } else {
+                enterpriseFields.style.display = 'none';
+            }
         }
+        if (accountTypeField) {
+            accountTypeField.addEventListener('change', syncEnterpriseVisibility);
+        }
+        syncEnterpriseVisibility();
     });
 </script>
 {% endblock %}

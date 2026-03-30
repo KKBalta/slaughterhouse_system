@@ -96,7 +96,10 @@ class AdminOnlyMixin(UserPassesTestMixin):
     """Restrict access to admins for operational management pages."""
 
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.role == self.request.user.Role.ADMIN
+        return self.request.user.is_authenticated and self.request.user.role in (
+            self.request.user.Role.OWNER,
+            self.request.user.Role.ADMIN,
+        )
 
 
 class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):

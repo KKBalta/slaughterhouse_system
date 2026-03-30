@@ -68,16 +68,33 @@ class PlatformAdminSetupForm(forms.Form):
 
 
 class CreateTenantSuperuserForm(forms.Form):
-    """Create a Django auth superuser inside a tenant schema (from platform admin)."""
+    """
+    Create an ADMIN-class user from platform admin (not OWNER — that role is only for
+    the first user created when a tenant registration is approved).
+    """
 
     username = forms.CharField(
         max_length=150,
         label="Username",
-        help_text="Used to sign in on the tenant site (e.g. same as email).",
+        help_text="Sign in with this or your email on the tenant site (language-prefixed /tr/login/ etc.).",
     )
     email = forms.EmailField(label="Email")
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
+    account_kind = forms.ChoiceField(
+        label="Account type",
+        choices=[
+            (
+                "app_admin",
+                "Tenant app admin (role ADMIN — full CarniTrack app access; not Django /admin/)",
+            ),
+            (
+                "django_superuser",
+                "Django superuser (role ADMIN + Django /admin/ on this tenant host)",
+            ),
+        ],
+        initial="app_admin",
+    )
 
     def clean(self):
         cleaned = super().clean()

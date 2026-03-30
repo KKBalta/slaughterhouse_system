@@ -22,3 +22,15 @@ def ensure_default_scales_site(sender, tenant, **kwargs):
 
         if not Site.objects.exists():
             Site.objects.create(name=_name(), address="")
+
+
+@receiver(post_schema_sync, sender=TenantMixin)
+def ensure_default_service_packages_signal(sender, tenant, **kwargs):
+    """Seed default ServicePackage rows per tenant (EN + TR). Runs after schema sync."""
+    if tenant.schema_name == get_public_schema_name():
+        return
+
+    with schema_context(tenant.schema_name):
+        from core.default_service_packages import ensure_default_service_packages
+
+        ensure_default_service_packages()

@@ -9,7 +9,8 @@
 
 .DEFAULT_GOAL := help
 
-PYTHON ?= $(shell [ -f .venv/bin/python ] && echo .venv/bin/python || echo python3)
+# Use system python3 (override: make dev PYTHON=/path/to/python)
+PYTHON ?= python3
 MANAGE := $(PYTHON) manage.py
 
 DEV_ENV     ?= .env.dev
@@ -38,7 +39,7 @@ help:
 	@echo "CarniTrack Makefile"
 	@echo ""
 	@echo "  make install-deps       First-time setup: pip install -r requirements.txt + Tailwind build ($(TAILWIND_DIR))"
-	@echo "  make pip-install        pip install -r requirements.txt (uses .venv when present)"
+	@echo "  make pip-install        pip install -r requirements.txt ($(PYTHON))"
 	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci && npm run build"
 	@echo ""
 	@echo "  make dev                Django runserver — local Postgres ($(DEV_ENV))"
@@ -57,8 +58,7 @@ help:
 	@echo "  make proxy-v2           Cloud SQL Proxy v2 (prod) → 127.0.0.1:$(PROXY_PORT)"
 	@echo "  make proxy-staging      Cloud SQL Proxy v1 (staging) → 127.0.0.1:$(STAGING_PROXY_PORT)"
 	@echo ""
-	@echo "First time (dev):     python3.11 -m venv .venv  # optional but recommended"
-	@echo "                      make install-deps && cp env/examples/.env.dev.example .env.dev && make db-setup-dev && make migrate-dev && make dev"
+	@echo "First time (dev):     make install-deps && cp env/examples/.env.dev.example .env.dev && make db-setup-dev && make migrate-dev && make dev"
 	@echo "First time (staging): cp env/examples/.env.staging.example .env.staging  # fill in DB_PASSWORD, then:"
 	@echo "                      make migrate-staging && make staging"
 	@echo ""

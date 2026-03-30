@@ -18,10 +18,9 @@ Example: `feature/slaughter-batch-export`, `fix/inventory-qty-rounding`.
 
 ## Local setup (dependencies)
 
-After cloning, create a venv and install Python and frontend build tooling (matches CI):
+After cloning, install Python and frontend build tooling (matches CI):
 
 ```bash
-python3.11 -m venv .venv
 make install-deps
 ```
 
