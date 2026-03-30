@@ -1,7 +1,14 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.utils.translation import gettext_lazy as _
 
 from .models import ClientProfile, User
+
+# Same country codes as reception walk-in phone (SlaughterOrderForm).
+PHONE_AREA_CODE_CHOICES = [
+    ("+90", "+90"),
+    ("+1", "+1"),
+]
 
 
 class ClientUserCredentialsForm(forms.Form):
@@ -84,6 +91,16 @@ class UserRegistrationForm(UserCreationForm):
 
 
 class ClientProfileRegisterForm(forms.ModelForm):
+    phone_area_code = forms.ChoiceField(
+        choices=PHONE_AREA_CODE_CHOICES,
+        initial="+90",
+        required=False,
+        label=_("Area code"),
+        widget=forms.Select(
+            attrs={"class": "modern-select", "title": _("Select country code: +90 for Turkey, +1 for USA/Canada")}
+        ),
+    )
+
     class Meta:
         model = ClientProfile
         fields = [
@@ -100,11 +117,43 @@ class ClientProfileRegisterForm(forms.ModelForm):
         self.fields["company_name"].required = False
         self.fields["tax_id"].required = False
         self.fields["contact_person"].required = False
+        self.fields["phone_number"].max_length = 15
+        self.fields["phone_number"].widget = forms.TextInput(
+            attrs={
+                "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
+                "placeholder": _("Enter phone number"),
+                "autocomplete": "tel-national",
+            }
+        )
+        self.fields["phone_number"].label = _("Phone number")
+
+        inst = getattr(self, "instance", None)
+        if inst and getattr(inst, "pk", None) and inst.phone_number:
+            phone = inst.phone_number.strip()
+            if phone.startswith("+90"):
+                self.fields["phone_area_code"].initial = "+90"
+                self.fields["phone_number"].initial = phone[3:]
+            elif phone.startswith("+1"):
+                self.fields["phone_area_code"].initial = "+1"
+                self.fields["phone_number"].initial = phone[2:]
+            else:
+                self.fields["phone_number"].initial = phone
 
     def clean(self):
         cleaned_data = super().clean()
         if not cleaned_data:
             return cleaned_data
+
+        phone = cleaned_data.get("phone_number")
+        area = cleaned_data.get("phone_area_code") or "+90"
+        if phone is not None:
+            p = phone.strip()
+            if p.startswith("+"):
+                cleaned_data["phone_number"] = p
+            elif p:
+                cleaned_data["phone_number"] = f"{area}{p}"
+            else:
+                cleaned_data["phone_number"] = ""
 
         # ModelForm may supply TextChoices members or plain strings depending on Django version.
         account_type = cleaned_data.get("account_type")

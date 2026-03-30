@@ -3,7 +3,10 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q
+from django.core.exceptions import ValidationError
+from collections import Counter
+
+from django.db.models import Count, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -548,21 +551,50 @@ class AnimalWeightLogView(LoginRequiredMixin, View):
         return redirect("processing:animal_detail", pk=animal.pk)
 
 
+def _batch_slaughter_type_breakdown(order):
+    """Counts of received animals per animal_type for batch slaughter UI."""
+    counts = Counter(order.animals.values_list("animal_type", flat=True))
+    if not counts:
+        return []
+    choices = dict(Animal.ANIMAL_TYPES)
+    sorted_types = sorted(counts.keys(), key=lambda t: str(choices.get(t, t)).lower())
+    return [{"label": choices.get(t, t), "count": counts[t]} for t in sorted_types]
+
+
 class BatchSlaughterView(LoginRequiredMixin, TemplateView):
     template_name = "processing/batch_slaughter.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get orders with animals ready for slaughter
+        # Get orders with animals ready for slaughter (prefetch received animals for type breakdown)
         orders = (
             SlaughterOrder.objects.filter(animals__status="received")
             .annotate(received_count=Count("animals", filter=Q(animals__status="received")))
             .filter(received_count__gt=0)
+            .prefetch_related(
+                Prefetch(
+                    "animals",
+                    queryset=Animal.objects.filter(status="received").only("animal_type"),
+                )
+            )
             .order_by("-order_datetime")
         )
 
-        context["orders"] = orders
+        selected_order = None
+        preselect_id = self.request.GET.get("order")
+        if preselect_id:
+            try:
+                selected_order = orders.filter(pk=preselect_id).first()
+            except (ValueError, ValidationError):
+                selected_order = None
+
+        orders_list = list(orders)
+        for order in orders_list:
+            order.received_type_rows = _batch_slaughter_type_breakdown(order)
+
+        context["orders"] = orders_list
+        context["selected_order"] = selected_order
         return context
 
     def post(self, request):

@@ -2,9 +2,10 @@
 {% load i18n %}
 
 {% block content %}
-<div class="px-4 py-6 max-w-4xl mx-auto">
+{# -mx-4 + width: undo base.html inner p-4 on phones so content uses full card width #}
+<div class="-mx-4 w-[calc(100%+2rem)] max-w-none sm:mx-0 sm:w-full sm:max-w-7xl sm:mx-auto py-1 sm:py-6">
     <!-- Mobile-first Order Header -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-8 mb-3 sm:mb-6 lg:mb-8">
         <div class="text-center mb-4">
             <h1 class="text-2xl font-bold text-gray-900">{{ order.slaughter_order_no }}</h1>
             <span class="inline-block px-3 py-1 text-sm font-medium rounded-full
@@ -78,17 +79,17 @@
     </div>
 
     <!-- Animals Section -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">{% trans "Animals" %}</h2>
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-8">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+            <h2 class="text-xl font-bold text-gray-900 min-w-0">{% trans "Animals" %}</h2>
             {% if order.status == 'PENDING' %}
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
                     <a href="{% url 'reception:add_animal_to_order' order.pk %}" 
-                       class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                       class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors text-sm whitespace-nowrap">
                         {% trans "Add Animal" %}
                     </a>
                     <a href="{% url 'reception:batch_add_animals_to_order' order.pk %}" 
-                       class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm">
+                       class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors text-sm whitespace-nowrap">
                         {% trans "Batch Add" %}
                     </a>
                 </div>
@@ -96,78 +97,28 @@
         </div>
 
         {% if order.animals.all %}
-            <!-- Mobile Animal Cards -->
-            <div class="space-y-3 sm:hidden">
-                {% for animal in order.animals.all %}
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <a href="{% url 'processing:animal_detail' animal.pk %}" 
-                               class="font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                                {{ animal.identification_tag }}
-                            </a>
-                            <p class="text-sm text-gray-600">{{ animal.get_animal_type_display }}</p>
-                        </div>
-                        <span class="inline-block px-2 py-1 text-xs font-medium rounded-full
-                            {% if animal.status == 'received' %} bg-blue-100 text-blue-800
-                            {% elif animal.status == 'slaughtered' %} bg-yellow-100 text-yellow-800
-                            {% elif animal.status == 'carcass_ready' %} bg-green-100 text-green-800
-                            {% elif animal.status == 'disassembled' %} bg-purple-100 text-purple-800
-                            {% elif animal.status == 'packaged' %} bg-indigo-100 text-indigo-800
-                            {% elif animal.status == 'delivered' %} bg-emerald-100 text-emerald-800
-                            {% elif animal.status == 'returned' %} bg-orange-100 text-orange-800
-                            {% elif animal.status == 'disposed' %} bg-red-100 text-red-800
-                            {% else %} bg-gray-100 text-gray-800
-                            {% endif %}">
-                            {{ animal.get_status_display }}
-                        </span>
-                    </div>
-                    <div class="flex space-x-2 mt-3">
-                        <a href="{% url 'processing:animal_detail' animal.pk %}" 
-                           class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 text-center text-sm">
-                            {% trans "View Profile" %}
-                        </a>
-                        {% if order.status == 'PENDING' %}
-                            <a href="{% url 'reception:edit_animal_in_order' order.pk animal.pk %}" 
-                               class="flex-1 bg-gray-600 text-white py-2 px-3 rounded-md hover:bg-gray-700 text-center text-sm">
-                                {% trans "Edit" %}
-                            </a>
-                            <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" class="flex-1">
-                                {% csrf_token %}
-                                <button type="submit" 
-                                        class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 text-sm"
-                                        onclick="return confirm('{% trans "Are you sure you want to remove this animal?" %}');">
-                                    {% trans "Remove" %}
-                                </button>
-                            </form>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Desktop Table -->
-            <div class="hidden sm:block overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+            <div class="overflow-x-auto -mx-3 sm:-mx-8 border border-gray-200 sm:border-0 rounded-lg sm:rounded-none">
+                <table class="w-full min-w-[680px] divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Tag" %}</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Species" %}</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Status" %}</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Actions" %}</th>
+                            <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Tag" %}</th>
+                            <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Species" %}</th>
+                            <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Status" %}</th>
+                            <th class="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Edit" %}</th>
+                            <th class="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Remove" %}</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for animal in order.animals.all %}
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td class="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium">
                                 <a href="{% url 'processing:animal_detail' animal.pk %}" 
                                    class="text-blue-600 hover:text-blue-800 hover:underline">
                                     {{ animal.identification_tag }}
                                 </a>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ animal.get_animal_type_display }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500">{{ animal.get_animal_type_display }}</td>
+                            <td class="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
                                     {% if animal.status == 'received' %} bg-blue-100 text-blue-800
                                     {% elif animal.status == 'slaughtered' %} bg-yellow-100 text-yellow-800
@@ -182,13 +133,17 @@
                                     {{ animal.get_status_display }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <a href="{% url 'processing:animal_detail' animal.pk %}" 
-                                   class="text-blue-600 hover:text-blue-900">{% trans "View Profile" %}</a>
+                            <td class="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-sm font-medium">
                                 {% if order.status == 'PENDING' %}
                                     <a href="{% url 'reception:edit_animal_in_order' order.pk animal.pk %}" 
                                        class="text-blue-600 hover:text-blue-900">{% trans "Edit" %}</a>
-                                    <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" class="inline">
+                                {% else %}
+                                    <span class="text-gray-400">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-sm font-medium">
+                                {% if order.status == 'PENDING' %}
+                                    <form action="{% url 'reception:remove_animal_from_order' order.pk animal.pk %}" method="post" class="inline m-0">
                                         {% csrf_token %}
                                         <button type="submit" 
                                                 class="text-red-600 hover:text-red-900"
@@ -196,6 +151,8 @@
                                             {% trans "Remove" %}
                                         </button>
                                     </form>
+                                {% else %}
+                                    <span class="text-gray-400">—</span>
                                 {% endif %}
                             </td>
                         </tr>

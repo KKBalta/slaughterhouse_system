@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 
 from django.conf import settings
-from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods
 
-from tenants.email_index import normalize_email
+from tenants.forms import PublicTenantRegistrationForm
 from tenants.models import TenantRegistrationRequest
 from tenants.services import (
-    allocate_unique_schema_name,
-    derive_base_schema_name,
-    generate_status_token_pair,
+    create_registration_request,
     verify_status_token,
 )
 
@@ -58,6 +55,43 @@ def _json_body(request) -> dict:
     return request.POST
 
 
+@dataclass
+class TenantRegistrationStatusLookupError(Exception):
+    detail: str
+    status_code: int
+
+
+def _flatten_form_errors(form: PublicTenantRegistrationForm) -> dict[str, list[str]]:
+    flat_errors: dict[str, list[str]] = {}
+    for field, items in form.errors.get_json_data().items():
+        flat_errors[field] = [item["message"] for item in items]
+    return flat_errors
+
+
+def get_tenant_registration_status_payload(registration_id, token: str) -> dict:
+    if not token:
+        raise TenantRegistrationStatusLookupError("Missing status token.", 401)
+
+    try:
+        reg = TenantRegistrationRequest.objects.get(pk=registration_id)
+    except TenantRegistrationRequest.DoesNotExist as exc:
+        raise TenantRegistrationStatusLookupError("Not found.", 404) from exc
+
+    if not verify_status_token(reg.status_token_hash, token):
+        raise TenantRegistrationStatusLookupError("Invalid token.", 403)
+
+    out = {
+        "id": str(reg.id),
+        "status": reg.status,
+        "derived_schema_preview": reg.derived_schema_name,
+    }
+    if reg.status == TenantRegistrationRequest.Status.REJECTED:
+        out["rejection_reason"] = reg.rejection_reason
+    if reg.status == TenantRegistrationRequest.Status.APPROVED and reg.approved_tenant_id:
+        out["schema_name"] = reg.approved_tenant.schema_name
+    return out
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def tenant_registration_create(request):
@@ -68,51 +102,17 @@ def tenant_registration_create(request):
         return JsonResponse({"detail": "Too many registration attempts. Try again later."}, status=429)
 
     payload = _json_body(request)
-    company_name = (payload.get("company_name") or "").strip()
-    owner_email = normalize_email(payload.get("owner_email"))
-    password = payload.get("owner_password") or ""
-    password_confirm = payload.get("owner_password_confirm") or ""
+    form = PublicTenantRegistrationForm(payload)
+    if not form.is_valid():
+        errors = _flatten_form_errors(form)
+        response_payload: dict[str, object] = {
+            "detail": "Please correct the highlighted fields.",
+            "errors": errors,
+        }
+        response_payload.update(errors)
+        return JsonResponse(response_payload, status=400)
 
-    errors: dict[str, list[str]] = {}
-    if not company_name:
-        errors.setdefault("company_name", []).append("This field is required.")
-    if not owner_email:
-        errors.setdefault("owner_email", []).append("This field is required.")
-    if not password:
-        errors.setdefault("owner_password", []).append("This field is required.")
-    if password != password_confirm:
-        errors.setdefault("owner_password_confirm", []).append("Passwords do not match.")
-
-    if errors:
-        return JsonResponse({"errors": errors}, status=400)
-
-    try:
-        validate_password(password)
-    except ValidationError as e:
-        return JsonResponse({"errors": {"owner_password": list(e.messages)}}, status=400)
-
-    base = derive_base_schema_name(company_name)
-    try:
-        schema_name = allocate_unique_schema_name(base)
-    except ValidationError as e:
-        return JsonResponse({"detail": str(e)}, status=400)
-
-    from django.contrib.auth.hashers import make_password
-
-    raw_token, token_hash = generate_status_token_pair()
-
-    reg = TenantRegistrationRequest.objects.create(
-        company_name=company_name,
-        company_full_name=(payload.get("company_full_name") or "").strip()[:255],
-        company_address=(payload.get("company_address") or "").strip()[:500],
-        license_no=(payload.get("license_no") or "").strip()[:64],
-        operation_no=(payload.get("operation_no") or "").strip()[:64],
-        contact_phone=(payload.get("contact_phone") or "").strip()[:64],
-        derived_schema_name=schema_name,
-        owner_email=owner_email,
-        owner_password_hash=make_password(password),
-        status_token_hash=token_hash,
-    )
+    reg, raw_token = create_registration_request(**form.registration_kwargs())
 
     return JsonResponse(
         {
@@ -139,24 +139,8 @@ def tenant_registration_status(request, registration_id):
         # Same name as POST response field — frontends often use ?status_token=
         token = request.GET.get("status_token") or request.GET.get("token")
 
-    if not token:
-        return JsonResponse({"detail": "Missing status token."}, status=401)
-
     try:
-        reg = TenantRegistrationRequest.objects.get(pk=registration_id)
-    except TenantRegistrationRequest.DoesNotExist:
-        return JsonResponse({"detail": "Not found."}, status=404)
-
-    if not verify_status_token(reg.status_token_hash, token):
-        return JsonResponse({"detail": "Invalid token."}, status=403)
-
-    out = {
-        "id": str(reg.id),
-        "status": reg.status,
-        "derived_schema_preview": reg.derived_schema_name,
-    }
-    if reg.status == TenantRegistrationRequest.Status.REJECTED:
-        out["rejection_reason"] = reg.rejection_reason
-    if reg.status == TenantRegistrationRequest.Status.APPROVED and reg.approved_tenant_id:
-        out["schema_name"] = reg.approved_tenant.schema_name
-    return JsonResponse(out)
+        payload = get_tenant_registration_status_payload(registration_id, token)
+    except TenantRegistrationStatusLookupError as exc:
+        return JsonResponse({"detail": exc.detail}, status=exc.status_code)
+    return JsonResponse(payload)

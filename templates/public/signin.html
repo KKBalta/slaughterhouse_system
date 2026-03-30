@@ -1,0 +1,384 @@
+{% extends "public/base_public.html" %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}{% trans "CarniTrack" %} · {% trans "Sign in" %}{% endblock %}
+
+{% block hero_title %}
+{% trans "Find your workspace first, then sign in on the tenant host." %}
+{% endblock %}
+
+{% block hero_body %}
+<p>{% trans "This Django-hosted fallback keeps the React email-first workflow: discover by email, choose the workspace if there are multiple matches, then authenticate directly against that tenant." %}</p>
+{% endblock %}
+
+{% block hero_panel %}
+<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex items-start gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 10-8 0v4m-2 0h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2z"></path>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-slate-900">{% trans "Authentication stays tenant-scoped" %}</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "The final password POST goes to the tenant origin so the browser receives a real tenant session cookie and the Django dashboard opens without a second login step." %}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_header %}
+<div class="mb-8">
+    <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">{% trans "Tenant sign in" %}</span>
+    <h2 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">{% trans "Sign in" %}</h2>
+    <p class="mt-3 text-base leading-7 text-slate-600">{% trans "Start with your work email. We will find the correct tenant before asking for your password." %}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if not signin_enabled %}
+    <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {% trans "Email-first tenant sign in is only available in multi-tenant mode." %}
+    </div>
+{% else %}
+    <noscript>
+        <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {% trans "This sign-in fallback requires JavaScript because the final authentication step must call the tenant login API from your browser." %}
+        </div>
+    </noscript>
+
+    <div id="public-signin-root" data-initial-email="{{ initial_email|escape }}" data-language-code="{{ LANGUAGE_CODE|lower }}">
+        <section id="step-email" class="space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <form id="discover-form" class="space-y-4">
+                    <div>
+                        <label for="signin-email" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Work email" %}</label>
+                        <input id="signin-email" type="email" value="{{ initial_email|default_if_none:'' }}" autocomplete="email"
+                               class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <p id="discover-error" class="hidden text-sm text-red-600"></p>
+                    <button id="discover-submit" type="submit" class="flex h-11 w-full items-center justify-center rounded-md bg-blue-600 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Continue" %}</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="step-tenant" class="hidden space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-sm font-semibold text-slate-900">{% trans "Select your workspace" %}</p>
+                <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "This email exists in more than one tenant. Pick the correct workspace to continue." %}</p>
+            </div>
+            <form id="tenant-form" class="space-y-4">
+                <div id="tenant-options" class="space-y-3"></div>
+                <p id="tenant-error" class="hidden text-sm text-red-600"></p>
+                <div class="flex gap-3">
+                    <button id="tenant-back" type="button" class="flex h-11 flex-1 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Back" %}</button>
+                    <button id="tenant-submit" type="submit" class="flex h-11 flex-1 items-center justify-center rounded-md bg-blue-600 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Continue" %}</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="step-password" class="hidden space-y-4">
+            <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 text-sm shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">{% trans "Workspace" %}</p>
+                <p id="selected-tenant-name" class="mt-2 font-semibold text-slate-900"></p>
+                <p id="selected-tenant-meta" class="mt-1 text-slate-600"></p>
+            </div>
+            <form id="password-form" class="space-y-4">
+                <div>
+                    <label for="signin-password" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Password" %}</label>
+                    <input id="signin-password" type="password" autocomplete="current-password"
+                           class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                </div>
+                <p id="login-error" class="hidden text-sm text-red-600"></p>
+                <div class="flex gap-3">
+                    <button id="password-back" type="button" class="flex h-11 flex-1 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Back" %}</button>
+                    <button id="password-submit" type="submit" class="flex h-11 flex-1 items-center justify-center rounded-md bg-blue-600 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Sign in" %}</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="step-empty" class="hidden space-y-4">
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                {% trans "No tenant account was found for this email. Check the address or request a workspace below." %}
+            </div>
+            <div class="flex gap-3">
+                <button id="empty-reset" type="button" class="flex h-11 flex-1 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">{% trans "Try another email" %}</button>
+                <a href="{% url 'public_setup' %}" class="flex h-11 flex-1 items-center justify-center rounded-md bg-emerald-600 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">{% trans "Request access" %}</a>
+            </div>
+        </section>
+    </div>
+
+    {% translate "Continue" as continue_label %}
+    {% translate "Looking up workspaces..." as continue_busy %}
+    {% translate "Sign in" as sign_in_label %}
+    {% translate "Signing in..." as sign_in_busy %}
+    {% translate "Enter a valid email address." as invalid_email %}
+    {% translate "Could not look up your account." as discover_failed %}
+    {% translate "Select a workspace." as choose_workspace %}
+    {% translate "Password is required." as password_required %}
+    {% translate "Sign in failed." as login_failed %}
+    {% translate "Workspace" as unknown_workspace %}
+    {% translate "Tenant host unavailable" as unknown_domain %}
+
+    <script>
+    (() => {
+        const root = document.getElementById('public-signin-root');
+        if (!root) return;
+
+        const stepEmail = document.getElementById('step-email');
+        const stepTenant = document.getElementById('step-tenant');
+        const stepPassword = document.getElementById('step-password');
+        const stepEmpty = document.getElementById('step-empty');
+        const emailInput = document.getElementById('signin-email');
+        const passwordInput = document.getElementById('signin-password');
+        const discoverError = document.getElementById('discover-error');
+        const tenantError = document.getElementById('tenant-error');
+        const loginError = document.getElementById('login-error');
+        const discoverSubmit = document.getElementById('discover-submit');
+        const passwordSubmit = document.getElementById('password-submit');
+        const tenantOptions = document.getElementById('tenant-options');
+        const selectedTenantName = document.getElementById('selected-tenant-name');
+        const selectedTenantMeta = document.getElementById('selected-tenant-meta');
+        const discoverForm = document.getElementById('discover-form');
+        const tenantForm = document.getElementById('tenant-form');
+        const passwordForm = document.getElementById('password-form');
+        const tenantBack = document.getElementById('tenant-back');
+        const passwordBack = document.getElementById('password-back');
+        const emptyReset = document.getElementById('empty-reset');
+
+        const copy = {
+            continueLabel: '{{ continue_label|escapejs }}',
+            continueBusy: '{{ continue_busy|escapejs }}',
+            signInLabel: '{{ sign_in_label|escapejs }}',
+            signInBusy: '{{ sign_in_busy|escapejs }}',
+            invalidEmail: '{{ invalid_email|escapejs }}',
+            discoverFailed: '{{ discover_failed|escapejs }}',
+            chooseWorkspace: '{{ choose_workspace|escapejs }}',
+            passwordRequired: '{{ password_required|escapejs }}',
+            loginFailed: '{{ login_failed|escapejs }}',
+            unknownWorkspace: '{{ unknown_workspace|escapejs }}',
+            unknownDomain: '{{ unknown_domain|escapejs }}'
+        };
+
+        let tenants = [];
+        let selectedTenant = null;
+
+        function normalizeEmail(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function setStep(step) {
+            stepEmail.classList.toggle('hidden', step !== 'email');
+            stepTenant.classList.toggle('hidden', step !== 'tenant');
+            stepPassword.classList.toggle('hidden', step !== 'password');
+            stepEmpty.classList.toggle('hidden', step !== 'empty');
+        }
+
+        function clearErrors() {
+            for (const node of [discoverError, tenantError, loginError]) {
+                node.textContent = '';
+                node.classList.add('hidden');
+            }
+        }
+
+        function showError(node, message) {
+            node.textContent = message;
+            node.classList.remove('hidden');
+        }
+
+        function resetToEmail() {
+            tenants = [];
+            selectedTenant = null;
+            tenantOptions.innerHTML = '';
+            passwordInput.value = '';
+            clearErrors();
+            setStep('email');
+        }
+
+        function renderTenantOptions(items) {
+            tenantOptions.innerHTML = '';
+            items.forEach((tenant, index) => {
+                const label = document.createElement('label');
+                label.className = 'flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'tenant_choice';
+                input.value = String(index);
+                input.className = 'mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500';
+                input.addEventListener('change', () => {
+                    selectedTenant = items[index];
+                    tenantError.classList.add('hidden');
+                });
+
+                const textWrap = document.createElement('div');
+                textWrap.className = 'min-w-0';
+
+                const title = document.createElement('p');
+                title.className = 'text-sm font-semibold text-slate-900';
+                title.textContent = tenant.name || tenant.slug || copy.unknownWorkspace;
+
+                const meta = document.createElement('p');
+                meta.className = 'mt-1 text-sm text-slate-600';
+                meta.textContent = tenant.primary_domain || tenant.schema_name || copy.unknownDomain;
+
+                textWrap.appendChild(title);
+                textWrap.appendChild(meta);
+                label.appendChild(input);
+                label.appendChild(textWrap);
+                tenantOptions.appendChild(label);
+            });
+        }
+
+        function loginUrlForTenant(tenant) {
+            if (tenant && tenant.auth_login_url) return String(tenant.auth_login_url);
+            const base = String(tenant?.api_base_url || '').replace(/\/$/, '');
+            if (!base) throw new Error(copy.loginFailed);
+            return `${base}/api/v1/auth/login/`;
+        }
+
+        async function parseResponse(response, fallbackMessage) {
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json') ? await response.json() : {};
+            if (!response.ok) {
+                throw new Error(data?.detail || data?.message || fallbackMessage);
+            }
+            return data;
+        }
+
+        async function getCsrfToken(origin) {
+            const response = await fetch(`${origin}/api/v1/auth/csrf/`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            const data = await parseResponse(response, copy.loginFailed);
+            return data?.csrfToken || '';
+        }
+
+        function buildDjangoFallback(tenant) {
+            const base = String(tenant?.api_base_url || '').replace(/\/$/, '');
+            if (!base) return '';
+            const lang = String(root.dataset.languageCode || 'tr').startsWith('en') ? 'en' : 'tr';
+            return `${base}/${lang}/dashboard/`;
+        }
+
+        discoverForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearErrors();
+            const email = normalizeEmail(emailInput.value);
+            if (!email || !email.includes('@')) {
+                showError(discoverError, copy.invalidEmail);
+                return;
+            }
+
+            discoverSubmit.disabled = true;
+            discoverSubmit.textContent = copy.continueBusy;
+            try {
+                const response = await fetch('{% url "api_discover_tenants" %}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await parseResponse(response, copy.discoverFailed);
+                tenants = Array.isArray(data?.tenants) ? data.tenants : [];
+
+                if (!tenants.length) {
+                    setStep('empty');
+                    return;
+                }
+                if (tenants.length === 1) {
+                    selectedTenant = tenants[0];
+                    selectedTenantName.textContent = selectedTenant.name || selectedTenant.slug || copy.unknownWorkspace;
+                    selectedTenantMeta.textContent = selectedTenant.primary_domain || selectedTenant.schema_name || copy.unknownDomain;
+                    setStep('password');
+                    return;
+                }
+                selectedTenant = null;
+                renderTenantOptions(tenants);
+                setStep('tenant');
+            } catch (error) {
+                showError(discoverError, error.message || copy.discoverFailed);
+            } finally {
+                discoverSubmit.disabled = false;
+                discoverSubmit.textContent = copy.continueLabel;
+            }
+        });
+
+        tenantForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            clearErrors();
+            if (!selectedTenant) {
+                showError(tenantError, copy.chooseWorkspace);
+                return;
+            }
+            selectedTenantName.textContent = selectedTenant.name || selectedTenant.slug || copy.unknownWorkspace;
+            selectedTenantMeta.textContent = selectedTenant.primary_domain || selectedTenant.schema_name || copy.unknownDomain;
+            passwordInput.value = '';
+            setStep('password');
+        });
+
+        passwordForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearErrors();
+            const password = passwordInput.value;
+            const email = normalizeEmail(emailInput.value);
+            if (!selectedTenant) {
+                showError(loginError, copy.chooseWorkspace);
+                return;
+            }
+            if (!password) {
+                showError(loginError, copy.passwordRequired);
+                return;
+            }
+
+            passwordSubmit.disabled = true;
+            passwordSubmit.textContent = copy.signInBusy;
+            try {
+                const loginUrl = loginUrlForTenant(selectedTenant);
+                const loginTarget = new URL(loginUrl);
+                const origin = `${loginTarget.protocol}//${loginTarget.host}`;
+                const csrfToken = await getCsrfToken(origin);
+                const response = await fetch(loginUrl, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        username: email,
+                        password,
+                        post_login_redirect: 'django'
+                    })
+                });
+                const payload = await parseResponse(response, copy.loginFailed);
+                const target = payload?.redirect_url || payload?.session_bootstrap_url || buildDjangoFallback(selectedTenant);
+                if (target) {
+                    window.location.assign(String(target));
+                    return;
+                }
+                throw new Error(copy.loginFailed);
+            } catch (error) {
+                showError(loginError, error.message || copy.loginFailed);
+            } finally {
+                passwordSubmit.disabled = false;
+                passwordSubmit.textContent = copy.signInLabel;
+            }
+        });
+
+        tenantBack.addEventListener('click', resetToEmail);
+        passwordBack.addEventListener('click', () => {
+            clearErrors();
+            if (tenants.length > 1) {
+                setStep('tenant');
+                return;
+            }
+            setStep('email');
+        });
+        emptyReset.addEventListener('click', resetToEmail);
+    })();
+    </script>
+{% endif %}
+{% endblock %}

@@ -5,6 +5,35 @@
 {% block title %}{% trans "Client Registration" %} - {{ block.super }}{% endblock %}
 
 {% block content %}
+<style>
+    /* Match reception create_order phone country selector */
+    .modern-select {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem 0 0 0.375rem;
+        padding: 0.5rem 1.75rem 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: #111827;
+        width: 70px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.25rem center;
+        background-repeat: no-repeat;
+        background-size: 1em 1em;
+        appearance: none;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .modern-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    }
+    .modern-select:hover {
+        border-color: #9ca3af;
+    }
+</style>
 <div class="max-w-md mx-auto">
     <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-8">
       {% trans "Register as a Client" %}
@@ -52,13 +81,15 @@
             {% if form.contact_person.errors %}<p class="mt-1 text-sm text-red-600">{{ form.contact_person.errors }}</p>{% endif %}
         </div>
         <div>
-            <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                {{ form.phone_number.label }}
-            </label>
-            <div class="mt-1">
-                {% render_field form.phone_number class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            <span class="block text-sm font-medium text-gray-700 mb-1">{% trans "Phone number" %}</span>
+            <div class="mt-1 flex">
+                <div class="relative shrink-0">
+                    {{ form.phone_area_code }}
+                </div>
+                {{ form.phone_number }}
             </div>
             {% if form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>{% endif %}
+            {% if form.phone_area_code.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_area_code.errors }}</p>{% endif %}
         </div>
         <div>
             <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">

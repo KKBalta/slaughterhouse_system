@@ -84,7 +84,8 @@ const loginRes = await fetch(`${tenantBase}/api/v1/auth/login/`, {
 });
 const loginJson = await loginRes.json();
 if (loginJson.session_pending && loginJson.session_bootstrap_url) {
-  window.location.assign(loginJson.session_bootstrap_url);
+  // redirect_url may already be the bootstrap URL with the final `next=...`
+  window.location.assign(loginJson.redirect_url || loginJson.session_bootstrap_url);
   return;
 }
 

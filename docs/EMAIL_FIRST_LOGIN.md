@@ -65,6 +65,7 @@ Django enforces CSRF on:
   - **`spa`** (aliases: `web`, `frontend`, `react`) — `redirect_url` uses **`web_app_base_url`** (e.g. port `:3000` in dev).
   - **Omitted** — follows **`TENANT_POST_LOGIN_USE_API_HOST`** in settings (see below).
 - **Success (JSON):** includes `redirect_url` so the client can `window.location.assign(redirect_url)` after login.
+- When the browser needs a first-party bootstrap hop before the session cookie can stick, `redirect_url` and `session_bootstrap_url` already point to `/api/v1/auth/session-bootstrap/?token=...&next=...`. In that case, navigating to either URL is correct; the backend will set the session on the tenant host first, then continue to the final SPA or Django URL.
 - Use **`credentials: "include"`** and **`X-CSRFToken`** on this POST (after tenant CSRF prefetch).
 
 ## Session check (`/me`)

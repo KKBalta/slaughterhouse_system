@@ -117,6 +117,19 @@ if DEBUG and USE_MULTITENANT and config("CSRF_DEV_TRUST_LOCALHOST", default=True
             _csrf_merged.append(_o)
     CSRF_TRUSTED_ORIGINS = _csrf_merged
 
+# DEBUG + plain HTTP: SameSite=None forces Secure on csrftoken/session; browsers do not send
+# Secure cookies on http:// for hosts like *.localhost (only the hostname "localhost" is exempt).
+# Without HTTPS, server-rendered login at e.g. pomet.localhost:8000 gets no csrftoken on POST.
+if DEBUG:
+    _dev_sess_secure = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
+    _dev_csrf_secure = config("CSRF_COOKIE_SECURE", default=False, cast=bool)
+    _sess_ss = SESSION_COOKIE_SAMESITE
+    if isinstance(_sess_ss, str) and _sess_ss.lower() == "none" and not _dev_sess_secure:
+        SESSION_COOKIE_SAMESITE = "Lax"
+    _csrf_ss = CSRF_COOKIE_SAMESITE
+    if isinstance(_csrf_ss, str) and _csrf_ss.lower() == "none" and not _dev_csrf_secure:
+        CSRF_COOKIE_SAMESITE = "Lax"
+
 # Application definition
 SHARED_APPS = [
     "django_tenants",

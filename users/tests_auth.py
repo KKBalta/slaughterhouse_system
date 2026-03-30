@@ -11,10 +11,14 @@ Tests cover:
 import json
 import os
 import unittest
+from types import SimpleNamespace
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
+import django.contrib.auth as django_auth
+import django_tenants.utils as tenant_utils
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from users.models import ClientProfile
@@ -104,6 +108,13 @@ class LoginTest(AuthenticationTestMixin, TestCase):
 
         # Check session was created
         self.assertTrue(self.test_client.session.get("_auth_user_id"))
+
+    @override_settings(DEBUG=True, ALLOWED_HOSTS=["pomet.localhost", ".localhost", "testserver"])
+    def test_login_page_sets_fresh_csrf_cookie_for_tenant_host(self):
+        response = self.test_client.get(reverse("login"), HTTP_HOST="pomet.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("csrftoken", response.cookies)
+        self.assertIn("no-store", response["Cache-Control"])
 
 
 class LogoutTest(AuthenticationTestMixin, TestCase):
@@ -236,6 +247,132 @@ class SessionSecurityTest(AuthenticationTestMixin, TestCase):
         self.assertTrue(client2.session.get("_auth_user_id"))
 
 
+def _dummy_login_user():
+    class DummyUser:
+        id = 7
+        pk = 7
+        email = "client@example.com"
+        is_active = True
+
+        def get_username(self):
+            return "client-user"
+
+    return DummyUser()
+
+
+@override_settings(
+    USE_MULTITENANT=True,
+    DEBUG=False,
+    TENANT_POST_LOGIN_USE_API_HOST=False,
+    ALLOWED_HOSTS=["pomet.localhost", ".localhost", "localhost", "testserver"],
+)
+def test_session_login_api_redirects_via_bootstrap_for_cross_site_spa(monkeypatch):
+    import users.views as user_views
+    from django.db import connection
+    from tenants import email_index
+
+    request = RequestFactory().post(
+        "/api/v1/auth/login/",
+        data=json.dumps({"email": "client@example.com", "password": "secret"}),
+        content_type="application/json",
+        HTTP_HOST="pomet.localhost:8000",
+        HTTP_ORIGIN="http://localhost:3000",
+    )
+    request.COOKIES["csrftoken"] = "csrf-token"
+
+    monkeypatch.setattr(user_views, "authenticate", lambda request, username, password: _dummy_login_user())
+    monkeypatch.setattr(user_views.secrets, "token_urlsafe", lambda _n: "bootstrap-token")
+    monkeypatch.setattr(user_views, "_bootstrap_token_cache_set", lambda **kwargs: None)
+    monkeypatch.setattr(connection, "schema_name", "pomet", raising=False)
+    monkeypatch.setattr(email_index, "get_client_tenant_from_connection", lambda: SimpleNamespace(schema_name="pomet"))
+    monkeypatch.setattr(
+        email_index,
+        "build_post_login_redirect_url",
+        lambda tenant, use_api_host=None: "http://pomet.localhost:3000/dashboard",
+    )
+
+    response = user_views.session_login_api(request)
+
+    assert response.status_code == 200
+    payload = json.loads(response.content)
+    parsed = urlsplit(payload["redirect_url"])
+    next_url = parse_qs(parsed.query)["next"][0]
+
+    assert payload["session_pending"] is True
+    assert payload["redirect_url"] == payload["session_bootstrap_url"]
+    assert payload["post_bootstrap_redirect_url"] == "http://pomet.localhost:3000/dashboard"
+    assert parsed.scheme == "http"
+    assert parsed.netloc == "pomet.localhost:8000"
+    assert parsed.path == "/api/v1/auth/session-bootstrap/"
+    assert parse_qs(parsed.query)["token"] == ["bootstrap-token"]
+    assert next_url == "http://pomet.localhost:3000/dashboard"
+
+
+@override_settings(
+    USE_MULTITENANT=True,
+    DEBUG=False,
+    ALLOWED_HOSTS=["pomet.localhost", ".localhost", "localhost", "testserver"],
+)
+def test_session_bootstrap_api_allows_same_tenant_spa_redirect(monkeypatch):
+    import users.views as user_views
+    from django.db import connection
+    from tenants import email_index
+
+    next_url = "http://pomet.localhost:3000/dashboard"
+    request = RequestFactory().get(
+        "/api/v1/auth/session-bootstrap/",
+        data={"token": "bootstrap-token", "next": next_url},
+        HTTP_HOST="pomet.localhost:8000",
+    )
+
+    class DummyUserModel:
+        class DoesNotExist(Exception):
+            pass
+
+        objects = SimpleNamespace(get=lambda pk: _dummy_login_user())
+
+    monkeypatch.setattr(user_views, "_bootstrap_token_cache_pop", lambda token: {"user_id": 7, "schema": "pomet"})
+    monkeypatch.setattr(connection, "schema_name", "pomet", raising=False)
+    monkeypatch.setattr(django_auth, "get_user_model", lambda: DummyUserModel)
+    monkeypatch.setattr(tenant_utils, "get_public_schema_name", lambda: "public")
+    monkeypatch.setattr(user_views, "login", lambda request, user, backend=None: None)
+    monkeypatch.setattr(user_views, "get_token", lambda request: "csrf-token")
+    monkeypatch.setattr(
+        email_index,
+        "get_client_tenant_from_connection",
+        lambda: SimpleNamespace(schema_name="pomet", language_code="en"),
+    )
+    monkeypatch.setattr(email_index, "build_tenant_api_base_url", lambda tenant: "http://pomet.localhost:8000")
+    monkeypatch.setattr(email_index, "build_tenant_web_app_base_url", lambda tenant: "http://pomet.localhost:3000")
+    monkeypatch.setattr(
+        email_index,
+        "build_post_login_redirect_url",
+        lambda tenant, use_api_host=None: (
+            "http://pomet.localhost:8000/en/dashboard/" if use_api_host else "http://pomet.localhost:3000/dashboard"
+        ),
+    )
+
+    response = user_views.session_bootstrap_api(request)
+
+    assert response.status_code == 302
+    assert response["Location"] == next_url
+
+
+@override_settings(LANGUAGE_CODE="tr", PUBLIC_TENANT_HTTP_PORT="8000", TENANT_LOGIN_SUCCESS_REDIRECT_PATH="/dashboard")
+def test_build_post_login_redirect_url_uses_tenant_language_code():
+    from tenants.email_index import build_post_login_redirect_url
+
+    class DummyTenant:
+        schema_name = "pomet"
+        slug = "pomet"
+        language_code = "en"
+
+        def get_primary_domain(self):
+            return SimpleNamespace(domain="pomet.localhost")
+
+    assert build_post_login_redirect_url(DummyTenant(), use_api_host=True) == "http://pomet.localhost:8000/en/dashboard/"
+
+
 # ============================================================================
 # Pytest-style authentication tests
 # ============================================================================
@@ -357,6 +494,7 @@ class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
             {
                 "account_type": "INDIVIDUAL",
                 "contact_person": "New Client",
+                "phone_area_code": "+90",
                 "phone_number": "5554443322",
                 "address": "100 St",
             },
@@ -365,7 +503,7 @@ class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
         self.assertIn("done", r.url)
         u = User.objects.get(username__endswith="3322")
         self.assertEqual(u.role, User.Role.CLIENT)
-        self.assertEqual(u.client_profile.phone_number, "5554443322")
+        self.assertEqual(u.client_profile.phone_number, "+905554443322")
 
     def test_second_registration_same_phone_gets_unique_username(self):
         from django.urls import reverse
@@ -374,14 +512,15 @@ class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
         data = {
             "account_type": "INDIVIDUAL",
             "contact_person": "Dup Client",
+            "phone_area_code": "+90",
             "phone_number": "5550000001",
             "address": "Addr",
         }
         self.test_client.post(url, data)
         self.test_client.post(url, data)
-        self.assertEqual(ClientProfile.objects.filter(phone_number="5550000001").count(), 2)
+        self.assertEqual(ClientProfile.objects.filter(phone_number="+905550000001").count(), 2)
         usernames = list(
-            User.objects.filter(client_profile__phone_number="5550000001").values_list("username", flat=True)
+            User.objects.filter(client_profile__phone_number="+905550000001").values_list("username", flat=True)
         )
         self.assertEqual(len(usernames), 2)
         self.assertNotEqual(usernames[0], usernames[1])
@@ -424,9 +563,9 @@ class ClientProfileAPITest(AuthenticationTestMixin, TestCase):
         pid = str(self.client_profile.id)
         r = self.test_client.patch(
             f"/api/v1/clients/{pid}/",
-            data=json.dumps({"phone_number": "9998887777"}),
+            data=json.dumps({"phone_number": "+909998887777"}),
             content_type="application/json",
         )
         self.assertEqual(r.status_code, 200)
         self.client_profile.refresh_from_db()
-        self.assertEqual(self.client_profile.phone_number, "9998887777")
+        self.assertEqual(self.client_profile.phone_number, "+909998887777")

@@ -1,68 +1,80 @@
-{% load static tailwind_tags i18n %}
-{% get_current_language as LANGUAGE_CODE %}
-<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% trans "CarniTrack" %} — {% trans "Slaughterhouse operations" %}</title>
-    <link rel="icon" href="{% static 'theme/img/favicon.png' %}" type="image/png">
-    {% tailwind_css %}
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
-    <div class="pointer-events-none fixed inset-0 overflow-hidden">
-        <div class="absolute -left-1/4 top-0 h-[480px] w-[480px] rounded-full bg-emerald-500/15 blur-3xl"></div>
-        <div class="absolute -right-1/4 bottom-0 h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl"></div>
-    </div>
+{% extends "public/base_public.html" %}
+{% load i18n %}
 
-    <header class="relative border-b border-white/10 bg-slate-950/80 backdrop-blur">
-        <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-            <div class="flex items-center gap-3">
-                <img src="{% static 'theme/img/favicon.png' %}" alt="" width="40" height="40" class="h-10 w-10 rounded-lg ring-1 ring-white/10">
-                <div>
-                    <p class="text-lg font-semibold tracking-tight text-white">CarniTrack</p>
-                    <p class="text-sm text-slate-400">{% trans "SamperLabs" %}</p>
-                </div>
-            </div>
-            <p class="max-w-xl text-sm leading-relaxed text-slate-300">
-                {% blocktrans trimmed %}
-                    Multi-tenant operations for meat processing and traceability. Each slaughterhouse uses its own secure subdomain.
-                {% endblocktrans %}
-            </p>
+{% block title %}{% trans "CarniTrack" %} · {% trans "Public access" %}{% endblock %}
+
+{% block hero_title %}
+{% trans "One platform for slaughterhouse traceability and operations." %}
+{% endblock %}
+
+{% block hero_body %}
+<p>{% trans "Use the public host when you need a fallback to sign in, request a tenant workspace, or track a registration without the React frontend." %}</p>
+<p>{% trans "The underlying discovery, approval, and tenant login APIs are the same ones used by the production web app." %}</p>
+{% endblock %}
+
+{% block hero_panel %}
+<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex items-start gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-3.314 0-6 1.79-6 4s2.686 4 6 4 6-1.79 6-4-2.686-4-6-4zm0 0V4m0 12v4"></path>
+            </svg>
         </div>
-    </header>
+        <div>
+            <p class="text-sm font-semibold text-slate-900">{% trans "Tenant routing stays intact" %}</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "Approved companies receive their own isolated tenant subdomain. Authentication still completes on that tenant host so the browser stores the correct session cookie." %}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    <main class="relative mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <section class="rounded-2xl border border-white/10 bg-slate-900/60 p-8 shadow-xl shadow-black/40 backdrop-blur sm:p-10">
-            <h1 class="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                {% trans "Welcome" %}
-            </h1>
-            <p class="mt-4 text-base leading-relaxed text-slate-300">
-                {% trans "Sign in on your tenant subdomain. The apex domain does not host application login; your administrator provides the exact URL for your site." %}
-            </p>
-            <p class="mt-3 rounded-lg bg-slate-800/80 px-3 py-2 font-mono text-sm text-emerald-300 ring-1 ring-white/10">
-                https://your-tenant.carnitrack.samperlabs.com
-            </p>
-            <ul class="mt-8 space-y-3 text-slate-300">
-                <li class="flex gap-3">
-                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"></span>
-                    <span>{% trans "Tenant-isolated users and data per slaughterhouse" %}</span>
-                </li>
-                <li class="flex gap-3">
-                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"></span>
-                    <span>{% trans "Labels and traceability scoped to your company profile" %}</span>
-                </li>
-                <li class="flex gap-3">
-                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"></span>
-                    <span>{% trans "Edge scale integration via your tenant API host" %}</span>
-                </li>
-            </ul>
-        </section>
-    </main>
+{% block page_header %}
+<div class="mb-8">
+    <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">{% trans "Public fallback" %}</span>
+    <h2 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">{% trans "Choose a flow" %}</h2>
+    <p class="mt-3 text-base leading-7 text-slate-600">{% trans "These pages are hosted directly by Django and follow the same public workflow as the React frontend." %}</p>
+</div>
+{% endblock %}
 
-    <footer class="relative border-t border-white/10 py-8 text-center text-xs text-slate-500">
-        <p><a href="{% url 'platform_admin_login' %}" class="text-slate-400 underline decoration-white/20 underline-offset-2 hover:text-slate-300">{% trans "SamperLabs platform admin" %}</a></p>
-        <p class="mt-2">© {% now "Y" %} SamperLabs · CarniTrack</p>
-    </footer>
-</body>
-</html>
+{% block content %}
+<div class="space-y-4">
+    <a href="{% url 'public_signin' %}" class="group block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
+        <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 10-8 0v4m-2 0h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2z"></path>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-base font-semibold text-slate-900">{% trans "Sign in to a tenant workspace" %}</p>
+                    <span class="text-sm font-semibold text-blue-600 transition group-hover:text-blue-700">{% trans "Open" %}</span>
+                </div>
+                <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "Start with your email, choose your workspace if needed, then finish authentication on the tenant host." %}</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{% url 'public_setup' %}" class="group block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
+        <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-base font-semibold text-slate-900">{% trans "Request a tenant workspace" %}</p>
+                    <span class="text-sm font-semibold text-emerald-600 transition group-hover:text-emerald-700">{% trans "Start" %}</span>
+                </div>
+                <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "Submit your company and owner details for platform-admin approval." %}</p>
+            </div>
+        </div>
+    </a>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <p class="text-sm font-semibold text-slate-900">{% trans "Already approved?" %}</p>
+        <p class="mt-2 text-sm leading-6 text-slate-600">{% trans "If your tenant is already active, use the sign-in flow here or go directly to the tenant URL provided by your administrator." %}</p>
+    </div>
+</div>
+{% endblock %}

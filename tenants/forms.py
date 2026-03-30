@@ -2,8 +2,10 @@ import re
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
+from tenants.email_index import normalize_email
 from tenants.models import Client, Domain
 
 
@@ -114,3 +116,53 @@ class PlatformAdminAuthenticationForm(AuthenticationForm):
                 "autofocus": True,
             }
         )
+
+
+class PublicTenantRegistrationForm(forms.Form):
+    company_name = forms.CharField(max_length=255, label="Company name")
+    owner_email = forms.EmailField(label="Owner email")
+    owner_password = forms.CharField(label="Password", widget=forms.PasswordInput(render_value=True), strip=False)
+    owner_password_confirm = forms.CharField(
+        label="Confirm password",
+        widget=forms.PasswordInput(render_value=True),
+        strip=False,
+    )
+    company_full_name = forms.CharField(max_length=255, required=False, label="Registered company name")
+    company_address = forms.CharField(
+        max_length=500,
+        required=False,
+        label="Address",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    contact_phone = forms.CharField(max_length=64, required=False, label="Phone")
+    license_no = forms.CharField(max_length=64, required=False, label="License number")
+    operation_no = forms.CharField(max_length=64, required=False, label="Operation number")
+
+    def clean_owner_email(self):
+        return normalize_email(self.cleaned_data["owner_email"])
+
+    def clean(self):
+        cleaned = super().clean()
+        password = cleaned.get("owner_password") or ""
+        password_confirm = cleaned.get("owner_password_confirm") or ""
+        if password and password_confirm and password != password_confirm:
+            self.add_error("owner_password_confirm", "Passwords do not match.")
+        if password:
+            try:
+                validate_password(password)
+            except ValidationError as exc:
+                self.add_error("owner_password", exc)
+        return cleaned
+
+    def registration_kwargs(self) -> dict[str, str]:
+        cleaned = self.cleaned_data
+        return {
+            "company_name": (cleaned.get("company_name") or "").strip(),
+            "company_full_name": (cleaned.get("company_full_name") or "").strip(),
+            "company_address": (cleaned.get("company_address") or "").strip(),
+            "license_no": (cleaned.get("license_no") or "").strip(),
+            "operation_no": (cleaned.get("operation_no") or "").strip(),
+            "contact_phone": (cleaned.get("contact_phone") or "").strip(),
+            "owner_email": cleaned.get("owner_email") or "",
+            "owner_password": cleaned.get("owner_password") or "",
+        }

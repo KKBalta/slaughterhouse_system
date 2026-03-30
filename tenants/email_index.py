@@ -68,7 +68,7 @@ def build_post_login_redirect_url(tenant: Client, *, use_api_host: bool | None =
     path = path.rstrip("/") or "/dashboard"
     base = base.rstrip("/")
     if use_api_host:
-        lang = getattr(settings, "LANGUAGE_CODE", "tr") or "tr"
+        lang = (getattr(tenant, "language_code", "") or getattr(settings, "LANGUAGE_CODE", "tr") or "tr").strip()
         # Trailing slash avoids APPEND_SLASH 301 before login_required runs (cleaner logs).
         if not path.endswith("/"):
             path = path + "/"

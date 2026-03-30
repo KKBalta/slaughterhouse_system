@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -111,6 +112,36 @@ def verify_status_token(stored_hash: str, raw_token: str) -> bool:
     if not stored_hash or not raw_token:
         return False
     return secrets.compare_digest(stored_hash, hash_status_token(raw_token))
+
+
+@transaction.atomic
+def create_registration_request(
+    *,
+    company_name: str,
+    owner_email: str,
+    owner_password: str,
+    company_full_name: str = "",
+    company_address: str = "",
+    license_no: str = "",
+    operation_no: str = "",
+    contact_phone: str = "",
+) -> tuple[TenantRegistrationRequest, str]:
+    """Create a pending self-service tenant registration plus a status token."""
+    schema_name = allocate_unique_schema_name(derive_base_schema_name(company_name))
+    raw_token, token_hash = generate_status_token_pair()
+    reg = TenantRegistrationRequest.objects.create(
+        company_name=company_name.strip(),
+        company_full_name=company_full_name.strip()[:255],
+        company_address=company_address.strip()[:500],
+        license_no=license_no.strip()[:64],
+        operation_no=operation_no.strip()[:64],
+        contact_phone=contact_phone.strip()[:64],
+        derived_schema_name=schema_name,
+        owner_email=owner_email.strip().lower(),
+        owner_password_hash=make_password(owner_password),
+        status_token_hash=token_hash,
+    )
+    return reg, raw_token
 
 
 @transaction.atomic

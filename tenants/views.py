@@ -6,7 +6,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django_tenants.utils import tenant_context
 
@@ -16,13 +16,72 @@ from tenants.forms import (
     CreateTenantSuperuserForm,
     PlatformAdminAuthenticationForm,
     PlatformAdminSetupForm,
+    PublicTenantRegistrationForm,
 )
 from tenants.models import Client, Domain, PlatformAdmin, TenantRegistrationRequest
+from tenants.registration_views import TenantRegistrationStatusLookupError, get_tenant_registration_status_payload
 from tenants.services import approve_registration, hard_delete_tenant, provision_tenant, reject_registration
+from tenants.services import create_registration_request
 
 
 def public_landing(request):
     return render(request, "public/landing.html")
+
+
+def public_signin(request):
+    return render(
+        request,
+        "public/signin.html",
+        {
+            "initial_email": (request.GET.get("email") or "").strip(),
+            "signin_enabled": getattr(settings, "USE_MULTITENANT", False),
+        },
+    )
+
+
+def public_setup(request):
+    registration_enabled = getattr(settings, "USE_MULTITENANT", False)
+    form = PublicTenantRegistrationForm(request.POST or None)
+    if not registration_enabled:
+        messages.error(request, "Tenant registration is only available in multi-tenant mode.")
+    elif request.method == "POST" and form.is_valid():
+        reg, raw_token = create_registration_request(**form.registration_kwargs())
+        return redirect(f'{reverse("public_setup_status", args=[reg.id])}?token={raw_token}')
+
+    return render(
+        request,
+        "public/setup.html",
+        {
+            "form": form,
+            "registration_enabled": registration_enabled,
+        },
+    )
+
+
+def public_setup_status(request, registration_id):
+    token = (request.GET.get("token") or request.GET.get("status_token") or "").strip()
+    status_payload = None
+    status_error = ""
+    if not getattr(settings, "USE_MULTITENANT", False):
+        status_error = "Tenant registration is only available in multi-tenant mode."
+    elif not token:
+        status_error = "Missing status token."
+    else:
+        try:
+            status_payload = get_tenant_registration_status_payload(registration_id, token)
+        except TenantRegistrationStatusLookupError as exc:
+            status_error = exc.detail
+
+    return render(
+        request,
+        "public/setup_status.html",
+        {
+            "registration_id": registration_id,
+            "status_token": token,
+            "status_payload": status_payload,
+            "status_error": status_error,
+        },
+    )
 
 
 class PlatformAdminLoginView(LoginView):

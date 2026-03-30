@@ -1,0 +1,104 @@
+{% load static tailwind_tags i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" data-theme="light" class="bg-slate-100 text-slate-900">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}{% trans "CarniTrack" %}{% endblock %}</title>
+    <link rel="icon" href="{% static 'theme/img/favicon.png' %}" type="image/png">
+    {% tailwind_css %}
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900 font-sans leading-normal tracking-normal antialiased">
+    <div class="min-h-screen lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <aside class="relative hidden overflow-hidden border-r border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 lg:flex lg:flex-col">
+            <div class="pointer-events-none absolute inset-0 overflow-hidden">
+                <div class="absolute -left-24 top-20 h-64 w-64 rounded-full bg-blue-200/40 blur-3xl"></div>
+                <div class="absolute right-0 top-0 h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl"></div>
+                <div class="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-cyan-200/30 blur-3xl"></div>
+            </div>
+
+            <div class="relative z-10 flex h-full flex-col px-10 py-10 xl:px-14 xl:py-12">
+                <div class="flex items-center justify-between gap-4">
+                    <a href="{% url 'public_landing' %}" class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <img src="{% static 'theme/img/favicon.png' %}" alt="" width="40" height="40" class="h-10 w-10 rounded-lg bg-blue-50 p-1.5 ring-1 ring-blue-100">
+                        <div>
+                            <p class="text-lg font-black tracking-tight text-slate-900" style="font-family: Chivo, sans-serif;">CarniTrack</p>
+                            <p class="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">SamperLabs</p>
+                        </div>
+                    </a>
+                    <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{% trans "Public fallback" %}</span>
+                </div>
+
+                <div class="mt-16 max-w-xl flex-1">
+                    <h1 class="max-w-xl text-4xl font-black leading-tight tracking-tight text-slate-900 xl:text-5xl" style="font-family: Chivo, sans-serif;">
+                        {% block hero_title %}{% trans "Built for modern slaughterhouse operations." %}{% endblock %}
+                    </h1>
+                    <div class="mt-6 max-w-lg space-y-4 text-base leading-7 text-slate-600">
+                        {% block hero_body %}
+                        <p>{% trans "Fallback access on the public host uses the same tenant discovery and approval pipeline as the React frontend." %}</p>
+                        {% endblock %}
+                    </div>
+                    <div class="mt-8">
+                        {% block hero_panel %}{% endblock %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M7 3v4m10-4v4M6 11h12M6 15h7m-7 4h10"></path>
+                            </svg>
+                        </div>
+                        <p class="mt-4 text-2xl font-black text-slate-900" style="font-family: Chivo, sans-serif;">500+</p>
+                        <p class="mt-1 text-sm text-slate-600">{% trans "Facilities operating on isolated tenant workspaces." %}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a3 3 0 013-3h6m0 0l-3-3m3 3l-3 3M5 19h6"></path>
+                            </svg>
+                        </div>
+                        <p class="mt-4 text-2xl font-black text-slate-900" style="font-family: Chivo, sans-serif;">2M+</p>
+                        <p class="mt-1 text-sm text-slate-600">{% trans "Animals tracked through receiving, processing, and labeling." %}</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex min-h-screen flex-1 flex-col justify-center px-5 py-8 sm:px-8 lg:px-12">
+            <div class="mx-auto w-full max-w-xl">
+                <a href="{% url 'public_landing' %}" class="mb-6 inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm lg:hidden">
+                    <img src="{% static 'theme/img/favicon.png' %}" alt="" width="34" height="34" class="h-8 w-8 rounded-lg bg-blue-50 p-1 ring-1 ring-blue-100">
+                    <div>
+                        <p class="text-base font-black tracking-tight text-slate-900" style="font-family: Chivo, sans-serif;">CarniTrack</p>
+                        <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500">SamperLabs</p>
+                    </div>
+                </a>
+
+                <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    {% if messages %}
+                        <div class="mb-6 space-y-3">
+                            {% for message in messages %}
+                                <div class="rounded-lg border px-4 py-3 text-sm {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-700{% elif message.tags == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-700{% else %}border-blue-200 bg-blue-50 text-blue-700{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% block page_header %}{% endblock %}
+                    {% block content %}{% endblock %}
+                </section>
+
+                <div class="mt-6 flex flex-col gap-2 px-1 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                    <a href="{% url 'platform_admin_login' %}" class="font-medium text-slate-600 transition hover:text-slate-900">{% trans "Platform admin" %}</a>
+                    <span>© {% now "Y" %} SamperLabs · CarniTrack</span>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

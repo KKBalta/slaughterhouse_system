@@ -2,7 +2,7 @@ import json
 import re
 import secrets
 from functools import wraps
-from urllib.parse import quote
+from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlsplit, urlunsplit
 
 # One-shot CSRF token cache: GET /csrf/ stores the issued token here so that
 # POST /login/ can validate it even when the browser omits the csrftoken cookie
@@ -48,6 +48,35 @@ def _bootstrap_token_cache_pop(token: str) -> dict | None:
             cache.delete(key)
         return payload
 
+
+def _replace_next_query(url: str, next_url: str | None) -> str:
+    """Attach or replace the `next` query parameter on a URL."""
+    if not url or not next_url:
+        return url
+    parsed = urlsplit(url)
+    query = [(k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True) if k != "next"]
+    query.append(("next", next_url))
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+
+
+def _allowed_redirect_hosts(*urls: str) -> set[str]:
+    """
+    Build an allow-list for absolute redirects.
+
+    Include both `host` and `host:port` so Django accepts same-tenant redirects
+    across the API (:8000) and SPA (:3000) dev ports.
+    """
+    hosts: set[str] = set()
+    for value in urls:
+        if not value:
+            continue
+        parsed = urlparse(value)
+        if parsed.hostname:
+            hosts.add(parsed.hostname.lower())
+        if parsed.netloc:
+            hosts.add(parsed.netloc.lower())
+    return hosts
+
 from django.conf import settings
 from django.contrib import messages
 from django.core import signing
@@ -56,12 +85,15 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.middleware.csrf import get_token
+from django.middleware.csrf import get_token, rotate_token
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count, Q
 from django.urls import reverse, reverse_lazy
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.generic import FormView
 from django.views.generic.edit import CreateView
@@ -100,18 +132,47 @@ class RegisterView(CreateView):
     #     return super().dispatch(request, *args, **kwargs)
 
 
+@method_decorator(sensitive_post_parameters(), name="dispatch")
+@method_decorator(csrf_protect, name="dispatch")
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+@method_decorator(never_cache, name="dispatch")
 class CustomLoginView(LoginView):
     template_name = "users/login.html"
     fields = "__all__"
     redirect_authenticated_user = True
 
     def dispatch(self, request, *args, **kwargs):
+        if request.method in ("GET", "HEAD"):
+            # Chromium can retain a stale csrftoken while restoring a cached login page.
+            # Force a fresh token + Set-Cookie on every login-page GET so the hidden form
+            # token and cookie secret stay aligned.
+            rotate_token(request)
+            get_token(request)
         response = super().dispatch(request, *args, **kwargs)
         # Flash messages are rendered once server-side; without this, the browser's
         # back-forward cache can restore an old login snapshot that still shows them.
         if response.status_code == 200:
             response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
             response["Pragma"] = "no-cache"
+            if (
+                request.method in ("GET", "HEAD")
+                and getattr(settings, "DEBUG", False)
+                and request.get_host().split(":")[0].endswith(".localhost")
+            ):
+                # Clean up any old domain-scoped dev cookies left over from previous
+                # localhost experiments so host-only tenant cookies win consistently.
+                response.delete_cookie(
+                    settings.CSRF_COOKIE_NAME,
+                    path="/",
+                    domain=".localhost",
+                    samesite=settings.CSRF_COOKIE_SAMESITE,
+                )
+                response.delete_cookie(
+                    getattr(settings, "SESSION_COOKIE_NAME", "sessionid"),
+                    path="/",
+                    domain=".localhost",
+                    samesite=settings.SESSION_COOKIE_SAMESITE,
+                )
         return response
 
     def get_success_url(self):
@@ -183,7 +244,6 @@ def session_login_api(request):
         return JsonResponse({"detail": "Invalid credentials."}, status=401)
 
     from django.db import connection as _db_conn
-    from urllib.parse import urlparse
 
     _needs_bootstrap = False
     if getattr(settings, "USE_MULTITENANT", False):
@@ -248,19 +308,28 @@ def session_login_api(request):
                 use_api_host = True
             elif post_login in ("spa", "web", "frontend", "react"):
                 use_api_host = False
-            payload_out["redirect_url"] = build_post_login_redirect_url(
+            final_redirect_url = build_post_login_redirect_url(
                 tenant_client,
                 use_api_host=use_api_host,
             )
+            if payload_out.get("session_pending") and payload_out.get("session_bootstrap_url"):
+                bootstrap_redirect_url = _replace_next_query(payload_out["session_bootstrap_url"], final_redirect_url)
+                payload_out["session_bootstrap_url"] = bootstrap_redirect_url
+                payload_out["post_bootstrap_redirect_url"] = final_redirect_url
+                payload_out["redirect_url"] = bootstrap_redirect_url
+            else:
+                payload_out["redirect_url"] = final_redirect_url
+    if payload_out.get("session_pending") and payload_out.get("session_bootstrap_url") and not payload_out.get(
+        "redirect_url"
+    ):
+        payload_out["redirect_url"] = payload_out["session_bootstrap_url"]
     if getattr(settings, "DEBUG", False) and getattr(settings, "USE_MULTITENANT", False):
         if payload_out.get("session_pending"):
             payload_out.setdefault("debug", {})["cookie_same_site"] = (
-                "Assign window.location.href = session_bootstrap_url (same tab) to finish login; "
+                "Navigate to redirect_url or session_bootstrap_url in the same tab to finish login; "
                 "the session cookie is set on that first-party GET to the tenant host."
             )
         else:
-            from urllib.parse import urlparse
-
             _oh = (request.META.get("HTTP_ORIGIN") or "").strip()
             if _oh and payload_out.get("redirect_url"):
                 try:
@@ -332,19 +401,44 @@ def session_bootstrap_api(request):
     get_token(request)
 
     next_url = request.GET.get("next")
+    tenant_client = None
+    if getattr(settings, "USE_MULTITENANT", False):
+        from tenants.email_index import (
+            build_post_login_redirect_url,
+            build_tenant_api_base_url,
+            build_tenant_web_app_base_url,
+            get_client_tenant_from_connection,
+        )
+
+        tenant_client = get_client_tenant_from_connection()
+        if next_url:
+            allowed_hosts = {
+                request.get_host().lower(),
+                request.get_host().split(":")[0].lower(),
+            }
+            if tenant_client is not None:
+                allowed_hosts |= _allowed_redirect_hosts(
+                    build_tenant_api_base_url(tenant_client),
+                    build_tenant_web_app_base_url(tenant_client),
+                    build_post_login_redirect_url(tenant_client, use_api_host=True),
+                    build_post_login_redirect_url(tenant_client, use_api_host=False),
+                )
+            if url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts=allowed_hosts,
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+
+        if tenant_client is not None:
+            return redirect(build_post_login_redirect_url(tenant_client, use_api_host=True))
+
     if next_url and url_has_allowed_host_and_scheme(
         next_url,
         allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
     ):
         return redirect(next_url)
-
-    if getattr(settings, "USE_MULTITENANT", False):
-        from tenants.email_index import build_post_login_redirect_url, get_client_tenant_from_connection
-
-        tc = get_client_tenant_from_connection()
-        if tc is not None:
-            return redirect(build_post_login_redirect_url(tc, use_api_host=True))
 
     return redirect("/")
 

@@ -365,6 +365,17 @@
                     selectedClient.classList.add('hidden');
                 }
             });
+
+            // Default order datetime to now (local) when empty — most orders are for today.
+            // Skips when the field already has a value (validation errors, user edits).
+            const orderDt = document.querySelector('input[name="order_datetime"]');
+            if (orderDt && !orderDt.value.trim()) {
+                const d = new Date();
+                const pad = function (n) { return String(n).padStart(2, '0'); };
+                orderDt.value =
+                    d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+                    'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
         });
     </script>
 {% endblock %}

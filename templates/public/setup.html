@@ -1,0 +1,137 @@
+{% extends "public/base_public.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "CarniTrack" %} · {% trans "Tenant registration" %}{% endblock %}
+
+{% block hero_title %}
+{% trans "Request a CarniTrack tenant workspace." %}
+{% endblock %}
+
+{% block hero_body %}
+<p>{% trans "This fallback form creates the same pending tenant-registration request as the React setup page." %}</p>
+<p>{% trans "Platform admins review the request, approve the tenant, and the owner account is created from the submitted email and password." %}</p>
+{% endblock %}
+
+{% block hero_panel %}
+<div class="space-y-3">
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">{% trans "Step 1" %}</p>
+        <p class="mt-2 text-sm text-slate-700">{% trans "Submit your company and owner details." %}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">{% trans "Step 2" %}</p>
+        <p class="mt-2 text-sm text-slate-700">{% trans "Track approval status with the private status token link." %}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">{% trans "Step 3" %}</p>
+        <p class="mt-2 text-sm text-slate-700">{% trans "After approval, sign in and land on your tenant dashboard." %}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_header %}
+<div class="mb-8">
+    <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">{% trans "Tenant registration" %}</span>
+    <h2 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">{% trans "Create your request" %}</h2>
+    <p class="mt-3 text-base leading-7 text-slate-600">{% trans "Required fields match the public API. Optional fields help platform admin review your request faster." %}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div>
+            <label for="id_company_name" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Company name" %}</label>
+            <input id="id_company_name" name="company_name" type="text" value="{{ form.company_name.value|default_if_none:'' }}" autocomplete="organization"
+                   class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.company_name.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
+                   {% if not registration_enabled %}disabled{% endif %}>
+            {% for error in form.company_name.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="mt-4">
+            <label for="id_owner_email" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Owner email" %}</label>
+            <input id="id_owner_email" name="owner_email" type="email" value="{{ form.owner_email.value|default_if_none:'' }}" autocomplete="email"
+                   class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_email.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
+                   {% if not registration_enabled %}disabled{% endif %}>
+            {% for error in form.owner_email.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="id_owner_password" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Password" %}</label>
+                <input id="id_owner_password" name="owner_password" type="password" autocomplete="new-password"
+                       class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_password.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
+                       {% if not registration_enabled %}disabled{% endif %}>
+                {% for error in form.owner_password.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label for="id_owner_password_confirm" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Confirm password" %}</label>
+                <input id="id_owner_password_confirm" name="owner_password_confirm" type="password" autocomplete="new-password"
+                       class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_password_confirm.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
+                       {% if not registration_enabled %}disabled{% endif %}>
+                {% for error in form.owner_password_confirm.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <details class="rounded-xl border border-slate-200 bg-white" {% if form.company_full_name.value or form.company_address.value or form.contact_phone.value or form.license_no.value or form.operation_no.value or form.company_full_name.errors or form.company_address.errors or form.contact_phone.errors or form.license_no.errors or form.operation_no.errors %}open{% endif %}>
+        <summary class="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-slate-900">{% trans "Optional company details" %}</summary>
+        <div class="space-y-4 border-t border-slate-200 px-4 py-4">
+            <div>
+                <label for="id_company_full_name" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Registered company name" %}</label>
+                <input id="id_company_full_name" name="company_full_name" type="text" value="{{ form.company_full_name.value|default_if_none:'' }}"
+                       class="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                       {% if not registration_enabled %}disabled{% endif %}>
+                {% for error in form.company_full_name.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label for="id_company_address" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Address" %}</label>
+                <textarea id="id_company_address" name="company_address" rows="3"
+                          class="w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                          {% if not registration_enabled %}disabled{% endif %}>{{ form.company_address.value|default_if_none:'' }}</textarea>
+                {% for error in form.company_address.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="id_contact_phone" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Phone" %}</label>
+                    <input id="id_contact_phone" name="contact_phone" type="text" value="{{ form.contact_phone.value|default_if_none:'' }}"
+                           class="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                           {% if not registration_enabled %}disabled{% endif %}>
+                    {% for error in form.contact_phone.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+                </div>
+                <div>
+                    <label for="id_license_no" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "License number" %}</label>
+                    <input id="id_license_no" name="license_no" type="text" value="{{ form.license_no.value|default_if_none:'' }}"
+                           class="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                           {% if not registration_enabled %}disabled{% endif %}>
+                    {% for error in form.license_no.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+                </div>
+            </div>
+            <div>
+                <label for="id_operation_no" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Operation number" %}</label>
+                <input id="id_operation_no" name="operation_no" type="text" value="{{ form.operation_no.value|default_if_none:'' }}"
+                       class="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                       {% if not registration_enabled %}disabled{% endif %}>
+                {% for error in form.operation_no.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+    </details>
+
+    <button type="submit" class="flex h-11 w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-blue-300" {% if not registration_enabled %}disabled{% endif %}>
+        {% trans "Submit request" %}
+    </button>
+</form>
+
+<p class="mt-5 text-sm text-slate-600">
+    {% trans "Already have an approved tenant?" %}
+    <a href="{% url 'public_signin' %}" class="font-medium text-blue-600 transition hover:text-blue-700">{% trans "Sign in" %}</a>
+</p>
+{% endblock %}
