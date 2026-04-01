@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from django_tenants.models import DomainMixin, TenantMixin
 
 
@@ -15,19 +16,55 @@ class Client(TenantMixin):
         blank=True,
         help_text="Subdomain identifier; auto-populated from schema_name if left blank",
     )
-    company_name = models.CharField(max_length=255, blank=True)
-    company_full_name = models.CharField(max_length=255, blank=True)
-    company_address = models.CharField(max_length=500, blank=True)
-    license_no = models.CharField(max_length=64, blank=True)
-    operation_no = models.CharField(max_length=64, blank=True)
-    logo = models.ImageField(upload_to="tenant_logos/", blank=True, null=True)
-    contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=64, blank=True)
+    company_name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Company name (label header)"),
+        help_text=_("Short trading name printed on labels."),
+    )
+    company_full_name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Legal company name"),
+        help_text=_("Full legal title on labels."),
+    )
+    company_address = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name=_("Company address"),
+        help_text=_("Address block on labels and reports."),
+    )
+    license_no = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name=_("İşletme onay no"),
+        help_text=_("Government approval number; same value as ISLETME ONAY NO on printed labels."),
+    )
+    operation_no = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name=_("Vergi dairesi / işletme no (VD)"),
+        help_text=_("Tax office / operation number (e.g. ÇKALE VD line on labels)."),
+    )
+    logo = models.ImageField(
+        upload_to="tenant_logos/",
+        blank=True,
+        null=True,
+        verbose_name=_("Logo"),
+        help_text=_("Optional branding image in the app header."),
+    )
+    contact_email = models.EmailField(blank=True, verbose_name=_("Contact email"))
+    contact_phone = models.CharField(max_length=64, blank=True, verbose_name=_("Contact phone"))
     is_active = models.BooleanField(default=True)
     created_on = models.DateTimeField(auto_now_add=True)
-    printer_turkish_mode = models.CharField(max_length=32, default="unicode")
-    timezone = models.CharField(max_length=64, default="Europe/Istanbul")
-    language_code = models.CharField(max_length=16, default="tr")
+    printer_turkish_mode = models.CharField(
+        max_length=32,
+        default="unicode",
+        verbose_name=_("Printer Turkish mode"),
+        help_text=_("unicode, ascii, or codepage1254 for label printers."),
+    )
+    timezone = models.CharField(max_length=64, default="Europe/Istanbul", verbose_name=_("Timezone"))
+    language_code = models.CharField(max_length=16, default="tr", verbose_name=_("Language code"))
 
     auto_create_schema = True
 

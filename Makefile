@@ -9,8 +9,9 @@
 
 .DEFAULT_GOAL := help
 
-# Use system python3 (override: make dev PYTHON=/path/to/python)
-PYTHON ?= python3
+# Prefer ./.venv when present (create with: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt)
+# Override: make dev PYTHON=/usr/bin/python3
+PYTHON ?= $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python3; fi)
 MANAGE := $(PYTHON) manage.py
 
 DEV_ENV     ?= .env.dev

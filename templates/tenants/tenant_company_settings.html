@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n widget_tweaks %}
+
+{% block title %}{% trans "Company & label settings" %} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{% trans "Company & label settings" %}</h1>
+    <p class="text-gray-600 mb-6">
+        {% trans "These values appear on printed labels (company block, İşletme onay no, VD number) and on PDF reports. İşletme onay no must match your official registration." %}
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="rounded-md bg-red-50 p-4 text-sm text-red-800">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.name.label }}</label>
+            {{ form.name|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+            {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.company_name.label }}</label>
+            {{ form.company_name|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+            {% if form.company_name.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.company_name.help_text }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.company_full_name.label }}</label>
+            {{ form.company_full_name|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.company_address.label }}</label>
+            {{ form.company_address|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.license_no.label }}</label>
+                {{ form.license_no|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+                {% if form.license_no.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.license_no.help_text }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.operation_no.label }}</label>
+                {{ form.operation_no|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+                {% if form.operation_no.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.operation_no.help_text }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.contact_email.label }}</label>
+                {{ form.contact_email|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.contact_phone.label }}</label>
+                {{ form.contact_phone|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.logo.label }}</label>
+            {{ form.logo|add_class:"block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700" }}
+            {% if form.logo.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.logo.help_text }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.printer_turkish_mode.label }}</label>
+            {{ form.printer_turkish_mode|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+            {% if form.printer_turkish_mode.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.printer_turkish_mode.help_text }}</p>{% endif %}
+        </div>
+
+        <div class="flex gap-3 pt-2">
+            <button type="submit" class="inline-flex justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                {% trans "Save" %}
+            </button>
+            <a href="{% url 'dashboard' %}" class="inline-flex justify-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300">
+                {% trans "Cancel" %}
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

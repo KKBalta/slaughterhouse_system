@@ -4,6 +4,15 @@
 > using `django-tenants`, PostgreSQL schema-per-client, fully isolated users, Redis caching,
 > and subdomain routing (`{client}.carnitrack.samperlabs.com`).
 
+## Implementation status (codebase snapshot)
+
+- **Company / İşletme onay on labels:** `labeling.utils.get_company_info()` reads `connection.tenant` (`tenants.Client`: `company_*`, `license_no`, `operation_no`). Non–multi-tenant / CI tests use optional `COMPANY_*` / `LICENSE_NO` / `OPERATION_NO` in `config/settings_test.py`.
+- **Label field `isletme_onay_no`:** Always equals `Client.license_no` via `get_company_info()["license_no"]` (animal and cut label data).
+- **QR / links:** `tenants.tenant_helpers.get_tenant_site_url()` from primary `Domain` or `{schema}.{TENANT_BASE_DOMAIN}`.
+- **Tenant profile (app):** Manager+ — `GET/POST /tenant-company-settings/` (`tenant_company_settings`) edits the public `Client` row. Platform admin — `Client` admin fieldsets (İşletme onay no, VD, printer mode).
+- **Product vs tenant branding:** Tenant UI uses `{{ tenant.name }}` / logo in `theme/templates/base.html` when `tenant` is set. Public landing, sign-in, and platform-admin pages may still say **CarniTrack** as product name; that is intentional unless you white-label the whole product.
+- **Legacy data:** See [TENANT_CLIENT_BACKFILL.md](TENANT_CLIENT_BACKFILL.md) for one-off `Client` updates.
+
 ---
 
 ## Phase 0 -- Pre-Migration Groundwork
@@ -141,13 +150,9 @@
 
 ### 2.3 Company Info -> Tenant Model
 
-- [ ] Refactor `get_company_info()` in `labeling/utils.py` (line 1840) to read from `connection.tenant` instead of `settings`:
-  ```
-  BEFORE: getattr(settings, "COMPANY_NAME", "GUNDOGDULAR GIDA")
-  AFTER:  connection.tenant.company_name
-  ```
-- [ ] Update `labeling/tests_utils.py` (lines 179-182) to use tenant fixture instead of `settings.COMPANY_NAME`
-- [ ] Remove company settings from `config/settings_test.py` (lines 158-162)
+- [x] Refactor `get_company_info()` in `labeling/utils.py` to read from `connection.tenant` when `USE_MULTITENANT` and not public schema; optional `settings.COMPANY_*` fallback when multitenant is off.
+- [x] Tests: `labeling/tests_utils.py` asserts keys, `settings_test` company fallbacks, and `isletme_onay_no` == `get_company_info()["license_no"]`.
+- [x] `config/settings_test.py` defines optional `COMPANY_*` / `LICENSE_NO` / `OPERATION_NO` for SQLite test runs (not removed — they document the non-multitenant fallback).
 
 ### 2.4 Tenant Context Processor
 
@@ -214,15 +219,14 @@ Affected `upload_to` paths:
 
 ### 4.1 Tenant-Aware Base Template
 
-- [ ] Update `theme/templates/base.html` to show tenant branding from `{{ tenant }}`
-- [ ] Replace any hardcoded "GUNDOGDULAR" or "CarniTrack" references with `{{ tenant.name }}`
-- [ ] Add tenant logo display: `{{ tenant.logo.url }}`
+- [x] `theme/templates/base.html` shows `{{ tenant.name }}` and optional `{{ tenant.logo.url }}` when `tenant` is set.
+- [ ] Public-schema pages (`templates/public/*`, platform admin) may keep **CarniTrack** as product branding; tenant app uses tenant name — do not blindly replace product name on public hosts.
 
 ### 4.2 Label Generation (Per-Tenant Company Info on Labels)
 
-- [ ] Verify `get_company_info()` refactor from Phase 2.3 propagates to all label formats (PRN, BAT, PDF)
-- [ ] Test label generation for two different tenants and confirm different company info appears
-- [ ] Verify `PRINTER_TURKISH_MODE` reads from tenant model instead of settings
+- [x] `get_company_info()` drives PRN/TSPL company block; reporting PDF header uses `get_company_info()`; `get_printer_compatibility_mode()` prefers `Client.printer_turkish_mode`.
+- [ ] Manually verify two tenants with different `Client.license_no` produce different İşletme onay lines on printed labels.
+- [x] Tenant app: **Company & label settings** (`tenant_company_settings`) and platform `Client` admin edit gov numbers and printer mode.
 
 ### 4.3 Public Landing Page
 

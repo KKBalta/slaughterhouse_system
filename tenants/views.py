@@ -4,7 +4,9 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db import IntegrityError
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import Http404
+from django.utils.translation import gettext as _
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
@@ -17,6 +19,7 @@ from tenants.forms import (
     PlatformAdminAuthenticationForm,
     PlatformAdminSetupForm,
     PublicTenantRegistrationForm,
+    TenantCompanyProfileForm,
 )
 from tenants.models import Client, Domain, PlatformAdmin, TenantRegistrationRequest
 from tenants.registration_views import TenantRegistrationStatusLookupError, get_tenant_registration_status_payload
@@ -314,6 +317,45 @@ def toggle_tenant_active(request, schema_name):
 
 class PlatformAdminLogoutView(LogoutView):
     next_page = reverse_lazy("public_landing")
+
+
+@login_required
+def tenant_company_settings_view(request):
+    """
+    Tenant managers edit `Client` company / İşletme onay no / printer fields (stored in public schema).
+    """
+    from django_tenants.utils import get_public_schema_name, schema_context
+    from users.models import User
+
+    if not getattr(settings, "USE_MULTITENANT", False):
+        raise Http404()
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        raise Http404()
+    if request.user.role not in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER):
+        raise PermissionDenied()
+
+    with schema_context(get_public_schema_name()):
+        client = get_object_or_404(Client, pk=tenant.pk)
+
+    if request.method == "POST":
+        form = TenantCompanyProfileForm(request.POST, request.FILES, instance=client)
+        if form.is_valid():
+            with schema_context(get_public_schema_name()):
+                form.save()
+            messages.success(
+                request,
+                _("Company and label settings saved. They apply to new labels and reports."),
+            )
+            return redirect("tenant_company_settings")
+    else:
+        form = TenantCompanyProfileForm(instance=client)
+
+    return render(
+        request,
+        "tenants/tenant_company_settings.html",
+        {"form": form},
+    )
 
 
 def platform_admin_setup(request):

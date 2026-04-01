@@ -175,11 +175,25 @@ class TestGetCompanyInfo:
         assert "license_no" in info
         assert "operation_no" in info
 
-    def test_respects_test_settings(self):
-        # In non-multitenant (SQLite) tests, get_company_info() falls back to settings defaults.
+    def test_non_multitenant_falls_back_to_company_settings(self):
+        # settings_test.py sets COMPANY_* / LICENSE_NO when USE_MULTITENANT is False.
         info = get_company_info()
-        assert info["company_name"] is not None
+        assert info["company_name"] == "Test Company"
+        assert info["license_no"] == "00-0000"
+        assert info["operation_no"] == "0000000000"
         assert isinstance(info["license_no"], str)
+
+    def test_override_settings_company_info(self):
+        with override_settings(
+            COMPANY_NAME="Acme",
+            COMPANY_FULL_NAME="Acme Ltd",
+            COMPANY_ADDRESS="Addr",
+            LICENSE_NO="99-9999",
+            OPERATION_NO="111",
+        ):
+            info = get_company_info()
+            assert info["company_name"] == "Acme"
+            assert info["license_no"] == "99-9999"
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +215,10 @@ class TestGenerateAnimalLabelData:
         assert "weight" in data
         assert "qr_url" in data
         assert "qr_data" in data
+
+    def test_isletme_onay_no_matches_license_from_get_company_info(self, slaughtered_animal):
+        data = generate_animal_label_data(slaughtered_animal)
+        assert data["isletme_onay_no"] == get_company_info()["license_no"]
 
     def test_no_slaughter_date_uses_bilinmiyor(self, db, animal_factory_fixture, slaughter_order_factory_fixture):
         order = slaughter_order_factory_fixture.create()
@@ -245,6 +263,21 @@ class TestGenerateCutLabelData:
         assert "cut_name" in data
         assert data["weight"] == "5.50"
         assert "qr_url" in data
+
+    def test_isletme_onay_no_matches_license_from_get_company_info(
+        self, db, animal_factory_fixture, slaughter_order_factory_fixture
+    ):
+        from decimal import Decimal
+
+        from processing.models import DisassemblyCut
+
+        order = slaughter_order_factory_fixture.create()
+        animal = animal_factory_fixture.create(slaughter_order=order, animal_type="cattle")
+        animal.perform_slaughter()
+        animal.save()
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("5.50"))
+        data = generate_cut_label_data(cut)
+        assert data["isletme_onay_no"] == get_company_info()["license_no"]
 
 
 # ---------------------------------------------------------------------------

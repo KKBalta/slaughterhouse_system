@@ -9,6 +9,38 @@ from tenants.email_index import normalize_email
 from tenants.models import Client, Domain
 
 
+class TenantCompanyProfileForm(forms.ModelForm):
+    """Editable company and regulatory fields for the current tenant (public `Client` row)."""
+
+    class Meta:
+        model = Client
+        fields = [
+            "name",
+            "company_name",
+            "company_full_name",
+            "company_address",
+            "license_no",
+            "operation_no",
+            "contact_email",
+            "contact_phone",
+            "logo",
+            "printer_turkish_mode",
+        ]
+        widgets = {
+            "company_address": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["printer_turkish_mode"].widget = forms.Select(
+            choices=[
+                ("unicode", "Unicode (recommended)"),
+                ("ascii", "ASCII (replace Turkish characters)"),
+                ("codepage1254", "Windows-1254"),
+            ]
+        )
+
+
 class CreateTenantForm(forms.Form):
     """Provision a new tenant: creates Client row + Domain + PostgreSQL schema."""
 
@@ -135,8 +167,17 @@ class PublicTenantRegistrationForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 3}),
     )
     contact_phone = forms.CharField(max_length=64, required=False, label="Phone")
-    license_no = forms.CharField(max_length=64, required=False, label="License number")
-    operation_no = forms.CharField(max_length=64, required=False, label="Operation number")
+    license_no = forms.CharField(
+        max_length=64,
+        required=False,
+        label="İşletme onay no",
+        help_text="Government approval number on labels (ISLETME ONAY NO).",
+    )
+    operation_no = forms.CharField(
+        max_length=64,
+        required=False,
+        label="Vergi dairesi / işletme no (VD)",
+    )
 
     def clean_owner_email(self):
         return normalize_email(self.cleaned_data["owner_email"])

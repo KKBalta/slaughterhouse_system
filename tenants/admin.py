@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 from tenants.models import Client, Domain, EmailTenantMembership, PlatformAdmin, TenantRegistrationRequest
 
@@ -14,9 +15,56 @@ class TenantRegistrationRequestAdmin(admin.ModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ("schema_name", "slug", "name", "company_name", "is_active", "created_on")
-    search_fields = ("schema_name", "slug", "name", "company_name")
+    list_display = ("schema_name", "slug", "name", "company_name", "license_no", "is_active", "created_on")
+    search_fields = ("schema_name", "slug", "name", "company_name", "license_no")
+    # Default; overridden on change so slug↔schema_name prepop does not touch form["schema_name"] when readonly
     prepopulated_fields = {"slug": ("schema_name",)}
+    fieldsets = (
+        (
+            _("Identity"),
+            {"fields": ("schema_name", "slug", "name", "is_active", "created_on")},
+        ),
+        (
+            _("Labels and reports — company block"),
+            {
+                "fields": (
+                    "company_name",
+                    "company_full_name",
+                    "company_address",
+                    "license_no",
+                    "operation_no",
+                ),
+                "description": _(
+                    "İşletme onay no and VD numbers are printed on meat labels; keep them aligned with official registrations."
+                ),
+            },
+        ),
+        (
+            _("Branding and contact"),
+            {"fields": ("logo", "contact_email", "contact_phone")},
+        ),
+        (
+            _("Locale and printing"),
+            {"fields": ("printer_turkish_mode", "timezone", "language_code")},
+        ),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        """Lock schema after creation; provisioning normally creates tenants outside this admin."""
+        ro = ["created_on"]
+        if obj is not None:
+            ro = ["schema_name", "created_on"]
+        return ro
+
+    def get_prepopulated_fields(self, request, obj=None):
+        """
+        On change, `schema_name` is readonly and omitted from the ModelForm. Prepopulated slug
+        dependencies still access `form['schema_name']` during AdminForm init, which raises KeyError.
+        Only prepopulate slug from schema_name when adding a new Client.
+        """
+        if obj is not None:
+            return {}
+        return {"slug": ("schema_name",)}
 
 
 @admin.register(Domain)

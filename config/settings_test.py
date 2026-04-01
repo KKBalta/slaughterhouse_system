@@ -168,6 +168,13 @@ AUTH_USER_MODEL = "users.User"
 # Fallback when tenant URL is not used (SQLite tests)
 SITE_URL_FALLBACK = "http://testserver"
 
+# When USE_MULTITENANT is False, labeling.get_company_info() reads these optional settings (same keys as legacy single-tenant).
+COMPANY_NAME = "Test Company"
+COMPANY_FULL_NAME = "Test Company Ltd"
+COMPANY_ADDRESS = "Test Address"
+LICENSE_NO = "00-0000"
+OPERATION_NO = "0000000000"
+
 # Printer Settings (per-tenant in multitenant mode; kept here as test fallback for SQLite runs)
 PRINTER_TURKISH_MODE = "unicode"
 

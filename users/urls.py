@@ -1,5 +1,7 @@
 from django.urls import path
 
+from tenants.views import tenant_company_settings_view
+
 from .views import (
     ClientProfileRegisterView,
     CustomLoginView,
@@ -25,6 +27,11 @@ urlpatterns = [
     path("logout/", CustomLogoutView.as_view(), name="logout"),
     path("logged-out/", logged_out_view, name="logged_out"),  # Page shown after logout
     path("dashboard/", dashboard_view, name="dashboard"),
+    path(
+        "tenant-company-settings/",
+        tenant_company_settings_view,
+        name="tenant_company_settings",
+    ),
     path("client-register/", ClientProfileRegisterView.as_view(), name="client_register"),
     path("client-register/done/", client_register_done_view, name="client_register_done"),
     path("clients/add/", client_profile_add_view, name="client_profile_add"),
