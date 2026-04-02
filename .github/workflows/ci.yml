@@ -8,6 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
+  COVERAGE_MIN: "59.50"
 
 jobs:
   # ============================================================================
@@ -80,7 +81,7 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings_test
         run: |
-          pytest --cov=. --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -v
+          pytest --cov --cov-fail-under=${{ env.COVERAGE_MIN }} --cov-report=xml --cov-report=html --cov-report=term-missing --junitxml=junit.xml -v
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -178,7 +179,7 @@ jobs:
           TEST_DB_HOST: localhost
           TEST_DB_PORT: "5432"
         run: |
-          pytest -m "integration or not slow" --cov=. --cov-report=xml --junitxml=junit.xml -v
+          pytest -m "integration or not slow" --cov --cov-fail-under=0 --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -v
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

@@ -86,18 +86,19 @@ def _allowed_redirect_hosts(*urls: str) -> set[str]:
             hosts.add(parsed.netloc.lower())
     return hosts
 
+
 from django.conf import settings
 from django.contrib import messages
-from django.core import signing
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core import signing
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.db.models import Count, Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token, rotate_token
-from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
-from django.db.models import Count, Q
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -210,6 +211,7 @@ class CustomLoginView(LoginView):
 @ensure_csrf_cookie
 def csrf_token_api(request):
     from django.core.cache import cache
+
     token = get_token(request)
     # Store the issued token so login can validate it even when the browser omits
     # the csrftoken cookie (credentials:omit on the GET /csrf/ fetch).
@@ -225,6 +227,7 @@ def session_login_api(request):
     # SPAs that call GET /csrf/ without credentials:include (so the browser discards
     # the Set-Cookie response and never stores the csrftoken cookie).
     from django.core.cache import cache
+
     x_csrf = request.META.get("HTTP_X_CSRFTOKEN", "")
     if "csrftoken" not in request.COOKIES:
         # No cookie — validate against the one-shot cache entry (consumed on use).
@@ -328,8 +331,10 @@ def session_login_api(request):
                 payload_out["redirect_url"] = bootstrap_redirect_url
             else:
                 payload_out["redirect_url"] = final_redirect_url
-    if payload_out.get("session_pending") and payload_out.get("session_bootstrap_url") and not payload_out.get(
-        "redirect_url"
+    if (
+        payload_out.get("session_pending")
+        and payload_out.get("session_bootstrap_url")
+        and not payload_out.get("redirect_url")
     ):
         payload_out["redirect_url"] = payload_out["session_bootstrap_url"]
     if getattr(settings, "DEBUG", False) and getattr(settings, "USE_MULTITENANT", False):
@@ -346,16 +351,22 @@ def session_login_api(request):
                 except ValueError:
                     _origin_host = ""
                 _api_host = (request.get_host().split(":")[0] or "").lower()
-                if _origin_host in ("localhost", "127.0.0.1") and _api_host.endswith(".localhost") and _api_host != "localhost":
+                if (
+                    _origin_host in ("localhost", "127.0.0.1")
+                    and _api_host.endswith(".localhost")
+                    and _api_host != "localhost"
+                ):
                     from tenants.email_index import build_tenant_web_app_base_url
 
                     _web = build_tenant_web_app_base_url(tenant_client) if tenant_client is not None else ""
+                    _tenant_subdomain = _api_host.split(".")[0]
+                    _fallback_web = f"http://{_tenant_subdomain}.localhost:3000"
                     payload_out.setdefault("debug", {})["cookie_same_site"] = (
                         "The SPA origin is http://localhost:* but the API is on a tenant host "
                         f"({_api_host}). Browsers treat those as different sites, so the session "
                         "cookie from POST /login/ is often blocked or not sent on navigation. "
                         "Run the Vite/Webpack dev server on the tenant web origin instead "
-                        f"(same-site with the API), e.g. {_web or f'http://{_api_host.split('.')[0]}.localhost:3000'} "
+                        f"(same-site with the API), e.g. {_web or _fallback_web} "
                         "and list that URL in CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS."
                     )
     return JsonResponse(payload_out)
@@ -470,7 +481,6 @@ def session_me_api(request):
 
         _is_public = _schema == get_public_schema_name()
     if not request.user.is_authenticated:
-
         payload = {"authenticated": False, "detail": "Not authenticated."}
         if getattr(settings, "USE_MULTITENANT", False) and _is_public:
             payload["detail"] = (
@@ -867,9 +877,7 @@ def client_profile_edit_view(request, pk):
     user = profile.user
     if request.method == "POST":
         profile_form = ClientProfileRegisterForm(request.POST, instance=profile)
-        cred_form = (
-            ClientUserCredentialsForm(request.POST, user_instance=user) if user else None
-        )
+        cred_form = ClientUserCredentialsForm(request.POST, user_instance=user) if user else None
         profile_ok = profile_form.is_valid()
         cred_ok = cred_form.is_valid() if cred_form else True
         if profile_ok and cred_ok:

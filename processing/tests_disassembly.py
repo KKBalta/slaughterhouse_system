@@ -1,6 +1,6 @@
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import FieldError
-from django.test import TestCase
 from django.utils import timezone
 
 from labeling.models import AnimalLabel
@@ -11,125 +11,128 @@ from users.models import ClientProfile
 
 User = get_user_model()
 
+pytestmark = pytest.mark.django_db
 
-class DisassemblyTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="password123", role=User.Role.CLIENT)
-        self.client_profile = ClientProfile.objects.create(
-            user=self.user,
-            account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number="1234567890",
-            address="123 Test St",
-        )
-        self.service_package = ServicePackage.objects.create(
-            name="Full Processing", includes_disassembly=True, includes_delivery=True
-        )
-        self.order = SlaughterOrder.objects.create(
-            client=self.client_profile, order_datetime=timezone.now(), service_package=self.service_package
-        )
-        self.animal = Animal.objects.create(
-            slaughter_order=self.order, animal_type="cattle", identification_tag="CATTLE-TEST-001"
-        )
-        # Move animal to carcass_ready
-        self.animal.perform_slaughter()
-        self.animal.prepare_carcass()
-        self.animal.save()
 
-        # perform_disassembly requires hot_carcass_weight to be logged
-        WeightLog.objects.create(
-            animal=self.animal, weight=150.0, weight_type="hot_carcass_weight", is_group_weight=False
-        )
+@pytest.fixture
+def disassembly_context():
+    user = User.objects.create_user(username="testuser", password="password123", role=User.Role.CLIENT)
+    client_profile = ClientProfile.objects.create(
+        user=user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        phone_number="1234567890",
+        address="123 Test St",
+    )
+    service_package = ServicePackage.objects.create(
+        name="Full Processing",
+        includes_disassembly=True,
+        includes_delivery=True,
+    )
+    order = SlaughterOrder.objects.create(
+        client=client_profile,
+        order_datetime=timezone.now(),
+        service_package=service_package,
+    )
+    animal = Animal.objects.create(
+        slaughter_order=order,
+        animal_type="cattle",
+        identification_tag="CATTLE-TEST-001",
+    )
+    animal.perform_slaughter()
+    animal.prepare_carcass()
+    animal.save()
 
-    def test_add_disassembly_cut(self):
-        """Test adding a disassembly cut to an animal."""
-        from processing.models import WeightLog
+    WeightLog.objects.create(
+        animal=animal,
+        weight=150.0,
+        weight_type="hot_carcass_weight",
+        is_group_weight=False,
+    )
 
-        # Log hot carcass weight (required for disassembly transition)
-        WeightLog.objects.create(animal=self.animal, weight=300.0, weight_type="hot_carcass_weight")
+    return {
+        "user": user,
+        "order": order,
+        "animal": animal,
+    }
 
-        # Perform disassembly transition (FSM requires hot carcass weight)
-        if self.animal.status == "carcass_ready":
-            self.animal.perform_disassembly()
-            self.animal.save()
 
-        cut = DisassemblyCut.objects.create(animal=self.animal, cut_name="tenderloin", weight_kg=10.5)
-        self.assertEqual(cut.animal, self.animal)
-        self.assertEqual(cut.cut_name, "tenderloin")
-        self.assertEqual(cut.weight_kg, 10.5)
+class TestDisassembly:
+    def test_add_disassembly_cut(self, disassembly_context):
+        animal = disassembly_context["animal"]
 
-        self.assertEqual(self.animal.status, "disassembled")
+        WeightLog.objects.create(animal=animal, weight=300.0, weight_type="hot_carcass_weight")
 
-    def test_cut_choices_validation(self):
-        """Test that cut choices are valid for the animal type."""
-        # Cattle should have big cut choices
-        cut = DisassemblyCut(animal=self.animal, cut_name="tenderloin", weight_kg=5.0)
-        # This should be valid
+        if animal.status == "carcass_ready":
+            animal.perform_disassembly()
+            animal.save()
+
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="tenderloin", weight_kg=10.5)
+
+        assert cut.animal == animal
+        assert cut.cut_name == "tenderloin"
+        assert cut.weight_kg == 10.5
+        assert animal.status == "disassembled"
+
+    def test_cut_choices_validation(self, disassembly_context):
+        animal = disassembly_context["animal"]
+
+        cut = DisassemblyCut(animal=animal, cut_name="tenderloin", weight_kg=5.0)
         cut.full_clean()
         cut.save()
 
-        # Create a sheep
         sheep = Animal.objects.create(
-            slaughter_order=self.order, animal_type="sheep", identification_tag="SHEEP-TEST-001"
+            slaughter_order=disassembly_context["order"],
+            animal_type="sheep",
+            identification_tag="SHEEP-TEST-001",
         )
         sheep.perform_slaughter()
         sheep.prepare_carcass()
         sheep.save()
 
-        # Sheep should have small cut choices
         cut_sheep = DisassemblyCut(animal=sheep, cut_name="leg", weight_kg=2.0)
         cut_sheep.full_clean()
         cut_sheep.save()
 
-    def test_generate_cut_label(self):
-        """Test generating a label for a cut."""
-        from processing.models import WeightLog
+    def test_generate_cut_label(self, disassembly_context):
+        animal = disassembly_context["animal"]
 
-        # Log hot carcass weight (required for disassembly transition)
-        WeightLog.objects.create(animal=self.animal, weight=300.0, weight_type="hot_carcass_weight")
+        WeightLog.objects.create(animal=animal, weight=300.0, weight_type="hot_carcass_weight")
 
-        # Perform disassembly to allow cuts
-        if self.animal.status == "carcass_ready":
-            self.animal.perform_disassembly()
-            self.animal.save()
+        if animal.status == "carcass_ready":
+            animal.perform_disassembly()
+            animal.save()
 
-        cut = DisassemblyCut.objects.create(animal=self.animal, cut_name="ribeye", weight_kg=3.5)
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=3.5)
 
-        # Generate label - this may fail if AnimalLabel schema has changed
         try:
-            label = create_cut_label(cut, user=self.user)
+            label = create_cut_label(cut, user=disassembly_context["user"])
+        except (AttributeError, FieldError) as exc:
+            pytest.skip(f"Label creation skipped due to schema change: {exc}")
 
-            self.assertIsInstance(label, AnimalLabel)
-            self.assertEqual(label.label_type, "cut")
-            self.assertEqual(label.animal, self.animal)
-            self.assertGreater(len(label.prn_content), 0)
-            self.assertGreater(len(label.bat_content), 0)
-            self.assertTrue(label.pdf_file)
+        assert isinstance(label, AnimalLabel)
+        assert label.label_type == "cut"
+        assert label.animal == animal
+        assert len(label.prn_content) > 0
+        assert len(label.bat_content) > 0
+        assert label.pdf_file
+        assert "RIBEYE" in label.prn_content
+        assert "3.5" in label.prn_content
 
-            # Check if PRN content contains cut info
-            self.assertIn("RIBEYE", label.prn_content)
-            self.assertIn("3.5", label.prn_content)
-        except (AttributeError, FieldError) as e:
-            # Skip if AnimalLabel schema has changed
-            self.skipTest(f"Label creation skipped due to schema change: {e}")
-        except Exception:
-            raise
-
-    def test_disassembly_cut_form_choices(self):
-        """Test that DisassemblyCutForm provides PLU catalog choices."""
+    def test_disassembly_cut_form_choices(self, disassembly_context):
         from processing.forms import DisassemblyCutForm
 
-        # Form uses PLU catalog (get_embedded_plu_map) - same choices for all animal types
-        form_cattle = DisassemblyCutForm(animal=self.animal)
-        choices_cattle = [c[0] for c in form_cattle.fields["cut_name"].widget.choices if c[0]]
-        self.assertGreater(len(choices_cattle), 0, "Form should have cut name choices")
-        # ANTREKOT (ribeye) is in the PLU catalog
-        self.assertIn("ANTREKOT", choices_cattle)
+        animal = disassembly_context["animal"]
+        form_cattle = DisassemblyCutForm(animal=animal)
+        choices_cattle = [choice[0] for choice in form_cattle.fields["cut_name"].widget.choices if choice[0]]
+        assert len(choices_cattle) > 0
+        assert "ANTREKOT" in choices_cattle
 
-        # Sheep gets same PLU catalog (no animal-type filtering)
         sheep = Animal.objects.create(
-            slaughter_order=self.order, animal_type="sheep", identification_tag="SHEEP-FORM-TEST"
+            slaughter_order=disassembly_context["order"],
+            animal_type="sheep",
+            identification_tag="SHEEP-FORM-TEST",
         )
         form_sheep = DisassemblyCutForm(animal=sheep)
-        choices_sheep = [c[0] for c in form_sheep.fields["cut_name"].widget.choices if c[0]]
-        self.assertGreater(len(choices_sheep), 0)
-        self.assertIn("ANTREKOT", choices_sheep)
+        choices_sheep = [choice[0] for choice in form_sheep.fields["cut_name"].widget.choices if choice[0]]
+        assert len(choices_sheep) > 0
+        assert "ANTREKOT" in choices_sheep

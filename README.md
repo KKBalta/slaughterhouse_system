@@ -63,13 +63,27 @@ make migrate-staging && make staging
 
 ## Tests
 
-Tests use `config.settings_test` (see `pytest.ini`).
+Tests use `config.settings_test` and are configured in `setup.cfg`.
 
 - **Default (SQLite in-memory, fast):**
 
   ```bash
+  make test
+  # or:
   pytest
   ```
+
+- **Coverage locally:**
+
+  ```bash
+  make test-cov
+  # or:
+  pytest --cov --cov-fail-under=59.50 --cov-report=term-missing
+  ```
+
+  The full SQLite suite in CI enforces the same `59.50%` minimum. For partial marker or app-only runs, either skip coverage or override with `--cov-fail-under=0`.
+
+  To scope either target, pass `TEST_ARGS`, for example `make test TEST_ARGS='processing/'` or `make test TEST_ARGS='-m "integration or not slow" -q'`.
 
 - **PostgreSQL (closer to production):** set `USE_POSTGRES_FOR_TESTS=true` and the `TEST_DB_*` variables (see `.github/workflows/ci.yml` `test-postgres` job), then for example:
 
@@ -77,7 +91,7 @@ Tests use `config.settings_test` (see `pytest.ini`).
   USE_POSTGRES_FOR_TESTS=true \
   TEST_DB_HOST=localhost TEST_DB_PORT=5432 \
   TEST_DB_NAME=test_carnitrack TEST_DB_USER=postgres TEST_DB_PASSWORD=postgres \
-  pytest -m integration
+  pytest -m "integration or not slow"
   ```
 
 Before running tests locally, ensure dependencies and CSS are built: `make install-deps` or at least `make tailwind-build`.
@@ -109,6 +123,8 @@ Specs, reports, and notes are in **`docs/`** (for example `docs/DJANGO_CLOUD_INT
 | `make install-deps`  | `pip install -r requirements.txt` + `npm ci` / `npm run build` for Tailwind. |
 | `make pip-install`   | Install Python packages from `requirements.txt`. |
 | `make tailwind-build`| Build Tailwind assets under `theme/static_src`. |
+| `make test`          | Run `pytest`; pass selectors or flags with `TEST_ARGS='...'`. |
+| `make test-cov`      | Run `pytest` with the local coverage gate (`59.50%` by default). |
 | `make dev`           | Run Django with `.env.dev` (local Postgres). |
 | `make staging`       | Start staging Cloud SQL Proxy on 5433, run Django with `.env.staging`, stop proxy on exit. |
 | `make production-local` | Gunicorn on `:8080` with `.env.production`; run `make proxy` separately for prod DB. |

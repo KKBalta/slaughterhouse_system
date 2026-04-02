@@ -15,7 +15,9 @@ def _import_view(qualified: str):
 
 
 urlpatterns = [
-    path("", _import_view("tenants.registration_views.tenant_registration_create"), name="api_tenant_registration_create"),
+    path(
+        "", _import_view("tenants.registration_views.tenant_registration_create"), name="api_tenant_registration_create"
+    ),
     path(
         "<uuid:registration_id>/",
         _import_view("tenants.registration_views.tenant_registration_status"),

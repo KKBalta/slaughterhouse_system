@@ -1860,28 +1860,16 @@ def get_company_info() -> dict:
         tenant = getattr(connection, "tenant", None)
         if tenant is not None and tenant.schema_name != get_public_schema_name():
             return {
-                "company_name": format_turkish_text_for_printer(
-                    tenant.company_name or "", compat_mode
-                ),
-                "company_full_name": format_turkish_text_for_printer(
-                    tenant.company_full_name or "", compat_mode
-                ),
-                "company_address": format_turkish_text_for_printer(
-                    tenant.company_address or "", compat_mode
-                ),
+                "company_name": format_turkish_text_for_printer(tenant.company_name or "", compat_mode),
+                "company_full_name": format_turkish_text_for_printer(tenant.company_full_name or "", compat_mode),
+                "company_address": format_turkish_text_for_printer(tenant.company_address or "", compat_mode),
                 "license_no": tenant.license_no or "",
                 "operation_no": tenant.operation_no or "",
             }
     return {
-        "company_name": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_NAME", ""), compat_mode
-        ),
-        "company_full_name": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_FULL_NAME", ""), compat_mode
-        ),
-        "company_address": format_turkish_text_for_printer(
-            getattr(settings, "COMPANY_ADDRESS", ""), compat_mode
-        ),
+        "company_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_NAME", ""), compat_mode),
+        "company_full_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_FULL_NAME", ""), compat_mode),
+        "company_address": format_turkish_text_for_printer(getattr(settings, "COMPANY_ADDRESS", ""), compat_mode),
         "license_no": getattr(settings, "LICENSE_NO", ""),
         "operation_no": getattr(settings, "OPERATION_NO", ""),
     }

@@ -7,7 +7,6 @@ from django.urls import reverse
 from tenants.models import TenantRegistrationRequest
 from tenants.services import create_registration_request
 
-
 pytestmark = pytest.mark.django_db
 
 

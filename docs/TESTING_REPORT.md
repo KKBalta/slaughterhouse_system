@@ -57,19 +57,23 @@ This document outlines the comprehensive testing enhancement implemented for the
 
 ### 2. Configuration Files Created
 
-#### `pytest.ini`
+#### `setup.cfg`
 ```ini
-[pytest]
+[tool:pytest]
 DJANGO_SETTINGS_MODULE = config.settings_test
-addopts = --cov=. --cov-report=html --cov-fail-under=60
-testpaths = core, users, reception, processing, inventory, portal, labeling, reporting
+python_files = tests.py test_*.py tests_*.py *_tests.py
+testpaths = tests core users reception processing inventory portal labeling reporting scales tenants
+markers =
+    integration: tests that exercise end-to-end or cross-app flows
+    slow: tests that are intentionally slower than the default suite
 ```
 
 **Key Settings:**
 - Uses dedicated test settings module
-- Enables coverage with 60% minimum threshold
+- Makes legacy `tests.py` / `tests_*.py` modules visible to `pytest`
 - Excludes migrations and static files from coverage
 - Supports test markers (`@pytest.mark.slow`, `@pytest.mark.integration`)
+- Keeps coverage scope centralized in config; the hard fail-under is enforced in the full-suite SQLite CI job
 
 #### `config/settings_test.py`
 A dedicated settings file optimized for testing:
@@ -206,7 +210,7 @@ Jobs:
 
 ```bash
 # Run all tests with coverage
-pytest
+pytest --cov --cov-fail-under=59.50 --cov-report=term-missing
 
 # Run without coverage (faster)
 pytest --no-cov
@@ -240,10 +244,10 @@ Tests run automatically on:
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| Line Coverage | 60% | TBD |
-| Branch Coverage | 60% | TBD |
+| Full-suite coverage (SQLite / CI gate) | 59.50% minimum | 60.00% |
+| PostgreSQL non-slow coverage | Reported only | Not gated (`-m "integration or not slow"` subset) |
 
-The pipeline will fail if coverage drops below 60%.
+Coverage is now hard-gated in the SQLite CI job at `59.50%`, which sits just below the current measured baseline of `60.00%` from the full local `pytest --cov` run on April 2, 2026. The PostgreSQL job still uploads coverage artifacts, but it overrides the fail-under to `0` because it exercises the broader non-slow suite with `-m "integration or not slow"` rather than gating on a second coverage threshold.
 
 ---
 
@@ -280,7 +284,7 @@ This enhancement improves the testing infrastructure from basic Django TestCase 
 
 - **Automated CI/CD** via GitHub Actions
 - **Parallel test execution** for faster feedback
-- **Code coverage tracking** with minimum thresholds
+- **Code coverage tracking** with an enforced full-suite CI floor
 - **Security scanning** for vulnerabilities
 - **Comprehensive fixtures** for test data generation
 

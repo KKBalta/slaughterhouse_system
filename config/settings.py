@@ -8,8 +8,8 @@ import logging
 import os
 from pathlib import Path
 
-from decouple import Csv, config
 import django
+from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
@@ -620,10 +620,7 @@ def print_settings_report():
     if _cache_backend == "django_redis.cache.RedisCache":
         print(f"💾 CACHE: Redis — {REDIS_URL}")
     elif "locmem" in _cache_backend.lower():
-        print(
-            "💾 CACHE: LocMemCache (in-process; not shared across workers) "
-            f"[multitenant={USE_MULTITENANT}]"
-        )
+        print(f"💾 CACHE: LocMemCache (in-process; not shared across workers) [multitenant={USE_MULTITENANT}]")
     else:
         print(f"💾 CACHE: {_cache_backend}")
 

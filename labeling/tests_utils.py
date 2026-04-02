@@ -3,7 +3,6 @@ Tests for labeling.utils: pure helpers and label data/PRN generation.
 """
 
 import pytest
-from django.conf import settings
 from django.test import override_settings
 from django.utils import timezone
 

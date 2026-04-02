@@ -3,12 +3,12 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
-from django.db import IntegrityError
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 from django.http import Http404
-from django.utils.translation import gettext as _
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from django_tenants.utils import tenant_context
 
@@ -21,10 +21,15 @@ from tenants.forms import (
     PublicTenantRegistrationForm,
     TenantCompanyProfileForm,
 )
-from tenants.models import Client, Domain, PlatformAdmin, TenantRegistrationRequest
+from tenants.models import Client, PlatformAdmin, TenantRegistrationRequest
 from tenants.registration_views import TenantRegistrationStatusLookupError, get_tenant_registration_status_payload
-from tenants.services import approve_registration, hard_delete_tenant, provision_tenant, reject_registration
-from tenants.services import create_registration_request
+from tenants.services import (
+    approve_registration,
+    create_registration_request,
+    hard_delete_tenant,
+    provision_tenant,
+    reject_registration,
+)
 
 
 def public_landing(request):
@@ -49,7 +54,7 @@ def public_setup(request):
         messages.error(request, "Tenant registration is only available in multi-tenant mode.")
     elif request.method == "POST" and form.is_valid():
         reg, raw_token = create_registration_request(**form.registration_kwargs())
-        return redirect(f'{reverse("public_setup_status", args=[reg.id])}?token={raw_token}')
+        return redirect(f"{reverse('public_setup_status', args=[reg.id])}?token={raw_token}")
 
     return render(
         request,
@@ -325,6 +330,7 @@ def tenant_company_settings_view(request):
     Tenant managers edit `Client` company / İşletme onay no / printer fields (stored in public schema).
     """
     from django_tenants.utils import get_public_schema_name, schema_context
+
     from users.models import User
 
     if not getattr(settings, "USE_MULTITENANT", False):

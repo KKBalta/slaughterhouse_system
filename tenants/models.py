@@ -16,9 +16,7 @@ def tenant_logo_upload_to(instance, filename: str) -> str:
     Store logos as tenant_logos/<schema>/<company_slug>_logo.<ext> for stable, readable paths.
     """
     schema = (getattr(instance, "schema_name", None) or "tenant").strip() or "tenant"
-    label = (
-        (getattr(instance, "company_name", None) or getattr(instance, "name", None) or schema or "logo") or "logo"
-    )
+    label = (getattr(instance, "company_name", None) or getattr(instance, "name", None) or schema or "logo") or "logo"
     label = str(label).strip() or "logo"
     base = slugify(label) or "logo"
     if len(base) > _LOGO_SLUG_MAX_LEN:

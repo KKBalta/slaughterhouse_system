@@ -36,9 +36,7 @@ class ClientUserCredentialsForm(forms.Form):
             self.fields["new_password1"].required = True
             self.fields["new_password2"].required = True
             self.fields["new_password1"].help_text = ""
-            self.fields["new_password1"].widget.attrs.setdefault(
-                "autocomplete", "new-password"
-            )
+            self.fields["new_password1"].widget.attrs.setdefault("autocomplete", "new-password")
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
@@ -76,11 +74,16 @@ class UserRegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        if user and hasattr(user, "role") and user.role in [
-            User.Role.OWNER,
-            User.Role.ADMIN,
-            User.Role.MANAGER,
-        ]:
+        if (
+            user
+            and hasattr(user, "role")
+            and user.role
+            in [
+                User.Role.OWNER,
+                User.Role.ADMIN,
+                User.Role.MANAGER,
+            ]
+        ):
             self.fields["role"].choices = User.Role.choices
         else:
             allowed_roles = [

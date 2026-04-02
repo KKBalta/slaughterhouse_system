@@ -10,9 +10,7 @@ logger = logging.getLogger(__name__)
 # Prevents the race where two concurrent workers both read count=0 and both
 # reset the window.  Returns the new count.
 _LUA_RATE_INCR = (
-    "local n = redis.call('INCR', KEYS[1]); "
-    "if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; "
-    "return n"
+    "local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return n"
 )
 
 

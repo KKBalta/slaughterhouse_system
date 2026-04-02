@@ -59,12 +59,12 @@ class ServicePackage(BaseModel):
     )
     # Add other boolean fields for specific services as needed
 
+    def __str__(self):
+        return self.name
+
     def localized_name(self) -> str:
         from django.utils.translation import get_language
 
         if (get_language() or "").startswith("tr") and self.name_tr:
             return self.name_tr
-        return self.name
-
-    def __str__(self):
         return self.name

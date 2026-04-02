@@ -1,9 +1,12 @@
-from datetime import date, datetime
+import json
+from datetime import date, datetime, timedelta
 from decimal import Decimal
+from io import StringIO
 from unittest.mock import MagicMock, patch
 
+import pytest
 from django.core.management import call_command
-from django.test import TestCase, TransactionTestCase
+from django.core.management.base import CommandError
 from django.utils import timezone
 
 from processing.models import Animal, CattleDetails, WeightLog
@@ -12,11 +15,47 @@ from reporting.models import GeneratedReport, Report
 from reporting.services import ExcelReportGenerator, PDFReportGenerator, ReportDataAggregator
 from users.models import User
 
+pytestmark = pytest.mark.django_db
 
-class ReportModelTest(TestCase):
+
+class _BinaryWorkbook:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def save(self, path):
+        with open(path, "wb") as handle:
+            handle.write(self.payload)
+
+
+class _ImmediateThread:
+    def __init__(self, target=None, **kwargs):
+        self.target = target
+        self.daemon = False
+
+    def start(self):
+        if self.target is not None:
+            self.target()
+
+
+def _request(method, user=None, path="/", data=None, content_type=None):
+    from django.contrib.auth.models import AnonymousUser
+    from django.test import RequestFactory
+
+    factory = RequestFactory()
+    request_factory_method = getattr(factory, method.lower())
+    if content_type is None:
+        request = request_factory_method(path, data=data or {})
+    else:
+        request = request_factory_method(path, data=data or {}, content_type=content_type)
+    request.user = user if user is not None else AnonymousUser()
+    return request
+
+
+class TestReportModel:
     """Test the Report model"""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.report = Report.objects.create(
             name="Daily Slaughter Report",
             description="Daily slaughter operations report",
@@ -28,27 +67,28 @@ class ReportModelTest(TestCase):
 
     def test_report_creation(self):
         """Test report creation"""
-        self.assertEqual(self.report.name, "Daily Slaughter Report")
-        self.assertEqual(self.report.report_type, "daily_slaughter")
-        self.assertEqual(self.report.frequency, "daily")
-        self.assertTrue(self.report.is_active)
+        assert self.report.name == "Daily Slaughter Report"
+        assert self.report.report_type == "daily_slaughter"
+        assert self.report.frequency == "daily"
+        assert self.report.is_active
 
     def test_report_str(self):
         """Test report string representation"""
-        self.assertEqual(str(self.report), "Daily Slaughter Report")
+        assert str(self.report) == "Daily Slaughter Report"
 
     def test_report_choices(self):
         """Test report type choices"""
         valid_types = [choice[0] for choice in Report.REPORT_TYPE_CHOICES]
-        self.assertIn("daily_slaughter", valid_types)
-        self.assertIn("monthly_operations", valid_types)
-        self.assertIn("yearly_operations", valid_types)
+        assert "daily_slaughter" in valid_types
+        assert "monthly_operations" in valid_types
+        assert "yearly_operations" in valid_types
 
 
-class GeneratedReportModelTest(TestCase):
+class TestGeneratedReportModel:
     """Test the GeneratedReport model"""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.report = Report.objects.create(name="Test Report", report_type="daily_slaughter", frequency="daily")
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
@@ -62,9 +102,9 @@ class GeneratedReportModelTest(TestCase):
             status="success",
         )
 
-        self.assertEqual(generated_report.report_definition, self.report)
-        self.assertEqual(generated_report.generated_by, self.user)
-        self.assertEqual(generated_report.status, "success")
+        assert generated_report.report_definition == self.report
+        assert generated_report.generated_by == self.user
+        assert generated_report.status == "success"
 
     def test_generated_report_str(self):
         """Test generated report string representation"""
@@ -75,30 +115,24 @@ class GeneratedReportModelTest(TestCase):
         expected_str = (
             f"Generated Report: {self.report.name} on {generated_report.generated_at.strftime('%Y-%m-%d %H:%M')}"
         )
-        self.assertEqual(str(generated_report), expected_str)
+        assert str(generated_report) == expected_str
 
 
-class ReportDataAggregatorTest(TestCase):
+class TestReportDataAggregator:
     """Test the ReportDataAggregator service"""
 
-    def setUp(self):
-        # Create test data
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-
-        # Create service package
         self.service_package = ServicePackage.objects.create(
             name="Test Package", includes_disassembly=True, includes_delivery=True
         )
-
-        # Create slaughter order
         self.slaughter_order = SlaughterOrder.objects.create(
             client_name="Test Client",
             service_package=self.service_package,
             order_datetime=timezone.now(),
             status="PENDING",
         )
-
-        # Create animals
         self.animal1 = Animal.objects.create(
             slaughter_order=self.slaughter_order,
             animal_type="cattle",
@@ -114,121 +148,104 @@ class ReportDataAggregatorTest(TestCase):
             received_date=timezone.now(),
             status="carcass_ready",
         )
-
-        # Create weight logs
         WeightLog.objects.create(
             animal=self.animal1, weight=Decimal("500.00"), weight_type="live_weight", is_group_weight=False
         )
-
         WeightLog.objects.create(
             animal=self.animal1, weight=Decimal("300.00"), weight_type="hot_carcass_weight", is_group_weight=False
         )
-
-        # Create cattle details
         CattleDetails.objects.create(
             animal=self.animal1,
             breed="Holstein",
-            sakatat_status=1.0,  # Good
-            bowels_status=1.0,  # Good
+            sakatat_status=1.0,
+            bowels_status=1.0,
         )
-
-        # Set slaughter dates
         self.test_date = date.today()
         self.animal1.slaughter_date = timezone.make_aware(datetime.combine(self.test_date, datetime.min.time()))
         self.animal1.save()
-
         self.animal2.slaughter_date = timezone.make_aware(datetime.combine(self.test_date, datetime.min.time()))
         self.animal2.save()
 
     def test_aggregator_initialization(self):
         """Test aggregator initialization"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
-        self.assertEqual(aggregator.start_date, self.test_date)
-        self.assertEqual(aggregator.end_date, self.test_date)
+        assert aggregator.start_date == self.test_date
+        assert aggregator.end_date == self.test_date
 
     def test_get_daily_slaughter_data(self):
         """Test getting daily slaughter data"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         data = aggregator.get_daily_slaughter_data()
 
-        self.assertEqual(len(data), 2)  # Two animals
-
-        # Check first animal data
+        assert len(data) == 2
         animal1_data = data[0]
-        self.assertEqual(animal1_data["client_name"], "Test Client")
-        self.assertEqual(animal1_data["animal_type"], "SIGIR")  # Turkish for cattle
-        self.assertEqual(animal1_data["quantity"], 1)
-        self.assertEqual(animal1_data["offal_status"], "SAĞLAM")
-        self.assertEqual(animal1_data["bowels_status"], "SAĞLAM")
+        assert animal1_data["client_name"] == "Test Client"
+        assert animal1_data["animal_type"] == "SIGIR"
+        assert animal1_data["quantity"] == 1
+        assert animal1_data["offal_status"] == "SAĞLAM"
+        assert animal1_data["bowels_status"] == "SAĞLAM"
 
     def test_get_daily_summary_totals(self):
         """Test getting daily summary totals"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         summary = aggregator.get_daily_summary_totals()
 
-        # Check that summary has expected structure
-        self.assertIn("buyukbas", summary)
-        self.assertIn("kuzu", summary)
-        self.assertIn("oglak", summary)
-        self.assertIn("koyun", summary)
-        self.assertIn("keci", summary)
+        assert "buyukbas" in summary
+        assert "kuzu" in summary
+        assert "oglak" in summary
+        assert "koyun" in summary
+        assert "keci" in summary
 
-        # Check that each category has expected keys
         for category in summary.values():
-            self.assertIn("kesim", category)
-            self.assertIn("deri", category)
-            self.assertIn("bagirsak", category)
+            assert "kesim" in category
+            assert "deri" in category
+            assert "bagirsak" in category
 
     def test_get_all_data(self):
         """Test getting all data for report"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         all_data = aggregator.get_all_data()
 
-        self.assertIn("date", all_data)
-        self.assertIn("daily_data", all_data)
-        self.assertIn("summary", all_data)
-        self.assertIn("total_animals", all_data)
-        self.assertIn("total_hot_carcass_weight", all_data)
-        self.assertIn("total_leather_weight", all_data)
-
-        self.assertEqual(all_data["total_animals"], 2)  # Two animals, each with quantity 1
+        assert "date" in all_data
+        assert "daily_data" in all_data
+        assert "summary" in all_data
+        assert "total_animals" in all_data
+        assert "total_hot_carcass_weight" in all_data
+        assert "total_leather_weight" in all_data
+        assert all_data["total_animals"] == 2
 
     def test_turkish_animal_type_mapping(self):
         """Test Turkish animal type mapping"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
 
-        # Test various animal types
-        self.assertEqual(aggregator._get_turkish_animal_type("cattle"), "SIGIR")
-        self.assertEqual(aggregator._get_turkish_animal_type("sheep"), "KOYUN")
-        self.assertEqual(aggregator._get_turkish_animal_type("goat"), "KECI")
-        self.assertEqual(aggregator._get_turkish_animal_type("lamb"), "KUZU")
-        self.assertEqual(aggregator._get_turkish_animal_type("heifer"), "DUVE")
-        self.assertEqual(aggregator._get_turkish_animal_type("beef"), "DANA")
+        assert aggregator._get_turkish_animal_type("cattle") == "SIGIR"
+        assert aggregator._get_turkish_animal_type("sheep") == "KOYUN"
+        assert aggregator._get_turkish_animal_type("goat") == "KECI"
+        assert aggregator._get_turkish_animal_type("lamb") == "KUZU"
+        assert aggregator._get_turkish_animal_type("heifer") == "DUVE"
+        assert aggregator._get_turkish_animal_type("beef") == "DANA"
 
     def test_offal_bowels_status_mapping(self):
         """Test offal and bowels status mapping"""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
 
-        # Test with good status
         offal_status, bowels_status = aggregator._get_offal_bowels_status(self.animal1)
-        self.assertEqual(offal_status, "SAĞLAM")
-        self.assertEqual(bowels_status, "SAĞLAM")
+        assert offal_status == "SAĞLAM"
+        assert bowels_status == "SAĞLAM"
 
-        # Test with bad status
-        self.animal1.cattle_details.sakatat_status = 0.0  # Not usable
-        self.animal1.cattle_details.bowels_status = 0.0  # Not usable
+        self.animal1.cattle_details.sakatat_status = 0.0
+        self.animal1.cattle_details.bowels_status = 0.0
         self.animal1.cattle_details.save()
 
         offal_status, bowels_status = aggregator._get_offal_bowels_status(self.animal1)
-        self.assertEqual(offal_status, "ATIK")
-        self.assertEqual(bowels_status, "BOZUK")
+        assert offal_status == "ATIK"
+        assert bowels_status == "BOZUK"
 
-        # Test with half status
-        self.animal1.cattle_details.sakatat_status = 0.5  # Not bad
+        self.animal1.cattle_details.sakatat_status = 0.5
         self.animal1.cattle_details.save()
 
         offal_status, bowels_status = aggregator._get_offal_bowels_status(self.animal1)
-        self.assertEqual(offal_status, "YARIM")
+        assert offal_status == "YARIM"
 
     def _make_aggregation_record(
         self,
@@ -265,7 +282,7 @@ class ReportDataAggregatorTest(TestCase):
         """_aggregate_identical_records returns empty list for empty input."""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         result = aggregator._aggregate_identical_records([])
-        self.assertEqual(result, [])
+        assert result == []
 
     def test_aggregate_identical_records_merges_small_animal_identical(self):
         """Identical small-animal records (KUZU) are merged and quantity summed; weights multiplied by quantity."""
@@ -273,11 +290,11 @@ class ReportDataAggregatorTest(TestCase):
         rec = self._make_aggregation_record(animal_type="KUZU", quantity=1)
         daily_data = [rec, rec.copy()]
         result = aggregator._aggregate_identical_records(daily_data)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["quantity"], 2)
-        self.assertEqual(result[0]["live_weight"], 80.0)  # 40 * 2
-        self.assertEqual(result[0]["hot_carcass_weight"], 40.0)  # 20 * 2
-        self.assertEqual(result[0]["leather_weight"], 6.0)  # 3 * 2
+        assert len(result) == 1
+        assert result[0]["quantity"] == 2
+        assert result[0]["live_weight"] == 80.0
+        assert result[0]["hot_carcass_weight"] == 40.0
+        assert result[0]["leather_weight"] == 6.0
 
     def test_aggregate_identical_records_keeps_different_animal_types_separate(self):
         """Records with different animal_type stay as separate rows."""
@@ -287,9 +304,9 @@ class ReportDataAggregatorTest(TestCase):
             self._make_aggregation_record(animal_type="DANA"),
         ]
         result = aggregator._aggregate_identical_records(daily_data)
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["animal_type"], "KUZU")
-        self.assertEqual(result[1]["animal_type"], "DANA")
+        assert len(result) == 2
+        assert result[0]["animal_type"] == "KUZU"
+        assert result[1]["animal_type"] == "DANA"
 
     def test_aggregate_identical_records_keeps_different_weights_separate(self):
         """Records differing in hot_carcass_weight stay as separate rows."""
@@ -299,7 +316,7 @@ class ReportDataAggregatorTest(TestCase):
             self._make_aggregation_record(animal_type="KUZU", hot_carcass_weight=22.0),
         ]
         result = aggregator._aggregate_identical_records(daily_data)
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
 
     def test_aggregate_identical_records_large_animal_uses_identification_tag(self):
         """For non-small animals (e.g. SIGIR), identification_tag is part of key so same type different tag = 2 rows."""
@@ -309,24 +326,25 @@ class ReportDataAggregatorTest(TestCase):
             self._make_aggregation_record(animal_type="SIGIR", identification_tag="T2"),
         ]
         result = aggregator._aggregate_identical_records(daily_data)
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
 
     def test_aggregate_identical_records_single_record_unchanged(self):
         """Single record is returned unchanged; weights not multiplied when quantity is 1."""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
         rec = self._make_aggregation_record(quantity=1, live_weight=50.0, hot_carcass_weight=25.0, leather_weight=4.0)
         result = aggregator._aggregate_identical_records([rec])
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["quantity"], 1)
-        self.assertEqual(result[0]["live_weight"], 50.0)
-        self.assertEqual(result[0]["hot_carcass_weight"], 25.0)
-        self.assertEqual(result[0]["leather_weight"], 4.0)
+        assert len(result) == 1
+        assert result[0]["quantity"] == 1
+        assert result[0]["live_weight"] == 50.0
+        assert result[0]["hot_carcass_weight"] == 25.0
+        assert result[0]["leather_weight"] == 4.0
 
 
-class ExcelReportGeneratorTest(TestCase):
+class TestExcelReportGenerator:
     """Test the ExcelReportGenerator service"""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.report_data = {
             "date": "2024-01-15",
             "daily_data": [
@@ -357,24 +375,17 @@ class ExcelReportGeneratorTest(TestCase):
     def test_excel_generator_initialization(self):
         """Test Excel generator initialization"""
         generator = ExcelReportGenerator(self.report_data)
-        self.assertEqual(generator.report_data, self.report_data)
+        assert generator.report_data == self.report_data
 
     def test_generate_daily_slaughter_excel(self):
         """Test generating daily slaughter Excel report"""
         generator = ExcelReportGenerator(self.report_data)
         workbook = generator.generate_daily_slaughter_excel()
 
-        # Check that workbook was created
-        self.assertIsNotNone(workbook)
-
-        # Check worksheet
+        assert workbook is not None
         ws = workbook.active
-        self.assertEqual(ws.title, "Daily Slaughter Report")
-
-        # Check title
-        self.assertEqual(ws["A1"].value, "GÜNLÜK KESİM RAPORU - 2024-01-15")
-
-        # Check headers
+        assert ws.title == "Daily Slaughter Report"
+        assert ws["A1"].value == "GÜNLÜK KESİM RAPORU - 2024-01-15"
         headers = [
             "FİRMA ÜNVANI",
             "ADET",
@@ -388,40 +399,36 @@ class ExcelReportGeneratorTest(TestCase):
             "AÇIKLAMA",
         ]
         for i, header in enumerate(headers, 1):
-            self.assertEqual(ws.cell(row=3, column=i).value, header)
+            assert ws.cell(row=3, column=i).value == header
 
-        # Check data
-        self.assertEqual(ws.cell(row=4, column=1).value, "Test Destination")  # ALINAN MÜŞTERİ
-        self.assertEqual(ws.cell(row=4, column=2).value, 1)  # ADET
-        self.assertEqual(ws.cell(row=4, column=3).value, "SIGIR")  # CİNSİ
-        self.assertEqual(ws.cell(row=4, column=4).value, 200.0)  # SICAK KARKAS
-        self.assertEqual(ws.cell(row=4, column=5).value, "")  # HAYVAN KİMLİK NO (empty in test data)
-        self.assertEqual(ws.cell(row=4, column=6).value, "SAĞLAM")  # SAKATAT
-        self.assertEqual(ws.cell(row=4, column=7).value, "SAĞLAM")  # BAĞIRSAK
-        self.assertEqual(ws.cell(row=4, column=8).value, 25.0)  # DERİ
-        self.assertEqual(ws.cell(row=4, column=9).value, "Test Client")  # FİRMA ÜNVANI
-        self.assertEqual(ws.cell(row=4, column=10).value, "")  # AÇIKLAMA
+        assert ws.cell(row=4, column=1).value == "Test Destination"
+        assert ws.cell(row=4, column=2).value == 1
+        assert ws.cell(row=4, column=3).value == "SIGIR"
+        assert ws.cell(row=4, column=4).value == 200.0
+        assert ws.cell(row=4, column=5).value == ""
+        assert ws.cell(row=4, column=6).value == "SAĞLAM"
+        assert ws.cell(row=4, column=7).value == "SAĞLAM"
+        assert ws.cell(row=4, column=8).value == 25.0
+        assert ws.cell(row=4, column=9).value == "Test Client"
+        assert ws.cell(row=4, column=10).value == ""
 
-        # Check summary section
-        summary_start_row = 7  # After data and spacing
-        self.assertEqual(ws.cell(row=summary_start_row, column=1).value, "ÖZET")
-
-        # Check summary headers
+        summary_start_row = 7
+        assert ws.cell(row=summary_start_row, column=1).value == "ÖZET"
         summary_headers = ["", "KESİM", "DERİ", "BAĞIRSAK"]
         for i, header in enumerate(summary_headers, 1):
-            self.assertEqual(ws.cell(row=summary_start_row + 1, column=i).value, header)
+            assert ws.cell(row=summary_start_row + 1, column=i).value == header
 
-        # Check summary data
-        self.assertEqual(ws.cell(row=summary_start_row + 2, column=1).value, "BÜYÜKBAŞ")
-        self.assertEqual(ws.cell(row=summary_start_row + 2, column=2).value, 1)
-        self.assertEqual(ws.cell(row=summary_start_row + 2, column=3).value, 25.0)
-        self.assertEqual(ws.cell(row=summary_start_row + 2, column=4).value, 1)
+        assert ws.cell(row=summary_start_row + 2, column=1).value == "BÜYÜKBAŞ"
+        assert ws.cell(row=summary_start_row + 2, column=2).value == 1
+        assert ws.cell(row=summary_start_row + 2, column=3).value == 25.0
+        assert ws.cell(row=summary_start_row + 2, column=4).value == 1
 
 
-class PDFReportGeneratorTest(TestCase):
+class TestPDFReportGenerator:
     """Test the PDFReportGenerator service"""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.report_data = {
             "start_date": "01.01.2024",
             "end_date": "01.01.2024",
@@ -451,81 +458,80 @@ class PDFReportGeneratorTest(TestCase):
     def test_pdf_generator_initialization(self):
         """Test PDF generator initialization."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator.report_data, self.report_data)
+        assert generator.report_data == self.report_data
 
     def test_convert_turkish_chars_empty(self):
         """_convert_turkish_chars returns empty string for empty input."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._convert_turkish_chars(""), "")
-        self.assertEqual(generator._convert_turkish_chars(None), None)
+        assert generator._convert_turkish_chars("") == ""
+        assert generator._convert_turkish_chars(None) is None
 
     def test_convert_turkish_chars_converts_all(self):
         """_convert_turkish_chars converts Turkish letters to ASCII."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._convert_turkish_chars("ĞÜŞİÖÇ ğüşışöç"), "GUSIOC gusisoc")
-        self.assertEqual(generator._convert_turkish_chars("SAĞLAM"), "SAGLAM")
-        self.assertEqual(generator._convert_turkish_chars("İzmir"), "Izmir")
+        assert generator._convert_turkish_chars("ĞÜŞİÖÇ ğüşışöç") == "GUSIOC gusisoc"
+        assert generator._convert_turkish_chars("SAĞLAM") == "SAGLAM"
+        assert generator._convert_turkish_chars("İzmir") == "Izmir"
 
     def test_convert_turkish_chars_plain_unchanged(self):
         """_convert_turkish_chars leaves ASCII text unchanged."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._convert_turkish_chars("Hello World"), "Hello World")
+        assert generator._convert_turkish_chars("Hello World") == "Hello World"
 
     def test_truncate_text_empty(self):
         """_truncate_text returns empty string for empty/None."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._truncate_text(""), "")
-        self.assertEqual(generator._truncate_text(None), "")
+        assert generator._truncate_text("") == ""
+        assert generator._truncate_text(None) == ""
 
     def test_truncate_text_short_unchanged(self):
         """_truncate_text leaves short text unchanged."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._truncate_text("Short", max_length=20), "Short")
+        assert generator._truncate_text("Short", max_length=20) == "Short"
 
     def test_truncate_text_long_truncated(self):
         """_truncate_text truncates long text with ellipsis."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._truncate_text("This is a long text", max_length=15), "This is a lo...")
+        assert generator._truncate_text("This is a long text", max_length=15) == "This is a lo..."
 
     def test_truncate_text_non_string(self):
         """_truncate_text converts non-string to str then truncates."""
         generator = PDFReportGenerator(self.report_data)
-        # str(12345) = "12345"; when max_length=4, returns text[:1] + "..." = "1..."
-        self.assertEqual(generator._truncate_text(12345, max_length=4), "1...")
+        assert generator._truncate_text(12345, max_length=4) == "1..."
 
     def test_wrap_text_empty(self):
         """_wrap_text returns empty string for empty/None."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._wrap_text(""), "")
-        self.assertEqual(generator._wrap_text(None), "")
+        assert generator._wrap_text("") == ""
+        assert generator._wrap_text(None) == ""
 
     def test_wrap_text_short_unchanged(self):
         """_wrap_text leaves short text as single line."""
         generator = PDFReportGenerator(self.report_data)
-        self.assertEqual(generator._wrap_text("Short", max_chars_per_line=15), "Short")
+        assert generator._wrap_text("Short", max_chars_per_line=15) == "Short"
 
     def test_wrap_text_wraps_long_line(self):
         """_wrap_text wraps at word boundaries."""
         generator = PDFReportGenerator(self.report_data)
         text = "One Two Three Four Five"
         result = generator._wrap_text(text, max_chars_per_line=10)
-        self.assertIn("\n", result)
+        assert "\n" in result
         lines = result.split("\n")
         for line in lines:
-            self.assertLessEqual(len(line), 10)
+            assert len(line) <= 10
 
     def test_wrap_text_long_single_word_truncated(self):
         """_wrap_text truncates a single word longer than max_chars_per_line."""
         generator = PDFReportGenerator(self.report_data)
         result = generator._wrap_text("VeryLongWordWithoutSpaces", max_chars_per_line=8)
-        self.assertEqual(result, "VeryL...")
+        assert result == "VeryL..."
 
     def test_generate_daily_slaughter_pdf_returns_path(self):
         """generate_daily_slaughter_pdf returns a file path."""
         generator = PDFReportGenerator(self.report_data)
         path = generator.generate_daily_slaughter_pdf()
-        self.assertIsInstance(path, str)
-        self.assertTrue(path.endswith(".pdf"))
+        assert isinstance(path, str)
+        assert path.endswith(".pdf")
 
     def test_generate_daily_slaughter_pdf_file_exists(self):
         """generate_daily_slaughter_pdf creates a file that exists."""
@@ -533,7 +539,7 @@ class PDFReportGeneratorTest(TestCase):
 
         generator = PDFReportGenerator(self.report_data)
         path = generator.generate_daily_slaughter_pdf()
-        self.assertTrue(os.path.isfile(path))
+        assert os.path.isfile(path)
 
     def test_generate_daily_slaughter_pdf_valid_pdf(self):
         """generate_daily_slaughter_pdf produces valid PDF (magic bytes)."""
@@ -541,22 +547,22 @@ class PDFReportGeneratorTest(TestCase):
         path = generator.generate_daily_slaughter_pdf()
         with open(path, "rb") as f:
             header = f.read(5)
-        self.assertEqual(header, b"%PDF-")
+        assert header == b"%PDF-"
 
     def test_generate_daily_slaughter_pdf_empty_daily_data(self):
         """generate_daily_slaughter_pdf works with empty daily_data."""
         data = {"start_date": "01.01.2024", "end_date": "01.01.2024", "daily_data": [], "summary": {}}
         generator = PDFReportGenerator(data)
         path = generator.generate_daily_slaughter_pdf()
-        self.assertIsInstance(path, str)
-        self.assertTrue(path.endswith(".pdf"))
+        assert isinstance(path, str)
+        assert path.endswith(".pdf")
 
 
-class ManagementCommandTest(TestCase):
+class TestManagementCommands:
     """Test management commands"""
 
-    def setUp(self):
-        # Create system user
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.system_user = User.objects.create_user(
             username="system",
             email="system@slaughterhouse.local",
@@ -564,8 +570,6 @@ class ManagementCommandTest(TestCase):
             role="ADMIN",
             is_staff=True,
         )
-
-        # Create report definition
         self.report = Report.objects.create(
             name="Daily Slaughter Report",
             report_type="daily_slaughter",
@@ -576,32 +580,23 @@ class ManagementCommandTest(TestCase):
 
     def test_setup_system_user_command(self):
         """Test setup system user command"""
-        # Delete existing system user
         User.objects.filter(username="system").delete()
-
-        # Run command
         call_command("setup_system_user")
-
-        # Check that system user was created
         system_user = User.objects.get(username="system")
-        self.assertEqual(system_user.email, "system@slaughterhouse.local")
-        self.assertEqual(system_user.role, "ADMIN")
-        self.assertTrue(system_user.is_staff)
+        assert system_user.email == "system@slaughterhouse.local"
+        assert system_user.role == "ADMIN"
+        assert system_user.is_staff
 
     def test_setup_system_user_already_exists(self):
         """Test setup system user when user already exists"""
-        # Run command (user already exists from setUp)
         call_command("setup_system_user")
-
-        # Should not raise an error
         system_user = User.objects.get(username="system")
-        self.assertEqual(system_user.username, "system")
+        assert system_user.username == "system"
 
     @patch("reporting.services.ReportDataAggregator")
     @patch("reporting.services.ExcelReportGenerator")
     def test_generate_daily_reports_command(self, mock_excel_generator, mock_aggregator):
         """Test generate daily reports command"""
-        # Mock the services
         mock_aggregator_instance = MagicMock()
         mock_aggregator.return_value = mock_aggregator_instance
         mock_aggregator_instance.get_all_data.return_value = {
@@ -624,55 +619,92 @@ class ManagementCommandTest(TestCase):
         mock_workbook = MagicMock()
         mock_excel_generator_instance.generate_daily_slaughter_excel.return_value = mock_workbook
 
-        # Run command
         with patch("os.makedirs"), patch("os.path.join", return_value="/tmp/test.xlsx"):
             call_command("generate_daily_reports", "--date=2024-01-15")
 
-        # Check that GeneratedReport was created
         generated_report = GeneratedReport.objects.get(report_definition=self.report, generated_by=self.system_user)
-        self.assertEqual(generated_report.status, "success")
-        self.assertEqual(generated_report.start_date, date(2024, 1, 15))
-        self.assertEqual(generated_report.end_date, date(2024, 1, 15))
+        assert generated_report.status == "success"
+        assert generated_report.start_date == date(2024, 1, 15)
+        assert generated_report.end_date == date(2024, 1, 15)
 
     def test_generate_daily_reports_invalid_date(self):
         """Test generate daily reports with invalid date"""
-        # Should not raise an error, but should handle gracefully
         call_command("generate_daily_reports", "--date=invalid-date")
-
-        # Should not create any generated reports
-        self.assertEqual(GeneratedReport.objects.count(), 0)
+        assert GeneratedReport.objects.count() == 0
 
     def test_generate_daily_reports_system_user_not_found(self):
         """Test generate daily reports when system user doesn't exist"""
-        # Delete system user
         User.objects.filter(username="system").delete()
-
-        # Run command
         call_command("generate_daily_reports", "--system-user=nonexistent")
+        assert GeneratedReport.objects.count() == 0
 
-        # Should not create any generated reports
-        self.assertEqual(GeneratedReport.objects.count(), 0)
+    def test_generate_daily_reports_report_definition_not_found(self):
+        """Test generate daily reports when no active report definition exists."""
+        self.report.delete()
+        stdout = StringIO()
+
+        call_command("generate_daily_reports", "--date=2024-01-15", stdout=stdout)
+
+        assert "Report definition not found for type: daily_slaughter" in stdout.getvalue()
+        assert GeneratedReport.objects.count() == 0
+
+    @patch("reporting.management.commands.generate_daily_reports.os.makedirs")
+    @patch("reporting.management.commands.generate_daily_reports.ExcelReportGenerator")
+    @patch("reporting.management.commands.generate_daily_reports.ReportDataAggregator")
+    def test_generate_daily_reports_handles_generation_failure(
+        self,
+        mock_aggregator,
+        mock_excel_generator,
+        _mock_makedirs,
+    ):
+        """Test generate daily reports when workbook generation fails."""
+        stdout = StringIO()
+        mock_aggregator.return_value.get_all_data.return_value = {
+            "date": "2024-01-15",
+            "daily_data": [],
+            "summary": {},
+            "total_animals": 0,
+            "total_weight": 0,
+            "total_leather_weight": 0,
+        }
+        mock_workbook = MagicMock()
+        mock_workbook.save.side_effect = RuntimeError("disk full")
+        mock_excel_generator.return_value.generate_daily_slaughter_excel.return_value = mock_workbook
+
+        call_command("generate_daily_reports", "--date=2024-01-15", stdout=stdout)
+
+        generated_report = GeneratedReport.objects.get(report_definition=self.report, generated_by=self.system_user)
+        assert generated_report.status == "pending"
+        assert "Failed to generate daily_slaughter report for 2024-01-15: disk full" in stdout.getvalue()
+
+    def test_generate_daily_reports_pdf_output_skips_file_save(self):
+        """Test generate daily reports when output format does not create Excel files."""
+        stdout = StringIO()
+
+        call_command("generate_daily_reports", "--date=2024-01-15", "--output-format=pdf", stdout=stdout)
+
+        generated_report = GeneratedReport.objects.get(report_definition=self.report, generated_by=self.system_user)
+        assert generated_report.status == "success"
+        assert generated_report.file_path is None
+        assert "Files saved to:" not in stdout.getvalue()
 
 
-class IntegrationTest(TransactionTestCase):
+@pytest.mark.django_db(transaction=True)
+class TestIntegration:
     """Integration tests for the complete reporting workflow"""
 
-    def setUp(self):
-        # Create comprehensive test data
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-
         self.service_package = ServicePackage.objects.create(
             name="Test Package", includes_disassembly=True, includes_delivery=True
         )
-
         self.slaughter_order = SlaughterOrder.objects.create(
             client_name="Test Client",
             service_package=self.service_package,
             order_datetime=timezone.now(),
             status="PENDING",
         )
-
-        # Create multiple animals
         self.animals = []
         animal_types = ["cattle", "sheep", "goat", "lamb"]
 
@@ -687,25 +719,19 @@ class IntegrationTest(TransactionTestCase):
                 leather_weight_kg=Decimal(f"{20 + i * 5}.00"),
             )
             self.animals.append(animal)
-
-            # Create weight logs
             WeightLog.objects.create(
                 animal=animal, weight=Decimal(f"{400 + i * 100}.00"), weight_type="live_weight", is_group_weight=False
             )
-
             WeightLog.objects.create(
                 animal=animal,
                 weight=Decimal(f"{250 + i * 50}.00"),
                 weight_type="hot_carcass_weight",
                 is_group_weight=False,
             )
-
-        # Create cattle details for first animal
         CattleDetails.objects.create(animal=self.animals[0], breed="Holstein", sakatat_status=1.0, bowels_status=1.0)
 
     def test_complete_report_generation_workflow(self):
         """Test the complete report generation workflow"""
-        # Create report definition
         report = Report.objects.create(
             name="Daily Slaughter Report",
             report_type="daily_slaughter",
@@ -713,74 +739,391 @@ class IntegrationTest(TransactionTestCase):
             output_format="excel",
             is_active=True,
         )
-
-        # Create system user
-        system_user = User.objects.create_user(
+        User.objects.create_user(
             username="system",
             email="system@slaughterhouse.local",
             password="systempass123",
             role="ADMIN",
             is_staff=True,
         )
-
-        # Generate report data
         aggregator = ReportDataAggregator(date.today(), date.today())
         report_data = aggregator.get_all_data()
-
-        # Verify data structure
-        self.assertIn("daily_data", report_data)
-        self.assertIn("summary", report_data)
-        self.assertEqual(len(report_data["daily_data"]), 4)  # Four animals
-
-        # Generate Excel report
+        assert "daily_data" in report_data
+        assert "summary" in report_data
+        assert len(report_data["daily_data"]) == 4
         excel_generator = ExcelReportGenerator(report_data)
         workbook = excel_generator.generate_daily_slaughter_excel()
-
-        # Verify Excel structure
         ws = workbook.active
-        self.assertEqual(ws.title, "Daily Slaughter Report")
-
-        # Check that all animals are included
+        assert ws.title == "Daily Slaughter Report"
         data_start_row = 4
         for i in range(4):
             row = data_start_row + i
-            self.assertIsNotNone(ws.cell(row=row, column=1).value)  # Client name
-            self.assertIsNotNone(ws.cell(row=row, column=3).value)  # Animal type
-
-        # Find the summary section by looking for "ÖZET"
+            assert ws.cell(row=row, column=1).value is not None
+            assert ws.cell(row=row, column=3).value is not None
         summary_start_row = None
-        for row in range(1, 20):  # Search in first 20 rows
+        for row in range(1, 20):
             if ws.cell(row=row, column=1).value == "ÖZET":
                 summary_start_row = row
                 break
-
-        self.assertIsNotNone(summary_start_row, "ÖZET section not found in Excel file")
-
-        # Verify that summary has data
+        assert summary_start_row is not None, "ÖZET section not found in Excel file"
         buyukbas_row = summary_start_row + 2
-        self.assertEqual(ws.cell(row=buyukbas_row, column=1).value, "BÜYÜKBAŞ")
-        self.assertEqual(ws.cell(row=buyukbas_row, column=2).value, 1)  # One cattle
+        assert ws.cell(row=buyukbas_row, column=1).value == "BÜYÜKBAŞ"
+        assert ws.cell(row=buyukbas_row, column=2).value == 1
 
     def test_report_data_accuracy(self):
         """Test that report data is accurate"""
         aggregator = ReportDataAggregator(date.today(), date.today())
         report_data = aggregator.get_all_data()
 
-        # Check total animals (4 animals, each with quantity 1)
-        self.assertEqual(report_data["total_animals"], 4)
-
-        # Check that all animals have correct data
+        assert report_data["total_animals"] == 4
         for animal_data in report_data["daily_data"]:
-            self.assertIn("client_name", animal_data)
-            self.assertIn("animal_type", animal_data)
-            self.assertIn("hot_carcass_weight", animal_data)
-            self.assertIn("offal_status", animal_data)
-            self.assertIn("bowels_status", animal_data)
-            self.assertIn("leather_weight", animal_data)
+            assert "client_name" in animal_data
+            assert "animal_type" in animal_data
+            assert "hot_carcass_weight" in animal_data
+            assert "offal_status" in animal_data
+            assert "bowels_status" in animal_data
+            assert "leather_weight" in animal_data
 
-        # Check summary totals
         summary = report_data["summary"]
-        self.assertEqual(summary["buyukbas"]["kesim"], 1)  # One cattle
-        self.assertEqual(summary["kuzu"]["kesim"], 1)  # One lamb
-        self.assertEqual(summary["keci"]["kesim"], 1)  # One goat
-        self.assertEqual(summary["koyun"]["kesim"], 1)  # One sheep
+        assert summary["buyukbas"]["kesim"] == 1
+        assert summary["kuzu"]["kesim"] == 1
+        assert summary["keci"]["kesim"] == 1
+        assert summary["koyun"]["kesim"] == 1
+
+
+class TestReportingViews:
+    @pytest.fixture(autouse=True)
+    def _setup(self, admin_user, operator_user):
+        self.admin_user = admin_user
+        self.operator_user = operator_user
+        self.report_definition = Report.objects.create(
+            name="Dashboard Report",
+            report_type="daily_slaughter",
+            frequency="daily",
+            output_format="excel",
+            is_active=True,
+        )
+
+    def test_report_dashboard_requires_manager_or_admin(self):
+        from reporting.views import report_dashboard
+
+        response = report_dashboard(_request("get"))
+
+        assert response.status_code == 302
+        assert "/login/" in response.url
+
+    def test_report_dashboard_client_force_login_allows_manager(self, client, manager_user):
+        from django.urls import reverse
+
+        client.force_login(manager_user)
+
+        response = client.get(reverse("report_dashboard"))
+
+        assert response.status_code == 200
+
+    def test_report_dashboard_client_force_login_allows_admin(self, client):
+        from django.urls import reverse
+
+        client.force_login(self.admin_user)
+
+        response = client.get(reverse("report_dashboard"))
+
+        assert response.status_code == 200
+
+    def test_report_dashboard_renders_for_manager(self):
+        from django.http import HttpResponse
+
+        from reporting.views import report_dashboard
+
+        captured = {}
+
+        def _fake_render(_request, template_name, context=None):
+            captured["template"] = template_name
+            captured["context"] = context
+            return HttpResponse("ok")
+
+        with patch("reporting.views.render", side_effect=_fake_render):
+            response = report_dashboard(_request("get", self.admin_user, "/reporting/"))
+
+        assert response.status_code == 200
+        assert captured["template"] == "reporting/simple_dashboard.html"
+
+    def test_report_dashboard_rejects_operator(self):
+        from reporting.views import report_dashboard
+
+        response = report_dashboard(_request("get", self.operator_user, "/reporting/"))
+
+        assert response.status_code == 302
+        assert "/login/" in response.url
+
+    @patch("reporting.views.ExcelReportGenerator")
+    @patch("reporting.views.ReportDataAggregator")
+    def test_generate_report_excel_success(self, mock_aggregator, mock_excel_generator):
+        from reporting.views import generate_report
+
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+        mock_excel_generator.return_value.generate_daily_slaughter_excel.return_value = _BinaryWorkbook(b"excel-bytes")
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "2026-03-01", "end_date": "2026-03-02", "output_format": "excel"},
+            )
+        )
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        assert response.content == b"excel-bytes"
+        assert response["Content-Disposition"] == 'attachment; filename="report_2026-03-01_to_2026-03-02.xlsx"'
+
+    @patch("reporting.views.ExcelReportGenerator")
+    @patch("reporting.views.ReportDataAggregator")
+    def test_generate_report_excel_failure_returns_500(self, mock_aggregator, mock_excel_generator):
+        from reporting.views import generate_report
+
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+        mock_excel_generator.return_value.generate_daily_slaughter_excel.side_effect = RuntimeError("xlsx failed")
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "2026-03-01", "end_date": "2026-03-02", "output_format": "excel"},
+            )
+        )
+
+        assert response.status_code == 500
+        assert response.content == b"An error occurred processing your request."
+
+    @patch("reporting.views.PDFReportGenerator")
+    @patch("reporting.views.ReportDataAggregator")
+    def test_generate_report_pdf_success(self, mock_aggregator, mock_pdf_generator, tmp_path):
+        from reporting.views import generate_report
+
+        pdf_path = tmp_path / "report.pdf"
+        pdf_path.write_bytes(b"%PDF-test")
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+        mock_pdf_generator.return_value.generate_daily_slaughter_pdf.return_value = str(pdf_path)
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "2026-03-01", "end_date": "2026-03-02", "output_format": "pdf"},
+            )
+        )
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/pdf"
+        assert response.content == b"%PDF-test"
+        assert response["Content-Disposition"] == 'attachment; filename="report_2026-03-01_to_2026-03-02.pdf"'
+        assert not pdf_path.exists()
+
+    @patch("reporting.views.PDFReportGenerator")
+    @patch("reporting.views.ReportDataAggregator")
+    def test_generate_report_pdf_failure_returns_500(self, mock_aggregator, mock_pdf_generator):
+        from reporting.views import generate_report
+
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+        mock_pdf_generator.return_value.generate_daily_slaughter_pdf.side_effect = RuntimeError("pdf failed")
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "2026-03-01", "end_date": "2026-03-02", "output_format": "pdf"},
+            )
+        )
+
+        assert response.status_code == 500
+        assert response.content == b"An error occurred processing your request."
+
+    @patch("reporting.views.ReportDataAggregator")
+    def test_generate_report_invalid_output_format_returns_400(self, mock_aggregator):
+        from reporting.views import generate_report
+
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "2026-03-01", "end_date": "2026-03-02", "output_format": "csv"},
+            )
+        )
+
+        assert response.status_code == 400
+        assert response.content == b"Invalid output format. Please select Excel or PDF."
+
+    def test_generate_report_invalid_dates_return_500(self):
+        from reporting.views import generate_report
+
+        response = generate_report(
+            _request(
+                "post",
+                self.admin_user,
+                "/reporting/generate/",
+                {"start_date": "invalid", "end_date": "2026-03-02", "output_format": "excel"},
+            )
+        )
+
+        assert response.status_code == 500
+        assert response.content == b"An error occurred processing your request."
+
+    def test_generate_report_get_returns_405(self):
+        from reporting.views import generate_report
+
+        response = generate_report(_request("get", self.admin_user, "/reporting/generate/"))
+
+        assert response.status_code == 405
+        assert response.content == b"Method not allowed"
+
+    @patch("reporting.views.call_command")
+    @patch("reporting.views.threading.Thread", side_effect=lambda target: _ImmediateThread(target=target))
+    def test_generate_daily_reports_api_starts_command(self, _mock_thread, mock_call_command, client):
+        from django.urls import reverse
+
+        response = client.post(
+            reverse("api_generate_daily_reports"),
+            data=json.dumps(
+                {
+                    "report_types": ["daily_slaughter", "daily_weights"],
+                    "output_format": "pdf",
+                    "system_user": "scheduler",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "status": "success",
+            "message": "Daily report generation started",
+            "report_types": ["daily_slaughter", "daily_weights"],
+        }
+        mock_call_command.assert_called_once_with(
+            "generate_daily_reports",
+            report_types=["daily_slaughter", "daily_weights"],
+            output_format="pdf",
+            system_user="scheduler",
+        )
+
+    @patch("reporting.views.call_command", side_effect=CommandError("scheduler failed"))
+    @patch("reporting.views.threading.Thread", side_effect=lambda target: _ImmediateThread(target=target))
+    def test_generate_daily_reports_api_swallows_command_error(self, _mock_thread, _mock_call_command, client):
+        from django.urls import reverse
+
+        response = client.post(
+            reverse("api_generate_daily_reports"),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "success"
+        assert response.json()["report_types"] == ["daily_slaughter"]
+
+    def test_generate_daily_reports_api_invalid_json_returns_500(self, client):
+        from django.urls import reverse
+
+        response = client.post(
+            reverse("api_generate_daily_reports"),
+            data="{not-json",
+            content_type="application/json",
+        )
+
+        assert response.status_code == 500
+        assert response.json() == {
+            "status": "error",
+            "message": "An error occurred processing your request.",
+        }
+
+    def test_test_report_generation_get_renders_template(self):
+        from django.http import HttpResponse
+
+        from reporting.views import test_report_generation
+
+        captured = {}
+
+        def _fake_render(_request, template_name, context=None):
+            captured["template"] = template_name
+            captured["context"] = context
+            return HttpResponse("ok")
+
+        with patch("reporting.views.render", side_effect=_fake_render):
+            response = test_report_generation(_request("get", self.admin_user, "/reporting/test/"))
+
+        assert response.status_code == 200
+        assert captured["template"] == "reporting/test_report.html"
+
+    @patch("reporting.views.ExcelReportGenerator")
+    @patch("reporting.views.ReportDataAggregator")
+    def test_test_report_generation_post_returns_excel(self, mock_aggregator, mock_excel_generator):
+        from reporting.views import test_report_generation
+
+        expected_date = (timezone.now() - timedelta(days=1)).date()
+        mock_aggregator.return_value.get_all_data.return_value = {"daily_data": [], "summary": {}}
+        mock_excel_generator.return_value.generate_daily_slaughter_excel.return_value = _BinaryWorkbook(b"test-xlsx")
+
+        response = test_report_generation(_request("post", self.admin_user, "/reporting/test/"))
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        assert response.content == b"test-xlsx"
+        assert response["Content-Disposition"] == f'attachment; filename="test_report_{expected_date}.xlsx"'
+
+    @patch("reporting.views.ReportDataAggregator", side_effect=RuntimeError("aggregate failed"))
+    def test_test_report_generation_post_failure_returns_json(self, _mock_aggregator):
+        from reporting.views import test_report_generation
+
+        response = test_report_generation(_request("post", self.admin_user, "/reporting/test/"))
+
+        assert response.status_code == 500
+        assert json.loads(response.content) == {
+            "status": "error",
+            "message": "An error occurred processing your request.",
+        }
+
+    def test_report_list_orders_reports_newest_first(self):
+        from django.http import HttpResponse
+
+        from reporting.views import report_list
+
+        older = GeneratedReport.objects.create(
+            report_definition=self.report_definition,
+            generated_by=self.admin_user,
+            start_date=date(2026, 3, 1),
+            end_date=date(2026, 3, 1),
+            status="success",
+        )
+        newer = GeneratedReport.objects.create(
+            report_definition=self.report_definition,
+            generated_by=self.admin_user,
+            start_date=date(2026, 3, 2),
+            end_date=date(2026, 3, 2),
+            status="success",
+        )
+        GeneratedReport.objects.filter(pk=older.pk).update(generated_at=timezone.now() - timedelta(days=2))
+        GeneratedReport.objects.filter(pk=newer.pk).update(generated_at=timezone.now() - timedelta(days=1))
+
+        captured = {}
+
+        def _fake_render(_request, template_name, context=None):
+            captured["template"] = template_name
+            captured["context"] = context or {}
+            return HttpResponse("ok")
+
+        with patch("reporting.views.render", side_effect=_fake_render):
+            response = report_list(_request("get", self.admin_user, "/reporting/list/"))
+
+        reports = list(captured["context"]["reports"])
+
+        assert response.status_code == 200
+        assert captured["template"] == "reporting/report_list.html"
+        assert [report.pk for report in reports[:2]] == [newer.pk, older.pk]

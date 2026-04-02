@@ -1,7 +1,6 @@
 """URLconf for the public schema (e.g. marketing / landing when no tenant hostname matches)."""
 
-from django.urls import include
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.generic import RedirectView
 
 from tenants.views import (

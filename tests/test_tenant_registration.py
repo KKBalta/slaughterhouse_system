@@ -5,11 +5,7 @@ import json
 import pytest
 from django.test import Client, override_settings
 
-from tenants.services import (
-    RESERVED_SCHEMA_NAMES,
-    derive_base_schema_name,
-    is_valid_schema_slug,
-)
+from tenants.services import RESERVED_SCHEMA_NAMES, derive_base_schema_name, is_valid_schema_slug
 
 
 def test_derive_base_schema_name_ascii_slug():

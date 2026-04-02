@@ -51,11 +51,12 @@ def _bump_edge_sessions_version(edge_pk) -> None:
     except ValueError:
         cache.set(_ver_key, 1, timeout=None)
 
-_SESSIONS_RL_LIMIT = 60   # 60 req / 60 s  (normal: 1 req/5 s = 12/min)
+
+_SESSIONS_RL_LIMIT = 60  # 60 req / 60 s  (normal: 1 req/5 s = 12/min)
 _SESSIONS_RL_WINDOW = 60
 _HEARTBEAT_RL_LIMIT = 10  # 10 req / 60 s  (normal: 1 req/30 s = 2/min)
 _HEARTBEAT_RL_WINDOW = 60
-_REGISTER_RL_LIMIT = 10   # 10 req / 60 s  per IP (first-time) or edgeId (re-reg)
+_REGISTER_RL_LIMIT = 10  # 10 req / 60 s  per IP (first-time) or edgeId (re-reg)
 _REGISTER_RL_WINDOW = 60
 
 # Default config returned to Edge (baseUrl/timezone filled per request in multitenant mode)
@@ -735,6 +736,7 @@ def edge_offline_batch_ack(request):
 
 # ---------- GET /config ----------
 _EDGE_CONFIG_TTL = 60  # seconds — config is mostly static; 60 s stale is acceptable
+
 
 @csrf_exempt
 @require_edge_id

@@ -49,7 +49,11 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
         from django.core.cache import cache
         from django.db import connection as _db_conn
 
-        _stats_key = f"dashboard_stats:{_db_conn.schema_name}"
+        # django-tenants connections expose `schema_name`, but the SQLite/test
+        # wrapper used outside tenant mode does not. Fall back to the DB alias
+        # so local and test runs can still use a stable cache key.
+        _cache_namespace = getattr(_db_conn, "schema_name", None) or _db_conn.alias
+        _stats_key = f"dashboard_stats:{_cache_namespace}"
         status_dict = cache.get(_stats_key)
         if status_dict is None:
             status_counts = Animal.objects.values("status").annotate(count=Count("id"))
@@ -561,7 +565,13 @@ class AnimalWeightLogView(LoginRequiredMixin, View):
 
 def _batch_slaughter_type_breakdown(order):
     """Counts of received animals per animal_type for batch slaughter UI."""
-    counts = Counter(order.animals.values_list("animal_type", flat=True))
+    prefetched_animals = getattr(order, "received_animals", None)
+    if prefetched_animals is not None:
+        animal_types = [animal.animal_type for animal in prefetched_animals]
+    else:
+        animal_types = order.animals.filter(status="received").values_list("animal_type", flat=True)
+
+    counts = Counter(animal_types)
     if not counts:
         return []
     choices = dict(Animal.ANIMAL_TYPES)
@@ -584,6 +594,7 @@ class BatchSlaughterView(LoginRequiredMixin, TemplateView):
                 Prefetch(
                     "animals",
                     queryset=Animal.objects.filter(status="received").only("animal_type"),
+                    to_attr="received_animals",
                 )
             )
             .order_by("-order_datetime")
@@ -736,8 +747,8 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 }
             )
 
-        recent_logs_qs = WeightLog.objects.filter(is_group_weight=True).select_related("slaughter_order").order_by(
-            "-log_date"
+        recent_logs_qs = (
+            WeightLog.objects.filter(is_group_weight=True).select_related("slaughter_order").order_by("-log_date")
         )
         recent_logs_page_obj = Paginator(recent_logs_qs, self.recent_logs_page_size).get_page(
             self.request.GET.get("recent_page") or 1
@@ -840,7 +851,9 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 weight_log = result["weight_log"]
                 sync_result = result["sync_result"]
                 redirect_order_id = redirect_order_id or str(weight_log.slaughter_order_id)
-                weight_type_label = services.get_individual_weight_type(weight_log.weight_type).replace("_", " ").title()
+                weight_type_label = (
+                    services.get_individual_weight_type(weight_log.weight_type).replace("_", " ").title()
+                )
                 average_weight = (
                     sync_result["creation_result"]["average_weight"]
                     if sync_result["creation_result"]

@@ -39,10 +39,9 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = "users.User"
-        skip_postgeneration_save = True  # Optimization for Django 4.2+
+        skip_postgeneration_save = True
 
     username = factory.Sequence(lambda n: f"user_{n}")
-    password = factory.PostGenerationMethodCall("set_password", "testpass123")
     email = factory.LazyAttribute(lambda obj: f"{obj.username}@example.com")
     is_active = True
     is_staff = False
@@ -52,6 +51,13 @@ class UserFactory(factory.django.DjangoModelFactory):
         from users.models import User
 
         return User.Role.ADMIN
+
+    @factory.post_generation
+    def password(obj, create, extracted, **kwargs):
+        raw_password = extracted or "testpass123"
+        obj.set_password(raw_password)
+        if create:
+            obj.save(update_fields=["password"])
 
 
 class ClientProfileFactory(factory.django.DjangoModelFactory):
@@ -283,7 +289,11 @@ def animal_factory(db, slaughter_order_factory):
             identification_tag = f"TAG-{fake.random_int(10000, 99999)}"
 
         return Animal.objects.create(
-            slaughter_order=slaughter_order, animal_type=animal_type, identification_tag=identification_tag, **kwargs
+            slaughter_order=slaughter_order,
+            animal_type=animal_type,
+            identification_tag=identification_tag,
+            status=status,
+            **kwargs,
         )
 
     return create_animal

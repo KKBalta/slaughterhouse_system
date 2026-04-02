@@ -13,10 +13,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from tenants.forms import PublicTenantRegistrationForm
 from tenants.models import TenantRegistrationRequest
-from tenants.services import (
-    create_registration_request,
-    verify_status_token,
-)
+from tenants.services import create_registration_request, verify_status_token
 
 REG_RATE_PREFIX = "tenant_reg_ip:"
 REG_RATE_LIMIT = 30  # per hour

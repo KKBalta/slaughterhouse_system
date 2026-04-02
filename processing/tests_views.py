@@ -6,121 +6,120 @@ in the test environment.
 """
 
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.utils import timezone
 
 from core.models import ServicePackage
-from processing.models import Animal, DisassemblyCut, WeightLog
+from processing.models import Animal, CattleDetails, DisassemblyCut, WeightLog
 from reception.models import SlaughterOrder
 from users.models import ClientProfile
 
 User = get_user_model()
 
 
-class ProcessingModelTestMixin:
-    """Mixin class providing common setup for processing tests."""
+@pytest.fixture
+def processing_test_data(db):
+    admin_user = User.objects.create_user(
+        username="proc_admin", password="testpass123", role=User.Role.ADMIN, is_staff=True
+    )
+    operator_user = User.objects.create_user(username="proc_operator", password="testpass123", role=User.Role.OPERATOR)
+    client_user = User.objects.create_user(username="proc_client", password="testpass123", role=User.Role.CLIENT)
+    client_profile = ClientProfile.objects.create(
+        user=client_user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        phone_number="1234567890",
+        address="123 Test St",
+    )
+    full_service = ServicePackage.objects.create(
+        name="Full Service Proc Test", includes_disassembly=True, includes_delivery=True
+    )
+    basic_service = ServicePackage.objects.create(
+        name="Basic Service Proc Test", includes_disassembly=False, includes_delivery=False
+    )
+    order = SlaughterOrder.objects.create(
+        client=client_profile, order_datetime=timezone.now(), service_package=full_service
+    )
+    animal = Animal.objects.create(slaughter_order=order, animal_type="cattle", identification_tag="PROC-TEST-001")
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data for the test class."""
-        cls.admin_user = User.objects.create_user(
-            username="proc_admin", password="testpass123", role=User.Role.ADMIN, is_staff=True
-        )
-        cls.operator_user = User.objects.create_user(
-            username="proc_operator", password="testpass123", role=User.Role.OPERATOR
-        )
-        cls.client_user = User.objects.create_user(
-            username="proc_client", password="testpass123", role=User.Role.CLIENT
-        )
-        cls.client_profile = ClientProfile.objects.create(
-            user=cls.client_user,
-            account_type=ClientProfile.AccountType.INDIVIDUAL,
-            phone_number="1234567890",
-            address="123 Test St",
-        )
-
-        cls.full_service = ServicePackage.objects.create(
-            name="Full Service Proc Test", includes_disassembly=True, includes_delivery=True
-        )
-        cls.basic_service = ServicePackage.objects.create(
-            name="Basic Service Proc Test", includes_disassembly=False, includes_delivery=False
-        )
-
-    def setUp(self):
-        """Set up test client and login."""
-        self.test_client = Client()
-        self.test_client.login(username="proc_admin", password="testpass123")
-
-        self.order = SlaughterOrder.objects.create(
-            client=self.client_profile, order_datetime=timezone.now(), service_package=self.full_service
-        )
-        self.animal = Animal.objects.create(
-            slaughter_order=self.order, animal_type="cattle", identification_tag="PROC-TEST-001"
-        )
+    return SimpleNamespace(
+        admin_user=admin_user,
+        operator_user=operator_user,
+        client_user=client_user,
+        client_profile=client_profile,
+        full_service=full_service,
+        basic_service=basic_service,
+        order=order,
+        animal=animal,
+    )
 
 
-class AnimalStatusTransitionTest(ProcessingModelTestMixin, TestCase):
+@pytest.mark.django_db
+class TestAnimalStatusTransition:
     """Tests for animal status transitions."""
 
-    def test_initial_status_is_received(self):
+    def test_initial_status_is_received(self, processing_test_data):
         """Test that new animals start in 'received' status."""
-        self.assertEqual(self.animal.status, "received")
+        assert processing_test_data.animal.status == "received"
 
-    def test_slaughter_transition(self):
+    def test_slaughter_transition(self, processing_test_data):
         """Test transitioning animal to slaughtered status."""
-        self.animal.perform_slaughter()
-        self.animal.save()
+        processing_test_data.animal.perform_slaughter()
+        processing_test_data.animal.save()
 
-        self.assertEqual(self.animal.status, "slaughtered")
-        self.assertIsNotNone(self.animal.slaughter_date)
+        assert processing_test_data.animal.status == "slaughtered"
+        assert processing_test_data.animal.slaughter_date is not None
 
-    def test_carcass_ready_transition(self):
+    def test_carcass_ready_transition(self, processing_test_data):
         """Test transitioning to carcass_ready status."""
-        self.animal.perform_slaughter()
-        self.animal.prepare_carcass()
-        self.animal.save()
+        processing_test_data.animal.perform_slaughter()
+        processing_test_data.animal.prepare_carcass()
+        processing_test_data.animal.save()
 
-        self.assertEqual(self.animal.status, "carcass_ready")
+        assert processing_test_data.animal.status == "carcass_ready"
 
-    def test_full_workflow_with_disassembly(self):
+    def test_full_workflow_with_disassembly(self, processing_test_data):
         """Test complete workflow with disassembly."""
         # Slaughter
-        self.animal.perform_slaughter()
-        self.assertEqual(self.animal.status, "slaughtered")
+        processing_test_data.animal.perform_slaughter()
+        assert processing_test_data.animal.status == "slaughtered"
 
         # Carcass ready
-        self.animal.prepare_carcass()
-        self.assertEqual(self.animal.status, "carcass_ready")
+        processing_test_data.animal.prepare_carcass()
+        assert processing_test_data.animal.status == "carcass_ready"
 
         # Log hot carcass weight (required for disassembly transition)
-        WeightLog.objects.create(animal=self.animal, weight=Decimal("300.00"), weight_type="hot_carcass_weight")
+        WeightLog.objects.create(
+            animal=processing_test_data.animal, weight=Decimal("300.00"), weight_type="hot_carcass_weight"
+        )
 
         # Disassembly (requires service package with disassembly + hot carcass weight)
-        self.animal.perform_disassembly()
-        self.assertEqual(self.animal.status, "disassembled")
+        processing_test_data.animal.perform_disassembly()
+        assert processing_test_data.animal.status == "disassembled"
 
         # Packaging
-        self.animal.perform_packaging()
-        self.assertEqual(self.animal.status, "packaged")
+        processing_test_data.animal.perform_packaging()
+        assert processing_test_data.animal.status == "packaged"
 
         # Delivery
-        self.animal.deliver_product()
-        self.animal.save()
-        self.assertEqual(self.animal.status, "delivered")
+        processing_test_data.animal.deliver_product()
+        processing_test_data.animal.save()
+        assert processing_test_data.animal.status == "delivered"
 
-    def test_invalid_transition_blocked(self):
+    def test_invalid_transition_blocked(self, processing_test_data):
         """Test that invalid transitions are blocked."""
         # Can't prepare carcass before slaughter
-        with self.assertRaises(Exception):
-            self.animal.prepare_carcass()
+        with pytest.raises(Exception):
+            processing_test_data.animal.prepare_carcass()
 
-    def test_disassembly_blocked_without_service(self):
+    def test_disassembly_blocked_without_service(self, processing_test_data):
         """Test that disassembly is blocked when not in service package."""
         basic_order = SlaughterOrder.objects.create(
-            client=self.client_profile, order_datetime=timezone.now(), service_package=self.basic_service
+            client=processing_test_data.client_profile,
+            order_datetime=timezone.now(),
+            service_package=processing_test_data.basic_service,
         )
         basic_animal = Animal.objects.create(
             slaughter_order=basic_order, animal_type="cattle", identification_tag="BASIC-TEST-001"
@@ -130,37 +129,44 @@ class AnimalStatusTransitionTest(ProcessingModelTestMixin, TestCase):
         basic_animal.prepare_carcass()
 
         # Should fail - service doesn't include disassembly
-        with self.assertRaises(Exception):
+        with pytest.raises(Exception):
             basic_animal.perform_disassembly()
 
 
-class WeightLogTest(ProcessingModelTestMixin, TestCase):
+@pytest.mark.django_db
+class TestWeightLog:
     """Tests for weight logging."""
 
-    def test_log_live_weight(self):
+    def test_log_live_weight(self, processing_test_data):
         """Test logging live weight."""
         weight_log = WeightLog.objects.create(
-            animal=self.animal, weight=Decimal("500.00"), weight_type="live_weight", is_group_weight=False
+            animal=processing_test_data.animal,
+            weight=Decimal("500.00"),
+            weight_type="live_weight",
+            is_group_weight=False,
         )
 
-        self.assertEqual(weight_log.animal, self.animal)
-        self.assertEqual(weight_log.weight, Decimal("500.00"))
+        assert weight_log.animal == processing_test_data.animal
+        assert weight_log.weight == Decimal("500.00")
 
-    def test_log_hot_carcass_weight(self):
+    def test_log_hot_carcass_weight(self, processing_test_data):
         """Test logging hot carcass weight after slaughter."""
-        self.animal.perform_slaughter()
-        self.animal.save()
+        processing_test_data.animal.perform_slaughter()
+        processing_test_data.animal.save()
 
         weight_log = WeightLog.objects.create(
-            animal=self.animal, weight=Decimal("300.00"), weight_type="hot_carcass_weight", is_group_weight=False
+            animal=processing_test_data.animal,
+            weight=Decimal("300.00"),
+            weight_type="hot_carcass_weight",
+            is_group_weight=False,
         )
 
-        self.assertEqual(weight_log.weight_type, "hot_carcass_weight")
+        assert weight_log.weight_type == "hot_carcass_weight"
 
-    def test_group_weight_log(self):
+    def test_group_weight_log(self, processing_test_data):
         """Test creating a group weight log."""
         weight_log = WeightLog.objects.create(
-            slaughter_order=self.order,
+            slaughter_order=processing_test_data.order,
             weight=Decimal("150.00"),
             weight_type="live_weight Group",
             is_group_weight=True,
@@ -168,74 +174,81 @@ class WeightLogTest(ProcessingModelTestMixin, TestCase):
             group_total_weight=Decimal("750.00"),
         )
 
-        self.assertTrue(weight_log.is_group_weight)
-        self.assertEqual(weight_log.group_quantity, 5)
+        assert weight_log.is_group_weight
+        assert weight_log.group_quantity == 5
 
 
-class DisassemblyCutTest(ProcessingModelTestMixin, TestCase):
+@pytest.mark.django_db
+class TestDisassemblyCut:
     """Tests for disassembly cuts."""
 
-    def setUp(self):
-        super().setUp()
-        # Prepare animal for disassembly
-        self.animal.perform_slaughter()
-        self.animal.prepare_carcass()
-        self.animal.save()
-
-    def test_create_disassembly_cut(self):
+    def test_create_disassembly_cut(self, processing_test_data):
         """Test creating a disassembly cut."""
-        cut = DisassemblyCut.objects.create(animal=self.animal, cut_name="ribeye", weight_kg=Decimal("5.5"))
+        animal = processing_test_data.animal
+        animal.perform_slaughter()
+        animal.prepare_carcass()
+        animal.save()
 
-        self.assertEqual(cut.animal, self.animal)
-        self.assertEqual(cut.cut_name, "ribeye")
-        self.assertEqual(cut.weight_kg, Decimal("5.5"))
+        cut = DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("5.5"))
 
-    def test_multiple_cuts_per_animal(self):
+        assert cut.animal == animal
+        assert cut.cut_name == "ribeye"
+        assert cut.weight_kg == Decimal("5.5")
+
+    def test_multiple_cuts_per_animal(self, processing_test_data):
         """Test creating multiple cuts for one animal."""
-        DisassemblyCut.objects.create(animal=self.animal, cut_name="ribeye", weight_kg=Decimal("5.5"))
-        DisassemblyCut.objects.create(animal=self.animal, cut_name="tenderloin", weight_kg=Decimal("3.0"))
-        DisassemblyCut.objects.create(animal=self.animal, cut_name="sirloin", weight_kg=Decimal("8.0"))
+        animal = processing_test_data.animal
+        animal.perform_slaughter()
+        animal.prepare_carcass()
+        animal.save()
 
-        self.assertEqual(self.animal.disassembly_cuts.count(), 3)
+        DisassemblyCut.objects.create(animal=animal, cut_name="ribeye", weight_kg=Decimal("5.5"))
+        DisassemblyCut.objects.create(animal=animal, cut_name="tenderloin", weight_kg=Decimal("3.0"))
+        DisassemblyCut.objects.create(animal=animal, cut_name="sirloin", weight_kg=Decimal("8.0"))
+
+        assert animal.disassembly_cuts.count() == 3
 
 
-class OrderStatusUpdateTest(ProcessingModelTestMixin, TestCase):
+@pytest.mark.django_db
+class TestOrderStatusUpdate:
     """Tests for order status updates based on animal processing."""
 
-    def test_order_status_updates_to_in_progress(self):
+    def test_order_status_updates_to_in_progress(self, processing_test_data):
         """Test that order status updates when animals are processed."""
-        self.assertEqual(self.order.status, "PENDING")
+        assert processing_test_data.order.status == "PENDING"
 
-        self.animal.perform_slaughter()
-        self.animal.save()
+        processing_test_data.animal.perform_slaughter()
+        processing_test_data.animal.save()
 
         from reception.services import update_order_status_from_animals
 
-        update_order_status_from_animals(self.order)
+        update_order_status_from_animals(processing_test_data.order)
 
-        self.order.refresh_from_db()
-        self.assertEqual(self.order.status, "IN_PROGRESS")
+        processing_test_data.order.refresh_from_db()
+        assert processing_test_data.order.status == "IN_PROGRESS"
 
-    def test_order_completes_when_all_animals_delivered(self):
+    def test_order_completes_when_all_animals_delivered(self, processing_test_data):
         """Test that order completes when all animals are delivered."""
         # Process animal through all stages
-        self.animal.perform_slaughter()
-        self.animal.prepare_carcass()
+        processing_test_data.animal.perform_slaughter()
+        processing_test_data.animal.prepare_carcass()
 
         # Log hot carcass weight (required for disassembly)
-        WeightLog.objects.create(animal=self.animal, weight=Decimal("300.00"), weight_type="hot_carcass_weight")
+        WeightLog.objects.create(
+            animal=processing_test_data.animal, weight=Decimal("300.00"), weight_type="hot_carcass_weight"
+        )
 
-        self.animal.perform_disassembly()
-        self.animal.perform_packaging()
-        self.animal.deliver_product()
-        self.animal.save()
+        processing_test_data.animal.perform_disassembly()
+        processing_test_data.animal.perform_packaging()
+        processing_test_data.animal.deliver_product()
+        processing_test_data.animal.save()
 
         from reception.services import update_order_status_from_animals
 
-        update_order_status_from_animals(self.order)
+        update_order_status_from_animals(processing_test_data.order)
 
-        self.order.refresh_from_db()
-        self.assertEqual(self.order.status, "COMPLETED")
+        processing_test_data.order.refresh_from_db()
+        assert processing_test_data.order.status == "COMPLETED"
 
 
 # ============================================================================
@@ -276,6 +289,29 @@ class TestAnimalWorkflow:
                 slaughter_order=order, animal_type=animal_type, identification_tag=f"{animal_type.upper()}-TEST"
             )
             assert animal.animal_type == animal_type
+
+
+@pytest.mark.django_db
+class TestProcessingDashboardView:
+    """Tests for the processing dashboard GET flow."""
+
+    def test_dashboard_renders_without_tenant_schema_name(self, admin_user):
+        from django.test import RequestFactory
+
+        from processing.views import ProcessingDashboardView
+
+        factory = RequestFactory()
+
+        first = factory.get("/processing/")
+        first.user = admin_user
+        second = factory.get("/processing/")
+        second.user = admin_user
+
+        first_response = ProcessingDashboardView.as_view()(first)
+        second_response = ProcessingDashboardView.as_view()(second)
+
+        assert first_response.status_code == 200
+        assert second_response.status_code == 200
 
 
 @pytest.mark.django_db
@@ -322,6 +358,110 @@ def _auth_post_request(user, post_data=None):
     return request
 
 
+def _auth_get_request(user, query_data=None):
+    """Build an authenticated GET request for view tests."""
+    from django.contrib.messages.storage.fallback import FallbackStorage
+    from django.test import RequestFactory
+
+    factory = RequestFactory()
+    request = factory.get("/", query_data or {})
+    request.user = user
+    request.session = {}
+    request._messages = FallbackStorage(request)
+    return request
+
+
+@pytest.mark.django_db
+class TestAnimalListView:
+    """Tests for AnimalListView queryset and alert context."""
+
+    def test_get_paginate_by_clamps_and_defaults(self, admin_user):
+        from processing.views import AnimalListView
+
+        low_request = _auth_get_request(admin_user, {"page_size": "5"})
+        low_response = AnimalListView.as_view()(low_request)
+
+        high_request = _auth_get_request(admin_user, {"page_size": "500"})
+        high_response = AnimalListView.as_view()(high_request)
+
+        invalid_request = _auth_get_request(admin_user, {"page_size": "not-a-number"})
+        invalid_response = AnimalListView.as_view()(invalid_request)
+
+        assert low_response.context_data["current_page_size"] == 10
+        assert high_response.context_data["current_page_size"] == 200
+        assert invalid_response.context_data["current_page_size"] == 50
+
+    def test_filters_queryset_and_sets_alert_flags(
+        self,
+        admin_user,
+        client_profile_factory,
+        service_package_factory,
+        slaughter_order_factory,
+        animal_factory,
+    ):
+        from processing.views import AnimalListView
+        from users.models import ClientProfile, User
+
+        search_user = User.objects.create_user(
+            username="animal_list_match",
+            password="testpass123",
+            first_name="Aylin",
+            last_name="Kasap",
+            role=User.Role.CLIENT,
+        )
+        search_profile = client_profile_factory(
+            user=search_user,
+            account_type=ClientProfile.AccountType.ENTERPRISE,
+            company_name="Acme Butchery",
+            contact_person="Aylin Kasap",
+        )
+        service_package = service_package_factory(name="List View Package")
+        matching_order = slaughter_order_factory(client=search_profile, service_package=service_package)
+        matching_animal = animal_factory(
+            slaughter_order=matching_order,
+            animal_type="cattle",
+            identification_tag="LIST-MATCH-001",
+            status="received",
+        )
+        matching_animal.perform_slaughter()
+        matching_animal.save()
+
+        nonmatching_order = slaughter_order_factory(service_package=service_package, client_name="Walk-in Customer")
+        animal_factory(
+            slaughter_order=nonmatching_order,
+            animal_type="sheep",
+            identification_tag="LIST-OTHER-001",
+            status="received",
+        )
+
+        request = _auth_get_request(
+            admin_user,
+            {
+                "status": "slaughtered",
+                "animal_type": "cattle",
+                "search": "Acme",
+                "page_size": "25",
+            },
+        )
+        response = AnimalListView.as_view()(request)
+
+        animals = list(response.context_data["animals"])
+        alerts = response.context_data["animals_with_alerts"]
+
+        assert [animal.pk for animal in animals] == [matching_animal.pk]
+        assert len(alerts) == 1
+        assert alerts[0]["animal"].pk == matching_animal.pk
+        assert alerts[0]["missing_details"] is True
+        assert alerts[0]["missing_leather_weight"] is True
+        assert alerts[0]["missing_hot_carcass_weight"] is True
+        assert response.context_data["current_status"] == "slaughtered"
+        assert response.context_data["current_animal_type"] == "cattle"
+        assert response.context_data["current_search"] == "Acme"
+        assert response.context_data["has_filters"] is True
+        assert response.context_data["current_page_size"] == 25
+        assert response.context_data["available_page_sizes"] == [25, 50, 100, 200]
+
+
 @pytest.mark.django_db
 class TestAnimalSearchView:
     """Tests for AnimalSearchView JSON response."""
@@ -361,6 +501,86 @@ class TestAnimalSearchView:
         found = next(a for a in data["animals"] if a["identification_tag"] == "UNIQUE-TAG-123")
         assert found["status"] == "received"
         assert "detail_url" in found
+
+
+@pytest.mark.django_db
+class TestAnimalDetailView:
+    """Tests for AnimalDetailView context and receipt upload/delete flows."""
+
+    def test_get_context_data_for_slaughtered_animal_without_details(self, admin_user, animal_factory):
+        from processing.views import AnimalDetailView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_get_request(admin_user)
+        response = AnimalDetailView.as_view()(request, pk=animal.pk)
+
+        context = response.context_data
+
+        assert response.status_code == 200
+        assert context["missing_hot_carcass_weight"] is True
+        assert context["can_fill_details"] is True
+        assert context["has_details"] is False
+        assert context["can_proceed_to_disassembly"]["can_proceed"] is False
+        assert context["scale_sessions_with_allocation"] == []
+        assert "detail_form" in context
+        assert "Cattle Details" in context["detail_form_title"]
+
+    def test_get_context_data_for_received_animal_exposes_existing_details(self, admin_user, animal_factory):
+        from processing.views import AnimalDetailView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        detail = CattleDetails.objects.create(animal=animal, breed="Holstein", sakatat_status=1.0, bowels_status=0.5)
+
+        request = _auth_get_request(admin_user)
+        response = AnimalDetailView.as_view()(request, pk=animal.pk)
+
+        context = response.context_data
+
+        assert response.status_code == 200
+        assert context["missing_hot_carcass_weight"] is False
+        assert context["can_fill_details"] is False
+        assert context["has_details"] is False
+        assert context["existing_details"] == detail
+        assert "detail_form" not in context
+
+    def test_post_delete_scale_receipt_without_existing_file_redirects(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import AnimalDetailView
+
+        animal = animal_factory()
+        request = _auth_post_request(admin_user, {"delete_scale_receipt": "1"})
+        response = AnimalDetailView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+
+    def test_post_valid_scale_receipt_upload_redirects(self, admin_user, animal_factory, monkeypatch):
+        from django.urls import reverse
+
+        from processing.views import AnimalDetailView
+
+        class _ValidForm:
+            def __init__(self, *args, **kwargs):
+                self.saved = False
+
+            def is_valid(self):
+                return True
+
+            def save(self):
+                self.saved = True
+
+        animal = animal_factory()
+        monkeypatch.setattr("processing.views.ScaleReceiptUploadForm", _ValidForm)
+
+        request = _auth_post_request(admin_user)
+        response = AnimalDetailView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:animal_detail", kwargs={"pk": animal.pk})
 
 
 @pytest.mark.django_db
@@ -519,6 +739,102 @@ class TestBatchWeightLogView:
 
 
 @pytest.mark.django_db
+class TestBatchSlaughterView:
+    """Tests for BatchSlaughterView GET and POST flows."""
+
+    def test_get_lists_received_orders_with_type_breakdown(self, admin_user, slaughter_order_factory, animal_factory):
+        from processing.views import BatchSlaughterView
+
+        order = slaughter_order_factory()
+        animal_factory(slaughter_order=order, animal_type="sheep", status="received", identification_tag="BS-001")
+        animal_factory(slaughter_order=order, animal_type="cattle", status="received", identification_tag="BS-002")
+        animal_factory(slaughter_order=order, animal_type="cattle", status="slaughtered", identification_tag="BS-003")
+
+        request = _auth_get_request(admin_user, {"order": str(order.pk)})
+        response = BatchSlaughterView.as_view()(request)
+
+        context = response.context_data
+
+        assert response.status_code == 200
+        assert context["selected_order"].pk == order.pk
+        assert len(context["orders"]) == 1
+        assert context["orders"][0].received_type_rows == [
+            {"label": "Cattle", "count": 1},
+            {"label": "Sheep", "count": 1},
+        ]
+
+    def test_post_without_order_id_redirects(self, admin_user):
+        from django.urls import reverse
+
+        from processing.views import BatchSlaughterView
+
+        request = _auth_post_request(admin_user)
+        response = BatchSlaughterView.as_view()(request)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:batch_slaughter")
+
+    def test_post_processes_successes_and_failures(
+        self, admin_user, slaughter_order_factory, animal_factory, monkeypatch
+    ):
+        from django.urls import reverse
+
+        from processing.views import BatchSlaughterView
+
+        order = slaughter_order_factory()
+        success_animal = animal_factory(slaughter_order=order, status="received", identification_tag="BS-OK-001")
+        failing_animal = animal_factory(slaughter_order=order, status="received", identification_tag="BS-FAIL-001")
+
+        def _fake_mark_slaughtered(animal):
+            if animal.pk == failing_animal.pk:
+                raise RuntimeError("boom")
+            animal.perform_slaughter()
+            animal.save()
+
+        monkeypatch.setattr("processing.views.mark_animal_slaughtered", _fake_mark_slaughtered)
+
+        request = _auth_post_request(admin_user, {"order_id": str(order.pk)})
+        response = BatchSlaughterView.as_view()(request)
+
+        success_status = Animal.objects.get(pk=success_animal.pk).status
+        failing_status = Animal.objects.get(pk=failing_animal.pk).status
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:batch_slaughter")
+        assert success_status == "slaughtered"
+        assert failing_status == "received"
+
+
+@pytest.mark.django_db
+class TestBatchWeightReportsView:
+    """Tests for BatchWeightReportsView filter parsing."""
+
+    def test_get_parses_dates_and_preserves_form_data(self, admin_user, mocker):
+        from processing.views import BatchWeightReportsView
+
+        reports_mock = mocker.patch(
+            "processing.views.services.get_batch_weight_reports",
+            return_value={"report_rows": [{"weight_type": "hot_carcass_weight"}], "summary": {"count": 1}},
+        )
+
+        request = _auth_get_request(
+            admin_user,
+            {"date_from": "2026-03-01", "date_to": "not-a-date", "order_id": "order-123"},
+        )
+        response = BatchWeightReportsView.as_view()(request)
+
+        context = response.context_data
+
+        assert response.status_code == 200
+        reports_mock.assert_called_once_with(
+            date_from=timezone.datetime(2026, 3, 1).date(), date_to=None, order_id="order-123"
+        )
+        assert context["report_rows"] == [{"weight_type": "hot_carcass_weight"}]
+        assert context["summary"] == {"count": 1}
+        assert context["form_data"] == {"date_from": "2026-03-01", "date_to": "", "order_id": "order-123"}
+
+
+@pytest.mark.django_db
 class TestOrderStatusUpdateView:
     """Tests for OrderStatusUpdateView POST + redirect."""
 
@@ -544,6 +860,125 @@ class TestOrderStatusUpdateView:
         resp = client.post(url)
         assert resp.status_code == 302
         assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestAnimalSearchDebugView:
+    """Tests for AnimalSearchDebugView debug payloads."""
+
+    def test_short_query_returns_debug_hint(self, client):
+        from django.urls import reverse
+
+        response = client.get(reverse("processing:animal_search_debug"), {"q": "x"})
+
+        assert response.status_code == 200
+        assert response.json() == {"debug": "query too short", "animals": []}
+
+    def test_search_returns_walk_in_client_when_client_name_missing(
+        self, client, slaughter_order_factory, animal_factory
+    ):
+        from django.urls import reverse
+
+        order = slaughter_order_factory(client=None, client_name="")
+        animal = animal_factory(slaughter_order=order, identification_tag="DEBUG-TAG-001")
+
+        response = client.get(reverse("processing:animal_search_debug"), {"q": "DEBUG-TAG"})
+
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["debug"] == "found 1 results for query: DEBUG-TAG"
+        assert data["animals"][0]["id"] == str(animal.pk)
+        assert data["animals"][0]["client_info"] == "Walk-in Client"
+
+    def test_search_returns_error_payload_on_exception(self, client, mocker):
+        from django.urls import reverse
+
+        mocker.patch("processing.views.Animal.objects.select_related", side_effect=RuntimeError("search exploded"))
+
+        response = client.get(reverse("processing:animal_search_debug"), {"q": "debug"})
+
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["animals"] == []
+        assert data["error"] == "search exploded"
+        assert data["debug"] == "error: search exploded"
+
+
+@pytest.mark.django_db
+class TestAnimalDetailsUpdateView:
+    """Tests for AnimalDetailsUpdateView POST branches."""
+
+    def test_post_rejects_received_animals(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import AnimalDetailsUpdateView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        request = _auth_post_request(admin_user, {"breed": "Holstein", "sakatat_status": "1.0", "bowels_status": "1.0"})
+        response = AnimalDetailsUpdateView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+        assert not CattleDetails.objects.filter(animal=animal).exists()
+
+    def test_post_creates_cattle_details(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import AnimalDetailsUpdateView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(
+            admin_user,
+            {"breed": "Holstein", "sakatat_status": "1.0", "bowels_status": "0.5"},
+        )
+        response = AnimalDetailsUpdateView.as_view()(request, pk=animal.pk)
+
+        details = CattleDetails.objects.get(animal=animal)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:animal_detail", kwargs={"pk": animal.pk})
+        assert details.breed == "Holstein"
+        assert details.sakatat_status == Decimal("1.0")
+        assert details.bowels_status == Decimal("0.5")
+
+    def test_post_updates_existing_cattle_details(self, admin_user, animal_factory):
+        from processing.views import AnimalDetailsUpdateView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+        details = CattleDetails.objects.create(animal=animal, breed="Old Breed", sakatat_status=0.5, bowels_status=0.5)
+
+        request = _auth_post_request(
+            admin_user,
+            {"breed": "New Breed", "sakatat_status": "1.0", "bowels_status": "1.0"},
+        )
+        AnimalDetailsUpdateView.as_view()(request, pk=animal.pk)
+
+        details.refresh_from_db()
+        assert details.breed == "New Breed"
+        assert details.sakatat_status == Decimal("1.0")
+        assert details.bowels_status == Decimal("1.0")
+
+    def test_post_invalid_details_form_does_not_save(self, admin_user, animal_factory):
+        from processing.views import AnimalDetailsUpdateView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(
+            admin_user,
+            {"breed": "Holstein", "sakatat_status": "9.9", "bowels_status": "9.9"},
+        )
+        AnimalDetailsUpdateView.as_view()(request, pk=animal.pk)
+
+        assert not CattleDetails.objects.filter(animal=animal).exists()
 
 
 @pytest.mark.django_db
@@ -645,3 +1080,52 @@ class TestDeleteDisassemblyCutView:
         resp = client.post(url)
         assert resp.status_code == 302
         assert "/login/" in resp.url or "login" in resp.url.lower()
+
+
+@pytest.mark.django_db
+class TestAnimalWeightLogViewExtra:
+    """Tests for AnimalWeightLogView validation and overwrite branches."""
+
+    def test_post_invalid_weight_type_does_not_create_log(self, admin_user, animal_factory):
+        from processing.views import AnimalWeightLogView
+
+        animal = animal_factory(status="received")
+        request = _auth_post_request(admin_user, {"weight_type": "hot_carcass_weight", "weight": "250.00"})
+        response = AnimalWeightLogView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert not WeightLog.objects.filter(animal=animal, weight_type="hot_carcass_weight").exists()
+
+    def test_post_existing_weight_updates_single_log(self, admin_user, animal_factory, weight_log_factory):
+        from processing.views import AnimalWeightLogView
+
+        animal = animal_factory(status="received")
+        animal.perform_slaughter()
+        animal.save()
+        weight_log_factory(animal=animal, weight_type="hot_carcass_weight", weight=200.0)
+
+        request = _auth_post_request(admin_user, {"weight_type": "hot_carcass_weight", "weight": "250.00"})
+        response = AnimalWeightLogView.as_view()(request, pk=animal.pk)
+
+        logs = WeightLog.objects.filter(animal=animal, weight_type="hot_carcass_weight")
+        assert response.status_code == 302
+        assert logs.count() == 1
+        assert logs.get().weight == Decimal("250.00")
+
+
+@pytest.mark.django_db
+class TestLeatherWeightLogViewExtra:
+    """Tests for invalid leather weight submissions."""
+
+    def test_post_invalid_leather_weight_keeps_existing_value_empty(self, admin_user, animal_factory):
+        from processing.views import LeatherWeightLogView
+
+        animal = animal_factory(status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {"leather_weight_kg": "500"})
+        response = LeatherWeightLogView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert Animal.objects.get(pk=animal.pk).leather_weight_kg is None

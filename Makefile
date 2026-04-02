@@ -13,6 +13,11 @@
 # Override: make dev PYTHON=/usr/bin/python3
 PYTHON ?= $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python3; fi)
 MANAGE := $(PYTHON) manage.py
+# Use the pytest entrypoint directly so the active test runner stays aligned
+# with the environment's installed interpreter.
+PYTEST ?= $(shell if [ -x .venv/bin/pytest ]; then echo .venv/bin/pytest; else echo pytest; fi)
+TEST_ARGS ?=
+COVERAGE_MIN ?= 59.50
 
 DEV_ENV     ?= .env.dev
 STAGING_ENV ?= .env.staging
@@ -34,7 +39,7 @@ TAILWIND_DIR ?= theme/static_src
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell
+.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov
 
 help:
 	@echo "CarniTrack Makefile"
@@ -42,6 +47,8 @@ help:
 	@echo "  make install-deps       First-time setup: pip install -r requirements.txt + Tailwind build ($(TAILWIND_DIR))"
 	@echo "  make pip-install        pip install -r requirements.txt ($(PYTHON))"
 	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci && npm run build"
+	@echo "  make test               Run pytest (pass extra args with TEST_ARGS='...')"
+	@echo "  make test-cov           Run pytest with coverage gate ($(COVERAGE_MIN)%)"
 	@echo ""
 	@echo "  make dev                Django runserver — local Postgres ($(DEV_ENV))"
 	@echo "  make staging            Django runserver — GCP Cloud SQL staging via proxy ($(STAGING_ENV))"
@@ -68,6 +75,8 @@ help:
 	@echo "Override examples:"
 	@echo "  make dev DEV_ENV=.env"
 	@echo "  make proxy PROXY_PORT=5435 CLOUDSQL_INSTANCE=project:region:instance"
+	@echo "  make test TEST_ARGS='processing/'"
+	@echo "  make test TEST_ARGS='-m \"integration or not slow\" -q'"
 
 dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi
@@ -109,6 +118,12 @@ tailwind-build:
 	cd $(TAILWIND_DIR) && npm ci && npm run build
 
 install-deps: pip-install tailwind-build
+
+test:
+	$(PYTEST) $(TEST_ARGS)
+
+test-cov:
+	$(PYTEST) --cov --cov-fail-under=$(COVERAGE_MIN) --cov-report=term-missing $(TEST_ARGS)
 
 db-setup-dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi

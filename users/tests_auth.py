@@ -10,16 +10,15 @@ Tests cover:
 
 import json
 import os
-import unittest
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 
-import pytest
 import django.contrib.auth as django_auth
 import django_tenants.utils as tenant_utils
+import pytest
 from django.contrib.auth import get_user_model
-from django.test import Client, RequestFactory, TestCase, override_settings
-from django.urls import reverse
+from django.test import Client, RequestFactory, override_settings
+from django.urls import NoReverseMatch, reverse
 
 from users.models import ClientProfile
 
@@ -28,223 +27,201 @@ from users.models import ClientProfile
 SKIP_VIEW_TESTS = os.environ.get("SKIP_VIEW_TESTS", "false").lower() == "true"
 SKIP_REASON = "View tests skipped - templates not available in test environment"
 
-
 User = get_user_model()
+pytestmark = pytest.mark.django_db
 
 
-class AuthenticationTestMixin:
-    """Mixin class providing common setup for auth tests."""
+@pytest.fixture
+def auth_state(db):
+    """Create the fixed user set shared by auth-focused tests."""
+    admin_user = User.objects.create_user(
+        username="auth_admin",
+        password="SecurePass123!",
+        email="admin@test.com",
+        role=User.Role.ADMIN,
+        is_staff=True,
+    )
+    operator_user = User.objects.create_user(
+        username="auth_operator",
+        password="SecurePass123!",
+        email="operator@test.com",
+        role=User.Role.OPERATOR,
+    )
+    manager_user = User.objects.create_user(
+        username="auth_manager",
+        password="SecurePass123!",
+        email="manager@test.com",
+        role=User.Role.MANAGER,
+    )
+    client_user = User.objects.create_user(
+        username="auth_client",
+        password="SecurePass123!",
+        email="client@test.com",
+        role=User.Role.CLIENT,
+    )
+    client_profile = ClientProfile.objects.create(
+        user=client_user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        contact_person="Auth Test Client",
+        phone_number="5551234567",
+        address="123 Auth Test St",
+    )
+    return SimpleNamespace(
+        admin_user=admin_user,
+        operator_user=operator_user,
+        manager_user=manager_user,
+        client_user=client_user,
+        client_profile=client_profile,
+    )
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data for the test class."""
-        cls.admin_user = User.objects.create_user(
-            username="auth_admin",
-            password="SecurePass123!",
-            email="admin@test.com",
-            role=User.Role.ADMIN,
-            is_staff=True,
-        )
-        cls.operator_user = User.objects.create_user(
-            username="auth_operator", password="SecurePass123!", email="operator@test.com", role=User.Role.OPERATOR
-        )
-        cls.manager_user = User.objects.create_user(
-            username="auth_manager", password="SecurePass123!", email="manager@test.com", role=User.Role.MANAGER
-        )
-        cls.client_user = User.objects.create_user(
-            username="auth_client", password="SecurePass123!", email="client@test.com", role=User.Role.CLIENT
-        )
-        cls.client_profile = ClientProfile.objects.create(
-            user=cls.client_user,
-            account_type=ClientProfile.AccountType.INDIVIDUAL,
-            contact_person="Auth Test Client",
-            phone_number="5551234567",
-            address="123 Auth Test St",
-        )
 
-    def setUp(self):
-        """Set up test client."""
-        self.test_client = Client()
-
-
-@unittest.skipIf(SKIP_VIEW_TESTS, SKIP_REASON)
-class LoginTest(AuthenticationTestMixin, TestCase):
+@pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
+class TestLogin:
     """Tests for user login functionality."""
 
-    def test_login_page_loads(self):
-        """Test that login page loads correctly."""
-        # Note: users app doesn't have namespace, so use 'login' directly
-        response = self.test_client.get(reverse("login"))
-        # 200 = page rendered; 302 = redirect (e.g. i18n or missing template)
-        self.assertIn(response.status_code, [200, 302])
+    def test_login_page_loads(self, client):
+        response = client.get(reverse("login"))
+        assert response.status_code in [200, 302]
 
-    def test_valid_login(self):
-        """Test login with valid credentials."""
-        response = self.test_client.post(reverse("login"), {"username": "auth_admin", "password": "SecurePass123!"})
-        self.assertEqual(response.status_code, 302)  # Redirect on success
+    def test_valid_login(self, client, auth_state):
+        response = client.post(
+            reverse("login"),
+            {"username": auth_state.admin_user.username, "password": "SecurePass123!"},
+        )
+        assert response.status_code == 302
 
-    def test_invalid_login(self):
-        """Test login with invalid credentials."""
-        response = self.test_client.post(reverse("login"), {"username": "auth_admin", "password": "WrongPassword!"})
-        # Should show form again with error (200) or redirect (302) depending on template availability
-        self.assertIn(response.status_code, [200, 302])
+    def test_invalid_login(self, client, auth_state):
+        response = client.post(
+            reverse("login"),
+            {"username": auth_state.admin_user.username, "password": "WrongPassword!"},
+        )
+        assert response.status_code in [200, 302]
 
-    def test_login_inactive_user(self):
-        """Test that inactive users cannot login."""
-        self.admin_user.is_active = False
-        self.admin_user.save()
+    def test_login_inactive_user(self, client, auth_state):
+        auth_state.admin_user.is_active = False
+        auth_state.admin_user.save()
 
-        response = self.test_client.post(reverse("login"), {"username": "auth_admin", "password": "SecurePass123!"})
-        # Should show form again (login failed) - accept either status
-        self.assertIn(response.status_code, [200, 302])
+        response = client.post(
+            reverse("login"),
+            {"username": auth_state.admin_user.username, "password": "SecurePass123!"},
+        )
+        assert response.status_code in [200, 302]
 
-        # Restore user
-        self.admin_user.is_active = True
-        self.admin_user.save()
+        auth_state.admin_user.is_active = True
+        auth_state.admin_user.save()
 
-    def test_login_creates_session(self):
-        """Test that successful login creates a session."""
-        self.test_client.post(reverse("login"), {"username": "auth_admin", "password": "SecurePass123!"})
-
-        # Check session was created
-        self.assertTrue(self.test_client.session.get("_auth_user_id"))
+    def test_login_creates_session(self, client, auth_state):
+        client.post(
+            reverse("login"),
+            {"username": auth_state.admin_user.username, "password": "SecurePass123!"},
+        )
+        assert client.session.get("_auth_user_id")
 
     @override_settings(DEBUG=True, ALLOWED_HOSTS=["pomet.localhost", ".localhost", "testserver"])
-    def test_login_page_sets_fresh_csrf_cookie_for_tenant_host(self):
-        response = self.test_client.get(reverse("login"), HTTP_HOST="pomet.localhost:8000")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("csrftoken", response.cookies)
-        self.assertIn("no-store", response["Cache-Control"])
+    def test_login_page_sets_fresh_csrf_cookie_for_tenant_host(self, client):
+        response = client.get(reverse("login"), HTTP_HOST="pomet.localhost:8000")
+        assert response.status_code == 200
+        assert "csrftoken" in response.cookies
+        assert "no-store" in response["Cache-Control"]
 
 
-class LogoutTest(AuthenticationTestMixin, TestCase):
+class TestLogout:
     """Tests for user logout functionality."""
 
-    def test_logout_clears_session(self):
-        """Test that logout clears the session."""
-        # First login
-        self.test_client.login(username="auth_admin", password="SecurePass123!")
-        self.assertTrue(self.test_client.session.get("_auth_user_id"))
+    def test_logout_clears_session(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        assert client.session.get("_auth_user_id")
 
-        # Then logout
-        response = self.test_client.post(reverse("logout"))
-        self.assertEqual(response.status_code, 302)
+        response = client.post(reverse("logout"))
+        assert response.status_code == 302
+        assert client.session.get("_auth_user_id") is None
 
-        # Session should be cleared
-        self.assertIsNone(self.test_client.session.get("_auth_user_id"))
-
-    def test_logout_redirects(self):
-        """Test that logout redirects to appropriate page."""
-        self.test_client.login(username="auth_admin", password="SecurePass123!")
-        response = self.test_client.post(reverse("logout"))
-        self.assertEqual(response.status_code, 302)
+    def test_logout_redirects(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        response = client.post(reverse("logout"))
+        assert response.status_code == 302
 
 
-@unittest.skipIf(SKIP_VIEW_TESTS, SKIP_REASON)
-class RoleBasedAccessTest(AuthenticationTestMixin, TestCase):
+@pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
+class TestRoleBasedAccess:
     """Tests for role-based access control."""
 
-    def test_admin_can_access_admin_views(self):
-        """Test that admins can access admin-only views."""
-        self.test_client.login(username="auth_admin", password="SecurePass123!")
+    def test_admin_can_access_admin_views(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        response = client.get(reverse("processing:dashboard"))
+        assert response.status_code in [200, 302]
 
-        # Admin should access processing dashboard - accept 200/302 due to template issues
-        response = self.test_client.get(reverse("processing:dashboard"))
-        self.assertIn(response.status_code, [200, 302])
+    def test_client_cannot_access_processing(self, client, auth_state):
+        client.login(username=auth_state.client_user.username, password="SecurePass123!")
+        response = client.get(reverse("processing:dashboard"))
+        assert response.status_code in [200, 302, 403]
 
-    def test_client_cannot_access_processing(self):
-        """Test that clients cannot access processing views (or get 200 if view allows)."""
-        self.test_client.login(username="auth_client", password="SecurePass123!")
+    def test_operator_can_access_processing(self, client, auth_state):
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+        response = client.get(reverse("processing:dashboard"))
+        assert response.status_code in [200, 302]
 
-        response = self.test_client.get(reverse("processing:dashboard"))
-        # Forbidden (403), redirect to login (302), or 200 if view allows client access
-        self.assertIn(response.status_code, [200, 302, 403])
-
-    def test_operator_can_access_processing(self):
-        """Test that operators can access processing views."""
-        self.test_client.login(username="auth_operator", password="SecurePass123!")
-
-        response = self.test_client.get(reverse("processing:dashboard"))
-        # Accept 200 or 302 (redirect) - template may not be available
-        self.assertIn(response.status_code, [200, 302])
-
-    def test_manager_can_access_reporting(self):
-        """Test that managers can access reporting views."""
-        self.test_client.login(username="auth_manager", password="SecurePass123!")
-
-        # reporting app doesn't have namespace
-        response = self.test_client.get(reverse("report_dashboard"))
-        self.assertIn(response.status_code, [200, 302])
+    def test_manager_can_access_reporting(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        response = client.get(reverse("report_dashboard"))
+        assert response.status_code in [200, 302]
 
 
-class PasswordManagementTest(AuthenticationTestMixin, TestCase):
+class TestPasswordManagement:
     """Tests for password management."""
 
-    def test_password_change_view_loads(self):
-        """Test that password change view loads for authenticated users."""
-        self.test_client.login(username="auth_admin", password="SecurePass123!")
-        # Use Django's built-in password change URL or skip if not configured
-        from django.urls import NoReverseMatch, reverse
-
+    def test_password_change_view_loads(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
         try:
-            response = self.test_client.get(reverse("password_change"))
-            self.assertIn(response.status_code, [200, 302])
+            response = client.get(reverse("password_change"))
+            assert response.status_code in [200, 302]
         except NoReverseMatch:
-            self.skipTest("Password change URL not configured")
+            pytest.skip("Password change URL not configured")
 
-    def test_password_change_success(self):
-        """Test successful password change via service."""
-        from users.services import change_user_password
-
-        # Test the service directly since URL may not be configured
-        success = change_user_password(
-            user=self.admin_user, old_password="SecurePass123!", new_password="NewSecurePass456!"
-        )
-
-        self.assertTrue(success)
-        self.assertTrue(self.admin_user.check_password("NewSecurePass456!"))
-
-        # Restore original password for other tests
-        self.admin_user.set_password("SecurePass123!")
-        self.admin_user.save()
-
-    def test_password_change_mismatch(self):
-        """Test password change with wrong old password."""
+    def test_password_change_success(self, auth_state):
         from users.services import change_user_password
 
         success = change_user_password(
-            user=self.admin_user, old_password="WrongPassword!", new_password="NewSecurePass456!"
+            user=auth_state.admin_user,
+            old_password="SecurePass123!",
+            new_password="NewSecurePass456!",
         )
 
-        self.assertFalse(success)
-        # Password should not be changed
-        self.assertTrue(self.admin_user.check_password("SecurePass123!"))
+        assert success is True
+        assert auth_state.admin_user.check_password("NewSecurePass456!")
+
+        auth_state.admin_user.set_password("SecurePass123!")
+        auth_state.admin_user.save()
+
+    def test_password_change_mismatch(self, auth_state):
+        from users.services import change_user_password
+
+        success = change_user_password(
+            user=auth_state.admin_user,
+            old_password="WrongPassword!",
+            new_password="NewSecurePass456!",
+        )
+
+        assert success is False
+        assert auth_state.admin_user.check_password("SecurePass123!")
 
 
-class SessionSecurityTest(AuthenticationTestMixin, TestCase):
+class TestSessionSecurity:
     """Tests for session security."""
 
-    def test_session_expires_on_browser_close(self):
-        """Test session behavior on browser close."""
-        # Login without 'remember me'
-        self.test_client.login(username="auth_admin", password="SecurePass123!")
+    def test_session_expires_on_browser_close(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        assert client.session.session_key is not None
 
-        # Session should exist
-        session_key = self.test_client.session.session_key
-        self.assertIsNotNone(session_key)
-
-    def test_concurrent_sessions(self):
-        """Test that user can have multiple sessions."""
+    def test_concurrent_sessions(self, auth_state):
         client1 = Client()
         client2 = Client()
 
-        # Login from both clients
-        client1.login(username="auth_admin", password="SecurePass123!")
-        client2.login(username="auth_admin", password="SecurePass123!")
+        client1.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        client2.login(username=auth_state.admin_user.username, password="SecurePass123!")
 
-        # Both should have valid sessions
-        self.assertTrue(client1.session.get("_auth_user_id"))
-        self.assertTrue(client2.session.get("_auth_user_id"))
+        assert client1.session.get("_auth_user_id")
+        assert client2.session.get("_auth_user_id")
 
 
 def _dummy_login_user():
@@ -267,8 +244,9 @@ def _dummy_login_user():
     ALLOWED_HOSTS=["pomet.localhost", ".localhost", "localhost", "testserver"],
 )
 def test_session_login_api_redirects_via_bootstrap_for_cross_site_spa(monkeypatch):
-    import users.views as user_views
     from django.db import connection
+
+    import users.views as user_views
     from tenants import email_index
 
     request = RequestFactory().post(
@@ -314,8 +292,9 @@ def test_session_login_api_redirects_via_bootstrap_for_cross_site_spa(monkeypatc
     ALLOWED_HOSTS=["pomet.localhost", ".localhost", "localhost", "testserver"],
 )
 def test_session_bootstrap_api_allows_same_tenant_spa_redirect(monkeypatch):
-    import users.views as user_views
     from django.db import connection
+
+    import users.views as user_views
     from tenants import email_index
 
     next_url = "http://pomet.localhost:3000/dashboard"
@@ -370,70 +349,53 @@ def test_build_post_login_redirect_url_uses_tenant_language_code():
         def get_primary_domain(self):
             return SimpleNamespace(domain="pomet.localhost")
 
-    assert build_post_login_redirect_url(DummyTenant(), use_api_host=True) == "http://pomet.localhost:8000/en/dashboard/"
+    assert (
+        build_post_login_redirect_url(DummyTenant(), use_api_host=True) == "http://pomet.localhost:8000/en/dashboard/"
+    )
 
 
-# ============================================================================
-# Pytest-style authentication tests
-# ============================================================================
-
-
-@pytest.mark.django_db
 class TestAuthenticationPytest:
     """Pytest-style authentication tests."""
 
     def test_login_required_decorator(self, client, admin_user):
-        """Test login required decorator on protected views."""
-        # Without login - should redirect to login
         response = client.get(reverse("processing:dashboard"))
         assert response.status_code == 302
 
-        # With login - should be accessible
         client.force_login(admin_user)
         response = client.get(reverse("processing:dashboard"))
-        # May return 200 or redirect depending on i18n setup
         assert response.status_code in [200, 302]
 
     @pytest.mark.skip(reason="View test - templates not available in test environment")
     def test_role_check_decorator(self, client, user_factory):
-        """Test role-based access decorators."""
         from users.models import User
 
-        # Create users with different roles
         client_user = user_factory(role=User.Role.CLIENT)
         operator_user = user_factory(role=User.Role.OPERATOR)
 
-        # Client should be denied processing access
         client.force_login(client_user)
         response = client.get(reverse("processing:dashboard"))
-        # Accept 302 (redirect to login) or 403 (forbidden)
         assert response.status_code in [302, 403]
 
-        # Operator should be allowed - accept 200 or 302 due to template issues
         client.force_login(operator_user)
         response = client.get(reverse("processing:dashboard"))
         assert response.status_code in [200, 302]
 
 
-@pytest.mark.django_db
 class TestUserRoles:
     """Tests for user role functionality."""
 
     def test_user_role_choices(self):
-        """Test that all expected roles exist."""
         expected_roles = ["OWNER", "ADMIN", "OPERATOR", "MANAGER", "CLIENT"]
         actual_roles = [choice[0] for choice in User.Role.choices]
 
         for role in expected_roles:
             assert role in actual_roles
 
-    def test_default_role_is_admin(self, db):
-        """Test that default role for new users is admin."""
+    def test_default_role_is_admin(self):
         user = User.objects.create_user(username="default_role_test", password="testpass123")
         assert user.role == User.Role.ADMIN
 
     def test_role_assignment(self, user_factory):
-        """Test that roles can be assigned correctly."""
         from users.models import User
 
         for role in User.Role:
@@ -441,12 +403,10 @@ class TestUserRoles:
             assert user.role == role
 
 
-@pytest.mark.django_db
 class TestClientProfile:
     """Tests for client profile functionality."""
 
     def test_client_profile_required_for_client_role(self, user_factory, client_profile_factory):
-        """Test that client role users should have profiles."""
         from users.models import User
 
         user = user_factory(role=User.Role.CLIENT)
@@ -454,8 +414,7 @@ class TestClientProfile:
 
         assert user.client_profile == profile
 
-    def test_enterprise_profile_fields(self, user_factory, db):
-        """Test enterprise client profile fields."""
+    def test_enterprise_profile_fields(self, user_factory):
         from users.models import ClientProfile, User
 
         user = user_factory(role=User.Role.CLIENT)
@@ -473,7 +432,6 @@ class TestClientProfile:
         assert profile.tax_id == "TAX123456"
 
     def test_profile_str_representation(self, user_factory, client_profile_factory):
-        """Test string representation of client profile."""
         from users.models import User
 
         user = user_factory(username="teststr", role=User.Role.CLIENT)
@@ -482,15 +440,12 @@ class TestClientProfile:
         assert "Individual" in str(profile)
 
 
-class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
+class TestClientProfileRegistration:
     """Self-service client registration creates a linked User + ClientProfile."""
 
-    def test_post_creates_client_user_and_profile(self):
-        from django.urls import reverse
-
-        url = reverse("client_register")
-        r = self.test_client.post(
-            url,
+    def test_post_creates_client_user_and_profile(self, client):
+        response = client.post(
+            reverse("client_register"),
             {
                 "account_type": "INDIVIDUAL",
                 "contact_person": "New Client",
@@ -499,16 +454,14 @@ class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
                 "address": "100 St",
             },
         )
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("done", r.url)
-        u = User.objects.get(username__endswith="3322")
-        self.assertEqual(u.role, User.Role.CLIENT)
-        self.assertEqual(u.client_profile.phone_number, "+905554443322")
 
-    def test_second_registration_same_phone_gets_unique_username(self):
-        from django.urls import reverse
+        assert response.status_code == 302
+        assert "done" in response.url
+        user = User.objects.get(username__endswith="3322")
+        assert user.role == User.Role.CLIENT
+        assert user.client_profile.phone_number == "+905554443322"
 
-        url = reverse("client_register")
+    def test_second_registration_same_phone_gets_unique_username(self, client):
         data = {
             "account_type": "INDIVIDUAL",
             "contact_person": "Dup Client",
@@ -516,56 +469,57 @@ class ClientProfileRegistrationTest(AuthenticationTestMixin, TestCase):
             "phone_number": "5550000001",
             "address": "Addr",
         }
-        self.test_client.post(url, data)
-        self.test_client.post(url, data)
-        self.assertEqual(ClientProfile.objects.filter(phone_number="+905550000001").count(), 2)
+        client.post(reverse("client_register"), data)
+        client.post(reverse("client_register"), data)
+
+        assert ClientProfile.objects.filter(phone_number="+905550000001").count() == 2
         usernames = list(
             User.objects.filter(client_profile__phone_number="+905550000001").values_list("username", flat=True)
         )
-        self.assertEqual(len(usernames), 2)
-        self.assertNotEqual(usernames[0], usernames[1])
+        assert len(usernames) == 2
+        assert usernames[0] != usernames[1]
 
 
-class ClientProfileAPITest(AuthenticationTestMixin, TestCase):
+class TestClientProfileAPI:
     """Staff JSON API for client profiles."""
 
-    def test_list_redirects_when_anonymous(self):
-        r = self.test_client.get("/api/v1/clients/")
-        self.assertEqual(r.status_code, 302)
+    def test_list_redirects_when_anonymous(self, client):
+        response = client.get("/api/v1/clients/")
+        assert response.status_code == 302
 
-    def test_list_forbidden_for_client_role(self):
-        self.test_client.login(username="auth_client", password="SecurePass123!")
-        r = self.test_client.get("/api/v1/clients/")
-        self.assertEqual(r.status_code, 403)
+    def test_list_forbidden_for_client_role(self, client, auth_state):
+        client.login(username=auth_state.client_user.username, password="SecurePass123!")
+        response = client.get("/api/v1/clients/")
+        assert response.status_code == 403
 
-    def test_list_forbidden_for_operator(self):
-        self.test_client.login(username="auth_operator", password="SecurePass123!")
-        r = self.test_client.get("/api/v1/clients/")
-        self.assertEqual(r.status_code, 403)
+    def test_list_forbidden_for_operator(self, client, auth_state):
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+        response = client.get("/api/v1/clients/")
+        assert response.status_code == 403
 
-    def test_list_ok_for_manager(self):
-        self.test_client.login(username="auth_manager", password="SecurePass123!")
-        r = self.test_client.get("/api/v1/clients/")
-        self.assertEqual(r.status_code, 200)
-        payload = json.loads(r.content)
-        self.assertIn("results", payload)
-        self.assertIn("count", payload)
+    def test_list_ok_for_manager(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        response = client.get("/api/v1/clients/")
+        assert response.status_code == 200
+        payload = json.loads(response.content)
+        assert "results" in payload
+        assert "count" in payload
 
-    def test_detail_ok_for_manager(self):
-        self.test_client.login(username="auth_manager", password="SecurePass123!")
-        r = self.test_client.get(f"/api/v1/clients/{self.client_profile.id}/")
-        self.assertEqual(r.status_code, 200)
-        payload = json.loads(r.content)
-        self.assertEqual(payload["id"], str(self.client_profile.id))
+    def test_detail_ok_for_manager(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        response = client.get(f"/api/v1/clients/{auth_state.client_profile.id}/")
+        assert response.status_code == 200
+        payload = json.loads(response.content)
+        assert payload["id"] == str(auth_state.client_profile.id)
 
-    def test_patch_updates_profile(self):
-        self.test_client.login(username="auth_manager", password="SecurePass123!")
-        pid = str(self.client_profile.id)
-        r = self.test_client.patch(
-            f"/api/v1/clients/{pid}/",
+    def test_patch_updates_profile(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        profile_id = str(auth_state.client_profile.id)
+        response = client.patch(
+            f"/api/v1/clients/{profile_id}/",
             data=json.dumps({"phone_number": "+909998887777"}),
             content_type="application/json",
         )
-        self.assertEqual(r.status_code, 200)
-        self.client_profile.refresh_from_db()
-        self.assertEqual(self.client_profile.phone_number, "+909998887777")
+        assert response.status_code == 200
+        auth_state.client_profile.refresh_from_db()
+        assert auth_state.client_profile.phone_number == "+909998887777"
