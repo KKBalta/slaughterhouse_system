@@ -229,6 +229,7 @@ def _dummy_login_user():
         id = 7
         pk = 7
         email = "client@example.com"
+        role = User.Role.CLIENT
         is_active = True
 
         def get_username(self):
@@ -279,6 +280,7 @@ def test_session_login_api_redirects_via_bootstrap_for_cross_site_spa(monkeypatc
     assert payload["session_pending"] is True
     assert payload["redirect_url"] == payload["session_bootstrap_url"]
     assert payload["post_bootstrap_redirect_url"] == "http://pomet.localhost:3000/dashboard"
+    assert payload["user"]["role"] == User.Role.CLIENT
     assert parsed.scheme == "http"
     assert parsed.netloc == "pomet.localhost:8000"
     assert parsed.path == "/api/v1/auth/session-bootstrap/"
@@ -335,6 +337,25 @@ def test_session_bootstrap_api_allows_same_tenant_spa_redirect(monkeypatch):
 
     assert response.status_code == 302
     assert response["Location"] == next_url
+
+
+def test_session_me_api_returns_role():
+    import users.views as user_views
+
+    user = User.objects.create_user(
+        username="me-client",
+        password="SecurePass123!",
+        email="me@example.com",
+        role=User.Role.CLIENT,
+    )
+    request = RequestFactory().get("/api/v1/auth/me/")
+    request.user = user
+
+    response = user_views.session_me_api(request)
+
+    assert response.status_code == 200
+    payload = json.loads(response.content)
+    assert payload["user"]["role"] == User.Role.CLIENT
 
 
 @override_settings(LANGUAGE_CODE="tr", PUBLIC_TENANT_HTTP_PORT="8000", TENANT_LOGIN_SUCCESS_REDIRECT_PATH="/dashboard")
@@ -459,7 +480,27 @@ class TestClientProfileRegistration:
         assert "done" in response.url
         user = User.objects.get(username__endswith="3322")
         assert user.role == User.Role.CLIENT
+        assert user.phone_number == "+905554443322"
         assert user.client_profile.phone_number == "+905554443322"
+
+    def test_post_creates_client_user_with_email_only(self, client):
+        response = client.post(
+            reverse("client_register"),
+            {
+                "account_type": "INDIVIDUAL",
+                "contact_person": "Mail Client",
+                "email": "mail-client@example.com",
+                "phone_area_code": "+90",
+                "phone_number": "",
+                "address": "100 St",
+            },
+        )
+
+        assert response.status_code == 302
+        user = User.objects.get(email="mail-client@example.com")
+        assert user.role == User.Role.CLIENT
+        assert user.phone_number == ""
+        assert user.client_profile.phone_number == ""
 
     def test_second_registration_same_phone_gets_unique_username(self, client):
         data = {

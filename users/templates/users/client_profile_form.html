@@ -123,6 +123,14 @@
             {% if cred_form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.email.errors }}</p>{% endif %}
         </div>
         <div>
+            <label for="{{ cred_form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.phone_number.label }}</label>
+            <div class="mt-1">
+                {% render_field cred_form.phone_number class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if cred_form.phone_number.help_text %}<p class="mt-1 text-xs text-gray-500">{{ cred_form.phone_number.help_text }}</p>{% endif %}
+            {% if cred_form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.phone_number.errors }}</p>{% endif %}
+        </div>
+        <div>
             <label for="{{ cred_form.new_password1.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.new_password1.label }}</label>
             <div class="mt-1">
                 {% render_field cred_form.new_password1 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}

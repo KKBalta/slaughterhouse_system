@@ -246,10 +246,10 @@ def session_login_api(request):
     else:
         payload = request.POST
 
-    username = payload.get("username") or payload.get("email")
+    username = payload.get("username") or payload.get("email") or payload.get("phone") or payload.get("phone_number")
     password = payload.get("password")
     if not username or not password:
-        return JsonResponse({"detail": "username/email and password are required."}, status=400)
+        return JsonResponse({"detail": "username, email, or phone and password are required."}, status=400)
 
     user = authenticate(request, username=username, password=password)
     if user is None or not user.is_active:
@@ -289,6 +289,7 @@ def session_login_api(request):
                 "id": user.id,
                 "username": user.get_username(),
                 "email": getattr(user, "email", ""),
+                "role": getattr(user, "role", ""),
             },
         }
     else:
@@ -305,6 +306,7 @@ def session_login_api(request):
                 "id": user.id,
                 "username": user.get_username(),
                 "email": getattr(user, "email", ""),
+                "role": getattr(user, "role", ""),
             },
         }
     _post_raw = (payload.get("post_login_redirect") or "").strip().lower()
@@ -526,6 +528,7 @@ def session_me_api(request):
                 "id": request.user.id,
                 "username": request.user.get_username(),
                 "email": getattr(request.user, "email", ""),
+                "role": getattr(request.user, "role", ""),
             },
         }
     )
@@ -535,7 +538,7 @@ def session_me_api(request):
 @require_http_methods(["POST"])
 def discover_tenants_api(request):
     """
-    Public email-first discovery: returns tenant options for a user email.
+    Public identifier discovery: returns tenant options for a user email or phone.
     Does not expose platform-admin accounts. Password login must be done on the
     selected tenant host (see docs/EMAIL_FIRST_LOGIN.md).
 
@@ -551,6 +554,7 @@ def discover_tenants_api(request):
         build_tenant_api_base_url,
         build_tenant_web_app_base_url,
         normalize_email as normalize_login_email,
+        normalize_phone as normalize_login_phone,
     )
 
     payload = {}
@@ -563,7 +567,8 @@ def discover_tenants_api(request):
         payload = request.POST
 
     email = normalize_login_email(payload.get("email"))
-    if not email:
+    phone = normalize_login_phone(payload.get("phone") or payload.get("phone_number"))
+    if not email and not phone:
         return JsonResponse({"tenants": []})
 
     from django.core.cache import cache
@@ -571,54 +576,73 @@ def discover_tenants_api(request):
 
     _DISCOVERY_CACHE_TTL = 300  # 5 minutes — safe; membership rows change rarely
 
-    with schema_context(get_public_schema_name()):
+    cache_key = None
+    if email and not phone:
         cache_key = f"tenant_discovery:{email}"
-        cached = cache.get(cache_key)
-    if cached is not None:
-        return JsonResponse(cached)
+    elif phone and not email:
+        cache_key = f"tenant_discovery_phone:{phone}"
+
+    if cache_key:
+        with schema_context(get_public_schema_name()):
+            cached = cache.get(cache_key)
+        if cached is not None:
+            return JsonResponse(cached)
 
     from tenants.models import EmailTenantMembership
 
-    qs = (
-        EmailTenantMembership.objects.filter(
-            email_normalized=email,
-            is_active=True,
-            tenant__is_active=True,
-        )
-        .select_related("tenant")
-        .order_by("tenant__schema_name")
-    )
+    membership_filter = Q()
+    if email:
+        membership_filter |= Q(email_normalized=email)
+    if phone:
+        membership_filter |= Q(phone_normalized=phone)
 
-    tenants_payload = []
-    for m in qs:
-        t = m.tenant
-        primary = t.get_primary_domain()
-        host = primary.domain if primary else f"{t.slug or t.schema_name}.localhost"
-        base = build_tenant_api_base_url(t)
-        web_base = build_tenant_web_app_base_url(t)
-        tenants_payload.append(
-            {
-                "schema_name": t.schema_name,
-                "name": t.name,
-                "slug": t.slug or t.schema_name,
-                "primary_domain": host,
-                "api_base_url": base,
-                "auth_login_url": f"{base.rstrip('/')}/api/v1/auth/login/",
-                "web_app_base_url": web_base,
-                "post_login_redirect_url": build_post_login_redirect_url(t),
-            }
+    with schema_context(get_public_schema_name()):
+        qs = (
+            EmailTenantMembership.objects.filter(
+                membership_filter,
+                is_active=True,
+                tenant__is_active=True,
+            )
+            .select_related("tenant")
+            .order_by("tenant__schema_name", "tenant_user_id")
         )
+
+        tenants_payload = []
+        seen_tenant_ids = set()
+        for m in qs:
+            t = m.tenant
+            if t.pk in seen_tenant_ids:
+                continue
+            seen_tenant_ids.add(t.pk)
+            primary = t.get_primary_domain()
+            host = primary.domain if primary else f"{t.slug or t.schema_name}.localhost"
+            base = build_tenant_api_base_url(t)
+            web_base = build_tenant_web_app_base_url(t)
+            tenants_payload.append(
+                {
+                    "schema_name": t.schema_name,
+                    "name": t.name,
+                    "slug": t.slug or t.schema_name,
+                    "primary_domain": host,
+                    "api_base_url": base,
+                    "auth_login_url": f"{base.rstrip('/')}/api/v1/auth/login/",
+                    "web_app_base_url": web_base,
+                    "post_login_redirect_url": build_post_login_redirect_url(t),
+                    "role": m.role,
+                }
+            )
 
     out: dict = {"tenants": tenants_payload}
-    if not tenants_payload and email:
+    if not tenants_payload and (email or phone):
         out["discovery_hint"] = (
-            "No tenants are indexed for this email. Each tenant user needs a non-empty email and a "
-            "public EmailTenantMembership row (created automatically on save, or run: "
+            "No tenants are indexed for this email or phone number. Each tenant user needs at least one "
+            "contact identifier and a public EmailTenantMembership row (created automatically on save, or run: "
             "python manage.py backfill_email_tenant_membership)."
         )
 
-    with schema_context(get_public_schema_name()):
-        cache.set(cache_key, out, timeout=_DISCOVERY_CACHE_TTL)
+    if cache_key:
+        with schema_context(get_public_schema_name()):
+            cache.set(cache_key, out, timeout=_DISCOVERY_CACHE_TTL)
 
     return JsonResponse(out)
 
@@ -648,6 +672,7 @@ class ClientProfileRegisterView(FormView):
 
     def form_valid(self, form):
         phone = form.cleaned_data["phone_number"]
+        email = form.cleaned_data.get("email") or ""
         account_type = form.cleaned_data["account_type"]
         contact_person = form.cleaned_data.get("contact_person")
         company_name = form.cleaned_data.get("company_name")
@@ -661,12 +686,19 @@ class ClientProfileRegisterView(FormView):
         profile_data = {
             "account_type": form.cleaned_data["account_type"],
             "contact_person": form.cleaned_data.get("contact_person") or "",
-            "phone_number": form.cleaned_data["phone_number"],
             "address": form.cleaned_data["address"],
             "company_name": form.cleaned_data.get("company_name") or None,
             "tax_id": form.cleaned_data.get("tax_id") or None,
         }
-        create_user_with_profile(username, password, User.Role.CLIENT, **profile_data)
+        create_user_with_profile(
+            username,
+            password,
+            User.Role.CLIENT,
+            email=email,
+            phone_number=phone,
+            profile_phone_number=phone,
+            **profile_data,
+        )
         # Session backup (optional); primary success payload is signed URL (works across workers / cache session).
         self.request.session[CLIENT_REGISTER_SESSION_KEY] = {
             "username": username,
@@ -831,7 +863,9 @@ def client_profile_detail_view(request, pk):
 @manager_or_admin_required
 def client_profile_add_view(request):
     if request.method == "POST":
-        profile_form = ClientProfileRegisterForm(request.POST)
+        profile_form_data = request.POST.copy()
+        profile_form_data.pop("email", None)
+        profile_form = ClientProfileRegisterForm(profile_form_data)
         cred_form = ClientUserCredentialsForm(request.POST, user_instance=None, require_password=True)
         if profile_form.is_valid() and cred_form.is_valid():
             cd = cred_form.cleaned_data
@@ -839,7 +873,6 @@ def client_profile_add_view(request):
             profile_data = {
                 "account_type": pd["account_type"],
                 "contact_person": pd.get("contact_person") or "",
-                "phone_number": pd["phone_number"],
                 "address": pd["address"],
                 "company_name": pd.get("company_name") or None,
                 "tax_id": pd.get("tax_id") or None,
@@ -849,10 +882,11 @@ def client_profile_add_view(request):
                     cd["username"],
                     cd["new_password1"],
                     User.Role.CLIENT,
+                    email=cd.get("email") or "",
+                    phone_number=cd.get("phone_number") or "",
+                    profile_phone_number=pd["phone_number"],
                     **profile_data,
                 )
-                user.email = cd.get("email") or ""
-                user.save(update_fields=["email"])
             messages.success(request, "Client created.")
             return redirect("client_profile_detail", pk=user.client_profile.pk)
     else:
@@ -876,7 +910,9 @@ def client_profile_edit_view(request, pk):
     _assert_staff_may_manage_client_profile(profile)
     user = profile.user
     if request.method == "POST":
-        profile_form = ClientProfileRegisterForm(request.POST, instance=profile)
+        profile_form_data = request.POST.copy()
+        profile_form_data.pop("email", None)
+        profile_form = ClientProfileRegisterForm(profile_form_data, instance=profile)
         cred_form = ClientUserCredentialsForm(request.POST, user_instance=user) if user else None
         profile_ok = profile_form.is_valid()
         cred_ok = cred_form.is_valid() if cred_form else True
@@ -887,6 +923,7 @@ def client_profile_edit_view(request, pk):
                     cd = cred_form.cleaned_data
                     user.username = cd["username"]
                     user.email = cd.get("email") or ""
+                    user.phone_number = cd.get("phone_number") or ""
                     p1 = (cd.get("new_password1") or "").strip()
                     if p1:
                         user.set_password(p1)
@@ -897,7 +934,11 @@ def client_profile_edit_view(request, pk):
         profile_form = ClientProfileRegisterForm(instance=profile)
         cred_form = (
             ClientUserCredentialsForm(
-                initial={"username": user.username, "email": user.email or ""},
+                initial={
+                    "username": user.username,
+                    "email": user.email or "",
+                    "phone_number": user.phone_number or "",
+                },
                 user_instance=user,
             )
             if user

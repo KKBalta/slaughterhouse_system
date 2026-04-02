@@ -15,6 +15,7 @@ class User(AbstractUser):
     base_role = Role.ADMIN
 
     role = models.CharField(max_length=50, choices=Role.choices)
+    phone_number = models.CharField(max_length=20, blank=True, default="")
 
     def save(self, *args, **kwargs):
         # Only apply default when role was never set (avoid treating valid values as falsy edge cases).

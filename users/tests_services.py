@@ -41,15 +41,24 @@ def test_create_user_with_profile_service():
     profile_data = {
         "account_type": ClientProfile.AccountType.ENTERPRISE,
         "company_name": "Test Farm",
-        "phone_number": "555-555-5555",
         "address": "123 Farm Rd",
     }
-    user = create_user_with_profile(username="testfarm", password="password123", role=User.Role.CLIENT, **profile_data)
+    user = create_user_with_profile(
+        username="testfarm",
+        password="password123",
+        role=User.Role.CLIENT,
+        email="farm@example.com",
+        phone_number="+15555555555",
+        profile_phone_number="555-555-5555",
+        **profile_data,
+    )
 
     assert isinstance(user, User)
     assert User.objects.count() == 1
     assert ClientProfile.objects.count() == 1
     assert hasattr(user, "client_profile")
+    assert user.email == "farm@example.com"
+    assert user.phone_number == "+15555555555"
     assert user.client_profile.company_name == "Test Farm"
 
 

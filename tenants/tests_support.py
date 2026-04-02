@@ -180,6 +180,25 @@ def test_public_schema_safe_model_backend_falls_back_to_email(monkeypatch):
         assert PublicSchemaSafeModelBackend().get_user(user.pk) == user
 
 
+def test_public_schema_safe_model_backend_falls_back_to_phone(monkeypatch):
+    user = User.objects.create_user(
+        username="phoneuser",
+        phone_number="+15551234567",
+        password="secretpass123",
+    )
+    monkeypatch.setattr(connection, "schema_name", "tenant-a", raising=False)
+
+    with (
+        patch("tenants.auth_backends.get_public_schema_name", return_value="public"),
+        patch.object(ModelBackend, "authenticate", return_value=None),
+    ):
+        result = PublicSchemaSafeModelBackend().authenticate(
+            None, username="+1 (555) 123-4567", password="secretpass123"
+        )
+
+    assert result == user
+
+
 def test_atomic_rate_incr_returns_eval_result(monkeypatch):
     class _FakeConn:
         def eval(self, script, key_count, key, window):

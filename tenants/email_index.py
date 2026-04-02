@@ -17,6 +17,17 @@ def normalize_email(email: str | None) -> str:
     return (email or "").strip().lower()
 
 
+def normalize_phone(phone: str | None) -> str:
+    """Strip formatting and return a leading-+ normalized phone string."""
+    raw = (phone or "").strip()
+    if not raw:
+        return ""
+    digits = "".join(c for c in raw if c.isdigit())
+    if not digits:
+        return ""
+    return f"+{digits}"
+
+
 def _tenant_primary_host(tenant: Client) -> str:
     primary = tenant.get_primary_domain()
     return primary.domain if primary else f"{tenant.slug or tenant.schema_name}.localhost"
@@ -104,20 +115,45 @@ def sync_user_membership(user) -> None:
         return
 
     email = normalize_email(getattr(user, "email", "") or "")
+    phone = normalize_phone(getattr(user, "phone_number", "") or "")
+    role = getattr(user, "role", "") or ""
     uid = user.pk
 
     with schema_context(get_public_schema_name()):
-        if not email:
+        existing = (
+            EmailTenantMembership.objects.filter(tenant_id=tenant.pk, tenant_user_id=uid)
+            .values_list("email_normalized", "phone_normalized")
+            .first()
+        )
+        old_email, old_phone = existing or ("", "")
+        from django.core.cache import cache
+
+        if not email and not phone:
             EmailTenantMembership.objects.filter(tenant_id=tenant.pk, tenant_user_id=uid).delete()
+            if old_email:
+                cache.delete(f"tenant_discovery:{old_email}")
+            if old_phone:
+                cache.delete(f"tenant_discovery_phone:{old_phone}")
             return
         EmailTenantMembership.objects.update_or_create(
             tenant=tenant,
             tenant_user_id=uid,
             defaults={
                 "email_normalized": email,
+                "phone_normalized": phone,
+                "role": role,
                 "is_active": bool(getattr(user, "is_active", True)),
             },
         )
+        # Bust discovery caches so changes are visible immediately.
+        if old_email:
+            cache.delete(f"tenant_discovery:{old_email}")
+        if email:
+            cache.delete(f"tenant_discovery:{email}")
+        if old_phone:
+            cache.delete(f"tenant_discovery_phone:{old_phone}")
+        if phone:
+            cache.delete(f"tenant_discovery_phone:{phone}")
 
 
 def remove_user_membership(user) -> None:
@@ -129,12 +165,25 @@ def remove_user_membership(user) -> None:
         return
     uid = user.pk
     with schema_context(get_public_schema_name()):
+        existing = (
+            EmailTenantMembership.objects.filter(tenant_id=tenant.pk, tenant_user_id=uid)
+            .values_list("email_normalized", "phone_normalized")
+            .first()
+        )
         EmailTenantMembership.objects.filter(tenant_id=tenant.pk, tenant_user_id=uid).delete()
+        if existing:
+            from django.core.cache import cache
+
+            old_email, old_phone = existing
+            if old_email:
+                cache.delete(f"tenant_discovery:{old_email}")
+            if old_phone:
+                cache.delete(f"tenant_discovery_phone:{old_phone}")
 
 
 def backfill_all_tenants() -> tuple[int, int]:
     """
-    Scan every active tenant schema and upsert memberships for users with email.
+    Scan every active tenant schema and upsert memberships for users with email or phone.
     Returns (tenants_processed, rows_upserted).
     """
     from django.contrib.auth import get_user_model
@@ -147,14 +196,18 @@ def backfill_all_tenants() -> tuple[int, int]:
         with tenant_context(client):
             for user in User.objects.iterator(chunk_size=500):
                 email = normalize_email(getattr(user, "email", "") or "")
-                if not email:
+                phone = normalize_phone(getattr(user, "phone_number", "") or "")
+                if not email and not phone:
                     continue
+                role = getattr(user, "role", "") or ""
                 with schema_context(get_public_schema_name()):
                     EmailTenantMembership.objects.update_or_create(
                         tenant=client,
                         tenant_user_id=user.pk,
                         defaults={
                             "email_normalized": email,
+                            "phone_normalized": phone,
+                            "role": role,
                             "is_active": bool(getattr(user, "is_active", True)),
                         },
                     )

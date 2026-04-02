@@ -81,13 +81,24 @@
             {% if form.contact_person.errors %}<p class="mt-1 text-sm text-red-600">{{ form.contact_person.errors }}</p>{% endif %}
         </div>
         <div>
-            <span class="block text-sm font-medium text-gray-700 mb-1">{% trans "Phone number" %}</span>
+            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.email.label }} ({% trans "optional" %})
+            </label>
+            <div class="mt-1">
+                {% render_field form.email class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if form.email.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.email.help_text }}</p>{% endif %}
+            {% if form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ form.email.errors }}</p>{% endif %}
+        </div>
+        <div>
+            <span class="block text-sm font-medium text-gray-700 mb-1">{% trans "Phone number" %} ({% trans "optional" %})</span>
             <div class="mt-1 flex">
                 <div class="relative shrink-0">
                     {{ form.phone_area_code }}
                 </div>
                 {{ form.phone_number }}
             </div>
+            {% if form.phone_number.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.phone_number.help_text }}</p>{% endif %}
             {% if form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>{% endif %}
             {% if form.phone_area_code.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_area_code.errors }}</p>{% endif %}
         </div>

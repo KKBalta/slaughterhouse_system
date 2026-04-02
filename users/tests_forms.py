@@ -24,6 +24,7 @@ def test_client_user_credentials_form_rejects_duplicate_username():
         data={
             "username": " taken ",
             "email": "",
+            "phone_number": "+15550001111",
             "new_password1": "",
             "new_password2": "",
         }
@@ -40,6 +41,7 @@ def test_client_user_credentials_form_allows_current_user_username():
         data={
             "username": " current ",
             "email": "",
+            "phone_number": "+15550001111",
             "new_password1": "",
             "new_password2": "",
         },
@@ -66,6 +68,7 @@ def test_client_user_credentials_form_password_validation(
         data={
             "username": "fresh-user",
             "email": "",
+            "phone_number": "+15550001111",
             "new_password1": password1,
             "new_password2": password2,
         },
@@ -81,12 +84,59 @@ def test_client_user_credentials_form_allows_optional_blank_password():
         data={
             "username": "fresh-user",
             "email": "",
+            "phone_number": "+15550001111",
             "new_password1": "",
             "new_password2": "",
         }
     )
 
     assert form.is_valid()
+
+
+def test_client_user_credentials_form_requires_email_or_phone():
+    form = ClientUserCredentialsForm(
+        data={
+            "username": "fresh-user",
+            "email": "",
+            "phone_number": "",
+            "new_password1": "",
+            "new_password2": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.non_field_errors() == ["At least one of email or phone number is required."]
+
+
+def test_client_user_credentials_form_initializes_email_and_phone_from_user_instance():
+    user = User.objects.create_user(
+        username="contact-user",
+        password="password123",
+        email="contact@example.com",
+        phone_number="+15551234567",
+    )
+
+    form = ClientUserCredentialsForm(user_instance=user)
+
+    assert form.fields["email"].initial == "contact@example.com"
+    assert form.fields["phone_number"].initial == "+15551234567"
+
+
+def test_client_user_credentials_form_rejects_duplicate_email():
+    User.objects.create_user(username="existing-email", password="password123", email="taken@example.com")
+
+    form = ClientUserCredentialsForm(
+        data={
+            "username": "fresh-user",
+            "email": "TAKEN@example.com",
+            "phone_number": "",
+            "new_password1": "",
+            "new_password2": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["email"] == ["A user with that email already exists in this tenant."]
 
 
 def test_user_registration_form_role_choices_for_privileged_user():
@@ -106,6 +156,38 @@ def test_user_registration_form_role_choices_for_non_privileged_user():
         (User.Role.CLIENT, "Client"),
         (User.Role.OPERATOR, "Operator"),
     ]
+
+
+def test_user_registration_form_requires_email_or_phone():
+    form = UserRegistrationForm(
+        data={
+            "username": "new-user",
+            "email": "",
+            "phone_number": "",
+            "role": User.Role.CLIENT,
+            "password1": "SecurePass123!",
+            "password2": "SecurePass123!",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.non_field_errors() == ["At least one of email or phone number is required."]
+
+
+def test_user_registration_form_normalizes_phone_number():
+    form = UserRegistrationForm(
+        data={
+            "username": "new-user",
+            "email": "",
+            "phone_number": "(555) 123-4567",
+            "role": User.Role.CLIENT,
+            "password1": "SecurePass123!",
+            "password2": "SecurePass123!",
+        }
+    )
+
+    assert form.is_valid()
+    assert form.cleaned_data["phone_number"] == "+5551234567"
 
 
 @pytest.mark.parametrize(
@@ -137,6 +219,7 @@ def test_client_profile_register_form_combines_area_code_and_strips_fields():
         data={
             "account_type": ClientProfile.AccountType.INDIVIDUAL,
             "contact_person": " Alice ",
+            "email": " alice@example.com ",
             "phone_area_code": "+1",
             "phone_number": " 5551234 ",
             "address": "123 Test St",
@@ -157,6 +240,7 @@ def test_client_profile_register_form_preserves_prefixed_phone_number():
         data={
             "account_type": ClientProfile.AccountType.INDIVIDUAL,
             "contact_person": "Alice",
+            "email": "",
             "phone_area_code": "+90",
             "phone_number": "+15551234",
             "address": "123 Test St",
@@ -169,11 +253,69 @@ def test_client_profile_register_form_preserves_prefixed_phone_number():
     assert form.cleaned_data["phone_number"] == "+15551234"
 
 
+def test_client_profile_register_form_allows_email_only_registration():
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "alice@example.com",
+            "phone_area_code": "+90",
+            "phone_number": "",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert form.is_valid()
+    assert form.cleaned_data["email"] == "alice@example.com"
+    assert form.cleaned_data["phone_number"] == ""
+
+
+def test_client_profile_register_form_requires_email_or_phone():
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.non_field_errors() == ["At least one of email or phone number is required."]
+
+
+def test_client_profile_register_form_rejects_duplicate_email():
+    User.objects.create_user(username="existing", password="password123", email="alice@example.com")
+
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "Alice@example.com",
+            "phone_area_code": "+90",
+            "phone_number": "",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["email"] == ["A user with that email already exists in this tenant."]
+
+
 def test_client_profile_register_form_requires_enterprise_fields():
     form = ClientProfileRegisterForm(
         data={
             "account_type": ClientProfile.AccountType.ENTERPRISE,
             "contact_person": " ",
+            "email": "enterprise@example.com",
             "phone_area_code": "+90",
             "phone_number": "5551234",
             "address": "123 Test St",
@@ -193,6 +335,7 @@ def test_client_profile_register_form_requires_contact_person_for_individual():
         data={
             "account_type": ClientProfile.AccountType.INDIVIDUAL,
             "contact_person": " ",
+            "email": "individual@example.com",
             "phone_area_code": "+90",
             "phone_number": "5551234",
             "address": "123 Test St",

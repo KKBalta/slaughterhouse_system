@@ -9,12 +9,25 @@ User = get_user_model()
 
 
 @transaction.atomic
-def create_user_with_profile(username, password, role, **profile_data) -> User:
+def create_user_with_profile(
+    username,
+    password,
+    role,
+    email="",
+    phone_number="",
+    profile_phone_number=None,
+    **profile_data,
+) -> User:
     """
     Creates a new User and their associated ClientProfile in a single transaction.
     """
     # The create_user method handles password hashing.
-    user = User.objects.create_user(username=username, password=password, role=role)
+    user = User.objects.create_user(
+        username=username, password=password, role=role, email=email, phone_number=phone_number
+    )
+
+    if profile_phone_number is not None:
+        profile_data["phone_number"] = profile_phone_number
 
     if profile_data:
         ClientProfile.objects.create(user=user, **profile_data)

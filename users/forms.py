@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 
+from tenants.email_index import normalize_email, normalize_phone
+
 from .models import ClientProfile, User
 
 # Same country codes as reception walk-in phone (SlaughterOrderForm).
@@ -16,6 +18,12 @@ class ClientUserCredentialsForm(forms.Form):
 
     username = forms.CharField(max_length=150)
     email = forms.EmailField(required=False)
+    phone_number = forms.CharField(
+        max_length=20,
+        required=False,
+        label=_("Phone number"),
+        help_text=_("At least one of email or phone is required."),
+    )
     new_password1 = forms.CharField(
         label="New password",
         widget=forms.PasswordInput(render_value=False),
@@ -32,11 +40,15 @@ class ClientUserCredentialsForm(forms.Form):
         self.user_instance = user_instance
         self.require_password = require_password
         super().__init__(*args, **kwargs)
+        if user_instance and getattr(user_instance, "email", ""):
+            self.fields["email"].initial = user_instance.email
         if require_password:
             self.fields["new_password1"].required = True
             self.fields["new_password2"].required = True
             self.fields["new_password1"].help_text = ""
             self.fields["new_password1"].widget.attrs.setdefault("autocomplete", "new-password")
+        if user_instance and getattr(user_instance, "phone_number", ""):
+            self.fields["phone_number"].initial = user_instance.phone_number
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
@@ -47,10 +59,29 @@ class ClientUserCredentialsForm(forms.Form):
             raise forms.ValidationError("A user with that username already exists.")
         return username
 
+    def clean_email(self):
+        email = normalize_email(self.cleaned_data.get("email"))
+        if not email:
+            return ""
+        qs = User.objects.filter(email__iexact=email)
+        if self.user_instance and getattr(self.user_instance, "pk", None):
+            qs = qs.exclude(pk=self.user_instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A user with that email already exists in this tenant."))
+        return email
+
+    def clean_phone_number(self):
+        return normalize_phone(self.cleaned_data.get("phone_number"))
+
     def clean(self):
         cleaned_data = super().clean()
         if not cleaned_data:
             return cleaned_data
+        # At least one of email or phone required.
+        email = (cleaned_data.get("email") or "").strip()
+        phone = (cleaned_data.get("phone_number") or "").strip()
+        if not email and not phone:
+            raise forms.ValidationError(_("At least one of email or phone number is required."))
         p1 = cleaned_data.get("new_password1") or ""
         p2 = cleaned_data.get("new_password2") or ""
         if self.require_password:
@@ -69,11 +100,13 @@ class ClientUserCredentialsForm(forms.Form):
 class UserRegistrationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = UserCreationForm.Meta.fields + ("email", "role")
+        fields = UserCreationForm.Meta.fields + ("email", "phone_number", "role")
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        self.fields["email"].required = False
+        self.fields["phone_number"].required = False
         if (
             user
             and hasattr(user, "role")
@@ -92,8 +125,29 @@ class UserRegistrationForm(UserCreationForm):
             ]
             self.fields["role"].choices = allowed_roles
 
+    def clean_email(self):
+        return normalize_email(self.cleaned_data.get("email"))
+
+    def clean_phone_number(self):
+        return normalize_phone(self.cleaned_data.get("phone_number"))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+        email = (cleaned_data.get("email") or "").strip()
+        phone = (cleaned_data.get("phone_number") or "").strip()
+        if not email and not phone:
+            raise forms.ValidationError(_("At least one of email or phone number is required."))
+        return cleaned_data
+
 
 class ClientProfileRegisterForm(forms.ModelForm):
+    email = forms.EmailField(
+        required=False,
+        label=_("Email"),
+        help_text=_("At least one of email or phone is required."),
+    )
     phone_area_code = forms.ChoiceField(
         choices=PHONE_AREA_CODE_CHOICES,
         initial="+90",
@@ -120,6 +174,7 @@ class ClientProfileRegisterForm(forms.ModelForm):
         self.fields["company_name"].required = False
         self.fields["tax_id"].required = False
         self.fields["contact_person"].required = False
+        self.fields["phone_number"].required = False
         self.fields["phone_number"].max_length = 15
         self.fields["phone_number"].widget = forms.TextInput(
             attrs={
@@ -129,8 +184,11 @@ class ClientProfileRegisterForm(forms.ModelForm):
             }
         )
         self.fields["phone_number"].label = _("Phone number")
+        self.fields["phone_number"].help_text = _("At least one of email or phone is required.")
 
         inst = getattr(self, "instance", None)
+        if inst and getattr(getattr(inst, "user", None), "email", ""):
+            self.fields["email"].initial = inst.user.email
         if inst and getattr(inst, "pk", None) and inst.phone_number:
             phone = inst.phone_number.strip()
             if phone.startswith("+90"):
@@ -142,6 +200,18 @@ class ClientProfileRegisterForm(forms.ModelForm):
             else:
                 self.fields["phone_number"].initial = phone
 
+    def clean_email(self):
+        email = normalize_email(self.cleaned_data.get("email"))
+        if not email:
+            return ""
+        qs = User.objects.filter(email__iexact=email)
+        linked_user = getattr(getattr(self, "instance", None), "user", None)
+        if linked_user and getattr(linked_user, "pk", None):
+            qs = qs.exclude(pk=linked_user.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A user with that email already exists in this tenant."))
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
         if not cleaned_data:
@@ -152,11 +222,13 @@ class ClientProfileRegisterForm(forms.ModelForm):
         if phone is not None:
             p = phone.strip()
             if p.startswith("+"):
-                cleaned_data["phone_number"] = p
+                cleaned_data["phone_number"] = normalize_phone(p)
             elif p:
-                cleaned_data["phone_number"] = f"{area}{p}"
+                cleaned_data["phone_number"] = normalize_phone(f"{area}{p}")
             else:
                 cleaned_data["phone_number"] = ""
+        if not cleaned_data.get("email") and not cleaned_data.get("phone_number"):
+            raise forms.ValidationError(_("At least one of email or phone number is required."))
 
         # ModelForm may supply TextChoices members or plain strings depending on Django version.
         account_type = cleaned_data.get("account_type")

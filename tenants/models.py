@@ -114,9 +114,16 @@ class EmailTenantMembership(models.Model):
     """
 
     email_normalized = models.CharField(max_length=254, db_index=True)
+    phone_normalized = models.CharField(max_length=20, blank=True, default="", db_index=True)
     tenant = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="email_memberships")
     tenant_user_id = models.PositiveIntegerField(
         help_text="Primary key of users.User in the tenant schema (for stable upserts).",
+    )
+    role = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        help_text="Mirrors users.User.role from the tenant schema (synced on save).",
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

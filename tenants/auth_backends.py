@@ -7,6 +7,17 @@ from django.contrib.auth.backends import ModelBackend
 from django.db import connection
 from django_tenants.utils import get_public_schema_name
 
+from tenants.email_index import normalize_phone
+
+
+def _looks_like_phone(value: str | None) -> bool:
+    raw = (value or "").strip()
+    if not raw:
+        return False
+    if any(not (ch.isdigit() or ch in "+-() .") for ch in raw):
+        return False
+    return sum(ch.isdigit() for ch in raw) >= 6
+
 
 class PlatformAdminBackend:
     """
@@ -73,9 +84,27 @@ class PublicSchemaSafeModelBackend(ModelBackend):
         try:
             by_email = User.objects.get(email__iexact=username)
         except User.DoesNotExist:
-            return None
-        if by_email.check_password(password) and self.user_can_authenticate(by_email):
+            by_email = None
+        except User.MultipleObjectsReturned:
+            by_email = None
+        if by_email and by_email.check_password(password) and self.user_can_authenticate(by_email):
             return by_email
+        if _looks_like_phone(username):
+            phone_candidates = []
+            raw_phone = (username or "").strip()
+            if raw_phone:
+                phone_candidates.append(raw_phone)
+            normalized_phone = normalize_phone(username)
+            if normalized_phone and normalized_phone not in phone_candidates:
+                phone_candidates.append(normalized_phone)
+            try:
+                by_phone = User.objects.get(phone_number__in=phone_candidates)
+            except User.DoesNotExist:
+                return None
+            except User.MultipleObjectsReturned:
+                return None
+            if by_phone.check_password(password) and self.user_can_authenticate(by_phone):
+                return by_phone
         return None
 
     def get_user(self, user_id):
