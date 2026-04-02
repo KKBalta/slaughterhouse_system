@@ -490,6 +490,34 @@
                 </div>
             </div>
 
+            {% if tenant %}
+            {% if user.role == 'OWNER' or user.role == 'ADMIN' or user.role == 'MANAGER' %}
+            <!-- Company & label settings (tenant public Client row) — same access as tenant_company_settings view -->
+            <div
+                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Settings" %}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Company name, İşletme onay no, label printer mode" %}</p>
+                    <a href="{% url 'tenant_company_settings' %}"
+                        class="w-full bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
+                        {% trans "Company & label settings" %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
             {% if user.role == 'ADMIN' %}
             <!-- User Management -->
             <div
@@ -510,40 +538,6 @@
                         class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
                         {% trans "Django Admin" %}
                     </a>
-                </div>
-            </div>
-
-            <!-- System Settings -->
-            <div
-                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div class="p-4">
-                    <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                                </path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Settings" %}</h3>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-4">
-                        {% if tenant %}{% trans "Company name, İşletme onay no, label printer mode" %}{% else %}{% trans "Configure system parameters" %}{% endif %}
-                    </p>
-                    {% if tenant %}
-                    <a href="{% url 'tenant_company_settings' %}"
-                        class="w-full bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                        {% trans "Company & label settings" %}
-                    </a>
-                    {% else %}
-                    <a href="#"
-                        class="w-full bg-gray-400 text-white py-2 px-3 rounded-md font-medium text-sm text-center block cursor-not-allowed"
-                        title="Coming Soon">
-                        {% trans "System Settings" %}
-                    </a>
-                    {% endif %}
                 </div>
             </div>
 

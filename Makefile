@@ -34,7 +34,7 @@ TAILWIND_DIR ?= theme/static_src
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev
+.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell
 
 help:
 	@echo "CarniTrack Makefile"
@@ -54,6 +54,8 @@ help:
 	@echo "  make tenant-superuser-dev  createsuperuser in tenant DB (SCHEMA=$(SCHEMA) by default; needs a Client + Domain)"
 	@echo "  make migrate-staging    Run migrations using $(STAGING_ENV)"
 	@echo "  make import-prod-dev    Wipe dev DB + load db_exports/prod.sql (destructive)"
+	@echo ""
+	@echo "  make redis-shell        Open redis-cli inside the docker compose redis container"
 	@echo ""
 	@echo "  make proxy              Cloud SQL Proxy v1 (prod) → 127.0.0.1:$(PROXY_PORT)"
 	@echo "  make proxy-v2           Cloud SQL Proxy v2 (prod) → 127.0.0.1:$(PROXY_PORT)"
@@ -138,3 +140,6 @@ import-prod-staging:
 
 import-prod-dev:
 	@bash scripts/import_prod_copy.sh dev
+
+redis-shell:
+	docker compose exec redis redis-cli

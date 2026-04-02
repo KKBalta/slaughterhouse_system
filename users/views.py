@@ -37,15 +37,24 @@ def _bootstrap_token_cache_set(*, token: str, payload: dict) -> None:
 
 
 def _bootstrap_token_cache_pop(token: str) -> dict | None:
-    """Atomically read and delete bootstrap payload from public-schema cache."""
+    """Atomically read and delete bootstrap payload from public-schema cache.
+
+    Uses cache.add() to claim a 'consumed' marker before reading the payload.
+    cache.add() maps to Redis SETNX (atomic), so only the first concurrent
+    caller succeeds — subsequent requests with the same token get None,
+    preventing replay attacks.
+    """
     from django.core.cache import cache
     from django_tenants.utils import get_public_schema_name, schema_context
 
     with schema_context(get_public_schema_name()):
         key = f"{_SESSION_BOOTSTRAP_PREFIX}{token}"
+        consumed_key = f"{_SESSION_BOOTSTRAP_PREFIX}consumed:{token}"
+        # Atomically claim the token. add() only writes if the key is absent.
+        if not cache.add(consumed_key, "1", timeout=_SESSION_BOOTSTRAP_TTL):
+            return None
         payload = cache.get(key)
-        if payload is not None:
-            cache.delete(key)
+        cache.delete(key)
         return payload
 
 

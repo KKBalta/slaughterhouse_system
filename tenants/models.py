@@ -1,9 +1,33 @@
+import os
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_tenants.models import DomainMixin, TenantMixin
+
+_LOGO_SLUG_MAX_LEN = 80
+LOGO_ALLOWED_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".gif"})
+
+
+def tenant_logo_upload_to(instance, filename: str) -> str:
+    """
+    Store logos as tenant_logos/<schema>/<company_slug>_logo.<ext> for stable, readable paths.
+    """
+    schema = (getattr(instance, "schema_name", None) or "tenant").strip() or "tenant"
+    label = (
+        (getattr(instance, "company_name", None) or getattr(instance, "name", None) or schema or "logo") or "logo"
+    )
+    label = str(label).strip() or "logo"
+    base = slugify(label) or "logo"
+    if len(base) > _LOGO_SLUG_MAX_LEN:
+        base = base[:_LOGO_SLUG_MAX_LEN]
+    _, ext = os.path.splitext(filename or "")
+    ext = ext.lower()
+    if ext not in LOGO_ALLOWED_EXTENSIONS:
+        ext = ".png"
+    return f"tenant_logos/{schema}/{base}_logo{ext}"
 
 
 class Client(TenantMixin):
@@ -47,7 +71,7 @@ class Client(TenantMixin):
         help_text=_("Tax office / operation number (e.g. ÇKALE VD line on labels)."),
     )
     logo = models.ImageField(
-        upload_to="tenant_logos/",
+        upload_to=tenant_logo_upload_to,
         blank=True,
         null=True,
         verbose_name=_("Logo"),

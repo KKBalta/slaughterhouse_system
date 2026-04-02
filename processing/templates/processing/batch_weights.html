@@ -43,10 +43,6 @@
             <p class="text-gray-600">{% trans "Log weights for multiple animals efficiently and track batch weight history" %}</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{% url 'processing:batch_weight_reports' %}" 
-               class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium transition-colors">
-                {% trans "View Reports" %}
-            </a>
             <a href="{% url 'processing:dashboard' %}" 
                class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 font-medium transition-colors">
                 {% trans "Dashboard" %}
@@ -103,7 +99,7 @@
                                 <div>
                                     <div class="font-medium text-gray-900">{{ order.slaughter_order_no }}</div>
                                     <div class="text-sm text-gray-600">
-                                        {% if order.client %}32
+                                        {% if order.client %}
                                             {{ order.client.company_name|default:order.client.get_full_name }}
                                         {% else %}
                                             {{ order.client_name }}
@@ -178,6 +174,8 @@
             
             <form method="post" class="space-y-4">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="create_batch_log">
+                <input type="hidden" name="recent_page" value="{{ recent_logs_page }}">
                 
                 <!-- Selected Order Display -->
                 <div id="selected-order-display" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -232,14 +230,10 @@
                 </div>
             </form>
 
-            <div class="mt-4 flex space-x-2">
+            <div class="mt-4">
                 <a href="{% url 'processing:dashboard' %}" 
-                   class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 text-center block transition-colors">
+                   class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 text-center block transition-colors">
                     {% trans "Back to Dashboard" %}
-                </a>
-                <a href="{% url 'processing:batch_weight_reports' %}" 
-                   class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center block transition-colors">
-                    {% trans "View Reports" %}
                 </a>
             </div>
         </div>
@@ -252,10 +246,10 @@
                 <div class="space-y-3 max-h-96 overflow-y-auto">
                     {% for log in recent_logs %}
                         <div class="border border-gray-200 rounded-lg p-3">
-                            <div class="flex justify-between items-start">
+                            <div class="flex justify-between items-start gap-3">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ log.slaughter_order.slaughter_order_no }}</div>
-                                    <div class="text-sm text-gray-600">{{ log.weight_type }}</div>
+                                    <div class="text-sm text-gray-600">{{ log.get_weight_type_display }}</div>
                                     <div class="text-xs text-gray-500 mt-1">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                             {{ log.group_quantity }} {% trans "animals" %}
@@ -264,13 +258,103 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-sm font-medium text-gray-900">{{ log.group_total_weight }}kg {% trans "total" %}</div>
-                                    <div class="text-xs text-gray-500">{{ log.weight }}kg {% trans "avg" %}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ log.group_total_weight|floatformat:2 }}kg {% trans "total" %}</div>
+                                    <div class="text-xs text-gray-500">{{ log.weight|floatformat:2 }}kg {% trans "avg" %}</div>
+                                    <button
+                                        type="button"
+                                        class="mt-2 inline-flex items-center text-xs font-medium text-purple-700 hover:text-purple-900"
+                                        data-edit-toggle="{{ log.pk }}"
+                                        data-open-label="{% trans 'Edit total' %}"
+                                        data-close-label="{% trans 'Close edit' %}"
+                                        onclick="toggleEditForm('{{ log.pk }}', this)"
+                                    >
+                                        {% trans "Edit total" %}
+                                    </button>
                                 </div>
+                            </div>
+
+                            <div id="edit-panel-{{ log.pk }}" data-edit-panel class="hidden mt-3 border-t border-gray-100 pt-3">
+                                <div class="grid grid-cols-2 gap-3 text-xs text-gray-600 mb-3">
+                                    <div>
+                                        <span class="font-medium text-gray-700">{% trans "Order" %}:</span>
+                                        {{ log.slaughter_order.slaughter_order_no }}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">{% trans "Type" %}:</span>
+                                        {{ log.get_weight_type_display }}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">{% trans "Animals" %}:</span>
+                                        {{ log.group_quantity }}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">{% trans "Logged" %}:</span>
+                                        {{ log.log_date|date:"M d, Y H:i" }}
+                                    </div>
+                                </div>
+
+                                <form method="post" class="space-y-3">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="edit_batch_log">
+                                    <input type="hidden" name="log_id" value="{{ log.pk }}">
+                                    <input type="hidden" name="order" value="{{ selected_order_id|default_if_none:'' }}">
+                                    <input type="hidden" name="recent_page" value="{{ recent_logs_page }}">
+
+                                    <div>
+                                        <label for="edit-total-{{ log.pk }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                            {% trans "Total Weight (kg)" %}
+                                        </label>
+                                        <input
+                                            id="edit-total-{{ log.pk }}"
+                                            name="total_weight"
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            value="{{ log.group_total_weight|floatformat:2 }}"
+                                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500"
+                                        >
+                                        <p class="mt-1 text-xs text-gray-500">{% trans "Only the total weight is editable. Animal count stays fixed." %}</p>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button
+                                            type="submit"
+                                            class="bg-purple-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+                                        >
+                                            {% trans "Save total" %}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
+
+                {% if recent_logs_total_pages > 1 %}
+                    <div class="mt-4 flex items-center justify-between gap-3 text-sm">
+                        <div class="text-gray-500">
+                            {% blocktrans with page=recent_logs_page pages=recent_logs_total_pages count=recent_logs_total_count %}Page {{ page }} of {{ pages }} ({{ count }} batches){% endblocktrans %}
+                        </div>
+                        <div class="flex gap-2">
+                            {% if recent_logs_page > 1 %}
+                                <a
+                                    href="{% url 'processing:batch_weights' %}?recent_page=1{% if selected_order_id %}&order={{ selected_order_id }}{% endif %}"
+                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    {% trans "Show fewer" %}
+                                </a>
+                            {% endif %}
+                            {% if recent_logs_has_next %}
+                                <a
+                                    href="{% url 'processing:batch_weights' %}?recent_page={{ recent_logs_page|add:'1' }}{% if selected_order_id %}&order={{ selected_order_id }}{% endif %}"
+                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    {% trans "See more batches" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="text-center py-8">
                     <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,6 +368,34 @@
 </div>
 
 <script>
+function toggleEditForm(logId, button = null) {
+    const targetPanel = document.getElementById(`edit-panel-${logId}`);
+    if (!targetPanel) return;
+
+    const shouldOpen = targetPanel.classList.contains('hidden');
+
+    document.querySelectorAll('[data-edit-panel]').forEach(panel => {
+        panel.classList.add('hidden');
+    });
+
+    document.querySelectorAll('[data-edit-toggle]').forEach(toggle => {
+        toggle.textContent = toggle.dataset.openLabel;
+    });
+
+    if (shouldOpen) {
+        targetPanel.classList.remove('hidden');
+        if (button) {
+            button.textContent = button.dataset.closeLabel;
+        }
+
+        const totalInput = targetPanel.querySelector('input[name="total_weight"]');
+        if (totalInput) {
+            totalInput.focus();
+            totalInput.select();
+        }
+    }
+}
+
 function selectOrder(orderId, orderNo, animalCount, clickedElement = null) {
     // Set form values using Django form field IDs
     const orderIdField = document.getElementById('id_order_id');
@@ -350,15 +462,7 @@ function checkFormValidity() {
     const weightTypeField = document.getElementById('id_weight_type');
     const totalWeightField = document.getElementById('id_total_weight');
     const animalCountField = document.getElementById('id_animal_count');
-    
-    // Debug: log field values
-    console.log('Form validation check:', {
-        orderId: orderIdField ? orderIdField.value : 'field not found',
-        weightType: weightTypeField ? weightTypeField.value : 'field not found',
-        totalWeight: totalWeightField ? totalWeightField.value : 'field not found',
-        animalCount: animalCountField ? animalCountField.value : 'field not found'
-    });
-    
+
     const orderId = orderIdField ? orderIdField.value : '';
     const weightType = weightTypeField ? weightTypeField.value : '';
     const totalWeight = totalWeightField ? totalWeightField.value : '';
@@ -378,8 +482,6 @@ function checkFormValidity() {
             submitBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'cursor-pointer');
         }
     }
-    
-    console.log('Button state:', isValid ? 'enabled' : 'disabled');
 }
 
 // Add event listeners

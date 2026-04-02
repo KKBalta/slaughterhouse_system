@@ -347,50 +347,11 @@ class BatchWeightLogForm(forms.Form):
                 try:
                     from reception.models import SlaughterOrder
 
-                    from .models import WeightLog
+                    from .services import get_available_animal_count_for_weight_type, get_group_weight_type
 
                     order = SlaughterOrder.objects.get(pk=order_id)
 
-                    # Determine available animal count based on weight type
-                    if weight_type == "live_weight":
-                        # For live weight, count all relevant statuses
-                        available_count = order.animals.filter(
-                            status__in=[
-                                "received",
-                                "slaughtered",
-                                "carcass_ready",
-                                "disassembled",
-                                "packaged",
-                                "delivered",
-                            ]
-                        ).count()
-                    elif weight_type == "hot_carcass_weight":
-                        # For hot carcass weight, count slaughtered/carcass_ready+ animals
-                        available_count = order.animals.filter(
-                            status__in=["slaughtered", "carcass_ready", "disassembled", "packaged", "delivered"]
-                        ).count()
-                    elif weight_type == "cold_carcass_weight":
-                        # For cold carcass weight, count carcass_ready+ animals
-                        available_count = order.animals.filter(
-                            status__in=["carcass_ready", "disassembled", "packaged", "delivered"]
-                        ).count()
-                    elif weight_type == "final_weight":
-                        # For final weight, count disassembled+ animals
-                        available_count = order.animals.filter(
-                            status__in=["disassembled", "packaged", "delivered"]
-                        ).count()
-                    else:
-                        # Default fallback for any other weight types
-                        available_count = order.animals.filter(
-                            status__in=[
-                                "received",
-                                "slaughtered",
-                                "carcass_ready",
-                                "disassembled",
-                                "packaged",
-                                "delivered",
-                            ]
-                        ).count()
+                    available_count = get_available_animal_count_for_weight_type(order, weight_type)
 
                     # Basic validation: ensure this batch doesn't exceed available animals
                     if animal_count > available_count:
@@ -406,7 +367,7 @@ class BatchWeightLogForm(forms.Form):
                         )
 
                     # CUMULATIVE VALIDATION: Check existing batch logs for this weight type
-                    group_weight_type = f"{weight_type} Group"
+                    group_weight_type = get_group_weight_type(weight_type)
                     existing_logs = WeightLog.objects.filter(
                         slaughter_order=order, weight_type=group_weight_type, is_group_weight=True
                     )
@@ -435,6 +396,55 @@ class BatchWeightLogForm(forms.Form):
                 except SlaughterOrder.DoesNotExist:
                     raise ValidationError(_("Invalid order selected."))
 
+        return cleaned_data
+
+
+class BatchWeightLogEditForm(forms.Form):
+    """Form for editing the total weight of an existing batch log."""
+
+    log_id = forms.UUIDField(widget=forms.HiddenInput())
+
+    total_weight = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        label=_("Total Weight (kg)"),
+        help_text=_("Enter the updated combined weight of all animals in the batch"),
+        widget=forms.NumberInput(
+            attrs={
+                "class": "w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500",
+                "placeholder": _("Enter total weight in kilograms"),
+                "step": "0.01",
+            }
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        log_id = cleaned_data.get("log_id")
+        total_weight = cleaned_data.get("total_weight")
+
+        if not log_id or total_weight is None:
+            return cleaned_data
+
+        try:
+            weight_log = WeightLog.objects.select_related("slaughter_order").get(pk=log_id)
+        except WeightLog.DoesNotExist as exc:
+            raise ValidationError(_("Selected batch weight log could not be found.")) from exc
+
+        if not weight_log.is_group_weight:
+            raise ValidationError(_("Only batch weight logs can be edited here."))
+
+        if not weight_log.group_quantity:
+            raise ValidationError(_("This batch weight log has no animal count and cannot be edited."))
+
+        average_weight = total_weight / weight_log.group_quantity
+        if average_weight > 1000:
+            raise ValidationError(_("Average weight per animal seems unusually high. Please verify."))
+        if average_weight < 1:
+            raise ValidationError(_("Average weight per animal seems unusually low. Please verify."))
+
+        cleaned_data["weight_log"] = weight_log
         return cleaned_data
 
 

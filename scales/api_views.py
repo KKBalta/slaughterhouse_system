@@ -30,6 +30,16 @@ from .utils import maybe_mark_event_animals_disassembled
 
 logger = logging.getLogger(__name__)
 
+# Rate limits for edge endpoints (per edgeId, per window).
+# Limits are generous relative to normal polling intervals so legitimate devices
+# are never blocked; they catch runaway loops or compromised edge nodes.
+_SESSIONS_RL_LIMIT = 60   # 60 req / 60 s  (normal: 1 req/5 s = 12/min)
+_SESSIONS_RL_WINDOW = 60
+_HEARTBEAT_RL_LIMIT = 10  # 10 req / 60 s  (normal: 1 req/30 s = 2/min)
+_HEARTBEAT_RL_WINDOW = 60
+_REGISTER_RL_LIMIT = 10   # 10 req / 60 s  per IP (first-time) or edgeId (re-reg)
+_REGISTER_RL_WINDOW = 60
+
 # Default config returned to Edge (baseUrl/timezone filled per request in multitenant mode)
 DEFAULT_CONFIG = {
     "sessionPollIntervalMs": 5000,
@@ -142,8 +152,17 @@ def _log_edge_activity(
 def edge_register(request):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
+    from tenants.redis_support import atomic_rate_incr
+
     body = request.json_body
     edge_id_raw = body.get("edgeId")
+    _rl_key = (
+        f"edge_rl:register:id:{edge_id_raw}"
+        if edge_id_raw
+        else f"edge_rl:register:ip:{request.META.get('REMOTE_ADDR', 'unknown')}"
+    )
+    if atomic_rate_incr(_rl_key, _REGISTER_RL_WINDOW) > _REGISTER_RL_LIMIT:
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
     site_id_raw = body.get("siteId")
     site_name = (body.get("siteName") or "").strip() or "Default Site"
     version = (body.get("version") or "").strip()
@@ -240,6 +259,10 @@ def _sessions_response_with_etag(request, payload, etag):
 def edge_sessions(request):
     if request.method != "GET":
         return JsonResponse({"error": "Method not allowed"}, status=405)
+    from tenants.redis_support import atomic_rate_incr
+
+    if atomic_rate_incr(f"edge_rl:sessions:{request.edge_device.id}", _SESSIONS_RL_WINDOW) > _SESSIONS_RL_LIMIT:
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
     request.edge_device.last_seen_at = timezone.now()
     request.edge_device.save(update_fields=["last_seen_at", "updated_at"])
     device_ids_param = request.GET.get("device_ids", "")
@@ -330,19 +353,19 @@ def edge_post_event(request):
             }
         )
 
-    # Resolve scale device (create if needed for this edge)
-    scale_device = ScaleDevice.objects.filter(
+    # Resolve scale device (create if needed for this edge).
+    # get_or_create is safe under concurrent requests: the UniqueConstraint on
+    # (edge, device_id) ensures only one row is created even with races.
+    scale_device, created = ScaleDevice.objects.get_or_create(
         edge=request.edge_device,
         device_id=device_id,
-    ).first()
-    if not scale_device:
-        scale_device = ScaleDevice.objects.create(
-            edge=request.edge_device,
-            device_id=device_id,
-            global_device_id=global_device_id or f"{request.edge_device.id}-{device_id}",
-            device_type="disassembly",
-            status="online",
-        )
+        defaults={
+            "global_device_id": global_device_id or f"{request.edge_device.id}-{device_id}",
+            "device_type": "disassembly",
+            "status": "online",
+        },
+    )
+    if created:
         _log_edge_activity(
             action="device_autocreate",
             request=request,
@@ -495,18 +518,15 @@ def edge_post_event_batch(request):
                     )
                     continue
 
-                scale_device = ScaleDevice.objects.filter(
+                scale_device, _ = ScaleDevice.objects.get_or_create(
                     edge=request.edge_device,
                     device_id=device_id,
-                ).first()
-                if not scale_device:
-                    scale_device = ScaleDevice.objects.create(
-                        edge=request.edge_device,
-                        device_id=device_id,
-                        global_device_id=global_device_id or f"{request.edge_device.id}-{device_id}",
-                        device_type="disassembly",
-                        status="online",
-                    )
+                    defaults={
+                        "global_device_id": global_device_id or f"{request.edge_device.id}-{device_id}",
+                        "device_type": "disassembly",
+                        "status": "online",
+                    },
+                )
 
                 site = request.edge_site
                 session = None
@@ -710,18 +730,16 @@ def edge_device_status(request):
     if not device_id:
         return JsonResponse({"error": "deviceId required"}, status=400)
 
-    scale_device = ScaleDevice.objects.filter(
+    scale_device, created = ScaleDevice.objects.get_or_create(
         edge=request.edge_device,
         device_id=device_id,
-    ).first()
-    if not scale_device:
-        scale_device = ScaleDevice.objects.create(
-            edge=request.edge_device,
-            device_id=device_id,
-            global_device_id=global_device_id or f"{request.edge_device.id}-{device_id}",
-            device_type=device_type,
-            status=status_val,
-        )
+        defaults={
+            "global_device_id": global_device_id or f"{request.edge_device.id}-{device_id}",
+            "device_type": device_type,
+            "status": status_val,
+        },
+    )
+    if created:
         _log_edge_activity(
             action="device_status",
             request=request,
@@ -758,6 +776,10 @@ def edge_heartbeat(request):
     """Accept full connectivity snapshot: edge + printers in one request."""
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
+    from tenants.redis_support import atomic_rate_incr
+
+    if atomic_rate_incr(f"edge_rl:heartbeat:{request.edge_device.id}", _HEARTBEAT_RL_WINDOW) > _HEARTBEAT_RL_LIMIT:
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
 
     edge = request.edge_device
     edge.is_online = True

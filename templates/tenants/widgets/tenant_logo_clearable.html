@@ -1,0 +1,13 @@
+{% load i18n %}
+<div class="tenant-logo-file-widget space-y-3">
+{% if widget.is_initial %}
+{% if not widget.required %}
+<div class="flex items-center gap-3 rounded-md border border-red-100 bg-red-50 px-3 py-2.5">
+<input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}" class="tenant-logo-clear-checkbox h-4 w-4 shrink-0 rounded border-gray-300 text-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-0"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+<label for="{{ widget.checkbox_id }}" class="cursor-pointer text-sm font-medium leading-snug text-red-900 select-none">{{ widget.clear_checkbox_label }}</label>
+</div>
+{% endif %}
+<p class="text-sm text-gray-600"><span class="font-medium text-gray-700">{{ widget.input_text }}:</span></p>
+{% endif %}
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+</div>

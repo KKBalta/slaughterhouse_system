@@ -9,9 +9,13 @@
         <div class="flex flex-col gap-2">
             <h1 class="text-3xl font-extrabold text-gray-900">{{ profile.get_full_name }}</h1>
             {% if profile.is_active %}
-            <span class="inline-flex w-fit items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-blue-200">{% trans "Active" %}</span>
+            <div class="w-max max-w-full">
+                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800 ring-1 ring-blue-200">{% trans "Active" %}</span>
+            </div>
             {% else %}
-            <span class="inline-flex w-fit items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">{% trans "Archived" %}</span>
+            <div class="w-max max-w-full">
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">{% trans "Archived" %}</span>
+            </div>
             {% endif %}
         </div>
         <div class="flex flex-wrap gap-2">

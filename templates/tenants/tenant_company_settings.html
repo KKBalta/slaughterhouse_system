@@ -64,11 +64,44 @@
             </div>
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.logo.label }}</label>
-            {{ form.logo|add_class:"block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700" }}
-            {% if form.logo.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.logo.help_text }}</p>{% endif %}
+        <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-700">{{ form.logo.label }}</label>
+            {% if form.logo.help_text %}<p class="text-xs text-gray-500">{{ form.logo.help_text }}</p>{% endif %}
+            <div class="space-y-2">
+                <p class="text-sm font-medium text-gray-800">{% if form.instance.logo %}{% trans "Current logo" %}{% else %}{% trans "Preview" %}{% endif %}</p>
+                <div class="{% if not form.instance.logo %}hidden {% endif %}inline-flex h-10 w-40 shrink-0 items-center justify-center overflow-hidden rounded-md {% if form.instance.logo %}border border-gray-200 bg-white{% else %}border border-dashed border-gray-200 bg-gray-50{% endif %}" id="tenant-logo-preview-wrap">
+                    {% if form.instance.logo %}
+                    <img src="{{ form.instance.logo.url }}" alt="" id="tenant-logo-preview" class="max-h-full max-w-full object-contain" width="160" height="40" loading="lazy" decoding="async">
+                    {% else %}
+                    <img src="" alt="" id="tenant-logo-preview" class="max-h-full max-w-full object-contain" width="160" height="40">
+                    {% endif %}
+                </div>
+            </div>
+            {{ form.logo }}
+            {% if form.logo.errors %}<p class="text-sm text-red-600">{{ form.logo.errors }}</p>{% endif %}
+            <p class="text-xs text-gray-500">{% trans "Shown in the app header at a fixed size (recommended: wide logo or horizontal mark)." %}</p>
         </div>
+        <script>
+        (function () {
+            var input = document.getElementById("id_logo");
+            var preview = document.getElementById("tenant-logo-preview");
+            var wrap = document.getElementById("tenant-logo-preview-wrap");
+            if (!input || !preview) return;
+            var prevUrl = null;
+            input.addEventListener("change", function () {
+                if (prevUrl) {
+                    URL.revokeObjectURL(prevUrl);
+                    prevUrl = null;
+                }
+                var f = input.files && input.files[0];
+                if (!f || !f.type || f.type.indexOf("image/") !== 0) return;
+                prevUrl = URL.createObjectURL(f);
+                preview.src = prevUrl;
+                preview.alt = f.name || "";
+                if (wrap) wrap.classList.remove("hidden");
+            });
+        })();
+        </script>
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.printer_turkish_mode.label }}</label>

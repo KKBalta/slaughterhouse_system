@@ -28,6 +28,7 @@ from processing.services import (
     record_cold_carcass_weight,
     record_initial_byproducts,
     update_animal_details,
+    update_group_weight_log_total,
 )
 from reception.models import SlaughterOrder
 from users.models import ClientProfile
@@ -182,6 +183,113 @@ class LogIndividualWeightServiceTest(TestCase):
         animal = Animal.objects.get(pk=self.animal.pk)
         # Status should be carcass_ready or slaughtered depending on implementation
         self.assertIn(animal.status, ["carcass_ready", "slaughtered"])
+
+
+class UpdateGroupWeightLogTotalServiceTest(TestCase):
+    """Tests for editing batch totals and resyncing derived individual logs."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="groupweightuser", password="testpass123", role=User.Role.CLIENT)
+        self.client_profile = ClientProfile.objects.create(
+            user=self.user, account_type="INDIVIDUAL", phone_number="1234567890", address="123 Test St"
+        )
+        self.service_package = ServicePackage.objects.create(name="Test Package", includes_disassembly=True)
+        self.order = SlaughterOrder.objects.create(
+            client=self.client_profile, order_datetime=timezone.now(), service_package=self.service_package
+        )
+        self.animals = [
+            Animal.objects.create(
+                slaughter_order=self.order,
+                animal_type="cattle",
+                identification_tag=f"BATCH-EDIT-{index:03d}",
+            )
+            for index in range(1, 5)
+        ]
+
+    def test_updates_existing_individual_logs_to_new_overall_average(self):
+        """Editing a completed batch recalculates all derived individual logs."""
+        first_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=Decimal("100.00"),
+            weight_type="live_weight Group",
+            group_quantity=2,
+            group_total_weight=Decimal("200.00"),
+        )
+        log_group_weight(
+            slaughter_order=self.order,
+            weight=Decimal("120.00"),
+            weight_type="live_weight Group",
+            group_quantity=2,
+            group_total_weight=Decimal("240.00"),
+        )
+
+        initial_weights = list(
+            WeightLog.objects.filter(
+                animal__slaughter_order=self.order,
+                weight_type="live_weight",
+                is_group_weight=False,
+            )
+            .order_by("animal__identification_tag")
+            .values_list("weight", flat=True)
+        )
+        self.assertEqual(initial_weights, [Decimal("110.00")] * 4)
+
+        result = update_group_weight_log_total(first_log.pk, Decimal("260.00"))
+
+        self.assertEqual(result["weight_log"].group_total_weight, Decimal("260.00"))
+        updated_logs = WeightLog.objects.filter(
+            animal__slaughter_order=self.order,
+            weight_type="live_weight",
+            is_group_weight=False,
+        ).order_by("animal__identification_tag")
+
+        self.assertEqual(updated_logs.count(), 4)
+        self.assertTrue(all(log.weight == Decimal("125.00") for log in updated_logs))
+        self.assertTrue(result["sync_result"]["completed"])
+
+    def test_removes_individual_logs_if_order_is_no_longer_complete(self):
+        """Editing after availability increases removes stale derived individual logs."""
+        for animal in self.animals:
+            animal.perform_slaughter()
+            animal.save()
+
+        batch_log = log_group_weight(
+            slaughter_order=self.order,
+            weight=Decimal("100.00"),
+            weight_type="hot_carcass_weight Group",
+            group_quantity=4,
+            group_total_weight=Decimal("400.00"),
+        )
+
+        update_group_weight_log_total(batch_log.pk, Decimal("400.00"))
+        self.assertEqual(
+            WeightLog.objects.filter(
+                animal__slaughter_order=self.order,
+                weight_type="hot_carcass_weight",
+                is_group_weight=False,
+            ).count(),
+            4,
+        )
+
+        new_animal = Animal.objects.create(
+            slaughter_order=self.order,
+            animal_type="cattle",
+            identification_tag="BATCH-EDIT-005",
+        )
+        new_animal.perform_slaughter()
+        new_animal.save()
+
+        result = update_group_weight_log_total(batch_log.pk, Decimal("410.00"))
+
+        self.assertFalse(result["sync_result"]["completed"])
+        self.assertEqual(
+            WeightLog.objects.filter(
+                animal__slaughter_order=self.order,
+                weight_type="hot_carcass_weight",
+                is_group_weight=False,
+            ).count(),
+            0,
+        )
 
 
 class CreateCarcassServiceTest(TestCase):

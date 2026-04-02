@@ -31,8 +31,15 @@ def _client_ip(request) -> str:
 
 
 def _rate_limited(request) -> bool:
+    from tenants.redis_support import atomic_rate_incr
+
     ip = _client_ip(request)
     key = f"{REG_RATE_PREFIX}{ip}"
+    count = atomic_rate_incr(key, REG_RATE_WINDOW)
+    if count:
+        # Redis path: count is the authoritative atomic increment.
+        return count > REG_RATE_LIMIT
+    # Fallback for LocMemCache / test env (single-process, non-atomic but acceptable).
     n = cache.get(key)
     if n is None:
         cache.set(key, 1, REG_RATE_WINDOW)

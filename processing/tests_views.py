@@ -454,6 +454,71 @@ class TestLeatherWeightLogView:
 
 
 @pytest.mark.django_db
+class TestBatchWeightLogView:
+    """Tests for BatchWeightLogView POST actions."""
+
+    def test_get_ignores_none_order_query_param(self, admin_user):
+        from django.test import RequestFactory
+
+        from processing.views import BatchWeightLogView
+
+        factory = RequestFactory()
+        request = factory.get("/processing/batch/weights/", {"order": "None", "recent_page": "1"})
+        request.user = admin_user
+        response = BatchWeightLogView.as_view()(request)
+
+        assert response.status_code == 200
+
+    def test_post_edit_batch_log_updates_total_and_redirects(self, admin_user, slaughter_order_factory, animal_factory):
+        from django.urls import reverse
+
+        from processing.services import log_group_weight
+        from processing.views import BatchWeightLogView
+
+        order = slaughter_order_factory()
+        animal_factory(slaughter_order=order, identification_tag="BATCH-VIEW-001")
+        animal_factory(slaughter_order=order, identification_tag="BATCH-VIEW-002")
+        batch_log = log_group_weight(
+            slaughter_order=order,
+            weight=Decimal("100.00"),
+            weight_type="live_weight Group",
+            group_quantity=2,
+            group_total_weight=Decimal("200.00"),
+        )
+
+        url = reverse("processing:batch_weights")
+        request = _auth_post_request(
+            admin_user,
+            {
+                "action": "edit_batch_log",
+                "log_id": str(batch_log.pk),
+                "total_weight": "250.00",
+                "order": str(order.pk),
+                "recent_page": "2",
+            },
+        )
+        view = BatchWeightLogView.as_view()
+        resp = view(request)
+
+        assert resp.status_code == 302
+        assert resp.url == f"{url}?order={order.pk}&recent_page=2"
+
+        updated_log = WeightLog.objects.get(pk=batch_log.pk)
+        assert updated_log.group_total_weight == Decimal("250.00")
+        assert updated_log.weight == Decimal("125.00")
+        individual_weights = list(
+            WeightLog.objects.filter(
+                animal__slaughter_order=order,
+                weight_type="live_weight",
+                is_group_weight=False,
+            )
+            .order_by("animal__identification_tag")
+            .values_list("weight", flat=True)
+        )
+        assert individual_weights == [Decimal("125.00"), Decimal("125.00")]
+
+
+@pytest.mark.django_db
 class TestOrderStatusUpdateView:
     """Tests for OrderStatusUpdateView POST + redirect."""
 

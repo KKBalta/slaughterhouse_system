@@ -20,9 +20,17 @@
                 <div class="flex items-center justify-center sm:justify-start">
                     <a href="/" class="min-w-0 flex items-center justify-center sm:justify-start gap-2">
                         {% if tenant and tenant.logo %}
-                            <img src="{{ tenant.logo.url }}" alt="{{ tenant.name|upper }}" class="h-9 w-auto max-w-[200px] object-contain sm:h-10">
+                            <span class="inline-flex h-10 w-40 shrink-0 items-center justify-center overflow-hidden">
+                                <img src="{{ tenant.logo.url }}" alt="{% trans 'Company logo' %} — {{ tenant.name|upper }}" class="max-h-full max-w-full object-contain" width="160" height="40" loading="lazy" decoding="async">
+                            </span>
                         {% endif %}
-                        <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{% if tenant %}{{ tenant.name|upper }}{% else %}{% trans "CarniTrack" %}{% endif %}</span>
+                        {% if tenant %}
+                            {% if not tenant.logo %}
+                                <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{{ tenant.name|upper }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="truncate text-xl font-bold text-gray-800 sm:text-2xl">{% trans "CarniTrack" %}</span>
+                        {% endif %}
                     </a>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -30,6 +38,11 @@
 
                     {% if user.is_authenticated %}
                         <a href="{% url 'dashboard' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">{% trans "Dashboard" %}</a>
+                        {% if tenant %}
+                        {% if user.role == 'OWNER' or user.role == 'ADMIN' or user.role == 'MANAGER' %}
+                        <a href="{% url 'tenant_company_settings' %}" class="inline-flex flex-1 justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 sm:flex-none">{% trans "Company settings" %}</a>
+                        {% endif %}
+                        {% endif %}
                         <form action="{% url 'logout' %}" method="post" class="flex-1 sm:flex-none">
                             {% csrf_token %}
                             <button type="submit" class="inline-flex w-full justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">{% trans "Logout" %}</button>

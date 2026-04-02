@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-02 20:19+0300\n"
+"POT-Creation-Date: 2026-04-02 03:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,525 +17,472 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: config/settings.py:151
 msgid "Turkish"
 msgstr ""
 
-#: config/settings.py:152
 msgid "English"
 msgstr ""
 
-#: labeling/admin.py:44
 msgid "Animal ID"
 msgstr ""
 
-#: labeling/admin.py:50 reporting/templates/reporting/simple_dashboard.html:66
 msgid "PDF"
 msgstr ""
 
-#: labeling/admin.py:58
 msgid "PRN Preview"
 msgstr ""
 
-#: labeling/admin.py:65
 msgid "PRN Content"
 msgstr ""
 
-#: labeling/admin.py:72
 msgid "BAT Content"
 msgstr ""
 
-#: labeling/admin.py:81
 msgid "PDF File"
 msgstr ""
 
-#: labeling/admin.py:105
 msgid "Regenerate PDF files"
 msgstr ""
 
-#: labeling/admin.py:124
 msgid "Delete PDF files"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:4
 msgid "Animal Label Detail"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:18
-#: labeling/templates/labeling/animal_label_list.html:18
 msgid "Back to Animal"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:22
 msgid "All Labels"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:48
 msgid "Label Information"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:51
-#: labeling/templates/labeling/animal_label_list.html:60
 msgid "Label Code"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:55
 msgid "Label Type"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:59
-#: labeling/templates/labeling/animal_label_list.html:66
 msgid "Print Date"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:64
-#: labeling/templates/labeling/animal_label_list.html:69
 msgid "Printed By"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:73
-#: processing/templates/processing/animal_detail.html:258
-#: processing/templates/processing/disassembly_detail.html:431
 msgid "Animal Information"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:76
-#: processing/templates/processing/animal_detail.html:261
 msgid "Identification Tag"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:80
-#: processing/forms.py:24
-#: processing/templates/processing/animal_detail.html:265
-#: reception/forms.py:300
 msgid "Animal Type"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:84
-#: processing/forms.py:12
-#: processing/templates/processing/animal_detail.html:269
-#: processing/templates/processing/animal_list.html:318
-#: processing/templates/processing/disassembly_dashboard.html:212
-#: processing/templates/processing/disassembly_detail.html:442
-#: reception/templates/reception/order_detail.html:156
-#: reception/templates/reception/order_list.html:78
-#: reporting/templates/reporting/report_list.html:39
-#: scales/templates/scales/edge_management.html:59
-#: scales/templates/scales/edge_management.html:103
-#: scales/templates/scales/session_detail.html:34
-#: scales/templates/scales/session_list.html:58
 msgid "Status"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:99
-#: processing/templates/processing/animal_detail.html:289
 msgid "Slaughter Date"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:104
 msgid "Not slaughtered yet"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:116
 msgid "Download Options"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:122
 msgid "PRN Format"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:123
 msgid "TSC Programming Language for direct printer output"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:127
 msgid "Download PRN"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:136
 msgid "BAT Format"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:137
 msgid "Windows batch file for easy label printing"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:141
 msgid "Download BAT"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:150
 msgid "PDF Format"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:151
 msgid "Portable Document Format for viewing and printing"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:156
 msgid "Download PDF"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:159
 msgid "PDF not available"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:167
-#: labeling/templates/labeling/animal_label_list.html:72
-#: processing/templates/processing/animal_list.html:324
-#: processing/templates/processing/disassembly_dashboard.html:215
-#: reception/templates/reception/order_detail.html:157
-#: reception/templates/reception/order_list.html:79
-#: reporting/templates/reporting/report_list.html:42
-#: scales/templates/scales/orphaned_batch_list.html:20
-#: scales/templates/scales/session_detail.html:102
-#: scales/templates/scales/session_list.html:60
 msgid "Actions"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:170
-#: labeling/templates/labeling/animal_label_list.html:122
 msgid "Are you sure you want to delete this label?"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:174
 msgid "Delete Label"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:180
-#: labeling/templates/labeling/animal_label_list.html:26
 msgid "Generate New Label"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:4
-#: labeling/templates/labeling/animal_label_list.html:12
 msgid "Animal Labels"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:53
 msgid "Generated Labels"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:63
-#: processing/templates/processing/animal_detail.html:641
-#: processing/templates/processing/disassembly_dashboard.html:211
-#: processing/templates/processing/disassembly_detail.html:438
-#: reporting/templates/reporting/report_list.html:30
-#: scales/templates/scales/edge_management.html:102
 msgid "Type"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:98
 msgid "System"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:119
-#: processing/templates/processing/animal_list.html:398
-#: processing/templates/processing/disassembly_detail.html:346
-#: scales/templates/scales/dashboard.html:35
-#: scales/templates/scales/session_list.html:42
-#: scales/templates/scales/session_list.html:79
 msgid "View"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:126
-#: processing/templates/processing/disassembly_detail.html:368
-#: processing/templates/processing/disassembly_detail.html:381
 msgid "Delete"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:143
 msgid "No labels generated"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:145
 msgid "No labels have been generated for this animal yet."
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:154
 msgid "Generate First Label"
 msgstr ""
 
-#: labeling/views.py:45
+msgid "Custom Label Detail"
+msgstr ""
+
+msgid "Custom Label"
+msgstr ""
+
+msgid "Back to List"
+msgstr ""
+
+msgid "Create New"
+msgstr ""
+
+msgid "Küpe No"
+msgstr ""
+
+msgid "Created By"
+msgstr ""
+
+msgid "Product Information"
+msgstr ""
+
+msgid "Üretici"
+msgstr ""
+
+msgid "Tüccar"
+msgstr ""
+
+msgid "Cinsi"
+msgstr ""
+
+msgid "Ağırlık"
+msgstr ""
+
+msgid "Kesim Tarihi"
+msgstr ""
+
+msgid "Son Tüketim Tarihi"
+msgstr ""
+
+msgid "Sipariş No"
+msgstr ""
+
+msgid "Sakatat Durumu"
+msgstr ""
+
+msgid "QR Verisi"
+msgstr ""
+
+msgid "Create New Label"
+msgstr ""
+
+msgid "Create Custom Label"
+msgstr ""
+
+msgid "Enter label information manually to create a hot carcass label"
+msgstr ""
+
+msgid "Usually slaughter date + 10 days"
+msgstr ""
+
+msgid "Optional URL or data for QR code"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Create Label"
+msgstr ""
+
+msgid "Custom Labels"
+msgstr ""
+
+msgid "Manually created hot carcass labels"
+msgstr ""
+
+msgid "All Custom Labels"
+msgstr ""
+
+msgid "Weight"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Page"
+msgstr ""
+
+msgid "of"
+msgstr ""
+
+msgid "Previous"
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "No custom labels"
+msgstr ""
+
+msgid "No custom labels have been created yet."
+msgstr ""
+
+msgid "Create First Custom Label"
+msgstr ""
+
 msgid "Hot carcass labels can only be generated for slaughtered animals."
 msgstr ""
 
-#: labeling/views.py:56
 msgid ""
 "PRN label and BAT file generated successfully! You can now download and "
 "print the label."
 msgstr ""
 
-#: labeling/views.py:60 labeling/views.py:100
 #, python-format
 msgid "Error generating label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:96
 msgid "Cut label generated successfully!"
 msgstr ""
 
-#: labeling/views.py:161
 msgid "PDF file not found."
 msgstr ""
 
-#: labeling/views.py:165
 #, python-format
 msgid "Error downloading label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:203
 msgid "Please select at least one animal."
 msgstr ""
 
-#: labeling/views.py:236
 #, python-format
 msgid "Successfully generated %(count)s labels."
 msgstr ""
 
-#: labeling/views.py:239
 #, python-format
 msgid "Some errors occurred: %(errors)s"
 msgstr ""
 
-#: labeling/views.py:256
 msgid "Label deleted successfully."
 msgstr ""
 
-#: labeling/views.py:259
 #, python-format
 msgid "Error deleting label: %(error)s"
 msgstr ""
 
-#: processing/admin.py:12
+msgid ""
+"Custom label created successfully! You can now download and print the label."
+msgstr ""
+
+#, python-format
+msgid "Error creating label: %(error)s"
+msgstr ""
+
+msgid "Custom label deleted successfully."
+msgstr ""
+
 msgid "Cattle Details"
 msgstr ""
 
-#: processing/admin.py:17
 msgid "Sheep Details"
 msgstr ""
 
-#: processing/admin.py:22
 msgid "Goat Details"
 msgstr ""
 
-#: processing/admin.py:27
 msgid "Lamb Details"
 msgstr ""
 
-#: processing/admin.py:32
 msgid "Oglak Details"
 msgstr ""
 
-#: processing/admin.py:37
 msgid "Calf Details"
 msgstr ""
 
-#: processing/admin.py:42
 msgid "Heifer Details"
 msgstr ""
 
-#: processing/admin.py:47
 msgid "Beef Details"
 msgstr ""
 
-#: processing/admin.py:52
 msgid "Weight Logs"
 msgstr ""
 
-#: processing/admin.py:78 processing/forms.py:66 processing/forms.py:123
-#: processing/models.py:476
-#: processing/templates/processing/animal_detail.html:295
 msgid "Leather Weight"
 msgstr ""
 
-#: processing/admin.py:89 processing/forms.py:63 processing/forms.py:111
-#: processing/forms.py:235 processing/models.py:473
-#: processing/templates/processing/disassembly_detail.html:477
 msgid "Hot Carcass Weight"
 msgstr ""
 
-#: processing/admin.py:95
 msgid "📷 Photo"
 msgstr ""
 
-#: processing/admin.py:97
 msgid "📋 Passport"
 msgstr ""
 
-#: processing/admin.py:99
 msgid "No photos"
 msgstr ""
 
-#: processing/admin.py:100
 msgid "Pictures"
 msgstr ""
 
-#: processing/admin.py:106
-#: processing/templates/processing/animal_detail.html:692
 msgid "Scale Receipt"
 msgstr ""
 
-#: processing/admin.py:113
 msgid "Scale Receipt Preview"
 msgstr ""
 
-#: processing/admin.py:153
 #, python-format
 msgid "📋 Order #%(id)s"
 msgstr ""
 
-#: processing/admin.py:154
 msgid "Unknown"
 msgstr ""
 
-#: processing/admin.py:155
 msgid "Animal/Order"
 msgstr ""
 
-#: processing/forms.py:10
 msgid "All Statuses"
 msgstr ""
 
-#: processing/forms.py:22
 msgid "All Types"
 msgstr ""
 
-#: processing/forms.py:36
 msgid "Search Animals"
 msgstr ""
 
-#: processing/forms.py:39
 msgid "Search by Tag, Order Number, Client Name, or Animal Type"
 msgstr ""
 
-#: processing/forms.py:61 processing/forms.py:104 processing/forms.py:233
 msgid "Select weight type"
 msgstr ""
 
-#: processing/forms.py:62 processing/forms.py:107 processing/forms.py:234
-#: processing/models.py:472 processing/templates/processing/dashboard.html:340
 msgid "Live Weight"
 msgstr ""
 
-#: processing/forms.py:64 processing/forms.py:115 processing/forms.py:236
-#: processing/models.py:474
 msgid "Cold Carcass Weight"
 msgstr ""
 
-#: processing/forms.py:65 processing/forms.py:119 processing/forms.py:237
-#: processing/models.py:475
 msgid "Final Weight"
 msgstr ""
 
-#: processing/forms.py:72 processing/forms.py:249
-#: processing/templates/processing/batch_weight_reports.html:124
-#: processing/templates/processing/batch_weight_reports.html:175
 msgid "Weight Type"
 msgstr ""
 
-#: processing/forms.py:84 processing/forms.py:563
-#: scales/templates/scales/session_event_edit.html:40
 msgid "Weight (kg)"
 msgstr ""
 
-#: processing/forms.py:87 processing/forms.py:568
 msgid "Enter weight in kg"
 msgstr ""
 
-#: processing/forms.py:134
 msgid "Weight seems unusually high. Please verify."
 msgstr ""
 
-#: processing/forms.py:136 processing/forms.py:202
 msgid "Weight must be greater than 0."
 msgstr ""
 
-#: processing/forms.py:152
 #, python-format
 msgid ""
 "Hot carcass weight can only be logged for slaughtered animals. Animal "
 "%(tag)s is currently %(status)s."
 msgstr ""
 
-#: processing/forms.py:157
 #, python-format
 msgid ""
 "Cold carcass weight can only be logged for animals with carcass ready or "
 "later status. Animal %(tag)s is currently %(status)s."
 msgstr ""
 
-#: processing/forms.py:162
 #, python-format
 msgid ""
 "Final weight can only be logged for disassembled animals. Animal %(tag)s is "
 "currently %(status)s."
 msgstr ""
 
-#: processing/forms.py:167
 #, python-format
 msgid ""
 "Leather weight should be logged after slaughter. Animal %(tag)s is currently "
 "%(status)s."
 msgstr ""
 
-#: processing/forms.py:183
 msgid "Leather Weight (kg)"
 msgstr ""
 
-#: processing/forms.py:186
 msgid "Enter leather weight in kg"
 msgstr ""
 
-#: processing/forms.py:200
 msgid "Leather weight seems unusually high. Please verify."
 msgstr ""
 
-#: processing/forms.py:212
-#: processing/templates/processing/animal_detail.html:697
 msgid "Scale Receipt Image"
 msgstr ""
 
-#: processing/forms.py:259
 msgid "Total Weight (kg)"
 msgstr ""
 
-#: processing/forms.py:260
 msgid "Enter the combined weight of all animals in the batch"
 msgstr ""
 
-#: processing/forms.py:263
 msgid "Enter total weight in kilograms"
 msgstr ""
 
-#: processing/forms.py:270 reception/forms.py:310
 msgid "Number of Animals"
 msgstr ""
 
-#: processing/forms.py:271
 msgid "Number of animals included in this batch weight"
 msgstr ""
 
-#: processing/forms.py:274
 msgid "Number of animals weighed together"
 msgstr ""
 
-#: processing/forms.py:290
 msgid "Average weight per animal seems unusually high. Please verify."
 msgstr ""
 
-#: processing/forms.py:292
 msgid "Average weight per animal seems unusually low. Please verify."
 msgstr ""
 
-#: processing/forms.py:322
 #, python-format
 msgid ""
 "Cannot log weight for %(animal_count)s animals. Only %(available_count)s "
 "animals are available for %(weight_type)s weighing in this order."
 msgstr ""
 
-#: processing/forms.py:346
 #, python-format
 msgid ""
 "Cannot log weight for %(animal_count)s animals. Only %(remaining_available)s "
@@ -543,60 +490,54 @@ msgid ""
 "already weighed out of %(total)s total)."
 msgstr ""
 
-#: processing/forms.py:356
 msgid "Invalid order selected."
 msgstr ""
 
-#: processing/forms.py:367 processing/forms.py:390 processing/forms.py:413
-#: processing/forms.py:472 processing/forms.py:495 processing/forms.py:518
+msgid "Enter the updated combined weight of all animals in the batch"
+msgstr ""
+
+msgid "Selected batch weight log could not be found."
+msgstr ""
+
+msgid "Only batch weight logs can be edited here."
+msgstr ""
+
+msgid "This batch weight log has no animal count and cannot be edited."
+msgstr ""
+
 msgid "Breed"
 msgstr ""
 
-#: processing/forms.py:368 processing/forms.py:391 processing/forms.py:414
-#: processing/forms.py:436 processing/forms.py:454 processing/forms.py:473
-#: processing/forms.py:496 processing/forms.py:519
 msgid "Sakatat Status"
 msgstr ""
 
-#: processing/forms.py:369 processing/forms.py:392 processing/forms.py:415
-#: processing/forms.py:437 processing/forms.py:455 processing/forms.py:474
-#: processing/forms.py:497 processing/forms.py:520
 msgid "Bowels Status"
 msgstr ""
 
-#: processing/forms.py:374
 msgid "Enter breed (e.g., Holstein, Angus, Hereford)"
 msgstr ""
 
-#: processing/forms.py:397
 msgid "Enter breed (e.g., Merino, Suffolk, Dorper)"
 msgstr ""
 
-#: processing/forms.py:420
 msgid "Enter breed (e.g., Boer, Nubian, Angora)"
 msgstr ""
 
-#: processing/forms.py:479
 msgid "Enter breed (e.g., Holstein, Jersey, Brahman)"
 msgstr ""
 
-#: processing/forms.py:502 processing/forms.py:525
 msgid "Enter breed (e.g., Holstein, Angus, Charolais)"
 msgstr ""
 
-#: processing/forms.py:551 processing/forms.py:562
 msgid "Cut Name"
 msgstr ""
 
-#: processing/forms.py:580
 msgid "Select cut name"
 msgstr ""
 
-#: processing/forms.py:592
 msgid "Boneless Meat Weight (kg)"
 msgstr ""
 
-#: processing/forms.py:625 processing/models.py:677
 #, python-format
 msgid ""
 "Total disassembly weight (%(total)s kg) cannot exceed hot carcass weight "
@@ -604,447 +545,328 @@ msgid ""
 "check existing cuts."
 msgstr ""
 
-#: processing/models.py:59
 msgid "Cattle"
 msgstr ""
 
-#: processing/models.py:60
 msgid "Sheep"
 msgstr ""
 
-#: processing/models.py:61
 msgid "Goat"
 msgstr ""
 
-#: processing/models.py:62
 msgid "Lamb"
 msgstr ""
 
-#: processing/models.py:63
 msgid "Oglak"
 msgstr ""
 
-#: processing/models.py:64
 msgid "Calf"
 msgstr ""
 
-#: processing/models.py:65
 msgid "Heifer"
 msgstr ""
 
-#: processing/models.py:66
 msgid "Beef"
 msgstr ""
 
-#: processing/models.py:71 processing/templates/processing/animal_list.html:321
-#: processing/templates/processing/animal_list.html:694
-#: processing/templates/processing/dashboard.html:116
 msgid "Received"
 msgstr ""
 
-#: processing/models.py:72 processing/templates/processing/dashboard.html:132
 msgid "Slaughtered"
 msgstr ""
 
-#: processing/models.py:73 processing/templates/processing/dashboard.html:148
 msgid "Carcass Ready"
 msgstr ""
 
-#: processing/models.py:74
 msgid "Disassembled"
 msgstr ""
 
-#: processing/models.py:75
 msgid "Packaged"
 msgstr ""
 
-#: processing/models.py:76
 msgid "Delivered"
 msgstr ""
 
-#: processing/models.py:77
 msgid "Returned to Owner"
 msgstr ""
 
-#: processing/models.py:78
 msgid "Disposed"
 msgstr ""
 
-#: processing/models.py:85
 msgid "The slaughter order this animal belongs to."
 msgstr ""
 
-#: processing/models.py:90
 msgid ""
 "Type of animal (e.g., cattle, sheep, goat, lamb, oglak, calf, heifer, beef)."
 msgstr ""
 
-#: processing/models.py:96
 msgid ""
 "Unique identification tag for the animal. System generates if not provided."
 msgstr ""
 
-#: processing/models.py:100
 msgid "Date and time the animal was received."
 msgstr ""
 
-#: processing/models.py:105
 msgid "Date and time the animal was slaughtered."
 msgstr ""
 
-#: processing/models.py:111
 msgid "Current status of the animal in the processing workflow."
 msgstr ""
 
-#: processing/models.py:116
 msgid "Picture of the animal."
 msgstr ""
 
-#: processing/models.py:121
 msgid "Picture of the animal's passport/documentation."
 msgstr ""
 
-#: processing/models.py:126
 msgid "Picture of the scale receipt for the animal's weights."
 msgstr ""
 
-#: processing/models.py:131
 msgid "The weight of the leather in kilograms."
 msgstr ""
 
-#: processing/models.py:253
-#: processing/templates/processing/animal_detail.html:372
 msgid "Not Usable"
 msgstr ""
 
-#: processing/models.py:254
-#: processing/templates/processing/animal_detail.html:373
 msgid "Not Bad"
 msgstr ""
 
-#: processing/models.py:255
-#: processing/templates/processing/animal_detail.html:374
 msgid "Good"
 msgstr ""
 
-#: processing/models.py:264
 msgid "The associated cattle animal."
 msgstr ""
 
-#: processing/models.py:269
 msgid "Breed of the cattle."
 msgstr ""
 
-#: processing/models.py:274 processing/models.py:302 processing/models.py:330
-#: processing/models.py:352 processing/models.py:374 processing/models.py:402
-#: processing/models.py:429 processing/models.py:456
 msgid "Score reflecting the usability of the sakatat (internal organs)."
 msgstr ""
 
-#: processing/models.py:279 processing/models.py:307 processing/models.py:335
-#: processing/models.py:357 processing/models.py:379 processing/models.py:407
-#: processing/models.py:434 processing/models.py:461
 msgid "Score reflecting the usability of the bowels."
 msgstr ""
 
-#: processing/models.py:284
 #, python-format
 msgid "Details for Cattle: %(tag)s"
 msgstr ""
 
-#: processing/models.py:292
 msgid "The associated sheep animal."
 msgstr ""
 
-#: processing/models.py:297
 msgid "Breed of the sheep."
 msgstr ""
 
-#: processing/models.py:312
 #, python-format
 msgid "Details for Sheep: %(tag)s"
 msgstr ""
 
-#: processing/models.py:320
 msgid "The associated goat animal."
 msgstr ""
 
-#: processing/models.py:325
 msgid "Breed of the goat."
 msgstr ""
 
-#: processing/models.py:339
 #, python-format
 msgid "Details for Goat: %(tag)s"
 msgstr ""
 
-#: processing/models.py:347
 msgid "The associated lamb animal."
 msgstr ""
 
-#: processing/models.py:361
 #, python-format
 msgid "Details for Lamb: %(tag)s"
 msgstr ""
 
-#: processing/models.py:369
 msgid "The associated oglak animal."
 msgstr ""
 
-#: processing/models.py:383
 #, python-format
 msgid "Details for Oglak: %(tag)s"
 msgstr ""
 
-#: processing/models.py:392
 msgid "The associated calf animal."
 msgstr ""
 
-#: processing/models.py:397
 msgid "Breed of the calf."
 msgstr ""
 
-#: processing/models.py:411
 #, python-format
 msgid "Details for Calf: %(tag)s"
 msgstr ""
 
-#: processing/models.py:419
 msgid "The associated heifer animal."
 msgstr ""
 
-#: processing/models.py:424
 msgid "Breed of the heifer."
 msgstr ""
 
-#: processing/models.py:438
 #, python-format
 msgid "Details for Heifer: %(tag)s"
 msgstr ""
 
-#: processing/models.py:446
 msgid "The associated beef animal."
 msgstr ""
 
-#: processing/models.py:451
 msgid "Breed of the beef."
 msgstr ""
 
-#: processing/models.py:465
 #, python-format
 msgid "Details for Beef: %(tag)s"
 msgstr ""
 
-#: processing/models.py:477
 msgid "Live Weight Group"
 msgstr ""
 
-#: processing/models.py:478
 msgid "Hot Carcass Weight Group"
 msgstr ""
 
-#: processing/models.py:479
 msgid "Cold Carcass Weight Group"
 msgstr ""
 
-#: processing/models.py:480
 msgid "Final Weight Group"
 msgstr ""
 
-#: processing/models.py:488
 msgid "The animal whose weight is being logged (for individual weights)."
 msgstr ""
 
-#: processing/models.py:495
 msgid "The slaughter order this group weight belongs to (for group weights)."
 msgstr ""
 
-#: processing/models.py:500
 msgid ""
 "Weight recorded (e.g., live weight, hot carcass weight). For group weights, "
 "this is the average per animal."
 msgstr ""
 
-#: processing/models.py:505
 msgid ""
 "Type of weight (e.g., 'Live', 'Hot Carcass', 'Cold Carcass', 'Live Group')."
 msgstr ""
 
-#: processing/models.py:509
 msgid "True if this log entry represents a group weighing."
 msgstr ""
 
-#: processing/models.py:513
 msgid "Number of animals in the group, if this is a group weight."
 msgstr ""
 
-#: processing/models.py:519
 msgid "Total weight of the group, if this is a group weight."
 msgstr ""
 
-#: processing/models.py:523
 msgid "Date and time the weight was logged."
 msgstr ""
 
-#: processing/models.py:528
 #, python-format
 msgid "%(type)s - %(quantity)s animals (%(total_weight)skg total)"
 msgstr ""
 
-#: processing/models.py:534
 #, python-format
 msgid "%(type)s - %(tag)s (%(weight)skg)"
 msgstr ""
 
-#: processing/models.py:561 processing/models.py:580
 msgid "Neck"
 msgstr ""
 
-#: processing/models.py:562
 msgid "Front Leg"
 msgstr ""
 
-#: processing/models.py:563
 msgid "Rib"
 msgstr ""
 
-#: processing/models.py:564
 msgid "Breast / Plate"
 msgstr ""
 
-#: processing/models.py:565
 msgid "Flank"
 msgstr ""
 
-#: processing/models.py:566
 msgid "Tenderloin"
 msgstr ""
 
-#: processing/models.py:567
 msgid "Ribeye"
 msgstr ""
 
-#: processing/models.py:568
 msgid "Topside / Tranç"
 msgstr ""
 
-#: processing/models.py:569
 msgid "Knuckle / Yumurta"
 msgstr ""
 
-#: processing/models.py:570
 msgid "Round / Nuar"
 msgstr ""
 
-#: processing/models.py:571
 msgid "Ground Beef"
 msgstr ""
 
-#: processing/models.py:572 processing/models.py:590
 msgid "Trim"
 msgstr ""
 
-#: processing/models.py:573
 msgid "Stew Cubes"
 msgstr ""
 
-#: processing/models.py:574 processing/models.py:591
 msgid "Whole Cut (Bones Removed)"
 msgstr ""
 
-#: processing/models.py:575
 msgid "Boneless Meat (Total)"
 msgstr ""
 
-#: processing/models.py:579
 msgid "Shoulder"
 msgstr ""
 
-#: processing/models.py:581
 msgid "Rib Cage"
 msgstr ""
 
-#: processing/models.py:582
 msgid "Chop / Rack"
 msgstr ""
 
-#: processing/models.py:583
 msgid "Breast"
 msgstr ""
 
-#: processing/models.py:584
 msgid "Fillet"
 msgstr ""
 
-#: processing/models.py:585
 msgid "Back Strip"
 msgstr ""
 
-#: processing/models.py:586
 msgid "Leg"
 msgstr ""
 
-#: processing/models.py:587
 msgid "Shank"
 msgstr ""
 
-#: processing/models.py:588
 msgid "Kulbasti"
 msgstr ""
 
-#: processing/models.py:589
 msgid "Soup Bones"
 msgstr ""
 
-#: processing/models.py:616
 msgid "Scale event that generated this cut (if auto-synced from scales)."
 msgstr ""
 
-#: processing/models.py:621
 msgid "Name of the cut (depends on animal type)"
 msgstr ""
 
-#: processing/models.py:627
 msgid "Weight of this cut in kg"
 msgstr ""
 
-#: processing/models.py:648
 msgid ""
 "This animal uses boneless disassembly. Only 'Boneless Meat (Total)' can be "
 "recorded."
 msgstr ""
 
-#: processing/models.py:652
 msgid ""
 "This animal uses standard disassembly. Please select a specific cut type."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:5
 msgid "Animal Detail"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:133
-msgid "Back to List"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:137
-#: processing/templates/processing/animal_detail.html:334
-#: processing/templates/processing/animal_detail.html:784
-#: processing/templates/processing/animal_list.html:402
 msgid "Mark animal as slaughtered?"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:141
-#: processing/templates/processing/animal_detail.html:788
 msgid "Mark Slaughtered"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:176
 #, python-format
 msgid "Action Required: %(title)s"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:178
 #, python-format
 msgid ""
 "This %(animal_type)s does not have its specific details filled in yet. "
@@ -1052,52 +874,41 @@ msgid ""
 "processing and record keeping."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:183
 msgid "Fill Details Now"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:205
 msgid "Leather Weight Missing"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:207
 msgid ""
 "This animal has been processed but the leather weight has not been recorded "
 "yet. Please log the leather weight for complete records."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:213
 msgid "Log Weight Now"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:235
 msgid "Hot Carcass Weight Missing"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:237
 msgid ""
 "This animal has been slaughtered but the hot carcass weight has not been "
 "recorded yet. This is a critical weight measurement required immediately "
 "after slaughter."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:243
 msgid "Log Hot Carcass Weight"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:284
 msgid "Received Date"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:301
 msgid "Performance"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:327
 msgid "Details Not Available"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:329
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
@@ -1105,368 +916,208 @@ msgid ""
 "first before filling in the specific %(animal_type)s details."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:338
 msgid "Slaughter Animal"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:350
 msgid "Existing Details (Read-Only)"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:353
 msgid "Details were filled previously and are preserved."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:390
 msgid "Edit Details"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:427
-#: processing/templates/processing/disassembly_dashboard.html:160
-#: reception/templates/reception/add_animal.html:103
-#: reception/templates/reception/batch_add_animals.html:167
-#: reception/templates/reception/edit_animal.html:106
-#: reception/templates/reception/update_order.html:258
-#: scales/templates/scales/orphaned_batch_reconcile.html:24
-#: scales/templates/scales/session_create.html:46
-#: scales/templates/scales/session_create.html:79
-#: scales/templates/scales/session_event_edit.html:57
-msgid "Cancel"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:432
 msgid "Update Details"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:432
 msgid "Save Details"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:444
 msgid "Label Management"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:453
 msgid "Hot Carcass Label Generate"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:460
 msgid "View All Labels"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:465
 msgid "Label Types Available:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:467
 msgid "PRN Format: Direct printer commands for TSC label printers"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:468
 msgid "BAT Format: Windows batch file for easy printing"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:469
 msgid "PDF Format: Printable document for any printer"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:477
 msgid "Order Information"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:480
 msgid "Order Number"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:489
-#: processing/templates/processing/disassembly_dashboard.html:213
-#: processing/templates/processing/disassembly_dashboard.html:271
-#: reception/templates/reception/order_list.html:76
-#: users/templates/users/dashboard.html:45
 msgid "Client"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:499
-#: processing/templates/processing/disassembly_detail.html:467
 msgid "Service Package"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:503
-#: reception/templates/reception/order_list.html:77
 msgid "Order Date"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:513
 msgid "Photos"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:517
 msgid "Animal Photo"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:524
 msgid "Passport Photo"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:537
-#: users/templates/users/dashboard.html:308
 msgid "Disassembly"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:540
-#: processing/templates/processing/disassembly_dashboard.html:57
-#: processing/templates/processing/disassembly_detail.html:54
 msgid "Boneless Service"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:544
-#: processing/templates/processing/disassembly_dashboard.html:61
-#: processing/templates/processing/disassembly_detail.html:58
 msgid "Standard Cuts"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:561
-#: processing/templates/processing/disassembly_dashboard.html:76
-#: processing/templates/processing/disassembly_detail.html:110
 msgid "Cannot Proceed to Disassembly"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:565
-#: processing/templates/processing/disassembly_dashboard.html:79
-#: processing/templates/processing/disassembly_detail.html:113
 msgid "Hot carcass weight must be logged before disassembly can begin."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:576
 msgid "Record the total weight of boneless meat after removing all bones."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:578
 msgid "Manage disassembly cuts and generate labels for individual pieces."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:586
-#: processing/templates/processing/disassembly_dashboard.html:172
 msgid "Boneless Meat Weight:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:591
 msgid "Total Cuts:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:593
-#: processing/templates/processing/disassembly_dashboard.html:185
-#: processing/templates/processing/disassembly_detail.html:393
 msgid "Total Weight:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:599
 msgid "Individual Cuts:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:621
-#: processing/templates/processing/disassembly_dashboard.html:242
-#: processing/templates/processing/disassembly_dashboard.html:282
-#: users/templates/users/dashboard.html:313
 msgid "Manage Cuts"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:630
 msgid "Weight History"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:638
 msgid "Date"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:644
-#: processing/templates/processing/disassembly_detail.html:136
-#: processing/templates/processing/disassembly_detail.html:480
-#: scales/templates/scales/orphaned_batch_list.html:19
-#: scales/templates/scales/orphaned_batch_reconcile.html:36
-#: scales/templates/scales/session_detail.html:100
-msgid "Weight"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:665
 msgid "No weight records yet."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:672
 msgid "Scale sessions"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:673
 msgid ""
 "Sessions where this animal was scaled (total allocated weight and average "
 "per event)."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:678
-#: scales/templates/scales/session_detail.html:4
-#: scales/templates/scales/session_detail.html:12
-#: scales/templates/scales/session_event_edit.html:4
-#: scales/templates/scales/session_list.html:54
 msgid "Session"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:681
-#: processing/templates/processing/disassembly_detail.html:138
 msgid "Allocated"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:682
-#: processing/templates/processing/batch_weights.html:284
-#: processing/templates/processing/disassembly_detail.html:78
-#: processing/templates/processing/disassembly_detail.html:422
 msgid "avg"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:682
-#: processing/templates/processing/disassembly_detail.html:78
-#: processing/templates/processing/disassembly_detail.html:422
 msgid "event"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:701
-#: reception/templates/reception/edit_animal.html:72
 msgid "Current Image:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:708
-#: reception/templates/reception/edit_animal.html:79
 msgid "Upload a new image to replace"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:725
 msgid "Choose Scale Receipt Image"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:756
 msgid "Upload"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:780
-#: processing/templates/processing/disassembly_detail.html:536
-#: reporting/templates/reporting/dashboard.html:154
-#: reporting/templates/reporting/simple_dashboard.html:82
 msgid "Quick Actions"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:795
-#: reception/templates/reception/edit_animal.html:42
 msgid "Edit Animal"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:802
-#: processing/templates/processing/animal_detail.html:855
 msgid "Log Weight"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:4
 msgid "Animal Processing List"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:227
 msgid "Animal Processing"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:228
 msgid "Manage individual animal processing and workflow"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:251
 msgid "Search by tag, order #, client name, or animal type"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:264
-#: scales/templates/scales/plu_list.html:18
-#: scales/templates/scales/session_list.html:21
 msgid "Filter"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:278
 #, python-format
 msgid "<span class=\"font-semibold\">%(count)s</span> animal found"
 msgid_plural "<span class=\"font-semibold\">%(count)s</span> animals found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: processing/templates/processing/animal_list.html:280
 msgid "filtered results"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:285
 #, python-format
 msgid "Page %(page_obj.number)s of %(page_obj.paginator.num_pages)s"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:292
 msgid "Show:"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:302
 msgid "per page"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:312
-#: scales/templates/scales/orphaned_batch_reconcile.html:14
 msgid "Animal"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:315
-#: processing/templates/processing/batch_weight_reports.html:174
-#: processing/templates/processing/disassembly_detail.html:16
-#: processing/templates/processing/disassembly_detail.html:458
-#: reception/templates/reception/add_animal.html:43
-#: reception/templates/reception/batch_add_animals.html:48
-#: reception/templates/reception/edit_animal.html:44
 msgid "Order"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:343
 #, python-format
 msgid "Missing %(animal_type)s details"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:349
 msgid "Missing leather weight"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:356
 msgid "Missing hot carcass weight"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:405
-#: processing/templates/processing/dashboard.html:231
 msgid "Slaughter"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:428
-#: processing/templates/processing/animal_list.html:435
-#: processing/templates/processing/disassembly_dashboard.html:299
-#: processing/templates/processing/disassembly_dashboard.html:326
-#: reception/templates/reception/order_list.html:130
-#: reception/templates/reception/order_list.html:137
-#: scales/templates/scales/orphaned_batch_list.html:47
-#: scales/templates/scales/plu_list.html:51
-#: scales/templates/scales/session_list.html:94
-msgid "Previous"
-msgstr ""
-
-#: processing/templates/processing/animal_list.html:442
-#: processing/templates/processing/animal_list.html:449
-#: processing/templates/processing/disassembly_dashboard.html:305
-#: processing/templates/processing/disassembly_dashboard.html:342
-#: reception/templates/reception/order_list.html:144
-#: reception/templates/reception/order_list.html:151
-#: scales/templates/scales/orphaned_batch_list.html:53
-#: scales/templates/scales/plu_list.html:57
-#: scales/templates/scales/session_list.html:100
-msgid "Next"
-msgstr ""
-
-#: processing/templates/processing/animal_list.html:461
 #, python-format
 msgid ""
 "Showing \n"
@@ -1481,278 +1132,192 @@ msgid ""
 "                                animals"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:469
-#: reception/templates/reception/order_list.html:171
 msgid "filtered"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:479
-#: reception/templates/reception/order_list.html:181
 msgid "Previous page"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:501
-#: reception/templates/reception/order_list.html:203
 #, python-format
 msgid "Go to page %(num)s"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:531
-#: reception/templates/reception/order_list.html:233
 msgid "Next page"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:567
 msgid "Jump to page:"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:577
 msgid "Go"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:579
 #, python-format
 msgid "of %(page_obj.paginator.num_pages)s"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:590
-#: processing/templates/processing/animal_list.html:665
 msgid "No animals found"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:591
 msgid "Try adjusting your filters or check back later."
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:652
 msgid "Authentication required. Please refresh the page and log in."
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:679
 msgid "No order"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:680 processing/views.py:805
-#: processing/views.py:876
 msgid "Walk-in Client"
 msgstr ""
 
-#: processing/templates/processing/animal_list.html:710
 msgid "Error loading results: "
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:4
-#: processing/templates/processing/dashboard.html:193
 msgid "Batch Slaughter"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:41
 msgid "Batch Slaughter Operations"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:42
 msgid "Process multiple animals from the same order efficiently"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:68
 msgid "Batch Processing Instructions"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:70
 msgid ""
 "Select an order with animals in \"Received\" status to process them all at "
 "once. This is especially useful for small animals like sheep, goats, and "
 "lambs."
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:78
-#: processing/templates/processing/dashboard.html:254
 msgid "Orders Ready for Slaughter"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:105
 msgid "animals ready"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:135
-#: processing/templates/processing/batch_slaughter.html:153
-#: processing/templates/processing/batch_weight_reports.html:234
-#: processing/templates/processing/batch_weights.html:254
-#: processing/templates/processing/disassembly_dashboard.html:18
-#: processing/templates/processing/disassembly_detail.html:27
-#: processing/templates/processing/disassembly_detail.html:548
+msgid "Composition"
+msgstr ""
+
 msgid "Back to Dashboard"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:139
 msgid ""
 "Are you sure you want to mark all animals in the selected order as "
 "slaughtered? This action cannot be undone."
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:140
 msgid "Process Selected Order"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:149
 msgid "No orders ready for batch slaughter"
 msgstr ""
 
-#: processing/templates/processing/batch_slaughter.html:150
 msgid ""
 "All current orders have been processed or have no animals in received status."
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:4
-#: processing/templates/processing/batch_weight_reports.html:10
 msgid "Batch Weight Reports"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:11
 msgid "Comprehensive analysis and reporting of batch weight data"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:16
 msgid "Filter Reports"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:19
 msgid "From Date"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:24
 msgid "To Date"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:29
 msgid "Order ID"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:30
 msgid "Enter order ID"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:35
 msgid "Apply Filters"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:52
 msgid "Total Logs"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:66
 msgid "Animals Weighed"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:80
-#: processing/templates/processing/batch_weight_reports.html:127
-#: processing/templates/processing/batch_weight_reports.html:177
 msgid "Total Weight"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:94
-#: processing/templates/processing/batch_weight_reports.html:128
 msgid "Avg Weight/Animal"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:108
 msgid "Avg Batch Size"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:119
 msgid "Weight Type Breakdown"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:125
 msgid "Logs Count"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:126
 msgid "Total Animals"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:155
-#: processing/templates/processing/dashboard.html:242
 msgid "Recent Activity"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:157
 #, python-format
 msgid "%(count)s batch weight logged in the last 7 days."
 msgid_plural "%(count)s batch weights logged in the last 7 days."
 msgstr[0] ""
 msgstr[1] ""
 
-#: processing/templates/processing/batch_weight_reports.html:166
 msgid "Detailed Weight Logs"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:173
 msgid "Date & Time"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:176
-#: reception/templates/reception/order_detail.html:83
-#: scales/templates/scales/session_create.html:65
-#: scales/templates/scales/session_detail.html:32
 msgid "Animals"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:178
 msgid "Avg Weight"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:214
 msgid "No batch weight data found"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:215
 msgid "No batch weights match your current filters."
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:219
-#: processing/templates/processing/batch_weight_reports.html:230
 msgid "Log New Batch Weight"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:239
 msgid "Print Report"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:4
-#: processing/templates/processing/batch_weights.html:42
 msgid "Batch Weight Logging"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:43
 msgid ""
 "Log weights for multiple animals efficiently and track batch weight history"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:48
-#: processing/templates/processing/batch_weights.html:258
-#: processing/templates/processing/dashboard.html:218
-#: reporting/templates/reporting/dashboard.html:181
-msgid "View Reports"
-msgstr ""
-
-#: processing/templates/processing/batch_weights.html:52
-#: theme/templates/base.html:28 users/templates/users/dashboard.html:4
 msgid "Dashboard"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:81
 #, python-format
 msgid ""
 "<strong>Order Auto-Selected:</strong> %(order_no)s is pre-selected below. "
 "You can change selection if needed."
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:94
 msgid "Real-Time Batch Weight Logging"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:96
 msgid ""
 "<strong>Live Weight:</strong> Can be logged for any animal status - received "
 "animals when truck arrives OR slaughtered animals if forgotten.<br>\n"
@@ -1766,618 +1331,471 @@ msgid ""
 "weighed, individual weights are automatically calculated and saved."
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:109
-#: processing/templates/processing/dashboard.html:297
 msgid "Orders Ready for Weight Logging"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:131
 msgid "received"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:136
 msgid "slaughtered"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:141
 msgid "carcass ready"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:146
 msgid "disassembled"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:151
 msgid "packaged"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:156
 msgid "delivered"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:172
-#: processing/templates/processing/batch_weights.html:277
 msgid "animals"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:186
-#: processing/templates/processing/dashboard.html:359
 msgid "No orders ready for weight logging"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:193
-#: processing/templates/processing/batch_weights.html:245
 msgid "Log Batch Weight"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:201
 msgid "Selected Order:"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:204
 msgid "Animals:"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:236
 msgid "Average per animal:"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:247
 msgid "Please select an order and fill all fields to enable the button"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:265
 msgid "Recent Batch Weights"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:283
 msgid "total"
 msgstr ""
 
-#: processing/templates/processing/batch_weights.html:295
+msgid "Edit total"
+msgstr ""
+
+msgid "Close edit"
+msgstr ""
+
+msgid "Logged"
+msgstr ""
+
+msgid "Only the total weight is editable. Animal count stays fixed."
+msgstr ""
+
+msgid "Save total"
+msgstr ""
+
+#, python-format
+msgid "Page %(page)s of %(pages)s (%(count)s batches)"
+msgstr ""
+
+msgid "Show fewer"
+msgstr ""
+
+msgid "See more batches"
+msgstr ""
+
 msgid "No batch weights logged yet"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:4
 msgid "Processing Dashboard"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:103
 msgid "Processing Control Center"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:104
 msgid "Real-time order tracking and workflow management"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:109
 msgid "Processing Pipeline Status"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:117
-#: processing/templates/processing/dashboard.html:230
 msgid "Ready for Slaughter"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:133
-#: processing/templates/processing/dashboard.html:236
 msgid "Ready for Weighing"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:149
 msgid "Weights Logged"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:164
 msgid "Today's Total"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:165
 msgid "All Received"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:178
 msgid "Individual Processing"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:180
 msgid "Process animals one by one with detailed tracking"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:183
 msgid "View Animals"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:195
 msgid "Process multiple animals from the same order"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:198
 msgid "Batch Process"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:208
 msgid "Weight Logging"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:210
 msgid "Log individual and batch weights efficiently"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:214
 msgid "Log Weights"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:232
-#: processing/templates/processing/dashboard.html:238
 #, python-format
 msgid "%(count)s order"
 msgid_plural "%(count)s orders"
 msgstr[0] ""
 msgstr[1] ""
 
-#: processing/templates/processing/dashboard.html:237
 msgid "Weighing"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:243
 msgid "Activity"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:244
 #, python-format
 msgid "%(count)s animal"
 msgid_plural "%(count)s animals"
 msgstr[0] ""
 msgstr[1] ""
 
-#: processing/templates/processing/dashboard.html:272
 msgid "animals received"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:278
 msgid "Process Batch"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:287
 msgid "No orders ready for slaughter"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:319
 #, python-format
 msgid "%(time_since)s since slaughter"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:328
 msgid "Weight Progress"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:344
 msgid "Hot Carcass"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:351
 msgid "Log Weights →"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:369
 msgid "Recently Received Animals"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:396
 msgid "View all received animals →"
 msgstr ""
 
-#: processing/templates/processing/dashboard.html:400
 msgid "No animals recently received"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:5
-#: processing/templates/processing/disassembly_dashboard.html:11
 msgid "Disassembly Management"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:15
-#: processing/templates/processing/disassembly_detail.html:23
-#: processing/templates/processing/disassembly_detail.html:540
-#: scales/templates/scales/session_create.html:4
-#: scales/templates/scales/session_create.html:8
+msgid "View Sessions"
+msgstr ""
+
 msgid "Start Scale Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:26
 msgid "Session-first workflow:"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:27
 msgid ""
 "Start a scale session for an animal below (choose device and operator), then "
 "use the scale or add manual cuts on the animal's disassembly page."
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:28
 msgid "Go to Start Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:36
-#: processing/templates/processing/disassembly_dashboard.html:43
-#: reception/templates/reception/order_list.html:24
+msgid "Active Sessions"
+msgstr ""
+
+msgid "View all sessions"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "No active sessions."
+msgstr ""
+
+msgid "Start a session"
+msgstr ""
+
 msgid "Search"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:39
 msgid "Search by Tag, Order No, or Client..."
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:53
-#: processing/templates/processing/disassembly_dashboard.html:156
-#: processing/templates/processing/disassembly_detail.html:195
-#: processing/templates/processing/disassembly_detail.html:277
 msgid "Add Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:168
-#: processing/templates/processing/disassembly_detail.html:293
 msgid "Existing Cuts"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:210
-#: processing/templates/processing/disassembly_detail.html:434
-#: reception/templates/reception/order_detail.html:154
 msgid "Tag"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:214
-#: processing/templates/processing/disassembly_dashboard.html:272
 msgid "Order No"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:226
 msgid "Scale session in progress"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:226
-#: processing/templates/processing/disassembly_dashboard.html:267
-#: processing/templates/processing/disassembly_detail.html:70
 msgid "Session Active"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:236
-#: processing/templates/processing/disassembly_dashboard.html:277
 msgid "Open Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:239
-#: processing/templates/processing/disassembly_dashboard.html:280
-#: scales/templates/scales/dashboard.html:16
-#: scales/templates/scales/session_create.html:78
-#: scales/templates/scales/session_list.html:11
 msgid "Start Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:248
-#: processing/templates/processing/disassembly_dashboard.html:287
 msgid "No animals found ready for disassembly."
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:312
 msgid "Showing"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:314
 msgid "to"
 msgstr ""
 
-#: processing/templates/processing/disassembly_dashboard.html:316
-msgid "of"
-msgstr ""
-
-#: processing/templates/processing/disassembly_dashboard.html:318
 msgid "results"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:5
 msgid "Disassembly Details"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:31
 msgid "View Animal"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:73
-#: processing/templates/processing/disassembly_detail.html:416
-#: scales/templates/scales/orphaned_batch_list.html:16
-#: scales/templates/scales/session_detail.html:31
-#: scales/templates/scales/session_list.html:56
 msgid "Device"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:74
-#: processing/templates/processing/disassembly_detail.html:417
-#: scales/templates/scales/session_detail.html:33
-#: scales/templates/scales/session_list.html:57
-#: users/templates/users/dashboard.html:37
 msgid "Operator"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:75
-#: processing/templates/processing/disassembly_detail.html:419
-#: scales/templates/scales/orphaned_batch_list.html:18
-#: scales/templates/scales/session_detail.html:39
 msgid "Events"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:76
 msgid "Total"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:78
-#: processing/templates/processing/disassembly_detail.html:422
 msgid "Allocated to this animal"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:84
 msgid "View Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:91
 msgid "Complete Session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:128
 msgid "Scale events"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:133
-#: scales/templates/scales/edge_management.html:144
-#: scales/templates/scales/orphaned_batch_reconcile.html:33
-#: scales/templates/scales/session_detail.html:72
-#: scales/templates/scales/session_detail.html:97
-#: scales/templates/scales/session_detail.html:185
-#: scales/templates/scales/session_event_edit.html:18
 msgid "Time"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:134
-#: processing/templates/processing/disassembly_detail.html:327
-#: scales/templates/scales/orphaned_batch_reconcile.html:34
-#: scales/templates/scales/plu_list.html:25
-#: scales/templates/scales/session_detail.html:98
 msgid "PLU"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:135
-#: scales/templates/scales/orphaned_batch_reconcile.html:35
-#: scales/templates/scales/session_detail.html:99
 msgid "Product"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:155
-#: processing/templates/processing/disassembly_detail.html:576
-#: scales/templates/scales/session_detail.html:89
-#: scales/templates/scales/session_detail.html:126
-#: scales/templates/scales/session_detail.html:169
-#: scales/templates/scales/session_detail.html:180
 msgid "No events yet."
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:161
 msgid "Updates every 5 seconds."
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:176
 msgid "Editing Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:178
 msgid "Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:179
 msgid "Current Weight"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:185
-#: processing/templates/processing/disassembly_detail.html:283
 msgid "Cancel Edit"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:193
 msgid "Edit Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:195
 msgid "Manual Entry (Fallback)"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:272
 msgid "Update Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:296
-msgid "Total:"
+msgid "Total (yield):"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:311
 msgid "Scale"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:315
+msgid ""
+"Scale event was removed or deactivated. Use Edit to change weight and "
+"reactivate."
+msgstr ""
+
+msgid "Event inactive"
+msgstr ""
+
 msgid "Manual"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:320
 msgid "Editing"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:325
 msgid "Added"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:337
 msgid "Currently Editing"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:341
 msgid "View Label"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:351
 msgid "Generate Label"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:355
 msgid "Regenerate"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:355
 msgid "Label"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:361
-#: processing/templates/processing/disassembly_detail.html:374
-#: reception/templates/reception/order_detail.html:133
-#: reception/templates/reception/order_detail.html:190
-#: scales/templates/scales/session_detail.html:68
-#: scales/templates/scales/session_detail.html:121
-#: scales/templates/scales/session_detail.html:174
-#: scales/templates/scales/session_detail.html:185
 msgid "Edit"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:365
+msgid "Reactivate"
+msgstr ""
+
 msgid "Are you sure you want to delete this event?"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:378
 msgid "Are you sure you want to delete this cut?"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:402
+msgid "Total Weight (yield):"
+msgstr ""
+
 msgid "No cuts added yet."
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:403
 msgid "Use the form above to add your first cut."
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:414
 msgid "Scale session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:418
-#: scales/templates/scales/orphaned_batch_list.html:17
-#: scales/templates/scales/session_detail.html:38
-#: scales/templates/scales/session_list.html:59
 msgid "Started"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:420
-#: scales/templates/scales/session_detail.html:40
 msgid "Total weight"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:425
 msgid "View session"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:485
-msgid "Logged"
-msgstr ""
-
-#: processing/templates/processing/disassembly_detail.html:495
 msgid "Boneless Yield"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:501
-#: processing/templates/processing/disassembly_detail.html:520
 #, python-format
 msgid "Yield %%"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:514
-msgid "Total Cuts Weight"
+msgid "Total Cuts Weight (yield)"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:544
 msgid "View Full Animal Details"
 msgstr ""
 
-#: processing/views.py:347
 msgid "Scale receipt image deleted."
 msgstr ""
 
-#: processing/views.py:349
 msgid "No scale receipt image to delete."
 msgstr ""
 
-#: processing/views.py:354
 msgid "Scale receipt image uploaded successfully."
 msgstr ""
 
-#: processing/views.py:356
 msgid "Failed to upload scale receipt image."
 msgstr ""
 
-#: processing/views.py:395 processing/views.py:398
 #, python-format
 msgid "%(animal_type)s Details"
 msgstr ""
 
-#: processing/views.py:447
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr ""
 
-#: processing/views.py:449
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr ""
 
-#: processing/views.py:467 processing/views.py:832
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:479
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr ""
 
-#: processing/views.py:481
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:483
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:512
 msgid "Please select an order."
 msgstr ""
 
-#: processing/views.py:529
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr ""
 
-#: processing/views.py:531
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr ""
 
-#: processing/views.py:693
 #, python-format
-msgid ""
-"✅ Batch weight logged successfully! All %(available_count)s animals for "
-"%(weight_type)s are now weighed. Individual weight logs have been "
-"automatically created with average weight of %(average_weight).2fkg per "
-"animal."
+msgid "%(field)s: %(error)s"
 msgstr ""
 
-#: processing/views.py:703
+#, python-format
+msgid ""
+"Batch weight logged successfully. All %(available_count)s animals for "
+"%(weight_type)s are now weighed, and individual weight logs were created at "
+"%(average_weight).2fkg average."
+msgstr ""
+
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -2385,435 +1803,349 @@ msgid ""
 "%(weight_type)s."
 msgstr ""
 
-#: processing/views.py:713
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:771
+#, python-format
+msgid ""
+"Batch total updated for %(weight_type)s. Individual animal weights were "
+"resynced to %(average_weight).2fkg average across %(available_count)s "
+"animals."
+msgstr ""
+
+#, python-format
+msgid ""
+"Batch total updated for %(weight_type)s. %(remaining)s animals are still "
+"pending, so individual animal logs for this type were removed."
+msgstr ""
+
+#, python-format
+msgid "Error updating batch weight: %(error)s"
+msgstr ""
+
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr ""
 
-#: processing/views.py:834
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:914
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
 "Current status: %(status)s. Please slaughter the animal first."
 msgstr ""
 
-#: processing/views.py:923
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr ""
 
-#: processing/views.py:930
 msgid "updated"
 msgstr ""
 
-#: processing/views.py:934
 msgid "created"
 msgstr ""
 
-#: processing/views.py:943
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr ""
 
-#: processing/views.py:1072 processing/views.py:1083
 msgid "No animal found matching the query"
 msgstr ""
 
-#: processing/views.py:1081
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
 msgstr ""
 
-#: processing/views.py:1310
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr ""
 
-#: processing/views.py:1312
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr ""
 
-#: processing/views.py:1314
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1344 processing/views.py:1355
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 
-#: processing/views.py:1363
 msgid "Cut updated successfully."
 msgstr ""
 
-#: processing/views.py:1366
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1381
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
 msgstr ""
 
-#: processing/views.py:1387
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr ""
 
-#: reception/forms.py:12 reception/forms.py:123
-#: reception/templates/reception/create_order.html:158
-#: reception/templates/reception/update_order.html:145
 msgid "Search Registered Client"
 msgstr ""
 
-#: reception/forms.py:15 reception/forms.py:126
 msgid "Type client name to search..."
 msgstr ""
 
-#: reception/forms.py:30 reception/forms.py:141
 msgid "Walk-in Client Name"
 msgstr ""
 
-#: reception/forms.py:33 reception/forms.py:144
 msgid "Enter client name for walk-in customers"
 msgstr ""
 
-#: reception/forms.py:47 reception/forms.py:158
 msgid "Area Code"
 msgstr ""
 
-#: reception/forms.py:50 reception/forms.py:161
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr ""
 
-#: reception/forms.py:57 reception/forms.py:168
-#: reception/templates/reception/create_order.html:217
-#: reception/templates/reception/update_order.html:203
 msgid "Walk-in Client Phone"
 msgstr ""
 
-#: reception/forms.py:60 reception/forms.py:171
 msgid "Enter phone number"
 msgstr ""
 
-#: reception/forms.py:68 reception/forms.py:179
 msgid "Service package"
 msgstr ""
 
-#: reception/forms.py:69 reception/forms.py:180
 msgid "Order datetime"
 msgstr ""
 
-#: reception/forms.py:70 reception/forms.py:181
 msgid "Destination"
 msgstr ""
 
-#: reception/forms.py:73 reception/forms.py:184
 msgid "The service package selected for this order."
 msgstr ""
 
-#: reception/forms.py:74 reception/forms.py:185
 msgid "Destination for the order."
 msgstr ""
 
-#: reception/forms.py:83 reception/forms.py:194
 msgid "Enter destination (optional)"
 msgstr ""
 
-#: reception/forms.py:93 reception/forms.py:204
 msgid "Select service package"
 msgstr ""
 
-#: reception/forms.py:102 reception/forms.py:232
+msgid "Please choose a service package before creating the order."
+msgstr ""
+
+msgid "Select a valid service package."
+msgstr ""
+
 msgid ""
 "An order must be linked to either a registered client or a walk-in client "
 "name."
 msgstr ""
 
-#: reception/forms.py:107 reception/forms.py:237
 msgid ""
 "Please provide either a registered client or a walk-in client, not both."
 msgstr ""
 
-#: reception/forms.py:264
+msgid "Please choose a service package before saving the order."
+msgstr ""
+
 msgid "Enter identification tag (optional - auto-generated if empty)"
 msgstr ""
 
-#: reception/forms.py:284 reception/forms.py:350
 msgid "Select animal type"
 msgstr ""
 
-#: reception/forms.py:288
 msgid "Animal Photo (Optional)"
 msgstr ""
 
-#: reception/forms.py:289
 msgid "Passport/Document Photo (Optional)"
 msgstr ""
 
-#: reception/forms.py:313
 msgid "Enter number of animals (1-100)"
 msgstr ""
 
-#: reception/forms.py:320
 msgid "Tag Prefix (Optional)"
 msgstr ""
 
-#: reception/forms.py:323
 msgid "e.g., BATCH-001 (leave empty for auto-generation)"
 msgstr ""
 
-#: reception/forms.py:325
 msgid ""
 "Custom prefix for identification tags. If empty, auto-generated tags will be "
 "used."
 msgstr ""
 
-#: reception/forms.py:330
 msgid "Received Date & Time"
 msgstr ""
 
-#: reception/forms.py:335
-msgid "Leave empty to use current date/time for all animals"
+msgid ""
+"Pre-filled with the current date and time; clear to use the time when you "
+"submit."
 msgstr ""
 
-#: reception/forms.py:341
 msgid "Skip Photos for Batch"
 msgstr ""
 
-#: reception/forms.py:345
 msgid "Check this to create animals without photos (photos can be added later)"
 msgstr ""
 
-#: reception/forms.py:355
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr ""
 
-#: reception/templates/reception/add_animal.html:4
 msgid "Add Animal to Order"
 msgstr ""
 
-#: reception/templates/reception/add_animal.html:42
-#: reception/templates/reception/add_animal.html:107
-#: reception/templates/reception/order_detail.html:88
 msgid "Add Animal"
 msgstr ""
 
-#: reception/templates/reception/add_animal.html:73
 msgid "Animal photo can be added now or later"
 msgstr ""
 
-#: reception/templates/reception/add_animal.html:75
 msgid "Passport/document photo can be added now or later"
 msgstr ""
 
-#: reception/templates/reception/add_animal.html:80
 msgid "Current:"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:4
 msgid "Batch Add Animals to Order"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:47
-#: reception/templates/reception/order_detail.html:217
 msgid "Batch Add Animals"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:49
 msgid "Create multiple animals at once with auto-generated tags"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:58
 msgid "Batch Creation Features:"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:60
 msgid "Auto-generates unique identification tags for each animal"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:61
 msgid "Creates up to 100 animals in a single batch"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:62
 msgid "Photos can be added individually later via edit function"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:63
 msgid "All animals will have the same received date/time"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:131
 msgid "Tag Examples:"
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:132
 msgid "With prefix 'FARM-A': FARM-A-001, FARM-A-002, FARM-A-003..."
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:133
 msgid "Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02..."
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:171
 msgid ""
 "Are you sure you want to create these animals? This action cannot be undone."
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:172
 msgid "Create Batch Animals"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:4
 msgid "Create Slaughter Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:135
 msgid "Create New Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:164
 msgid "Create New Client Profile"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:192
-#: reception/templates/reception/update_order.html:178
 msgid "OR"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:271
-#: users/templates/users/dashboard.html:92
 msgid "Create Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:309
-#: reception/templates/reception/update_order.html:301
-#: users/templates/users/dashboard.html:616
 msgid "No clients found"
 msgstr ""
 
-#: reception/templates/reception/edit_animal.html:4
 msgid "Edit Animal in Order"
 msgstr ""
 
-#: reception/templates/reception/edit_animal.html:110
 msgid "Update Animal"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:24
 msgid "Client:"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:29
 msgid "Phone:"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:34
 msgid "Order Date:"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:38
 msgid "Service:"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:43
 msgid "Destination:"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:53
 msgid "Edit Order"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:61
+msgid "Operation Dashboard"
+msgstr ""
+
 msgid "Are you sure you want to cancel this order?"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:62
 msgid "Cancel Order"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:72
 msgid "Are you sure you want to mark this order as billed?"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:73
 msgid "Bill Order"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:92
 msgid "Batch Add"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:128
-#: reception/templates/reception/order_detail.html:187
-msgid "View Profile"
-msgstr ""
-
-#: reception/templates/reception/order_detail.html:139
-#: reception/templates/reception/order_detail.html:195
-msgid "Are you sure you want to remove this animal?"
-msgstr ""
-
-#: reception/templates/reception/order_detail.html:140
-#: reception/templates/reception/order_detail.html:196
-msgid "Remove"
-msgstr ""
-
-#: reception/templates/reception/order_detail.html:155
 msgid "Species"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:208
+msgid "Remove"
+msgstr ""
+
+msgid "Are you sure you want to remove this animal?"
+msgstr ""
+
 msgid "No animals in this order yet."
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:213
 msgid "Add First Animal"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:7
 msgid "Slaughter Orders"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:10
-#: users/templates/users/dashboard.html:87
 msgid "New Order"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:20
 msgid "Search by order number, client name, or destination..."
 msgstr ""
 
-#: reception/templates/reception/order_list.html:29
 msgid "Clear"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:63
-#: reception/templates/reception/order_list.html:110
-msgid "View Details"
-msgstr ""
-
-#: reception/templates/reception/order_list.html:75
 msgid "Order No."
 msgstr ""
 
-#: reception/templates/reception/order_list.html:163
+msgid "View Details"
+msgstr ""
+
 #, python-format
 msgid ""
 "Showing \n"
@@ -2825,1081 +2157,1370 @@ msgid ""
 "                            orders"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:253
 msgid "No orders yet"
 msgstr ""
 
-#: reception/templates/reception/order_list.html:254
 msgid "Get started by creating your first slaughter order."
 msgstr ""
 
-#: reception/templates/reception/order_list.html:257
 msgid "Create First Order"
 msgstr ""
 
-#: reception/templates/reception/update_order.html:4
 msgid "Update Slaughter Order"
 msgstr ""
 
-#: reception/templates/reception/update_order.html:121
-#: reception/templates/reception/update_order.html:262
 msgid "Update Order"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:4
-#: reporting/templates/reporting/dashboard.html:9
+msgid ""
+"We could not save this order. Please try again, or contact support if it "
+"keeps happening."
+msgstr ""
+
+msgid "Check the highlighted fields below, fix any issues, and submit again."
+msgstr ""
+
 msgid "Reports Dashboard"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:14
 msgid "Reporting System"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:17
 msgid ""
 "Generate and manage daily, monthly, and yearly reports for your "
 "slaughterhouse operations."
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:32
-#: users/templates/users/dashboard.html:437
 msgid "Daily Reports"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:34
 msgid "Generate daily slaughter reports with detailed animal processing data."
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:45
-#: reporting/templates/reporting/dashboard.html:90
-#: reporting/templates/reporting/dashboard.html:131
 msgid "Generate"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:49
 msgid "Test"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:60
 msgid "No daily reports configured"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:77
 msgid "Monthly Reports"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:79
 msgid "Generate monthly operational and performance reports."
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:101
 msgid "No monthly reports configured"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:118
 msgid "Yearly Reports"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:120
 msgid "Generate annual summary and trend reports."
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:142
 msgid "No yearly reports configured"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:164
-#: reporting/templates/reporting/simple_dashboard.html:86
 msgid "Today's Report"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:166
 msgid "Generate daily slaughter report for today"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:169
 msgid "Generate Now"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:183
+msgid "View Reports"
+msgstr ""
+
 msgid "Browse previously generated reports"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:186
 msgid "View All"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:198
 msgid "Test Generation"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:200
 msgid "Test report generation with sample data"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:203
 msgid "Test Now"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:221
-#: reporting/templates/reporting/simple_dashboard.html:114
 msgid "Generating Report"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:222
 msgid "Please wait while we generate your report..."
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:242
 msgid "Report generation started for"
 msgstr ""
 
-#: reporting/templates/reporting/dashboard.html:277
-#: reporting/templates/reporting/simple_dashboard.html:217
 msgid "Error generating report"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:4
-#: reporting/templates/reporting/report_list.html:9
 msgid "Generated Reports"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:14
 msgid "Archive"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:17
 msgid "View and download previously generated reports."
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:27
 msgid "Report Name"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:33
 msgid "Generated At"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:36
 msgid "Generated By"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:81
 msgid "Download"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:86
 msgid "Details"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:99
 msgid "No reports generated yet"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:100
 msgid "Start by generating your first report from the dashboard."
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:103
 msgid "Go to Dashboard"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:112
-#: reporting/templates/reporting/test_report.html:56
 msgid "← Back to Reports Dashboard"
 msgstr ""
 
-#: reporting/templates/reporting/report_list.html:119
 msgid "Report details for ID"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:4
-#: reporting/templates/reporting/simple_dashboard.html:16
-#: reporting/templates/reporting/simple_dashboard.html:76
 msgid "Generate Report"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:17
 msgid "Select date range and download your report"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:27
 msgid "Start Date"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:38
 msgid "End Date"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:50
 msgid "Output Format"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:59
 msgid "Excel (.xlsx)"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:90
 msgid "Yesterday's Report"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:94
 msgid "This Week"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:98
 msgid "This Month"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:115
 msgid "Please wait..."
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:176
 msgid "Please select both start and end dates"
 msgstr ""
 
-#: reporting/templates/reporting/simple_dashboard.html:181
 msgid "Start date cannot be after end date"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:4
-#: reporting/templates/reporting/test_report.html:9
 msgid "Test Report Generation"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:14
 msgid "Testing"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:17
 msgid ""
 "Test the report generation system with sample data to ensure everything is "
 "working correctly."
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:29
-#: reporting/templates/reporting/test_report.html:36
 msgid "Generate Test Report"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:30
 msgid ""
 "This will generate a sample daily slaughter report using test data to verify "
 "the reporting system is working correctly."
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:41
 msgid "The test report will include:"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:43
 msgid "Sample animal data"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:44
 msgid "Weight information"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:45
 msgid "Offal and bowels status"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:46
 msgid "Summary totals by animal type"
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:68
 msgid "Generating..."
 msgstr ""
 
-#: reporting/templates/reporting/test_report.html:100
 msgid "Error generating test report"
 msgstr ""
 
-#: scales/models.py:178
 msgid "No animals"
 msgstr ""
 
-#: scales/models.py:184
 #, python-format
 msgid "+%(count)s more"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:4
-#: scales/templates/scales/dashboard.html:8
 msgid "Scale Operations"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:12
 msgid "Sessions"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:13
 msgid "active"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:17
 msgid "Link scale to animal"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:20
-#: scales/templates/scales/orphaned_batch_list.html:4
-#: scales/templates/scales/orphaned_batch_list.html:8
 msgid "Orphaned Batches"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:21
 msgid "pending"
 msgstr ""
 
-#: scales/templates/scales/dashboard.html:26
-msgid "Active Sessions"
-msgstr ""
-
-#: scales/templates/scales/dashboard.html:38
-msgid "No active sessions."
-msgstr ""
-
-#: scales/templates/scales/dashboard.html:44
 msgid "PLU catalog"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:4
-#: scales/templates/scales/edge_management.html:10
-#: users/templates/users/dashboard.html:545
 msgid "Edge Management"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:11
 msgid "Browse infrastructure as site -> edge -> printer and review edge logs."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:13
 msgid "Back to dashboard"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:17
 msgid "Topology Selector"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:20
-#: scales/templates/scales/edge_management.html:58
-#: scales/templates/scales/session_create.html:12
 msgid "Site"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:22
 msgid "Select site"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:29
 msgid "Edge"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:31
-#: scales/templates/scales/edge_management.html:284
 msgid "Select edge"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:41
 msgid "Apply filter"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:50
 msgid "Available Edges"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:51
-#: scales/templates/scales/edge_management.html:95
 msgid "Live"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:57
-#: scales/templates/scales/plu_list.html:26
 msgid "Name"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:60
 msgid "Last seen"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:70
-#: scales/templates/scales/edge_management.html:114
-#: scales/templates/scales/edge_management.html:205
-#: scales/templates/scales/edge_management.html:224
 msgid "Online"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:72
-#: scales/templates/scales/edge_management.html:116
-#: scales/templates/scales/edge_management.html:206
-#: scales/templates/scales/edge_management.html:225
 msgid "Offline"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:77
-#: scales/templates/scales/edge_management.html:78
-#: scales/templates/scales/edge_management.html:79
-#: scales/templates/scales/edge_management.html:122
-#: scales/templates/scales/edge_management.html:123
-#: scales/templates/scales/edge_management.html:124
-#: scales/templates/scales/edge_management.html:193
-#: scales/templates/scales/edge_management.html:194
-#: scales/templates/scales/edge_management.html:195
 msgid "ago"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:85
-#: scales/templates/scales/edge_management.html:200
 msgid "No edges for this filter."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:94
 msgid "Available Printers / Scale Devices"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:101
 msgid "Device ID"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:104
 msgid "Last heartbeat"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:130
-#: scales/templates/scales/edge_management.html:219
 msgid "No printers for this filter."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:139
 msgid "Recent Edge Logs"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:145
 msgid "Level"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:146
 msgid "Action"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:147
 msgid "Site / Edge / Printer"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:148
 msgid "Message"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:165
 msgid "No edge logs yet."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:285
-#: scales/templates/scales/edge_management.html:312
 msgid "Select an edge to list printers."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:288
 msgid "Select a site to list edges."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:302
 msgid "online"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:302
 msgid "offline"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_list.html:9
 msgid ""
 "Batches of scale events captured while the Edge was offline. Assign each "
 "batch to an animal to reconcile."
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_list.html:15
 msgid "Batch ID"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_list.html:32
 msgid "Reconcile"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_list.html:37
 msgid "No pending orphaned batches."
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_list.html:51
-#: scales/templates/scales/plu_list.html:55
-#: scales/templates/scales/session_list.html:98
-msgid "Page"
-msgstr ""
-
-#: scales/templates/scales/orphaned_batch_reconcile.html:4
 msgid "Reconcile batch"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:8
 msgid "Reconcile offline batch"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:9
 msgid "events"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:9
 msgid "Assign to an animal to create a session and link all events."
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:16
 msgid "— Select animal —"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:23
 msgid "Reconcile to animal"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:28
 msgid "Events in this batch"
 msgstr ""
 
-#: scales/templates/scales/orphaned_batch_reconcile.html:49
 msgid "No events."
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:4
-#: scales/templates/scales/plu_list.html:8
 msgid "PLU Catalog"
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:11
 msgid "Search PLU or name"
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:13
 msgid "All categories"
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:27
 msgid "Category"
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:28
 msgid "Scale label (16ch)"
 msgstr ""
 
-#: scales/templates/scales/plu_list.html:41
 msgid "No PLU items. Run: python manage.py seed_plu"
 msgstr ""
 
-#: scales/templates/scales/session_create.html:9
 msgid ""
 "Choose a scale device and one or more animals. You can search and add "
 "multiple animals to scale together."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:27
 msgid "Add animal by QR code"
 msgstr ""
 
-#: scales/templates/scales/session_create.html:28
 msgid ""
 "Scan the animal label QR code to add the animal to this session (you can add "
 "multiple)."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:33
 msgid "Scan QR code"
 msgstr ""
 
-#: scales/templates/scales/session_create.html:42
 msgid "Scan animal label"
 msgstr ""
 
-#: scales/templates/scales/session_create.html:66
 msgid ""
 "Search by tag, order number or client; only animals eligible for disassembly "
 "are shown."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:68
 msgid "Search animals..."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:75 scales/views.py:417
 msgid "Select at least one animal."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:80
 msgid "Back to Disassembly"
 msgstr ""
 
-#: scales/templates/scales/session_create.html:136
 msgid "No animal ID in this QR code. Try scanning the animal label."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:149
 msgid "Scanner could not load. Please refresh the page."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:164
 msgid "Camera access denied or not available."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:256
 msgid "No eligible animals or already added."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:289
 msgid "Search failed."
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:17
 msgid "more"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:24
 msgid "Back to list"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:47
 msgid "Reason (optional)"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:48
 msgid "Close Session"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:52
 msgid "Cancel Session"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:58
 msgid "Weighing events"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:75
-#: scales/templates/scales/session_detail.html:101
-#: scales/templates/scales/session_detail.html:185
 msgid "Assignee"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:78
-#: scales/templates/scales/session_detail.html:114
-#: scales/templates/scales/session_detail.html:162
 msgid "Dedicated"
 msgstr ""
 
-#: scales/templates/scales/session_detail.html:83
-#: scales/templates/scales/session_detail.html:117
-#: scales/templates/scales/session_detail.html:164
 msgid "Split"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:4
 msgid "Edit event"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:10
 msgid "Back to session"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:12
+msgid "Back to sessions"
+msgstr ""
+
 msgid "Edit weighing event"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:22
+msgid ""
+"This event is currently inactive (e.g. deleted or excluded). You can change "
+"the weight and save to reactivate it and fix allocation."
+msgstr ""
+
 msgid "Current product"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:30
 msgid "Product (PLU)"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:35
 msgid "No PLU items"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:45
 msgid "Assign to animal"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:47
 msgid "Split (average across all animals)"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:52
 msgid "Choose one animal to assign full weight, or Split to share evenly."
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:56
 msgid "Save"
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:62
 msgid "Delete this event? It will be hidden from the list but kept for logs."
 msgstr ""
 
-#: scales/templates/scales/session_event_edit.html:64
 msgid "Delete event"
 msgstr ""
 
-#: scales/templates/scales/session_list.html:4
-#: scales/templates/scales/session_list.html:10
 msgid "Scale Sessions"
 msgstr ""
 
-#: scales/templates/scales/session_list.html:16
 msgid "All statuses"
 msgstr ""
 
-#: scales/templates/scales/session_list.html:46
-#: scales/templates/scales/session_list.html:84
 msgid "No sessions."
 msgstr ""
 
-#: scales/templates/scales/session_list.html:55
 msgid "Affected Animals"
 msgstr ""
 
-#: scales/views.py:242
 msgid "Scale device"
 msgstr ""
 
-#: scales/views.py:298
 msgid "Walk-in"
 msgstr ""
 
-#: scales/views.py:377
+#, python-format
+msgid ""
+"Animal %(tag)s is not eligible for scale session. It must be carcass-ready "
+"with hot carcass weight."
+msgstr ""
+
+msgid "Animal not found. The scanned QR code may be invalid."
+msgstr ""
+
 msgid "Animal not found or not eligible for scale session."
 msgstr ""
 
-#: scales/views.py:382
 msgid "Could not find animal from this QR code."
 msgstr ""
 
-#: scales/views.py:435
 msgid "One or more selected animals are invalid or not eligible."
 msgstr ""
 
-#: scales/views.py:457
 #, python-format
 msgid ""
 "Device %(device)s already has an active session (animal: %(tag)s). Close it "
 "before starting a new one."
 msgstr ""
 
-#: scales/views.py:489
 #, python-format
 msgid "Session started for %(tag)s on %(device)s."
 msgstr ""
 
-#: scales/views.py:495
 #, python-format
 msgid "Session started for %(count)s animals on %(device)s."
 msgstr ""
 
-#: scales/views.py:705
 msgid "Event updated."
 msgstr ""
 
-#: scales/views.py:728
+msgid "This event is already deleted."
+msgstr ""
+
 msgid "Event deleted."
 msgstr ""
 
-#: scales/views.py:738 scales/views.py:757
+msgid "This event is already active."
+msgstr ""
+
+msgid "Event reactivated."
+msgstr ""
+
 msgid "Session is already closed."
 msgstr ""
 
-#: scales/views.py:744
 msgid "Session closed."
 msgstr ""
 
-#: scales/views.py:763
 msgid "Session cancelled."
 msgstr ""
 
-#: scales/views.py:829
 msgid "Please select an animal."
 msgstr ""
 
-#: scales/views.py:859
 #, python-format
 msgid "Batch reconciled to animal %(tag)s."
 msgstr ""
 
-#: theme/templates/base.html:7
-msgid "POMET Slaughterhouse"
+msgid "CarniTrack"
 msgstr ""
 
-#: theme/templates/base.html:31
+msgid "Public fallback"
+msgstr ""
+
+msgid "Built for modern slaughterhouse operations."
+msgstr ""
+
+msgid ""
+"Fallback access on the public host uses the same tenant discovery and "
+"approval pipeline as the React frontend."
+msgstr ""
+
+msgid "Facilities operating on isolated tenant workspaces."
+msgstr ""
+
+msgid "Animals tracked through receiving, processing, and labeling."
+msgstr ""
+
+msgid "Platform admin"
+msgstr ""
+
+msgid "Public access"
+msgstr ""
+
+msgid "One platform for slaughterhouse traceability and operations."
+msgstr ""
+
+msgid ""
+"Use the public host when you need a fallback to sign in, request a tenant "
+"workspace, or track a registration without the React frontend."
+msgstr ""
+
+msgid ""
+"The underlying discovery, approval, and tenant login APIs are the same ones "
+"used by the production web app."
+msgstr ""
+
+msgid "Tenant routing stays intact"
+msgstr ""
+
+msgid ""
+"Approved companies receive their own isolated tenant subdomain. "
+"Authentication still completes on that tenant host so the browser stores the "
+"correct session cookie."
+msgstr ""
+
+msgid "Choose a flow"
+msgstr ""
+
+msgid ""
+"These pages are hosted directly by Django and follow the same public "
+"workflow as the React frontend."
+msgstr ""
+
+msgid "Sign in to a tenant workspace"
+msgstr ""
+
+msgid ""
+"Start with your email, choose your workspace if needed, then finish "
+"authentication on the tenant host."
+msgstr ""
+
+msgid "Request a tenant workspace"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Submit your company and owner details for platform-admin approval."
+msgstr ""
+
+msgid "Already approved?"
+msgstr ""
+
+msgid ""
+"If your tenant is already active, use the sign-in flow here or go directly "
+"to the tenant URL provided by your administrator."
+msgstr ""
+
+msgid "Tenant registration"
+msgstr ""
+
+msgid "Request a CarniTrack tenant workspace."
+msgstr ""
+
+msgid ""
+"This fallback form creates the same pending tenant-registration request as "
+"the React setup page."
+msgstr ""
+
+msgid ""
+"Platform admins review the request, approve the tenant, and the owner "
+"account is created from the submitted email and password."
+msgstr ""
+
+msgid "Step 1"
+msgstr ""
+
+msgid "Submit your company and owner details."
+msgstr ""
+
+msgid "Step 2"
+msgstr ""
+
+msgid "Track approval status with the private status token link."
+msgstr ""
+
+msgid "Step 3"
+msgstr ""
+
+msgid "After approval, sign in and land on your tenant dashboard."
+msgstr ""
+
+msgid "Create your request"
+msgstr ""
+
+msgid ""
+"Required fields match the public API. Optional fields help platform admin "
+"review your request faster."
+msgstr ""
+
+msgid "Company name"
+msgstr ""
+
+msgid "Owner email"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Confirm password"
+msgstr ""
+
+msgid "Optional company details"
+msgstr ""
+
+msgid "Registered company name"
+msgstr ""
+
+msgid "Address"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "License number"
+msgstr ""
+
+msgid "Operation number"
+msgstr ""
+
+msgid "Submit request"
+msgstr ""
+
+msgid "Already have an approved tenant?"
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid "Registration status"
+msgstr ""
+
+msgid "Track your tenant approval status."
+msgstr ""
+
+msgid ""
+"The status page reads the same approval endpoint used by the React app. Keep "
+"the private token in the URL if you want to refresh or revisit this page "
+"later."
+msgstr ""
+
+msgid "Approval states"
+msgstr ""
+
+msgid "Pending: waiting for platform-admin review."
+msgstr ""
+
+msgid "Approved: tenant created and owner account ready."
+msgstr ""
+
+msgid "Rejected: review the reason before submitting again."
+msgstr ""
+
+msgid "Follow your request"
+msgstr ""
+
+msgid "This page refreshes automatically while your request is still pending."
+msgstr ""
+
+msgid ""
+"Your request is still pending review. We will keep checking automatically."
+msgstr ""
+
+msgid ""
+"Your tenant is approved. Continue to sign in and finish setup on the tenant "
+"host."
+msgstr ""
+
+msgid ""
+"This request was rejected. Review the reason below before submitting a new "
+"request."
+msgstr ""
+
+msgid "Could not load registration status."
+msgstr ""
+
+msgid "Workspace preview"
+msgstr ""
+
+msgid "Current status"
+msgstr ""
+
+msgid "Rejection reason"
+msgstr ""
+
+msgid "Continue to sign in"
+msgstr ""
+
+msgid "Submit another request"
+msgstr ""
+
+msgid "Back to home"
+msgstr ""
+
+msgid "Find your workspace first, then sign in on the tenant host."
+msgstr ""
+
+msgid ""
+"This Django-hosted fallback keeps the React email-first workflow: discover "
+"by email, choose the workspace if there are multiple matches, then "
+"authenticate directly against that tenant."
+msgstr ""
+
+msgid "Authentication stays tenant-scoped"
+msgstr ""
+
+msgid ""
+"The final password POST goes to the tenant origin so the browser receives a "
+"real tenant session cookie and the Django dashboard opens without a second "
+"login step."
+msgstr ""
+
+msgid "Tenant sign in"
+msgstr ""
+
+msgid ""
+"Start with your work email. We will find the correct tenant before asking "
+"for your password."
+msgstr ""
+
+msgid "Email-first tenant sign in is only available in multi-tenant mode."
+msgstr ""
+
+msgid ""
+"This sign-in fallback requires JavaScript because the final authentication "
+"step must call the tenant login API from your browser."
+msgstr ""
+
+msgid "Work email"
+msgstr ""
+
+msgid "Continue"
+msgstr ""
+
+msgid "Select your workspace"
+msgstr ""
+
+msgid ""
+"This email exists in more than one tenant. Pick the correct workspace to "
+"continue."
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Workspace"
+msgstr ""
+
+msgid ""
+"No tenant account was found for this email. Check the address or request a "
+"workspace below."
+msgstr ""
+
+msgid "Try another email"
+msgstr ""
+
+msgid "Request access"
+msgstr ""
+
+msgid "Looking up workspaces..."
+msgstr ""
+
+msgid "Signing in..."
+msgstr ""
+
+msgid "Enter a valid email address."
+msgstr ""
+
+msgid "Could not look up your account."
+msgstr ""
+
+msgid "Select a workspace."
+msgstr ""
+
+msgid "Password is required."
+msgstr ""
+
+msgid "Sign in failed."
+msgstr ""
+
+msgid "Tenant host unavailable"
+msgstr ""
+
+msgid "Company & label settings"
+msgstr ""
+
+msgid ""
+"These values appear on printed labels (company block, İşletme onay no, VD "
+"number) and on PDF reports. İşletme onay no must match your official "
+"registration."
+msgstr ""
+
+msgid "Current logo"
+msgstr "Current logo"
+
+msgid "Preview"
+msgstr "Preview"
+
+msgid ""
+"Shown in the app header at a fixed size (recommended: wide logo or "
+"horizontal mark)."
+msgstr ""
+"Shown in the app header at a fixed size (recommended: wide logo or "
+"horizontal mark)."
+
+msgid "Identity"
+msgstr ""
+
+msgid "Labels and reports — company block"
+msgstr ""
+
+msgid ""
+"İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
+"with official registrations."
+msgstr ""
+
+msgid "Branding and contact"
+msgstr ""
+
+msgid "Locale and printing"
+msgstr ""
+
+msgid "Remove current logo"
+msgstr "Remove current logo"
+
+msgid "Current file"
+msgstr "Current file"
+
+msgid "Replace with"
+msgstr "Replace with"
+
+msgid "Please upload a PNG, JPEG, WebP, or GIF image."
+msgstr "Please upload a PNG, JPEG, WebP, or GIF image."
+
+msgid "Company name (label header)"
+msgstr ""
+
+msgid "Short trading name printed on labels."
+msgstr ""
+
+msgid "Legal company name"
+msgstr ""
+
+msgid "Full legal title on labels."
+msgstr ""
+
+msgid "Company address"
+msgstr ""
+
+msgid "Address block on labels and reports."
+msgstr ""
+
+msgid "İşletme onay no"
+msgstr ""
+
+msgid ""
+"Government approval number; same value as ISLETME ONAY NO on printed labels."
+msgstr ""
+
+msgid "Vergi dairesi / işletme no (VD)"
+msgstr ""
+
+msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
+msgstr ""
+
+msgid "Logo"
+msgstr ""
+
+msgid "Optional branding image in the app header."
+msgstr ""
+
+msgid "Contact email"
+msgstr ""
+
+msgid "Contact phone"
+msgstr ""
+
+msgid "Printer Turkish mode"
+msgstr ""
+
+msgid "unicode, ascii, or codepage1254 for label printers."
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+msgid "Language code"
+msgstr ""
+
+msgid "Company and label settings saved. They apply to new labels and reports."
+msgstr ""
+
+msgid "Company logo"
+msgstr "Company logo"
+
+msgid "Company settings"
+msgstr "Company settings"
+
 msgid "Logout"
 msgstr ""
 
-#: theme/templates/base.html:34 users/templates/users/login.html:7
 msgid "Login"
 msgstr ""
 
-#: users/templates/users/client_profile_register.html:5
+msgid "Area code"
+msgstr ""
+
+msgid "Phone number"
+msgstr ""
+
+msgid "Archive client"
+msgstr ""
+
+msgid "Archive this client?"
+msgstr ""
+
+#, python-format
+msgid ""
+"This will deactivate the profile <strong>%(name)s</strong> and disable login "
+"for the linked user."
+msgstr ""
+
+msgid ""
+"Slaughter orders and history are kept; the account can no longer sign in."
+msgstr ""
+
+msgid "Yes, archive"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Archived"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Account type"
+msgstr ""
+
+msgid "Company"
+msgstr ""
+
+msgid "Tax ID"
+msgstr ""
+
+msgid "Contact person"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Login active"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "Profile active"
+msgstr ""
+
+msgid "Registered"
+msgstr ""
+
+msgid "Add client"
+msgstr ""
+
+msgid "Edit client"
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "This profile has no login account. Only profile fields can be edited."
+msgstr ""
+
+msgid "Create client"
+msgstr ""
+
+msgid "Save changes"
+msgstr ""
+
+msgid "Registered clients"
+msgstr ""
+
+msgid "Clients"
+msgstr ""
+
+msgid ""
+"Manage registered customer accounts and quickly open profiles for updates."
+msgstr ""
+
+msgid "Status filters"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Search clients"
+msgstr ""
+
+msgid "Search name, company, phone, username…"
+msgstr ""
+
+#, python-format
+msgid "Showing %(total)s client."
+msgid_plural "Showing %(total)s clients."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Type:"
+msgstr ""
+
+msgid "Registered:"
+msgstr ""
+
+msgid "Try a different search term or clear the current filter."
+msgstr ""
+
+msgid "Get started by creating your first client profile."
+msgstr ""
+
+msgid "Clear search"
+msgstr ""
+
 msgid "Client Registration"
 msgstr ""
 
-#: users/templates/users/client_profile_register.html:10
 msgid "Register as a Client"
 msgstr ""
 
-#: users/templates/users/client_profile_register.html:80
 msgid "Register as Client"
 msgstr ""
 
-#: users/templates/users/dashboard.html:9
+msgid "Registration complete"
+msgstr ""
+
+msgid "Your client account is ready"
+msgstr ""
+
+msgid "Save these credentials now. They will not be shown again."
+msgstr ""
+
 #, python-format
 msgid "Welcome, %(username)s!"
 msgstr ""
 
-#: users/templates/users/dashboard.html:17
+msgid "Owner"
+msgstr ""
+
 msgid "System Administrator"
 msgstr ""
 
-#: users/templates/users/dashboard.html:28
 msgid "Manager"
 msgstr ""
 
-#: users/templates/users/dashboard.html:54
 msgid "User"
 msgstr ""
 
-#: users/templates/users/dashboard.html:58
 msgid "This is your dashboard. Here are the actions you can perform."
 msgstr ""
 
-#: users/templates/users/dashboard.html:73
 msgid "Reception Management"
 msgstr ""
 
-#: users/templates/users/dashboard.html:89
 msgid "Create slaughter order for new or existing clients"
 msgstr ""
 
-#: users/templates/users/dashboard.html:109
 msgid "All Orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:111
 msgid "View and manage all slaughter orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:114
-#: users/templates/users/dashboard.html:210
 msgid "View Orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:189
 msgid "Client Portal"
 msgstr ""
 
-#: users/templates/users/dashboard.html:204
 msgid "My Orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:206
 msgid "Track your order status and progress"
 msgstr ""
 
-#: users/templates/users/dashboard.html:226
 msgid "History"
 msgstr ""
 
-#: users/templates/users/dashboard.html:228
 msgid "View past orders and invoices"
 msgstr ""
 
-#: users/templates/users/dashboard.html:232
 msgid "Order History"
 msgstr ""
 
-#: users/templates/users/dashboard.html:249
 msgid "Documents"
 msgstr ""
 
-#: users/templates/users/dashboard.html:251
 msgid "Download certificates and reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:255
 msgid "View Documents"
 msgstr ""
 
-#: users/templates/users/dashboard.html:271
 msgid "Processing & Operations"
 msgstr ""
 
-#: users/templates/users/dashboard.html:286
-msgid "Operation Dashboard"
-msgstr ""
-
-#: users/templates/users/dashboard.html:288
 msgid "Processing overview and workflow status"
 msgstr ""
 
-#: users/templates/users/dashboard.html:291
 msgid "View Dashboard"
 msgstr ""
 
-#: users/templates/users/dashboard.html:310
 msgid "Manage animal disassembly and cuts"
 msgstr ""
 
-#: users/templates/users/dashboard.html:329
 msgid "Inventory"
 msgstr ""
 
-#: users/templates/users/dashboard.html:331
 msgid "Stock levels and storage"
 msgstr ""
 
-#: users/templates/users/dashboard.html:335
 msgid "View Inventory"
 msgstr ""
 
-#: users/templates/users/dashboard.html:352
-msgid "Labeling"
+msgid "Create and print custom hot carcass labels"
 msgstr ""
 
-#: users/templates/users/dashboard.html:354
-msgid "Print labels and barcodes"
-msgstr ""
-
-#: users/templates/users/dashboard.html:358
-msgid "Label Manager"
-msgstr ""
-
-#: users/templates/users/dashboard.html:376
 msgid "Management & Reporting"
 msgstr ""
 
-#: users/templates/users/dashboard.html:391
 msgid "Analytics"
 msgstr ""
 
-#: users/templates/users/dashboard.html:393
 msgid "Performance metrics and KPIs"
 msgstr ""
 
-#: users/templates/users/dashboard.html:397
 msgid "View Analytics"
 msgstr ""
 
-#: users/templates/users/dashboard.html:414
 msgid "Finance"
 msgstr ""
 
-#: users/templates/users/dashboard.html:416
 msgid "Revenue and cost analysis"
 msgstr ""
 
-#: users/templates/users/dashboard.html:420
 msgid "Financial Reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:439
 msgid "Generate daily slaughter reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:442
 msgid "Generate Reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:461
 msgid "System Administration"
 msgstr ""
 
-#: users/templates/users/dashboard.html:476
-msgid "Users"
+msgid "Clients who registered via the public form"
 msgstr ""
 
-#: users/templates/users/dashboard.html:478
-msgid "Manage user accounts and permissions"
+msgid "View clients"
 msgstr ""
 
-#: users/templates/users/dashboard.html:481
-msgid "Django Admin"
-msgstr ""
-
-#: users/templates/users/dashboard.html:500
 msgid "Settings"
 msgstr ""
 
-#: users/templates/users/dashboard.html:502
-msgid "Configure system parameters"
+msgid "Company name, İşletme onay no, label printer mode"
 msgstr ""
 
-#: users/templates/users/dashboard.html:506
-msgid "System Settings"
+msgid "Users"
 msgstr ""
 
-#: users/templates/users/dashboard.html:523
-#: users/templates/users/dashboard.html:529
+msgid "Manage user accounts and permissions"
+msgstr ""
+
+msgid "Django Admin"
+msgstr ""
+
 msgid "Maintenance"
 msgstr ""
 
-#: users/templates/users/dashboard.html:525
 msgid "Database backup and system health"
 msgstr ""
 
-#: users/templates/users/dashboard.html:547
 msgid "Manage Site -> Edge -> Printer topology and edge logs"
 msgstr ""
 
-#: users/templates/users/dashboard.html:550
 msgid "Open Edge Console"
 msgstr ""
 
-#: users/templates/users/dashboard.html:565
 msgid "Search Clients"
 msgstr ""
 
-#: users/templates/users/dashboard.html:573
 msgid " Type client name to search..."
 msgstr ""
 
-#: users/templates/users/dashboard.html:627
 msgid "Selected client"
 msgstr ""
 
-#: users/templates/users/dashboard.html:636
 msgid "Error searching clients"
 msgstr ""
 
-#: users/templates/users/home.html:4
 msgid "Welcome"
 msgstr ""
 
-#: users/templates/users/home.html:12
 msgid "Quality Meats, Ethical Processing"
 msgstr ""
 
-#: users/templates/users/home.html:13
 msgid ""
 "Your trusted partner in the farm-to-table journey. We provide humane, clean, "
 "and efficient slaughtering services for local farmers and businesses."
 msgstr ""
 
-#: users/templates/users/home.html:15
 msgid "Client Login"
 msgstr ""
 
-#: users/templates/users/home.html:16
 msgid "Learn more"
 msgstr ""
 
-#: users/templates/users/home.html:25
 msgid "About Us"
 msgstr ""
 
-#: users/templates/users/home.html:26
 msgid ""
 "We are a family-owned business dedicated to upholding the highest standards "
 "of animal welfare and food safety. Our state-of-the-art facility and "
@@ -3907,58 +3528,38 @@ msgid ""
 "product quality."
 msgstr ""
 
-#: users/templates/users/logged_out.html:4
 msgid "Logged Out"
 msgstr ""
 
-#: users/templates/users/logged_out.html:9
 msgid "You have been successfully logged out."
 msgstr ""
 
-#: users/templates/users/logged_out.html:12
 msgid "Thank you for using the Slaughterhouse Management System."
 msgstr ""
 
-#: users/templates/users/logged_out.html:15
 msgid "Log back in"
 msgstr ""
 
-#: users/templates/users/login.html:12
 msgid "Sign in to your account"
 msgstr ""
 
-#: users/templates/users/login.html:31
-msgid "Username"
+msgid "Username or email"
 msgstr ""
 
-#: users/templates/users/login.html:40
-msgid "Password"
-msgstr ""
-
-#: users/templates/users/login.html:49
-msgid "Sign in"
-msgstr ""
-
-#: users/templates/users/login.html:54
 msgid "Don't have an account?"
 msgstr ""
 
-#: users/templates/users/login.html:54
 msgid "Register here."
 msgstr ""
 
-#: users/templates/users/register.html:5 users/templates/users/register.html:41
 msgid "Register"
 msgstr ""
 
-#: users/templates/users/register.html:10
 msgid "Create a new account"
 msgstr ""
 
-#: users/templates/users/register.html:46
 msgid "Already have an account?"
 msgstr ""
 
-#: users/templates/users/register.html:46
 msgid "Sign in."
 msgstr ""

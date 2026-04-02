@@ -16,7 +16,7 @@ import unittest
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -190,6 +190,24 @@ class SlaughterOrderDetailViewTest(ReceptionViewTestMixin, TestCase):
         """Test that order detail shows client information."""
         response = self.test_client.get(reverse("reception:slaughter_order_detail", kwargs={"pk": self.order.pk}))
         self.assertIn(response.status_code, [200, 302])
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_order_detail_operation_dashboard_hidden_with_one_animal(self):
+        """Operation dashboard link appears only when there is more than one animal."""
+        response = self.test_client.get(reverse("reception:slaughter_order_detail", kwargs={"pk": self.order.pk}))
+        if response.status_code == 200:
+            self.assertEqual(response.context["animal_count"], 1)
+            self.assertNotContains(response, "Operation Dashboard")
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_order_detail_operation_dashboard_shown_with_two_animals(self):
+        Animal.objects.create(
+            slaughter_order=self.order, animal_type="cattle", identification_tag="DETAIL-TEST-002"
+        )
+        response = self.test_client.get(reverse("reception:slaughter_order_detail", kwargs={"pk": self.order.pk}))
+        if response.status_code == 200:
+            self.assertEqual(response.context["animal_count"], 2)
+            self.assertContains(response, "Operation Dashboard")
 
 
 @unittest.skipIf(SKIP_VIEW_TESTS, SKIP_REASON)

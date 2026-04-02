@@ -9,11 +9,15 @@ import os
 from pathlib import Path
 
 from decouple import Csv, config
+import django
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Shipped widget templates (select, attrs, etc.). Required when FORM_RENDERER is TemplatesSetting.
+DJANGO_FORMS_TEMPLATE_DIR = Path(django.__file__).resolve().parent / "forms" / "templates"
 
 
 def _cookie_samesite(value: str | None) -> str | None:
@@ -226,7 +230,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "templates", DJANGO_FORMS_TEMPLATE_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -242,6 +246,11 @@ TEMPLATES = [
 
 if USE_MULTITENANT:
     TEMPLATES[0]["OPTIONS"]["context_processors"].append("tenants.context_processors.tenant_context")
+
+# Use project TEMPLATES for form widgets. Pair with DJANGO_FORMS_TEMPLATE_DIR in TEMPLATES["DIRS"]
+# so built-in partials (django/forms/widgets/select.html, attrs.html, …) resolve; BASE_DIR/templates
+# remains first for project overrides (e.g. tenants/widgets/tenant_logo_clearable.html).
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 WSGI_APPLICATION = "config.wsgi.application"
 
@@ -584,6 +593,17 @@ def print_settings_report():
     if USE_MULTITENANT:
         print(f"🔴 REDIS_URL: {'SET' if REDIS_URL else 'MISSING'}")
         print(f"🏢 TENANT_BASE_DOMAIN: {TENANT_BASE_DOMAIN}")
+
+    _cache_backend = CACHES["default"]["BACKEND"]
+    if _cache_backend == "django_redis.cache.RedisCache":
+        print(f"💾 CACHE: Redis — {REDIS_URL}")
+    elif "locmem" in _cache_backend.lower():
+        print(
+            "💾 CACHE: LocMemCache (in-process; not shared across workers) "
+            f"[multitenant={USE_MULTITENANT}]"
+        )
+    else:
+        print(f"💾 CACHE: {_cache_backend}")
 
     # Database
     db_conf = DATABASES["default"]

@@ -1,11 +1,13 @@
+from collections import Counter
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from urllib.parse import urlencode
+from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
-from collections import Counter
-
+from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,6 +22,7 @@ from . import services
 from .forms import (
     ANIMAL_DETAIL_FORMS,
     AnimalFilterForm,
+    BatchWeightLogEditForm,
     BatchWeightLogForm,
     DisassemblyCutForm,
     LeatherWeightForm,
@@ -626,21 +629,48 @@ class BatchSlaughterView(LoginRequiredMixin, TemplateView):
 
 class BatchWeightLogView(LoginRequiredMixin, TemplateView):
     template_name = "processing/batch_weights.html"
+    recent_logs_page_size = 10
+
+    def _normalize_order_id(self, value):
+        if value in [None, "", "None", "null", "undefined"]:
+            return None
+
+        try:
+            return str(UUID(str(value)))
+        except (TypeError, ValueError):
+            return None
+
+    def _build_redirect_url(self, request, order_id=None):
+        params = {}
+        selected_order_id = self._normalize_order_id(order_id or request.POST.get("order") or request.GET.get("order"))
+        recent_page = request.POST.get("recent_page") or request.GET.get("recent_page")
+
+        if selected_order_id:
+            params["order"] = selected_order_id
+        if recent_page:
+            params["recent_page"] = recent_page
+
+        url = reverse("processing:batch_weights")
+        return f"{url}?{urlencode(params)}" if params else url
+
+    def _add_form_errors_to_messages(self, request, form):
+        for field, errors in form.errors.items():
+            field_label = form.fields[field].label if field in form.fields else None
+            for error in errors:
+                if field == "__all__":
+                    messages.error(request, error)
+                else:
+                    messages.error(
+                        request,
+                        _("%(field)s: %(error)s") % {"field": field_label or field, "error": error},
+                    )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get the pre-selected order from URL parameter
-        selected_order_id = self.request.GET.get("order")
-        selected_order = None
-        if selected_order_id:
-            try:
-                selected_order = SlaughterOrder.objects.get(pk=selected_order_id)
-            except SlaughterOrder.DoesNotExist:
-                selected_order = None
+        selected_order_id = self._normalize_order_id(self.request.GET.get("order"))
+        selected_order = SlaughterOrder.objects.filter(pk=selected_order_id).first() if selected_order_id else None
 
-        # Get orders with animals ready for weight logging (any status that allows weight logging)
-        # Filter to only show orders from the last week
         one_week_ago = timezone.now() - timedelta(days=7)
         relevant_statuses = ["received", "slaughtered", "carcass_ready", "disassembled", "packaged", "delivered"]
         orders = (
@@ -664,57 +694,26 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
             .order_by("-order_datetime")
         )
 
-        # Add batch weight progress information for each order
         orders_with_progress = []
         for order in orders:
-            # Calculate progress for each weight type
             weight_progress = {}
             weight_types = ["live_weight", "hot_carcass_weight", "cold_carcass_weight", "final_weight"]
 
             for weight_type in weight_types:
-                group_weight_type = f"{weight_type} Group"
+                group_weight_type = services.get_group_weight_type(weight_type)
                 existing_logs = WeightLog.objects.filter(
                     slaughter_order=order, weight_type=group_weight_type, is_group_weight=True
                 ).order_by("-log_date")
-
-                # Calculate progress - use correct count based on weight type and status rules
                 total_weighed = sum(log.group_quantity for log in existing_logs)
-
-                # Weight type rules based on animal status:
-                if weight_type == "live_weight":
-                    # Live weight: Can be logged for ANY status (including received animals)
-                    available_count = order.animals.filter(status__in=relevant_statuses).count()
-                elif weight_type == "hot_carcass_weight":
-                    # Hot carcass weight: Only for slaughtered/carcass_ready animals
-                    available_count = order.animals.filter(
-                        status__in=["slaughtered", "carcass_ready", "disassembled", "packaged", "delivered"]
-                    ).count()
-                elif weight_type == "cold_carcass_weight":
-                    # Cold carcass weight: Only for carcass_ready+ animals
-                    available_count = order.animals.filter(
-                        status__in=["carcass_ready", "disassembled", "packaged", "delivered"]
-                    ).count()
-                elif weight_type == "final_weight":
-                    # Final weight: Only for disassembled+ animals
-                    available_count = order.animals.filter(status__in=["disassembled", "packaged", "delivered"]).count()
-                else:
-                    # Default fallback
-                    available_count = order.animals.filter(status__in=relevant_statuses).count()
-
-                remaining = available_count - total_weighed
-
-                # Check if individual weights were auto-generated (completion)
-                individual_logs_exist = WeightLog.objects.filter(
-                    animal__slaughter_order=order, weight_type=weight_type, is_group_weight=False
-                ).exists()
+                available_count = services.get_available_animal_count_for_weight_type(order, weight_type)
 
                 weight_progress[weight_type] = {
                     "total_weighed": total_weighed,
-                    "remaining": max(0, remaining),
+                    "remaining": max(0, available_count - total_weighed),
                     "logs_count": existing_logs.count(),
-                    "completed": individual_logs_exist or total_weighed >= available_count,
+                    "completed": available_count > 0 and total_weighed >= available_count,
                     "latest_log": existing_logs.first(),
-                    "available_count": available_count,  # Add this for debugging
+                    "available_count": available_count,
                 }
 
             orders_with_progress.append(
@@ -732,23 +731,36 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 }
             )
 
-        context["orders_with_progress"] = orders_with_progress
-        context["form"] = BatchWeightLogForm()
-
-        # Add recent batch weight logs for reference
-        recent_logs = (
-            WeightLog.objects.filter(is_group_weight=True).select_related("slaughter_order").order_by("-log_date")[:10]
+        recent_logs_qs = WeightLog.objects.filter(is_group_weight=True).select_related("slaughter_order").order_by(
+            "-log_date"
         )
-        context["recent_logs"] = recent_logs
+        recent_logs_page_obj = Paginator(recent_logs_qs, self.recent_logs_page_size).get_page(
+            self.request.GET.get("recent_page") or 1
+        )
 
-        # Add selected order information
+        context["orders_with_progress"] = orders_with_progress
+        context["form"] = BatchWeightLogForm(initial={"order_id": selected_order_id} if selected_order_id else {})
+        context["edit_form"] = BatchWeightLogEditForm()
+        context["recent_logs"] = recent_logs_page_obj.object_list
+        context["recent_logs_page"] = recent_logs_page_obj.number
+        context["recent_logs_has_next"] = recent_logs_page_obj.has_next()
+        context["recent_logs_has_previous"] = recent_logs_page_obj.has_previous()
+        context["recent_logs_total_pages"] = recent_logs_page_obj.paginator.num_pages
+        context["recent_logs_total_count"] = recent_logs_page_obj.paginator.count
         context["selected_order"] = selected_order
         context["selected_order_id"] = selected_order_id
 
         return context
 
     def post(self, request):
+        action = request.POST.get("action")
+        if action == "edit_batch_log":
+            return self._handle_edit_batch_log(request)
+        return self._handle_create_batch_log(request)
+
+    def _handle_create_batch_log(self, request):
         form = BatchWeightLogForm(request.POST)
+        redirect_order_id = request.POST.get("order_id")
 
         if form.is_valid():
             try:
@@ -758,42 +770,30 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                 animal_count = form.cleaned_data["animal_count"]
 
                 order = get_object_or_404(SlaughterOrder, pk=order_id)
-
-                # Calculate average weight per animal
+                redirect_order_id = str(order.pk)
                 average_weight = total_weight / animal_count
-
-                # Create proper weight type for group weights
-                group_weight_type = f"{weight_type} Group"
-
-                # Check current progress before logging
+                group_weight_type = services.get_group_weight_type(weight_type)
                 existing_logs = WeightLog.objects.filter(
                     slaughter_order=order, weight_type=group_weight_type, is_group_weight=True
                 )
                 current_total = sum(log.group_quantity for log in existing_logs)
 
-                # Call service with correct parameters
-                weight_log = log_group_weight(
+                log_group_weight(
                     slaughter_order=order,
-                    weight=average_weight,  # Average weight per animal
+                    weight=average_weight,
                     weight_type=group_weight_type,
                     group_quantity=animal_count,
-                    group_total_weight=total_weight,  # Total weight of the group
+                    group_total_weight=total_weight,
                 )
 
-                # Check if this completed the weight type
                 new_total = current_total + animal_count
+                available_count = services.get_available_animal_count_for_weight_type(order, weight_type)
 
-                # For hot carcass weight, count both slaughtered and carcass_ready animals
-                if weight_type == "hot_carcass_weight":
-                    available_count = order.animals.filter(status__in=["slaughtered", "carcass_ready"]).count()
-                else:
-                    available_count = order.animals.filter(status="slaughtered").count()
-
-                if new_total >= available_count:
+                if available_count > 0 and new_total >= available_count:
                     messages.success(
                         request,
                         _(
-                            "✅ Batch weight logged successfully! All %(available_count)s animals for %(weight_type)s are now weighed. Individual weight logs have been automatically created with average weight of %(average_weight).2fkg per animal."
+                            "Batch weight logged successfully. All %(available_count)s animals for %(weight_type)s are now weighed, and individual weight logs were created at %(average_weight).2fkg average."
                         )
                         % {
                             "available_count": available_count,
@@ -802,7 +802,6 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                         },
                     )
                 else:
-                    remaining = available_count - new_total
                     messages.success(
                         request,
                         _(
@@ -812,7 +811,7 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                             "animal_count": animal_count,
                             "total_weight": total_weight,
                             "average_weight": average_weight,
-                            "remaining": remaining,
+                            "remaining": max(0, available_count - new_total),
                             "weight_type": weight_type.replace("_", " ").title(),
                         },
                     )
@@ -820,12 +819,59 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
             except Exception as e:
                 messages.error(request, _("Error logging batch weight: %(error)s") % {"error": str(e)})
         else:
-            # Display form errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
+            self._add_form_errors_to_messages(request, form)
 
-        return redirect("processing:batch_weights")
+        return redirect(self._build_redirect_url(request, order_id=redirect_order_id))
+
+    def _handle_edit_batch_log(self, request):
+        form = BatchWeightLogEditForm(request.POST)
+        redirect_order_id = request.POST.get("order")
+
+        if form.is_valid():
+            try:
+                result = services.update_group_weight_log_total(
+                    form.cleaned_data["log_id"], form.cleaned_data["total_weight"]
+                )
+                weight_log = result["weight_log"]
+                sync_result = result["sync_result"]
+                redirect_order_id = redirect_order_id or str(weight_log.slaughter_order_id)
+                weight_type_label = services.get_individual_weight_type(weight_log.weight_type).replace("_", " ").title()
+                average_weight = (
+                    sync_result["creation_result"]["average_weight"]
+                    if sync_result["creation_result"]
+                    else float(weight_log.weight)
+                )
+
+                if sync_result["completed"]:
+                    messages.success(
+                        request,
+                        _(
+                            "Batch total updated for %(weight_type)s. Individual animal weights were resynced to %(average_weight).2fkg average across %(available_count)s animals."
+                        )
+                        % {
+                            "weight_type": weight_type_label,
+                            "average_weight": average_weight,
+                            "available_count": sync_result["available_count"],
+                        },
+                    )
+                else:
+                    messages.success(
+                        request,
+                        _(
+                            "Batch total updated for %(weight_type)s. %(remaining)s animals are still pending, so individual animal logs for this type were removed."
+                        )
+                        % {
+                            "weight_type": weight_type_label,
+                            "remaining": sync_result["remaining"],
+                        },
+                    )
+
+            except Exception as e:
+                messages.error(request, _("Error updating batch weight: %(error)s") % {"error": str(e)})
+        else:
+            self._add_form_errors_to_messages(request, form)
+
+        return redirect(self._build_redirect_url(request, order_id=redirect_order_id))
 
 
 class BatchWeightReportsView(LoginRequiredMixin, TemplateView):

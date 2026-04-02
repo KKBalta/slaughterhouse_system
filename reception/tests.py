@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from users.models import ClientProfile
 
-from .forms import BatchAnimalForm
+from .forms import BatchAnimalForm, SlaughterOrderForm
 from .models import ServicePackage, SlaughterOrder
 
 User = get_user_model()
@@ -64,6 +64,35 @@ class ReceptionModelTest(TestCase):
         self.assertIsNone(order.client)
         self.assertEqual(order.client_name, "")
         self.assertEqual(SlaughterOrder.objects.count(), 1)
+
+
+class SlaughterOrderFormValidationTest(TestCase):
+    """SlaughterOrderForm must require a service package despite nullable FK on the model."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="formtest", password="password123", role=User.Role.CLIENT)
+        self.client_profile = ClientProfile.objects.create(
+            user=self.user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="1234567890",
+            address="123 Test St",
+        )
+        self.service_package = ServicePackage.objects.create(
+            name="Form Test Package", description="Basic slaughter service."
+        )
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_service_package_required(self):
+        form_data = {
+            "client_name": "Walk-in Customer",
+            "order_datetime": "2026-04-01T12:00",
+            "destination": "",
+            "service_package": "",
+        }
+        form = SlaughterOrderForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("service_package", form.errors)
+        self.assertIn("service package", str(form.errors["service_package"]).lower())
 
 
 class BatchAnimalFormTest(TestCase):
@@ -214,5 +243,9 @@ class BatchAnimalFormTest(TestCase):
         form = BatchAnimalForm()
 
         self.assertIn("Custom prefix for identification tags", form.fields["tag_prefix"].help_text)
-        self.assertIn("Leave empty to use current date/time", form.fields["received_date"].help_text)
+        self.assertIn("Pre-filled with the current date and time", form.fields["received_date"].help_text)
         self.assertIn("photos can be added later", form.fields["skip_photos"].help_text)
+
+    def test_batch_animal_form_received_date_initial_now(self):
+        form = BatchAnimalForm()
+        self.assertIsNotNone(form.fields["received_date"].initial)

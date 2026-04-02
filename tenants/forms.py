@@ -1,12 +1,23 @@
+import os
 import re
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 from tenants.email_index import normalize_email
-from tenants.models import Client, Domain
+from tenants.models import LOGO_ALLOWED_EXTENSIONS, Client, Domain
+
+
+class TenantLogoClearableFileInput(forms.ClearableFileInput):
+    """Clearable image input with Tailwind-friendly template and copy for logo removal."""
+
+    template_name = "tenants/widgets/tenant_logo_clearable.html"
+    clear_checkbox_label = _("Remove current logo")
+    initial_text = _("Current file")
+    input_text = _("Replace with")
 
 
 class TenantCompanyProfileForm(forms.ModelForm):
@@ -39,6 +50,28 @@ class TenantCompanyProfileForm(forms.ModelForm):
                 ("codepage1254", "Windows-1254"),
             ]
         )
+        self.fields["logo"].widget = TenantLogoClearableFileInput(
+            attrs={
+                "class": (
+                    "block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 "
+                    "file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700"
+                ),
+                "accept": "image/png,image/jpeg,image/webp,image/gif",
+            }
+        )
+
+    def clean_logo(self):
+        logo = self.cleaned_data.get("logo")
+        if logo in (None, False):
+            return logo
+        name = getattr(logo, "name", "") or ""
+        ext = os.path.splitext(name)[1].lower()
+        if ext not in LOGO_ALLOWED_EXTENSIONS:
+            raise ValidationError(
+                _("Please upload a PNG, JPEG, WebP, or GIF image."),
+                code="invalid_logo_type",
+            )
+        return logo
 
 
 class CreateTenantForm(forms.Form):

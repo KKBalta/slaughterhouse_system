@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -5,6 +7,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.translation import gettext as _
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
 
@@ -22,6 +25,8 @@ from .services import (
     remove_animal_from_order,
     update_slaughter_order,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ClientSearchView(LoginRequiredMixin, View):
@@ -102,10 +107,17 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
                 )
                 messages.success(request, f"Slaughter Order {order.slaughter_order_no} created successfully!")
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk}))
-            except Exception as e:
-                messages.error(request, f"Error creating order: {e}")
+            except Exception:
+                logger.exception("Create slaughter order failed")
+                messages.error(
+                    request,
+                    _("We could not save this order. Please try again, or contact support if it keeps happening."),
+                )
         else:
-            messages.error(request, "Please correct the errors below.")
+            messages.error(
+                request,
+                _("Check the highlighted fields below, fix any issues, and submit again."),
+            )
 
         context = {"form": form}
         return render(request, "reception/create_order.html", context)
@@ -147,6 +159,11 @@ class SlaughterOrderDetailView(LoginRequiredMixin, DetailView):
     model = SlaughterOrder
     template_name = "reception/order_detail.html"
     context_object_name = "order"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["animal_count"] = self.object.animals.count()
+        return context
 
 
 class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):

@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from processing.models import Animal
@@ -95,9 +96,16 @@ class SlaughterOrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["service_package"].queryset = ServicePackage.objects.all()
-        self.fields["service_package"].empty_label = _("Select service package")
-        self.fields["service_package"].label_from_instance = lambda obj: obj.localized_name()
+        sp = self.fields["service_package"]
+        sp.queryset = ServicePackage.objects.all()
+        sp.empty_label = _("Select service package")
+        sp.label_from_instance = lambda obj: obj.localized_name()
+        # Model allows null; orders must still pick a package at intake.
+        sp.required = True
+        msgs = dict(sp.error_messages)
+        msgs["required"] = _("Please choose a service package before creating the order.")
+        msgs["invalid_choice"] = _("Select a valid service package.")
+        sp.error_messages = msgs
 
     def clean(self):
         cleaned_data = super().clean()
@@ -210,9 +218,15 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["service_package"].queryset = ServicePackage.objects.all()
-        self.fields["service_package"].empty_label = _("Select service package")
-        self.fields["service_package"].label_from_instance = lambda obj: obj.localized_name()
+        sp = self.fields["service_package"]
+        sp.queryset = ServicePackage.objects.all()
+        sp.empty_label = _("Select service package")
+        sp.label_from_instance = lambda obj: obj.localized_name()
+        sp.required = True
+        msgs = dict(sp.error_messages)
+        msgs["required"] = _("Please choose a service package before saving the order.")
+        msgs["invalid_choice"] = _("Select a valid service package.")
+        sp.error_messages = msgs
 
         # Pre-populate client fields if instance exists
         if self.instance and self.instance.pk:
@@ -342,12 +356,21 @@ class BatchAnimalForm(forms.Form):
         required=False,
         label=_("Received Date & Time"),
         widget=forms.DateTimeInput(
+            format="%Y-%m-%dT%H:%M",
             attrs={
                 "type": "datetime-local",
                 "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
-            }
+            },
         ),
-        help_text=_("Leave empty to use current date/time for all animals"),
+        input_formats=[
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M:%S.%f",
+            "%Y-%m-%d %H:%M",
+        ],
+        help_text=_("Pre-filled with the current date and time; clear to use the time when you submit."),
     )
 
     skip_photos = forms.BooleanField(
@@ -363,6 +386,8 @@ class BatchAnimalForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["animal_type"].empty_label = _("Select animal type")
+        if not self.is_bound:
+            self.fields["received_date"].initial = timezone.localtime(timezone.now())
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get("quantity")

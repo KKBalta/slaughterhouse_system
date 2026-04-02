@@ -7,10 +7,13 @@ This configuration is optimized for fast test execution.
 import os
 from pathlib import Path
 
+import django
 from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+DJANGO_FORMS_TEMPLATE_DIR = Path(django.__file__).resolve().parent / "forms" / "templates"
 
 # Test environment settings
 SECRET_KEY = "test-secret-key-for-ci-only-not-for-production"
@@ -73,7 +76,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "templates", DJANGO_FORMS_TEMPLATE_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -86,6 +89,8 @@ TEMPLATES = [
         },
     },
 ]
+
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 WSGI_APPLICATION = "config.wsgi.application"
 
