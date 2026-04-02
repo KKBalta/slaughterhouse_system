@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% trans "Back to list" as default_back_label %}
 <style>
     .modern-select {
         background: white;
@@ -40,11 +41,14 @@
         <h2 class="text-2xl font-extrabold text-gray-900">
             {% if mode == 'add' %}{% trans "Add client" %}{% else %}{% trans "Edit client" %}{% endif %}
         </h2>
-        <a href="{% url 'client_profile_list' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500">{% trans "Back to list" %}</a>
+        <a href="{{ back_url }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">{{ back_label|default:default_back_label }}</a>
     </div>
 
     <form method="post" class="space-y-6" id="client-staff-form">
         {% csrf_token %}
+        {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
         {% if profile_form.non_field_errors %}
             <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
                 {{ profile_form.non_field_errors }}
@@ -120,16 +124,23 @@
             <div class="mt-1">
                 {% render_field cred_form.email class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
+            <p class="mt-1 text-xs text-gray-500">{% trans "Use email or phone. Client phone is synced from the profile section above." %}</p>
             {% if cred_form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.email.errors }}</p>{% endif %}
         </div>
+        {% if show_credential_phone %}
         <div>
             <label for="{{ cred_form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.phone_number.label }}</label>
-            <div class="mt-1">
-                {% render_field cred_form.phone_number class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            <div class="mt-1 flex">
+                <div class="relative shrink-0">
+                    {{ cred_form.phone_area_code }}
+                </div>
+                {% render_field cred_form.phone_number class="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
             </div>
             {% if cred_form.phone_number.help_text %}<p class="mt-1 text-xs text-gray-500">{{ cred_form.phone_number.help_text }}</p>{% endif %}
             {% if cred_form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.phone_number.errors }}</p>{% endif %}
+            {% if cred_form.phone_area_code.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.phone_area_code.errors }}</p>{% endif %}
         </div>
+        {% endif %}
         <div>
             <label for="{{ cred_form.new_password1.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.new_password1.label }}</label>
             <div class="mt-1">
@@ -168,6 +179,33 @@
             accountTypeField.addEventListener('change', syncEnterpriseVisibility);
         }
         syncEnterpriseVisibility();
+
+        {% if mode == 'add' and cred_form %}
+        (function () {
+            var nameEl = document.getElementById('{{ profile_form.contact_person.id_for_label }}');
+            var userEl = document.getElementById('{{ cred_form.username.id_for_label }}');
+            if (!nameEl || !userEl) return;
+
+            function deriveUsername(name) {
+                return (name || '').replace(/\s+/g, '');
+            }
+
+            var autoUsername = deriveUsername(nameEl.value);
+            var userEdited =
+                userEl.value.trim() !== '' && userEl.value.trim() !== autoUsername;
+
+            nameEl.addEventListener('input', function () {
+                if (userEdited) return;
+                var s = deriveUsername(nameEl.value);
+                userEl.value = s;
+                autoUsername = s;
+            });
+
+            userEl.addEventListener('input', function () {
+                userEdited = userEl.value.trim() !== autoUsername;
+            });
+        })();
+        {% endif %}
     });
 </script>
 {% endblock %}

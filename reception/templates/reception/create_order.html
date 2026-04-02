@@ -145,8 +145,8 @@
                     {{ form.client_search }}
                     {{ form.client_id }}
                     <p class="mt-4 text-center text-sm">
-                        <a href="{% url 'client_register' %}" class="font-medium text-blue-600 hover:text-blue-500">
-                            {% trans "Create New Client Profile" %}
+                        <a href="{% url 'tenant_user_create' 'CLIENT' %}?next={{ request.path|urlencode }}" class="font-medium text-blue-600 hover:text-blue-500">
+                            {% trans "Create New Client Account" %}
                         </a>
                     </p>
                     

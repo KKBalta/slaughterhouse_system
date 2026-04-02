@@ -3,15 +3,16 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 
 from .models import ClientProfile
+from .policies import can_create_role, can_edit_user, creatable_roles_for
 
 User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
 
-def test_create_user_with_default_role():
-    user = User.objects.create_user(username="testuser", password="password123")
-    assert user.role == User.Role.ADMIN
+def test_create_user_requires_explicit_role():
+    with pytest.raises(ValueError, match="explicit role"):
+        User.objects.create_user(username="testuser", password="password123")
 
 
 def test_create_user_with_specific_role():
@@ -63,6 +64,38 @@ def test_user_deletion_cascades_to_client_profile():
 
 
 def test_username_uniqueness():
-    User.objects.create_user(username="unique_user", password="password123")
+    User.objects.create_user(username="unique_user", password="password123", role=User.Role.CLIENT)
     with pytest.raises(IntegrityError):
-        User.objects.create_user(username="unique_user", password="password456")
+        User.objects.create_user(username="unique_user", password="password456", role=User.Role.CLIENT)
+
+
+def test_owner_cannot_create_admin_role():
+    owner = User.objects.create_user(username="owner-user", password="password123", role=User.Role.OWNER)
+
+    assert can_create_role(owner, User.Role.ADMIN) is False
+    assert creatable_roles_for(owner) == (
+        User.Role.MANAGER,
+        User.Role.OPERATOR,
+        User.Role.CLIENT,
+    )
+
+
+def test_owner_cannot_edit_admin_user():
+    owner = User.objects.create_user(username="owner-user", password="password123", role=User.Role.OWNER)
+    admin = User.objects.create_user(username="admin-user", password="password123", role=User.Role.ADMIN)
+
+    assert can_edit_user(owner, admin) is False
+
+
+def test_admin_can_create_and_edit_admin_role():
+    admin_actor = User.objects.create_user(username="admin-actor", password="password123", role=User.Role.ADMIN)
+    admin_target = User.objects.create_user(username="admin-target", password="password123", role=User.Role.ADMIN)
+
+    assert can_create_role(admin_actor, User.Role.ADMIN) is True
+    assert creatable_roles_for(admin_actor) == (
+        User.Role.ADMIN,
+        User.Role.MANAGER,
+        User.Role.OPERATOR,
+        User.Role.CLIENT,
+    )
+    assert can_edit_user(admin_actor, admin_target) is True

@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_sync_email_membership_signal_noops_without_multitenant(monkeypatch, settings):
-    user = User.objects.create_user(username="signal-user", password="password123")
+    user = User.objects.create_user(username="signal-user", password="password123", role=User.Role.CLIENT)
     settings.USE_MULTITENANT = False
 
     def _boom(_user):
@@ -22,7 +22,7 @@ def test_sync_email_membership_signal_noops_without_multitenant(monkeypatch, set
 
 
 def test_sync_email_membership_signal_calls_helper(monkeypatch, settings):
-    user = User.objects.create_user(username="signal-user-2", password="password123")
+    user = User.objects.create_user(username="signal-user-2", password="password123", role=User.Role.CLIENT)
     settings.USE_MULTITENANT = True
     calls = []
 
@@ -34,7 +34,7 @@ def test_sync_email_membership_signal_calls_helper(monkeypatch, settings):
 
 
 def test_remove_email_membership_signal_noops_without_multitenant(monkeypatch, settings):
-    user = User.objects.create_user(username="signal-user-3", password="password123")
+    user = User.objects.create_user(username="signal-user-3", password="password123", role=User.Role.CLIENT)
     settings.USE_MULTITENANT = False
 
     def _boom(_user):
@@ -46,7 +46,7 @@ def test_remove_email_membership_signal_noops_without_multitenant(monkeypatch, s
 
 
 def test_remove_email_membership_signal_calls_helper(monkeypatch, settings):
-    user = User.objects.create_user(username="signal-user-4", password="password123")
+    user = User.objects.create_user(username="signal-user-4", password="password123", role=User.Role.CLIENT)
     settings.USE_MULTITENANT = True
     calls = []
 

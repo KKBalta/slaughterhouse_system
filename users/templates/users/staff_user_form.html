@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load widget_tweaks i18n %}
+
+{% block title %}
+    {% if managed_user %}{% trans "Edit user" %}{% else %}{% trans "Create user" %}{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<style>
+    .modern-select {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem 0 0 0.375rem;
+        padding: 0.5rem 1.75rem 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: #111827;
+        width: 70px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.25rem center;
+        background-repeat: no-repeat;
+        background-size: 1em 1em;
+        appearance: none;
+        cursor: pointer;
+    }
+</style>
+<div class="mx-auto max-w-2xl px-4 py-6">
+    <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">
+            {% if managed_user %}{% trans "Edit user" %}{% else %}{% trans "Create user" %}{% endif %}
+        </h1>
+        <a href="{{ back_url }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">{% trans "Back to users" %}</a>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
+        {% if form.non_field_errors %}
+        <div class="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.role.label }}</label>
+            <div class="mt-1">
+                {% render_field form.role class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+            </div>
+            {% if form.role.errors %}<p class="mt-1 text-sm text-red-600">{{ form.role.errors }}</p>{% endif %}
+        </div>
+
+        {% if not managed_user %}
+        <div>
+            <label for="staff-suggest-name" class="block text-sm font-medium text-gray-700">{% trans "Full name" %}</label>
+            <div class="mt-1">
+                <input type="text"
+                       id="staff-suggest-name"
+                       class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                       autocomplete="name"
+                       maxlength="200"
+                       placeholder="{% trans 'e.g. Ali Yılmaz' %}">
+            </div>
+            <p class="mt-1 text-xs text-gray-500">{% trans "Username below is filled automatically from this; change it if you need a different login name." %}</p>
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.username.label }}</label>
+            <div class="mt-1">
+                {% render_field form.username class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+            </div>
+            {% if form.username.errors %}<p class="mt-1 text-sm text-red-600">{{ form.username.errors }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.email.label }}</label>
+            <div class="mt-1">
+                {% render_field form.email class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+            </div>
+            <p class="mt-1 text-xs text-gray-500">{% trans "At least one of email or phone is required." %}</p>
+            {% if form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ form.email.errors }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.phone_number.label }}</label>
+            <div class="mt-1 flex">
+                <div class="relative shrink-0">
+                    {{ form.phone_area_code }}
+                </div>
+                {% render_field form.phone_number class="flex-1 rounded-r-md border border-l-0 border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+            </div>
+            {% if form.phone_number.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.phone_number.help_text }}</p>{% endif %}
+            {% if form.phone_number.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>{% endif %}
+            {% if form.phone_area_code.errors %}<p class="mt-1 text-sm text-red-600">{{ form.phone_area_code.errors }}</p>{% endif %}
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+            <div>
+                <label for="{{ form.new_password1.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.new_password1.label }}</label>
+                <div class="mt-1">
+                    {% render_field form.new_password1 class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+                </div>
+                {% if form.new_password1.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.new_password1.help_text }}</p>{% endif %}
+                {% if form.new_password1.errors %}<p class="mt-1 text-sm text-red-600">{{ form.new_password1.errors }}</p>{% endif %}
+            </div>
+            <div>
+                <label for="{{ form.new_password2.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.new_password2.label }}</label>
+                <div class="mt-1">
+                    {% render_field form.new_password2 class="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" %}
+                </div>
+                {% if form.new_password2.errors %}<p class="mt-1 text-sm text-red-600">{{ form.new_password2.errors }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+            {% render_field form.is_active class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" %}
+            <label for="{{ form.is_active.id_for_label }}" class="text-sm font-medium text-gray-700">{{ form.is_active.label }}</label>
+        </div>
+
+        <button type="submit"
+                class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            {% if managed_user %}{% trans "Save changes" %}{% else %}{% trans "Create user" %}{% endif %}
+        </button>
+    </form>
+</div>
+{% if not managed_user %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var nameEl = document.getElementById('staff-suggest-name');
+        var userEl = document.getElementById('{{ form.username.id_for_label }}');
+        if (!nameEl || !userEl) return;
+
+        function deriveUsername(name) {
+            return (name || '').replace(/\s+/g, '');
+        }
+
+        var autoUsername = deriveUsername(nameEl.value);
+        var userEdited =
+            userEl.value.trim() !== '' && userEl.value.trim() !== autoUsername;
+
+        nameEl.addEventListener('input', function () {
+            if (userEdited) return;
+            var s = deriveUsername(nameEl.value);
+            userEl.value = s;
+            autoUsername = s;
+        });
+
+        userEl.addEventListener('input', function () {
+            userEdited = userEl.value.trim() !== autoUsername;
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -151,7 +151,12 @@ def test_public_schema_safe_model_backend_returns_none_on_public_schema(monkeypa
 
 
 def test_public_schema_safe_model_backend_falls_back_to_case_insensitive_username(monkeypatch):
-    user = User.objects.create_user(username="CaseUser", email="case@example.com", password="secretpass123")
+    user = User.objects.create_user(
+        username="CaseUser",
+        email="case@example.com",
+        password="secretpass123",
+        role=User.Role.CLIENT,
+    )
     monkeypatch.setattr(connection, "schema_name", "tenant-a", raising=False)
 
     with (
@@ -164,7 +169,12 @@ def test_public_schema_safe_model_backend_falls_back_to_case_insensitive_usernam
 
 
 def test_public_schema_safe_model_backend_falls_back_to_email(monkeypatch):
-    user = User.objects.create_user(username="mailuser", email="mail@example.com", password="secretpass123")
+    user = User.objects.create_user(
+        username="mailuser",
+        email="mail@example.com",
+        password="secretpass123",
+        role=User.Role.CLIENT,
+    )
     monkeypatch.setattr(connection, "schema_name", "tenant-a", raising=False)
 
     with (
@@ -185,6 +195,7 @@ def test_public_schema_safe_model_backend_falls_back_to_phone(monkeypatch):
         username="phoneuser",
         phone_number="+15551234567",
         password="secretpass123",
+        role=User.Role.CLIENT,
     )
     monkeypatch.setattr(connection, "schema_name", "tenant-a", raising=False)
 

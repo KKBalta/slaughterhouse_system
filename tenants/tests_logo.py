@@ -69,6 +69,7 @@ def test_clean_logo_accepts_png():
             "license_no": "",
             "operation_no": "",
             "contact_email": "",
+            "contact_phone_area_code": "+90",
             "contact_phone": "",
             "printer_turkish_mode": "unicode",
         },

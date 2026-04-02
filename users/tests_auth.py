@@ -34,6 +34,12 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def auth_state(db):
     """Create the fixed user set shared by auth-focused tests."""
+    owner_user = User.objects.create_user(
+        username="auth_owner",
+        password="SecurePass123!",
+        email="owner@test.com",
+        role=User.Role.OWNER,
+    )
     admin_user = User.objects.create_user(
         username="auth_admin",
         password="SecurePass123!",
@@ -67,6 +73,7 @@ def auth_state(db):
         address="123 Auth Test St",
     )
     return SimpleNamespace(
+        owner_user=owner_user,
         admin_user=admin_user,
         operator_user=operator_user,
         manager_user=manager_user,
@@ -204,6 +211,56 @@ class TestPasswordManagement:
 
         assert success is False
         assert auth_state.admin_user.check_password("SecurePass123!")
+
+
+@pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
+class TestAccountProfile:
+    def test_account_profile_page_loads_for_authenticated_user(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("account_profile"))
+
+        assert response.status_code == 200
+
+    def test_account_profile_updates_client_contact_and_syncs_profile(self, client, auth_state):
+        client.login(username=auth_state.client_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("account_profile"),
+            {
+                "action": "contact",
+                "email": "",
+                "phone_area_code": "+90",
+                "phone_number": "5550004455",
+            },
+        )
+
+        assert response.status_code == 302
+        auth_state.client_user.refresh_from_db()
+        auth_state.client_profile.refresh_from_db()
+        assert auth_state.client_user.email == ""
+        assert auth_state.client_user.phone_number == "+905550004455"
+        assert auth_state.client_profile.phone_number == "+905550004455"
+
+    def test_account_profile_changes_password_and_keeps_session(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("account_profile"),
+            {
+                "action": "password",
+                "current_password": "SecurePass123!",
+                "new_password1": "NewSecurePass456!",
+                "new_password2": "NewSecurePass456!",
+            },
+        )
+
+        assert response.status_code == 302
+        auth_state.manager_user.refresh_from_db()
+        assert auth_state.manager_user.check_password("NewSecurePass456!")
+        assert client.get(reverse("account_profile")).status_code == 200
+        client.post(reverse("logout"))
+        assert client.login(username=auth_state.manager_user.username, password="NewSecurePass456!")
 
 
 class TestSessionSecurity:
@@ -413,8 +470,8 @@ class TestUserRoles:
             assert role in actual_roles
 
     def test_default_role_is_admin(self):
-        user = User.objects.create_user(username="default_role_test", password="testpass123")
-        assert user.role == User.Role.ADMIN
+        with pytest.raises(ValueError, match="explicit role"):
+            User.objects.create_user(username="default_role_test", password="testpass123")
 
     def test_role_assignment(self, user_factory):
         from users.models import User
@@ -462,12 +519,17 @@ class TestClientProfile:
 
 
 class TestClientProfileRegistration:
-    """Self-service client registration creates a linked User + ClientProfile."""
+    """Internal client creation uses the tenant users-management flow."""
 
-    def test_post_creates_client_user_and_profile(self, client):
+    def test_post_creates_client_user_and_profile(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
         response = client.post(
-            reverse("client_register"),
+            reverse("tenant_user_create", args=[User.Role.CLIENT]),
             {
+                "username": "new-client-user",
+                "email": "",
+                "new_password1": "SecurePass123!",
+                "new_password2": "SecurePass123!",
                 "account_type": "INDIVIDUAL",
                 "contact_person": "New Client",
                 "phone_area_code": "+90",
@@ -477,19 +539,44 @@ class TestClientProfileRegistration:
         )
 
         assert response.status_code == 302
-        assert "done" in response.url
-        user = User.objects.get(username__endswith="3322")
+        user = User.objects.get(username="new-client-user")
         assert user.role == User.Role.CLIENT
         assert user.phone_number == "+905554443322"
         assert user.client_profile.phone_number == "+905554443322"
 
-    def test_post_creates_client_user_with_email_only(self, client):
+    def test_post_creates_client_user_with_generated_password_when_empty(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
         response = client.post(
-            reverse("client_register"),
+            reverse("tenant_user_create", args=[User.Role.CLIENT]),
             {
+                "username": "auto-pass-client",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": "INDIVIDUAL",
+                "contact_person": "Auto Pass",
+                "phone_area_code": "+90",
+                "phone_number": "5554443323",
+                "address": "100 St",
+            },
+        )
+
+        assert response.status_code == 302
+        user = User.objects.get(username="auto-pass-client")
+        assert user.has_usable_password()
+        assert user.check_password("") is False
+
+    def test_post_creates_client_user_with_email_only(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.CLIENT]),
+            {
+                "username": "mail-client-user",
                 "account_type": "INDIVIDUAL",
                 "contact_person": "Mail Client",
                 "email": "mail-client@example.com",
+                "new_password1": "SecurePass123!",
+                "new_password2": "SecurePass123!",
                 "phone_area_code": "+90",
                 "phone_number": "",
                 "address": "100 St",
@@ -502,23 +589,25 @@ class TestClientProfileRegistration:
         assert user.phone_number == ""
         assert user.client_profile.phone_number == ""
 
-    def test_second_registration_same_phone_gets_unique_username(self, client):
+    def test_operator_can_create_client_account(self, client, auth_state):
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
         data = {
+            "username": "operator-created-client",
+            "email": "",
+            "new_password1": "SecurePass123!",
+            "new_password2": "SecurePass123!",
             "account_type": "INDIVIDUAL",
             "contact_person": "Dup Client",
             "phone_area_code": "+90",
             "phone_number": "5550000001",
             "address": "Addr",
         }
-        client.post(reverse("client_register"), data)
-        client.post(reverse("client_register"), data)
+        response = client.post(reverse("tenant_user_create", args=[User.Role.CLIENT]), data)
 
-        assert ClientProfile.objects.filter(phone_number="+905550000001").count() == 2
-        usernames = list(
-            User.objects.filter(client_profile__phone_number="+905550000001").values_list("username", flat=True)
-        )
-        assert len(usernames) == 2
-        assert usernames[0] != usernames[1]
+        assert response.status_code == 302
+        created = User.objects.get(username="operator-created-client")
+        assert created.role == User.Role.CLIENT
+        assert created.client_profile.phone_number == "+905550000001"
 
 
 class TestClientProfileAPI:
@@ -533,10 +622,10 @@ class TestClientProfileAPI:
         response = client.get("/api/v1/clients/")
         assert response.status_code == 403
 
-    def test_list_forbidden_for_operator(self, client, auth_state):
+    def test_list_ok_for_operator(self, client, auth_state):
         client.login(username=auth_state.operator_user.username, password="SecurePass123!")
         response = client.get("/api/v1/clients/")
-        assert response.status_code == 403
+        assert response.status_code == 200
 
     def test_list_ok_for_manager(self, client, auth_state):
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
@@ -562,5 +651,170 @@ class TestClientProfileAPI:
             content_type="application/json",
         )
         assert response.status_code == 200
+        auth_state.client_user.refresh_from_db()
         auth_state.client_profile.refresh_from_db()
+        assert auth_state.client_user.phone_number == "+909998887777"
         assert auth_state.client_profile.phone_number == "+909998887777"
+
+    def test_api_rejects_non_client_profile_records(self, client, auth_state):
+        staff_user = User.objects.create_user(
+            username="staff-profile-user",
+            password="SecurePass123!",
+            role=User.Role.MANAGER,
+        )
+        staff_profile = ClientProfile.objects.create(
+            user=staff_user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            contact_person="Staff Profile",
+            phone_number="+15554443333",
+            address="Back Office",
+        )
+
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+        response = client.get(f"/api/v1/clients/{staff_profile.id}/")
+
+        assert response.status_code == 403
+
+
+@pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
+class TestTenantUserManagement:
+    def test_admin_can_create_admin(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.ADMIN]),
+            {
+                "role": User.Role.ADMIN,
+                "username": "tenant-admin",
+                "email": "tenant-admin@example.com",
+                "phone_area_code": "+90",
+                "phone_number": "",
+                "new_password1": "SecurePass123!",
+                "new_password2": "SecurePass123!",
+                "is_active": "on",
+            },
+        )
+
+        assert response.status_code == 302
+        created = User.objects.get(username="tenant-admin")
+        assert created.role == User.Role.ADMIN
+
+    def test_owner_cannot_create_admin(self, client, auth_state):
+        client.login(username=auth_state.owner_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_create", args=[User.Role.ADMIN]))
+
+        assert response.status_code == 403
+
+    def test_owner_user_list_hides_admin_create_action(self, client, auth_state):
+        client.login(username=auth_state.owner_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_list"))
+
+        assert response.status_code == 200
+        assert User.Role.ADMIN not in response.context["creatable_roles"]
+
+    def test_admin_can_create_manager(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.MANAGER]),
+            {
+                "role": User.Role.MANAGER,
+                "username": "tenant-manager",
+                "email": "",
+                "phone_area_code": "+1",
+                "phone_number": "5556667777",
+                "new_password1": "SecurePass123!",
+                "new_password2": "SecurePass123!",
+                "is_active": "on",
+            },
+        )
+
+        assert response.status_code == 302
+        created = User.objects.get(username="tenant-manager")
+        assert created.role == User.Role.MANAGER
+        assert created.phone_number == "+15556667777"
+
+    def test_staff_edit_page_prefills_existing_username(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_edit", kwargs={"pk": auth_state.manager_user.pk}))
+
+        assert response.status_code == 200
+        assert response.context["form"]["username"].value() == auth_state.manager_user.username
+
+    def test_admin_can_create_manager_with_generated_password_when_empty(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.MANAGER]),
+            {
+                "role": User.Role.MANAGER,
+                "username": "tenant-manager-auto",
+                "email": "",
+                "phone_area_code": "+1",
+                "phone_number": "5556667788",
+                "new_password1": "",
+                "new_password2": "",
+                "is_active": "on",
+            },
+        )
+
+        assert response.status_code == 302
+        created = User.objects.get(username="tenant-manager-auto")
+        assert created.role == User.Role.MANAGER
+        assert created.has_usable_password()
+        assert created.check_password("") is False
+
+    def test_operator_cannot_create_staff_user(self, client, auth_state):
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_create", args=[User.Role.OPERATOR]))
+
+        assert response.status_code == 403
+
+    def test_operator_user_list_is_limited_to_clients(self, client, auth_state):
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_list"))
+
+        assert response.status_code == 200
+        rows = response.context["user_rows"]
+        assert rows
+        assert all(row["user"].role == User.Role.CLIENT for row in rows)
+
+    def test_owner_cannot_edit_admin_user(self, client, auth_state):
+        client.login(username=auth_state.owner_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_edit", kwargs={"pk": auth_state.admin_user.pk}))
+
+        assert response.status_code == 403
+
+    def test_manager_can_edit_client_account_and_phone_syncs(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_edit", kwargs={"pk": auth_state.client_user.pk}),
+            {
+                "username": "edited-client",
+                "email": "edited-client@example.com",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.INDIVIDUAL,
+                "contact_person": "Edited Client",
+                "phone_area_code": "+90",
+                "phone_number": "5550001122",
+                "address": "Edited Address",
+                "company_name": "",
+                "tax_id": "",
+            },
+        )
+
+        assert response.status_code == 302
+        auth_state.client_user.refresh_from_db()
+        auth_state.client_profile.refresh_from_db()
+        assert auth_state.client_user.username == "edited-client"
+        assert auth_state.client_user.email == "edited-client@example.com"
+        assert auth_state.client_user.phone_number == "+905550001122"
+        assert auth_state.client_profile.phone_number == "+905550001122"

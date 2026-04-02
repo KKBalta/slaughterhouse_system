@@ -90,7 +90,12 @@ class TestGeneratedReportModel:
     @pytest.fixture(autouse=True)
     def _setup(self):
         self.report = Report.objects.create(name="Test Report", report_type="daily_slaughter", frequency="daily")
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+            role=User.Role.ADMIN,
+        )
 
     def test_generated_report_creation(self):
         """Test generated report creation"""
@@ -123,7 +128,12 @@ class TestReportDataAggregator:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+            role=User.Role.ADMIN,
+        )
         self.service_package = ServicePackage.objects.create(
             name="Test Package", includes_disassembly=True, includes_delivery=True
         )
@@ -695,7 +705,12 @@ class TestIntegration:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+            role=User.Role.ADMIN,
+        )
         self.service_package = ServicePackage.objects.create(
             name="Test Package", includes_disassembly=True, includes_delivery=True
         )

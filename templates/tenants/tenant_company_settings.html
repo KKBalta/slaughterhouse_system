@@ -1,11 +1,29 @@
 {% extends "base.html" %}
 {% load i18n widget_tweaks %}
 
-{% block title %}{% trans "Company & label settings" %} — {{ block.super }}{% endblock %}
+{% block title %}{% trans "Company settings" %} — {{ block.super }}{% endblock %}
 
 {% block content %}
+<style>
+    .modern-select {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem 0 0 0.375rem;
+        padding: 0.5rem 1.75rem 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: #111827;
+        width: 70px;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.25rem center;
+        background-repeat: no-repeat;
+        background-size: 1em 1em;
+        appearance: none;
+        cursor: pointer;
+    }
+</style>
 <div class="max-w-2xl">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">{% trans "Company & label settings" %}</h1>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{% trans "Company settings" %}</h1>
     <p class="text-gray-600 mb-6">
         {% trans "These values appear on printed labels (company block, İşletme onay no, VD number) and on PDF reports. İşletme onay no must match your official registration." %}
     </p>
@@ -60,7 +78,14 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.contact_phone.label }}</label>
-                {{ form.contact_phone|add_class:"w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+                <div class="flex">
+                    <div class="relative shrink-0">
+                        {{ form.contact_phone_area_code }}
+                    </div>
+                    {{ form.contact_phone|add_class:"flex-1 rounded-r-md border border-l-0 border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" }}
+                </div>
+                {% if form.contact_phone_area_code.errors %}<p class="mt-1 text-sm text-red-600">{{ form.contact_phone_area_code.errors }}</p>{% endif %}
+                {% if form.contact_phone.errors %}<p class="mt-1 text-sm text-red-600">{{ form.contact_phone.errors }}</p>{% endif %}
             </div>
         </div>
 

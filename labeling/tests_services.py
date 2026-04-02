@@ -56,7 +56,7 @@ def test_all_target_item_types():
 
 
 def test_create_print_job():
-    user = User.objects.create_user(username="print_test_user", password="testpass123")
+    user = User.objects.create_user(username="print_test_user", password="testpass123", role=User.Role.ADMIN)
     template = LabelTemplate.objects.create(name="Print Job Template", template_data={}, target_item_type="carcass")
 
     item_id = uuid.uuid4()
@@ -68,7 +68,7 @@ def test_create_print_job():
 
 
 def test_print_job_status_transitions():
-    user = User.objects.create_user(username="status_test_user", password="testpass123")
+    user = User.objects.create_user(username="status_test_user", password="testpass123", role=User.Role.ADMIN)
     template = LabelTemplate.objects.create(name="Status Test Template", template_data={}, target_item_type="carcass")
 
     job = PrintJob.objects.create(label_template=template, item_type="carcass", item_id=uuid.uuid4(), printed_by=user)
@@ -101,7 +101,7 @@ def test_print_job_template_deletion():
 
 
 def test_all_status_values():
-    user = User.objects.create_user(username="status_test_user_2", password="testpass123")
+    user = User.objects.create_user(username="status_test_user_2", password="testpass123", role=User.Role.ADMIN)
     template = LabelTemplate.objects.create(
         name="Status Test Template 2", template_data={}, target_item_type="meat_cut"
     )

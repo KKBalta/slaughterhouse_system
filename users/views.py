@@ -1,8 +1,6 @@
 import json
-import re
 import secrets
-from functools import wraps
-from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
 
 # One-shot CSRF token cache: GET /csrf/ stores the issued token here so that
 # POST /login/ can validate it even when the browser omits the csrftoken cookie
@@ -89,32 +87,59 @@ def _allowed_redirect_hosts(*urls: str) -> set[str]:
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
-from django.core import signing
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token, rotate_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods
-from django.views.generic import FormView
-from django.views.generic.edit import CreateView
 
-from .forms import ClientProfileRegisterForm, ClientUserCredentialsForm, UserRegistrationForm
+from .forms import (
+    ClientProfileRegisterForm,
+    ClientUserCredentialsForm,
+    SelfServiceContactForm,
+    SelfServicePasswordForm,
+    TenantManagedUserForm,
+)
 from .models import ClientProfile, User
-from .services import activate_client_profile, archive_client_profile, create_user_with_profile, deactivate_user
+from .policies import (
+    can_access_reception,
+    can_access_user_management,
+    can_create_role,
+    can_edit_user,
+    can_manage_client_accounts,
+    can_manage_company_settings,
+    can_manage_tenant_users,
+    creatable_roles_for,
+)
+from .services import (
+    activate_client_profile,
+    archive_client_profile,
+    change_user_password,
+    create_user_with_profile,
+    deactivate_user,
+    generate_random_password,
+    update_self_service_contact_channels,
+    update_user_credentials,
+)
 
-CLIENT_REGISTER_SESSION_KEY = "client_register_credentials"
-CLIENT_REGISTER_SIGNING_SALT = "client-register-done"
 
+def _password_for_create(cd: dict) -> tuple[str, bool]:
+    """Return (password, was_generated) when creating a user from credential form data."""
+    raw = (cd.get("new_password1") or "").strip()
+    if raw:
+        return raw, False
+    return generate_random_password(), True
 
 # New home view for the landing page
 def home_view(request):
@@ -126,20 +151,57 @@ def logged_out_view(request):
     return render(request, "users/logged_out.html")
 
 
-class RegisterView(CreateView):
-    form_class = UserRegistrationForm
-    success_url = reverse_lazy("login")  # Redirect to login page after successful registration
-    template_name = "users/register.html"
+@sensitive_post_parameters("current_password", "new_password1", "new_password2")
+@login_required
+def account_profile_view(request):
+    contact_form = SelfServiceContactForm(user_instance=request.user)
+    password_form = SelfServicePasswordForm(user_instance=request.user)
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip().lower()
+        if action == "contact":
+            contact_form = SelfServiceContactForm(request.POST, user_instance=request.user)
+            if contact_form.is_valid():
+                update_self_service_contact_channels(
+                    request.user,
+                    email=contact_form.cleaned_data.get("email") or "",
+                    phone_number=contact_form.cleaned_data.get("phone_number") or "",
+                )
+                messages.success(request, _("Your contact details were updated."))
+                return redirect("account_profile")
+        elif action == "password":
+            password_form = SelfServicePasswordForm(request.POST, user_instance=request.user)
+            if password_form.is_valid():
+                changed = change_user_password(
+                    request.user,
+                    old_password=password_form.cleaned_data["current_password"],
+                    new_password=password_form.cleaned_data["new_password1"],
+                )
+                if not changed:
+                    password_form.add_error("current_password", _("Your current password was entered incorrectly."))
+                else:
+                    update_session_auth_hash(request, request.user)
+                    messages.success(request, _("Your password was changed."))
+                    return redirect("account_profile")
+        else:
+            messages.error(request, _("Unknown account action."))
 
-    # def dispatch(self, request, *args, **kwargs):
-    #     if request.user.is_authenticated:
-    #         return redirect(reverse_lazy('dashboard')) # Redirect to dashboard if already logged in
-    #     return super().dispatch(request, *args, **kwargs)
+    client_profile = None
+    if getattr(request.user, "role", "") == User.Role.CLIENT:
+        try:
+            client_profile = request.user.client_profile
+        except ClientProfile.DoesNotExist:
+            client_profile = None
+
+    return render(
+        request,
+        "users/account_profile.html",
+        {
+            "contact_form": contact_form,
+            "password_form": password_form,
+            "client_profile": client_profile,
+        },
+    )
 
 
 @method_decorator(sensitive_post_parameters(), name="dispatch")
@@ -650,169 +712,390 @@ def discover_tenants_api(request):
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")  # Redirect to logged_out page after logout
 
-
-def _unique_client_username(base_name: str, phone_last4: str) -> str:
-    """Build a username from name + phone suffix; ensure uniqueness (max 150 chars)."""
-    slug = re.sub(r"[^a-z0-9]", "", (base_name or "client").lower())[:80] or "client"
-    candidate = f"{slug}{phone_last4}"
-    if len(candidate) > 150:
-        candidate = candidate[:150]
-    n = 0
-    while User.objects.filter(username=candidate).exists():
-        n += 1
-        suffix = secrets.token_hex(3) if n > 15 else str(n)
-        candidate = f"{slug}{phone_last4}{suffix}"[:150]
-    return candidate
-
-
-class ClientProfileRegisterView(FormView):
-    form_class = ClientProfileRegisterForm
-    template_name = "users/client_profile_register.html"
-    success_url = reverse_lazy("client_register_done")
-
-    def form_valid(self, form):
-        phone = form.cleaned_data["phone_number"]
-        email = form.cleaned_data.get("email") or ""
-        account_type = form.cleaned_data["account_type"]
-        contact_person = form.cleaned_data.get("contact_person")
-        company_name = form.cleaned_data.get("company_name")
-        if account_type == ClientProfile.AccountType.ENTERPRISE and company_name:
-            base_name = company_name
-        else:
-            base_name = contact_person or "client"
-        phone_last4 = phone[-4:] if len(phone) >= 4 else phone
-        username = _unique_client_username(base_name, phone_last4)
-        password = secrets.token_urlsafe(8)
-        profile_data = {
-            "account_type": form.cleaned_data["account_type"],
-            "contact_person": form.cleaned_data.get("contact_person") or "",
-            "address": form.cleaned_data["address"],
-            "company_name": form.cleaned_data.get("company_name") or None,
-            "tax_id": form.cleaned_data.get("tax_id") or None,
-        }
-        create_user_with_profile(
-            username,
-            password,
-            User.Role.CLIENT,
-            email=email,
-            phone_number=phone,
-            profile_phone_number=phone,
-            **profile_data,
-        )
-        # Session backup (optional); primary success payload is signed URL (works across workers / cache session).
-        self.request.session[CLIENT_REGISTER_SESSION_KEY] = {
-            "username": username,
-            "password": password,
-        }
-        self.request.session.modified = True
-        # signing.dumps() already applies TimestampSigner + HMAC; do not wrap in .sign() again.
-        token = signing.dumps(
-            {"username": username, "password": password},
-            salt=CLIENT_REGISTER_SIGNING_SALT,
-        )
-        done_url = reverse("client_register_done") + "?t=" + quote(token, safe="")
-        return HttpResponseRedirect(done_url)
-
-
-def client_register_done_view(request):
-    token = request.GET.get("t")
-    if token:
-        try:
-            data = signing.loads(
-                token,
-                salt=CLIENT_REGISTER_SIGNING_SALT,
-                max_age=600,
-            )
-        except signing.SignatureExpired:
-            messages.error(
-                request,
-                "That confirmation link expired. Please submit the registration form again or sign in if you already have an account.",
-            )
-            return redirect("login")
-        except signing.BadSignature:
-            pass
-        else:
-            if isinstance(data, dict) and data.get("username") and data.get("password") is not None:
-                request.session.pop(CLIENT_REGISTER_SESSION_KEY, None)
-                return render(
-                    request,
-                    "users/client_register_done.html",
-                    {
-                        "username": data["username"],
-                        "password": data["password"],
-                    },
-                )
-
-    creds = request.session.pop(CLIENT_REGISTER_SESSION_KEY, None)
-    if creds:
-        return render(
-            request,
-            "users/client_register_done.html",
-            {
-                "username": creds["username"],
-                "password": creds["password"],
-            },
-        )
-    messages.info(
-        request,
-        "If you just registered, sign in below. Otherwise complete the registration form first.",
-    )
-    return redirect("login")
-
-
 @login_required
 def dashboard_view(request):
     return render(request, "users/dashboard.html", {})
 
 
-# RBAC Decorators using Django's built-in functionality
-
-
 def is_manager_or_admin(user):
-    """Check if user has MANAGER, ADMIN, or OWNER role"""
-    return user.is_authenticated and user.role in [
-        user.Role.OWNER,
-        user.Role.ADMIN,
-        user.Role.MANAGER,
-    ]
+    return can_manage_company_settings(user)
 
 
 def is_admin(user):
-    """Tenant admin: OWNER or ADMIN (full app privileges; not Django /admin/)."""
-    return user.is_authenticated and user.role in [user.Role.OWNER, user.Role.ADMIN]
+    return can_manage_tenant_users(user)
 
 
 def is_manager(user):
-    """MANAGER or OWNER — same operational permissions (OWNER is the registration-approved tenant owner)."""
     return user.is_authenticated and user.role in (user.Role.MANAGER, user.Role.OWNER)
 
 
 def is_operator_or_above(user):
-    """OPERATOR and above (includes OWNER, ADMIN, MANAGER)."""
-    return user.is_authenticated and user.role in [
-        user.Role.OWNER,
-        user.Role.ADMIN,
-        user.Role.MANAGER,
-        user.Role.OPERATOR,
-    ]
+    return can_access_reception(user)
 
 
-# Decorators using Django's user_passes_test
 manager_or_admin_required = user_passes_test(is_manager_or_admin, login_url="/login/")
 admin_required = user_passes_test(is_admin, login_url="/login/")
 manager_required = user_passes_test(is_manager, login_url="/login/")
 operator_or_above_required = user_passes_test(is_operator_or_above, login_url="/login/")
+client_account_required = user_passes_test(can_manage_client_accounts, login_url="/login/")
+user_management_required = user_passes_test(can_access_user_management, login_url="/login/")
 
 
-@manager_or_admin_required
+def _get_safe_next_url(request) -> str:
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    next_url = (request.POST.get("next") or request.GET.get("next") or "").strip()
+    if not next_url:
+        return ""
+    allowed_hosts = {
+        request.get_host().lower(),
+        request.get_host().split(":")[0].lower(),
+    }
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts=allowed_hosts, require_https=request.is_secure()):
+        return next_url
+    return ""
+
+
+def _redirect_next_or(request, default_name: str, **kwargs):
+    next_url = _get_safe_next_url(request)
+    if next_url:
+        return redirect(next_url)
+    return redirect(default_name, **kwargs)
+
+
+def _user_management_queryset_for(actor):
+    qs = User.objects.select_related("client_profile").exclude(role=User.Role.OWNER).order_by("username")
+    if not can_manage_tenant_users(actor):
+        qs = qs.filter(role=User.Role.CLIENT)
+    return qs
+
+
+def _staff_allowed_roles(actor) -> tuple[str, ...]:
+    return tuple(role for role in creatable_roles_for(actor) if role in (User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR))
+
+
+def _client_profile_form_instance(user: User | None, profile: ClientProfile | None) -> ClientProfile:
+    if profile is not None:
+        return profile
+    return ClientProfile(
+        user=user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        phone_number="",
+        address="",
+    )
+
+
+def _save_client_profile(instance: ClientProfile, cleaned_data: dict) -> ClientProfile:
+    profile_fields = {
+        "account_type": cleaned_data["account_type"],
+        "contact_person": cleaned_data.get("contact_person") or "",
+        "phone_number": cleaned_data.get("phone_number") or "",
+        "address": cleaned_data["address"],
+        "company_name": cleaned_data.get("company_name") or None,
+        "tax_id": cleaned_data.get("tax_id") or None,
+    }
+    for field, value in profile_fields.items():
+        setattr(instance, field, value)
+    instance.save()
+    return instance
+
+
+def _render_client_account_form(request, *, user: User | None = None, profile: ClientProfile | None = None):
+    next_url = _get_safe_next_url(request)
+    profile_instance = _client_profile_form_instance(user, profile)
+    require_password = user is None
+    cred_form = None
+
+    if request.method == "POST":
+        profile_form = ClientProfileRegisterForm(request.POST, instance=profile_instance)
+        if user is not None or profile is None:
+            cred_form = ClientUserCredentialsForm(
+                request.POST,
+                user_instance=user,
+                require_password=require_password,
+                require_contact=False,
+            )
+        profile_ok = profile_form.is_valid()
+        cred_ok = cred_form.is_valid() if cred_form else True
+        if profile_ok and cred_ok:
+            profile_phone = profile_form.cleaned_data.get("phone_number") or ""
+            with transaction.atomic():
+                if user is None and cred_form:
+                    cd = cred_form.cleaned_data
+                    password, password_generated = _password_for_create(cd)
+                    created_user = create_user_with_profile(
+                        cd["username"],
+                        password,
+                        User.Role.CLIENT,
+                        email=cd.get("email") or "",
+                        phone_number=profile_phone,
+                        profile_phone_number=profile_phone,
+                        account_type=profile_form.cleaned_data["account_type"],
+                        contact_person=profile_form.cleaned_data.get("contact_person") or "",
+                        address=profile_form.cleaned_data["address"],
+                        company_name=profile_form.cleaned_data.get("company_name") or None,
+                        tax_id=profile_form.cleaned_data.get("tax_id") or None,
+                    )
+                    redirect_response = _redirect_next_or(request, "tenant_user_list")
+                    if next_url:
+                        if password_generated:
+                            messages.success(
+                                request,
+                                _(
+                                    "Client created. Temporary password: %(pwd)s — copy it now; "
+                                    "the user can change it later."
+                                )
+                                % {"pwd": password},
+                            )
+                        else:
+                            messages.success(request, _("Client created."))
+                        return redirect_response
+                    if password_generated:
+                        messages.success(
+                            request,
+                            _(
+                                "Client created. Temporary password: %(pwd)s — copy it now; "
+                                "the user can change it later."
+                            )
+                            % {"pwd": password},
+                        )
+                    return redirect("tenant_user_edit", pk=created_user.pk)
+
+                saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
+                if user is not None and cred_form:
+                    cd = cred_form.cleaned_data
+                    update_user_credentials(
+                        user,
+                        username=cd["username"],
+                        email=cd.get("email") or "",
+                        phone_number=profile_phone,
+                        password=(cd.get("new_password1") or "").strip(),
+                    )
+                messages.success(request, "Client updated.")
+                if saved_profile.pk and not next_url:
+                    return redirect("client_profile_detail", pk=saved_profile.pk)
+                return _redirect_next_or(request, "tenant_user_list")
+    else:
+        profile_form = ClientProfileRegisterForm(instance=profile_instance)
+        if user is not None or profile is None:
+            cred_form = ClientUserCredentialsForm(
+                initial={"username": user.username, "email": user.email or ""} if user else None,
+                user_instance=user,
+                require_password=require_password,
+                require_contact=False,
+            )
+
+    return render(
+        request,
+        "users/client_profile_form.html",
+        {
+            "profile_form": profile_form,
+            "cred_form": cred_form,
+            "mode": "edit" if user or profile else "add",
+            "profile": profile,
+            "back_url": next_url or reverse("tenant_user_list"),
+            "back_label": "Back to users",
+            "show_credential_phone": False,
+            "next_url": next_url,
+        },
+    )
+
+
+def _render_staff_user_form(request, *, user: User | None = None, initial_role: str):
+    next_url = _get_safe_next_url(request)
+    allowed_roles = _staff_allowed_roles(request.user)
+    if initial_role not in allowed_roles:
+        raise PermissionDenied("You cannot create that role from this screen.")
+
+    require_password = user is None
+    if request.method == "POST":
+        form = TenantManagedUserForm(
+            request.POST,
+            user_instance=user,
+            require_password=require_password,
+            allowed_roles=allowed_roles,
+        )
+        if form.is_valid():
+            cd = form.cleaned_data
+            with transaction.atomic():
+                if user is None:
+                    password, password_generated = _password_for_create(cd)
+                    user = User.objects.create_user(
+                        username=cd["username"],
+                        email=cd.get("email") or "",
+                        password=password,
+                        phone_number=cd.get("phone_number") or "",
+                        role=cd["role"],
+                        is_active=cd["is_active"],
+                    )
+                    if password_generated:
+                        messages.success(
+                            request,
+                            _(
+                                "User created. Temporary password: %(pwd)s — copy it now; "
+                                "the user can change it later."
+                            )
+                            % {"pwd": password},
+                        )
+                    else:
+                        messages.success(request, _("User created."))
+                else:
+                    update_user_credentials(
+                        user,
+                        username=cd["username"],
+                        email=cd.get("email") or "",
+                        phone_number=cd.get("phone_number") or "",
+                        password=(cd.get("new_password1") or "").strip(),
+                        role=cd["role"],
+                        is_active=cd["is_active"],
+                    )
+                    messages.success(request, "User updated.")
+            if next_url:
+                return redirect(next_url)
+            return redirect("tenant_user_list")
+    else:
+        form = TenantManagedUserForm(
+            initial={"role": initial_role, "is_active": True},
+            user_instance=user,
+            require_password=require_password,
+            allowed_roles=allowed_roles,
+        )
+
+    return render(
+        request,
+        "users/staff_user_form.html",
+        {
+            "form": form,
+            "managed_user": user,
+            "back_url": next_url or reverse("tenant_user_list"),
+            "next_url": next_url,
+        },
+    )
+
+
+@user_management_required
+def tenant_user_list_view(request):
+    q = (request.GET.get("q") or "").strip()
+    status = (request.GET.get("status") or "all").strip().lower()
+    role_filter = (request.GET.get("role") or "all").strip().upper()
+
+    base_qs = _user_management_queryset_for(request.user)
+    allowed_roles = [User.Role.CLIENT] if not can_manage_tenant_users(request.user) else [
+        User.Role.ADMIN,
+        User.Role.MANAGER,
+        User.Role.OPERATOR,
+        User.Role.CLIENT,
+    ]
+    if role_filter != "ALL" and role_filter not in allowed_roles:
+        role_filter = "ALL"
+    if status not in {"all", "active", "inactive"}:
+        status = "all"
+
+    qs = base_qs
+    if role_filter != "ALL":
+        qs = qs.filter(role=role_filter)
+    if status == "active":
+        qs = qs.filter(is_active=True)
+    elif status == "inactive":
+        qs = qs.filter(is_active=False)
+    if q:
+        qs = qs.filter(
+            Q(username__icontains=q)
+            | Q(email__icontains=q)
+            | Q(phone_number__icontains=q)
+            | Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(client_profile__company_name__icontains=q)
+            | Q(client_profile__contact_person__icontains=q)
+        )
+
+    role_filters = [{"value": "ALL", "label": "All"}] + [
+        {"value": role, "label": User.Role(role).label} for role in allowed_roles
+    ]
+    counts = {
+        "all": base_qs.count(),
+        "active": base_qs.filter(is_active=True).count(),
+        "inactive": base_qs.filter(is_active=False).count(),
+    }
+    user_rows = []
+    for managed_user in qs:
+        try:
+            profile = managed_user.client_profile
+        except ClientProfile.DoesNotExist:
+            profile = None
+        if managed_user.role == User.Role.CLIENT and profile is not None:
+            display_name = profile.get_full_name()
+            secondary_text = profile.contact_person or profile.company_name or ""
+            legacy_detail_url = reverse("client_profile_detail", kwargs={"pk": profile.pk})
+        else:
+            display_name = managed_user.get_full_name() or managed_user.username
+            secondary_text = managed_user.username
+            legacy_detail_url = ""
+        user_rows.append(
+            {
+                "user": managed_user,
+                "profile": profile,
+                "display_name": display_name,
+                "secondary_text": secondary_text,
+                "edit_url": (
+                    reverse("tenant_user_edit", kwargs={"pk": managed_user.pk})
+                    if can_edit_user(request.user, managed_user)
+                    else ""
+                ),
+                "legacy_detail_url": legacy_detail_url,
+            }
+        )
+
+    return render(
+        request,
+        "users/user_management_list.html",
+        {
+            "user_rows": user_rows,
+            "q": q,
+            "status_filter": status,
+            "role_filter": role_filter,
+            "role_filters": role_filters,
+            "count_all": counts["all"],
+            "count_active": counts["active"],
+            "count_inactive": counts["inactive"],
+            "creatable_roles": creatable_roles_for(request.user),
+        },
+    )
+
+
+@user_management_required
+def tenant_user_create_view(request, role: str):
+    requested_role = (role or "").upper()
+    if requested_role not in {choice[0] for choice in User.Role.choices}:
+        raise Http404()
+    if not can_create_role(request.user, requested_role):
+        raise PermissionDenied()
+    if requested_role == User.Role.CLIENT:
+        return _render_client_account_form(request)
+    return _render_staff_user_form(request, initial_role=requested_role)
+
+
+@user_management_required
+def tenant_user_edit_view(request, pk: int):
+    managed_user = get_object_or_404(User.objects.select_related("client_profile"), pk=pk)
+    if not can_edit_user(request.user, managed_user):
+        raise PermissionDenied()
+    if managed_user.role == User.Role.CLIENT:
+        return _render_client_account_form(request, user=managed_user, profile=getattr(managed_user, "client_profile", None))
+    return _render_staff_user_form(request, user=managed_user, initial_role=managed_user.role)
+
+
+@client_account_required
 def client_profile_list_view(request):
-    """List registered client profiles (staff: owner, admin, manager)."""
     q = request.GET.get("q", "").strip()
     status = (request.GET.get("status") or "all").strip().lower()
     if status not in ("all", "active", "archived"):
         status = "all"
 
-    qs = ClientProfile.objects.select_related("user").order_by("-created_at")
+    manageable_qs = ClientProfile.objects.select_related("user").filter(
+        Q(user__isnull=True) | Q(user__role=User.Role.CLIENT)
+    )
+    qs = manageable_qs.order_by("-created_at")
     if q:
         qs = qs.filter(
             Q(company_name__icontains=q)
@@ -827,7 +1110,7 @@ def client_profile_list_view(request):
     elif status == "archived":
         qs = qs.filter(is_active=False)
 
-    counts = ClientProfile.objects.aggregate(
+    counts = manageable_qs.aggregate(
         n_active=Count("id", filter=Q(is_active=True)),
         n_archived=Count("id", filter=Q(is_active=False)),
     )
@@ -847,116 +1130,31 @@ def client_profile_list_view(request):
 
 
 def _assert_staff_may_manage_client_profile(profile: ClientProfile) -> None:
-    """Only profiles for client-role users (or walk-in without user) are managed here."""
     u = profile.user
     if u is not None and u.role != User.Role.CLIENT:
         raise PermissionDenied("This account cannot be managed from the client list.")
 
 
-@manager_or_admin_required
+@client_account_required
 def client_profile_detail_view(request, pk):
     profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
     _assert_staff_may_manage_client_profile(profile)
     return render(request, "users/client_profile_detail.html", {"profile": profile})
 
 
-@manager_or_admin_required
+@client_account_required
 def client_profile_add_view(request):
-    if request.method == "POST":
-        profile_form_data = request.POST.copy()
-        profile_form_data.pop("email", None)
-        profile_form = ClientProfileRegisterForm(profile_form_data)
-        cred_form = ClientUserCredentialsForm(request.POST, user_instance=None, require_password=True)
-        if profile_form.is_valid() and cred_form.is_valid():
-            cd = cred_form.cleaned_data
-            pd = profile_form.cleaned_data
-            profile_data = {
-                "account_type": pd["account_type"],
-                "contact_person": pd.get("contact_person") or "",
-                "address": pd["address"],
-                "company_name": pd.get("company_name") or None,
-                "tax_id": pd.get("tax_id") or None,
-            }
-            with transaction.atomic():
-                user = create_user_with_profile(
-                    cd["username"],
-                    cd["new_password1"],
-                    User.Role.CLIENT,
-                    email=cd.get("email") or "",
-                    phone_number=cd.get("phone_number") or "",
-                    profile_phone_number=pd["phone_number"],
-                    **profile_data,
-                )
-            messages.success(request, "Client created.")
-            return redirect("client_profile_detail", pk=user.client_profile.pk)
-    else:
-        profile_form = ClientProfileRegisterForm()
-        cred_form = ClientUserCredentialsForm(user_instance=None, require_password=True)
-    return render(
-        request,
-        "users/client_profile_form.html",
-        {
-            "profile_form": profile_form,
-            "cred_form": cred_form,
-            "mode": "add",
-            "profile": None,
-        },
-    )
+    return _render_client_account_form(request)
 
 
-@manager_or_admin_required
+@client_account_required
 def client_profile_edit_view(request, pk):
     profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
     _assert_staff_may_manage_client_profile(profile)
-    user = profile.user
-    if request.method == "POST":
-        profile_form_data = request.POST.copy()
-        profile_form_data.pop("email", None)
-        profile_form = ClientProfileRegisterForm(profile_form_data, instance=profile)
-        cred_form = ClientUserCredentialsForm(request.POST, user_instance=user) if user else None
-        profile_ok = profile_form.is_valid()
-        cred_ok = cred_form.is_valid() if cred_form else True
-        if profile_ok and cred_ok:
-            with transaction.atomic():
-                profile_form.save()
-                if user and cred_form:
-                    cd = cred_form.cleaned_data
-                    user.username = cd["username"]
-                    user.email = cd.get("email") or ""
-                    user.phone_number = cd.get("phone_number") or ""
-                    p1 = (cd.get("new_password1") or "").strip()
-                    if p1:
-                        user.set_password(p1)
-                    user.save()
-            messages.success(request, "Client updated.")
-            return redirect("client_profile_detail", pk=profile.pk)
-    else:
-        profile_form = ClientProfileRegisterForm(instance=profile)
-        cred_form = (
-            ClientUserCredentialsForm(
-                initial={
-                    "username": user.username,
-                    "email": user.email or "",
-                    "phone_number": user.phone_number or "",
-                },
-                user_instance=user,
-            )
-            if user
-            else None
-        )
-    return render(
-        request,
-        "users/client_profile_form.html",
-        {
-            "profile_form": profile_form,
-            "cred_form": cred_form,
-            "mode": "edit",
-            "profile": profile,
-        },
-    )
+    return _render_client_account_form(request, user=profile.user, profile=profile)
 
 
-@manager_or_admin_required
+@client_account_required
 @require_http_methods(["POST"])
 def client_profile_activate_view(request, pk):
     profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
@@ -969,7 +1167,7 @@ def client_profile_activate_view(request, pk):
     return redirect("client_profile_list")
 
 
-@manager_or_admin_required
+@client_account_required
 def client_profile_delete_view(request, pk):
     profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
     _assert_staff_may_manage_client_profile(profile)
@@ -982,30 +1180,3 @@ def client_profile_delete_view(request, pk):
         messages.success(request, "Client archived and login disabled.")
         return redirect("client_profile_list")
     return render(request, "users/client_profile_confirm_delete.html", {"profile": profile})
-
-
-# Custom decorator for better error handling
-def role_required(*allowed_roles):
-    """
-    Decorator that requires user to have one of the specified roles.
-
-    Usage:
-    @role_required('ADMIN', 'MANAGER')
-    def my_view(request):
-        pass
-    """
-
-    def decorator(view_func):
-        @wraps(view_func)
-        def wrapper(request, *args, **kwargs):
-            if not request.user.is_authenticated:
-                return redirect("/login/")
-
-            if request.user.role not in allowed_roles:
-                raise PermissionDenied("You don't have permission to access this page.")
-
-            return view_func(request, *args, **kwargs)
-
-        return wrapper
-
-    return decorator

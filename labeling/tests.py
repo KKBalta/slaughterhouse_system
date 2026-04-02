@@ -26,7 +26,7 @@ def test_label_template_name_uniqueness():
 
 
 def test_create_print_job():
-    user = User.objects.create_user(username="testuser", password="password123")
+    user = User.objects.create_user(username="testuser", password="password123", role=User.Role.ADMIN)
     template = LabelTemplate.objects.create(name="Test Template", template_data={}, target_item_type="offal")
     item_id = uuid.uuid4()
     job = PrintJob.objects.create(label_template=template, item_type="offal", item_id=item_id, printed_by=user)

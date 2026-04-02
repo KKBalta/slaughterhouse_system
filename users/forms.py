@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 
 from tenants.email_index import normalize_email, normalize_phone
@@ -13,13 +14,41 @@ PHONE_AREA_CODE_CHOICES = [
 ]
 
 
+def split_phone_parts(phone_number: str | None) -> tuple[str, str]:
+    phone = (phone_number or "").strip()
+    if phone.startswith("+90"):
+        return "+90", phone[3:]
+    if phone.startswith("+1"):
+        return "+1", phone[2:]
+    return "+90", phone
+
+
+def combine_phone_parts(phone_area_code: str | None, phone_number: str | None) -> str:
+    raw_phone = (phone_number or "").strip()
+    if not raw_phone:
+        return ""
+    if raw_phone.startswith("+"):
+        return normalize_phone(raw_phone)
+    area = (phone_area_code or "+90").strip() or "+90"
+    return normalize_phone(f"{area}{raw_phone}")
+
+
 class ClientUserCredentialsForm(forms.Form):
     """Staff edit of login identifiers and optional password reset for a client user."""
 
     username = forms.CharField(max_length=150)
     email = forms.EmailField(required=False)
+    phone_area_code = forms.ChoiceField(
+        choices=PHONE_AREA_CODE_CHOICES,
+        initial="+90",
+        required=False,
+        label=_("Area code"),
+        widget=forms.Select(
+            attrs={"class": "modern-select", "title": _("Select country code: +90 for Turkey, +1 for USA/Canada")}
+        ),
+    )
     phone_number = forms.CharField(
-        max_length=20,
+        max_length=15,
         required=False,
         label=_("Phone number"),
         help_text=_("At least one of email or phone is required."),
@@ -36,19 +65,31 @@ class ClientUserCredentialsForm(forms.Form):
         required=False,
     )
 
-    def __init__(self, *args, user_instance=None, require_password: bool = False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        user_instance=None,
+        require_password: bool = False,
+        require_contact: bool = True,
+        **kwargs,
+    ):
         self.user_instance = user_instance
         self.require_password = require_password
+        self.require_contact = require_contact
         super().__init__(*args, **kwargs)
+        if user_instance and getattr(user_instance, "username", ""):
+            self.fields["username"].initial = user_instance.username
         if user_instance and getattr(user_instance, "email", ""):
             self.fields["email"].initial = user_instance.email
         if require_password:
-            self.fields["new_password1"].required = True
-            self.fields["new_password2"].required = True
-            self.fields["new_password1"].help_text = ""
+            self.fields["new_password1"].required = False
+            self.fields["new_password2"].required = False
+            self.fields["new_password1"].help_text = _("Leave blank to assign a random password.")
             self.fields["new_password1"].widget.attrs.setdefault("autocomplete", "new-password")
         if user_instance and getattr(user_instance, "phone_number", ""):
-            self.fields["phone_number"].initial = user_instance.phone_number
+            area, local = split_phone_parts(user_instance.phone_number)
+            self.fields["phone_area_code"].initial = area
+            self.fields["phone_number"].initial = local
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
@@ -71,21 +112,33 @@ class ClientUserCredentialsForm(forms.Form):
         return email
 
     def clean_phone_number(self):
-        return normalize_phone(self.cleaned_data.get("phone_number"))
+        phone_number = combine_phone_parts(
+            self.cleaned_data.get("phone_area_code"),
+            self.cleaned_data.get("phone_number"),
+        )
+        if not phone_number:
+            return ""
+        qs = User.objects.filter(phone_number=phone_number)
+        if self.user_instance and getattr(self.user_instance, "pk", None):
+            qs = qs.exclude(pk=self.user_instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A user with that phone number already exists in this tenant."))
+        return phone_number
 
     def clean(self):
         cleaned_data = super().clean()
         if not cleaned_data:
             return cleaned_data
-        # At least one of email or phone required.
         email = (cleaned_data.get("email") or "").strip()
         phone = (cleaned_data.get("phone_number") or "").strip()
-        if not email and not phone:
+        if self.require_contact and not email and not phone:
             raise forms.ValidationError(_("At least one of email or phone number is required."))
         p1 = cleaned_data.get("new_password1") or ""
         p2 = cleaned_data.get("new_password2") or ""
         if self.require_password:
-            if p1 != p2:
+            if not self.user_instance and not p1 and not p2:
+                pass
+            elif p1 != p2:
                 self.add_error("new_password2", "The two password fields don't match.")
             elif len(p1) < 8:
                 self.add_error("new_password1", "Password must be at least 8 characters.")
@@ -94,6 +147,131 @@ class ClientUserCredentialsForm(forms.Form):
                 self.add_error("new_password2", "The two password fields don't match.")
             elif len(p1) < 8:
                 self.add_error("new_password1", "Password must be at least 8 characters.")
+        return cleaned_data
+
+
+class TenantManagedUserForm(ClientUserCredentialsForm):
+    role = forms.ChoiceField(required=True, label=_("Role"))
+    is_active = forms.BooleanField(required=False, initial=True, label=_("Active"))
+
+    def __init__(self, *args, allowed_roles=(), user_instance=None, **kwargs):
+        self.allowed_roles = tuple(allowed_roles)
+        super().__init__(*args, user_instance=user_instance, **kwargs)
+        self.fields["role"].choices = [(role, User.Role(role).label) for role in self.allowed_roles]
+        if user_instance:
+            self.fields["role"].initial = user_instance.role
+            self.fields["is_active"].initial = user_instance.is_active
+
+    def clean_role(self):
+        role = self.cleaned_data["role"]
+        if role not in self.allowed_roles:
+            raise forms.ValidationError(_("You cannot assign that role from this screen."))
+        return role
+
+
+class SelfServiceContactForm(forms.Form):
+    email = forms.EmailField(required=False, label=_("Email"))
+    phone_area_code = forms.ChoiceField(
+        choices=PHONE_AREA_CODE_CHOICES,
+        initial="+90",
+        required=False,
+        label=_("Area code"),
+        widget=forms.Select(
+            attrs={"class": "modern-select", "title": _("Select country code: +90 for Turkey, +1 for USA/Canada")}
+        ),
+    )
+    phone_number = forms.CharField(
+        max_length=15,
+        required=False,
+        label=_("Phone number"),
+        help_text=_("At least one of email or phone is required."),
+    )
+
+    def __init__(self, *args, user_instance=None, **kwargs):
+        self.user_instance = user_instance
+        super().__init__(*args, **kwargs)
+        if user_instance and getattr(user_instance, "email", ""):
+            self.fields["email"].initial = user_instance.email
+        if user_instance and getattr(user_instance, "phone_number", ""):
+            area, local = split_phone_parts(user_instance.phone_number)
+            self.fields["phone_area_code"].initial = area
+            self.fields["phone_number"].initial = local
+
+    def clean_email(self):
+        email = normalize_email(self.cleaned_data.get("email"))
+        if not email:
+            return ""
+        qs = User.objects.filter(email__iexact=email)
+        if self.user_instance and getattr(self.user_instance, "pk", None):
+            qs = qs.exclude(pk=self.user_instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A user with that email already exists in this tenant."))
+        return email
+
+    def clean_phone_number(self):
+        phone_number = combine_phone_parts(
+            self.cleaned_data.get("phone_area_code"),
+            self.cleaned_data.get("phone_number"),
+        )
+        if not phone_number:
+            return ""
+        qs = User.objects.filter(phone_number=phone_number)
+        if self.user_instance and getattr(self.user_instance, "pk", None):
+            qs = qs.exclude(pk=self.user_instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A user with that phone number already exists in this tenant."))
+        return phone_number
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+        email = (cleaned_data.get("email") or "").strip()
+        phone = (cleaned_data.get("phone_number") or "").strip()
+        if not email and not phone:
+            raise forms.ValidationError(_("At least one of email or phone number is required."))
+        return cleaned_data
+
+
+class SelfServicePasswordForm(forms.Form):
+    current_password = forms.CharField(
+        label=_("Current password"),
+        widget=forms.PasswordInput(render_value=False),
+    )
+    new_password1 = forms.CharField(
+        label=_("New password"),
+        widget=forms.PasswordInput(render_value=False),
+    )
+    new_password2 = forms.CharField(
+        label=_("Confirm new password"),
+        widget=forms.PasswordInput(render_value=False),
+    )
+
+    def __init__(self, *args, user_instance=None, **kwargs):
+        self.user_instance = user_instance
+        super().__init__(*args, **kwargs)
+        for field_name in ("current_password", "new_password1", "new_password2"):
+            self.fields[field_name].widget.attrs.setdefault("autocomplete", "current-password")
+        self.fields["new_password1"].widget.attrs["autocomplete"] = "new-password"
+        self.fields["new_password2"].widget.attrs["autocomplete"] = "new-password"
+
+    def clean_current_password(self):
+        current_password = self.cleaned_data.get("current_password") or ""
+        if self.user_instance is None or not self.user_instance.check_password(current_password):
+            raise forms.ValidationError(_("Your current password was entered incorrectly."))
+        return current_password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+        password1 = cleaned_data.get("new_password1") or ""
+        password2 = cleaned_data.get("new_password2") or ""
+        if password1 != password2:
+            self.add_error("new_password2", _("The two password fields don't match."))
+            return cleaned_data
+        if password1:
+            validate_password(password1, self.user_instance)
         return cleaned_data
 
 
@@ -229,6 +407,15 @@ class ClientProfileRegisterForm(forms.ModelForm):
                 cleaned_data["phone_number"] = ""
         if not cleaned_data.get("email") and not cleaned_data.get("phone_number"):
             raise forms.ValidationError(_("At least one of email or phone number is required."))
+
+        phone_number = cleaned_data.get("phone_number") or ""
+        if phone_number:
+            qs = User.objects.filter(phone_number=phone_number)
+            linked_user = getattr(getattr(self, "instance", None), "user", None)
+            if linked_user and getattr(linked_user, "pk", None):
+                qs = qs.exclude(pk=linked_user.pk)
+            if qs.exists():
+                self.add_error("phone_number", _("A user with that phone number already exists in this tenant."))
 
         # ModelForm may supply TextChoices members or plain strings depending on Django version.
         account_type = cleaned_data.get("account_type")

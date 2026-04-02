@@ -29,6 +29,7 @@ from django import forms
 from django.http import JsonResponse
 
 from processing.models import Animal
+from users.policies import can_manage_tenant_users
 
 from .models import (
     DisassemblySession,
@@ -96,10 +97,7 @@ class AdminOnlyMixin(UserPassesTestMixin):
     """Restrict access to admins for operational management pages."""
 
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.role in (
-            self.request.user.Role.OWNER,
-            self.request.user.Role.ADMIN,
-        )
+        return can_manage_tenant_users(self.request.user)
 
 
 class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):

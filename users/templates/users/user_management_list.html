@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Users" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl px-4 py-6">
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{% trans "Users" %}</h1>
+            <p class="mt-1 text-sm text-gray-600">{% trans "Manage staff roles, client accounts, and contact identifiers." %}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% if 'CLIENT' in creatable_roles %}
+            <a href="{% url 'tenant_user_create' 'CLIENT' %}"
+               class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                {% trans "Add client" %}
+            </a>
+            {% endif %}
+            {% if 'OPERATOR' in creatable_roles %}
+            <a href="{% url 'tenant_user_create' 'OPERATOR' %}"
+               class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+                {% trans "Add operator" %}
+            </a>
+            {% endif %}
+            {% if 'MANAGER' in creatable_roles %}
+            <a href="{% url 'tenant_user_create' 'MANAGER' %}"
+               class="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">
+                {% trans "Add manager" %}
+            </a>
+            {% endif %}
+            {% if 'ADMIN' in creatable_roles %}
+            <a href="{% url 'tenant_user_create' 'ADMIN' %}"
+               class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+                {% trans "Add admin" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mb-4 flex flex-wrap gap-2">
+        <a href="?status=all&role={{ role_filter|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}"
+           class="rounded-md px-4 py-2 text-sm font-medium {% if status_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% trans "All" %} <span class="ml-1">{{ count_all }}</span>
+        </a>
+        <a href="?status=active&role={{ role_filter|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}"
+           class="rounded-md px-4 py-2 text-sm font-medium {% if status_filter == 'active' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% trans "Active" %} <span class="ml-1">{{ count_active }}</span>
+        </a>
+        <a href="?status=inactive&role={{ role_filter|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}"
+           class="rounded-md px-4 py-2 text-sm font-medium {% if status_filter == 'inactive' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {% trans "Inactive" %} <span class="ml-1">{{ count_inactive }}</span>
+        </a>
+    </div>
+
+    <form method="get" class="mb-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_140px]">
+        <input type="search"
+               name="q"
+               value="{{ q }}"
+               placeholder="{% trans 'Search username, email, phone, client name…' %}"
+               class="rounded-md border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
+        <select name="role"
+                class="rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
+            {% for item in role_filters %}
+            <option value="{{ item.value }}"{% if role_filter == item.value %} selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+        </select>
+        <select name="status"
+                class="rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500">
+            <option value="all"{% if status_filter == 'all' %} selected{% endif %}>{% trans "All statuses" %}</option>
+            <option value="active"{% if status_filter == 'active' %} selected{% endif %}>{% trans "Active" %}</option>
+            <option value="inactive"{% if status_filter == 'inactive' %} selected{% endif %}>{% trans "Inactive" %}</option>
+        </select>
+        <div class="md:col-span-3 flex gap-2">
+            <button type="submit"
+                    class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                {% trans "Apply filters" %}
+            </button>
+            <a href="{% url 'tenant_user_list' %}"
+               class="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">
+                {% trans "Clear" %}
+            </a>
+        </div>
+    </form>
+
+    {% if user_rows %}
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "User" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "Role" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "Email" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "Phone" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "Status" %}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{% trans "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for row in user_rows %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-4">
+                        <div class="font-medium text-gray-900">{{ row.display_name }}</div>
+                        <div class="text-sm text-gray-500">{{ row.secondary_text }}</div>
+                    </td>
+                    <td class="px-4 py-4 text-sm">
+                        {% if row.user.role == 'CLIENT' %}
+                        <span class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">{{ row.user.get_role_display }}</span>
+                        {% elif row.user.role == 'OPERATOR' %}
+                        <span class="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">{{ row.user.get_role_display }}</span>
+                        {% elif row.user.role == 'MANAGER' %}
+                        <span class="inline-flex rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-800">{{ row.user.get_role_display }}</span>
+                        {% elif row.user.role == 'ADMIN' %}
+                        <span class="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">{{ row.user.get_role_display }}</span>
+                        {% elif row.user.role == 'OWNER' %}
+                        <span class="inline-flex rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">{{ row.user.get_role_display }}</span>
+                        {% else %}
+                        <span class="text-gray-700">{{ row.user.get_role_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-700">{{ row.user.email|default:"—" }}</td>
+                    <td class="px-4 py-4 text-sm text-gray-700">{{ row.user.phone_number|default:"—" }}</td>
+                    <td class="px-4 py-4">
+                        {% if row.user.is_active %}
+                        <span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">{% trans "Active" %}</span>
+                        {% else %}
+                        <span class="inline-flex rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">{% trans "Inactive" %}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-4 text-right text-sm font-medium">
+                        <div class="flex justify-end gap-2">
+                            {% if row.edit_url %}
+                            <a href="{{ row.edit_url }}"
+                               class="rounded-md bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700">
+                                {% trans "Edit" %}
+                            </a>
+                            {% endif %}
+                            {% if row.legacy_detail_url %}
+                            <a href="{{ row.legacy_detail_url }}"
+                               class="rounded-md bg-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-300">
+                                {% trans "Profile" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
+        <h2 class="text-lg font-semibold text-gray-900">{% trans "No users found" %}</h2>
+        <p class="mt-2 text-sm text-gray-600">{% trans "Adjust your filters or create a new user account." %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

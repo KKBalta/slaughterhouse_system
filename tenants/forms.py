@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from tenants.email_index import normalize_email
 from tenants.models import LOGO_ALLOWED_EXTENSIONS, Client, Domain
+from users.forms import PHONE_AREA_CODE_CHOICES, combine_phone_parts, split_phone_parts
 
 
 class TenantLogoClearableFileInput(forms.ClearableFileInput):
@@ -22,6 +23,19 @@ class TenantLogoClearableFileInput(forms.ClearableFileInput):
 
 class TenantCompanyProfileForm(forms.ModelForm):
     """Editable company and regulatory fields for the current tenant (public `Client` row)."""
+
+    contact_phone_area_code = forms.ChoiceField(
+        choices=PHONE_AREA_CODE_CHOICES,
+        initial="+90",
+        required=False,
+        label=_("Area code"),
+        widget=forms.Select(
+            attrs={
+                "class": "modern-select",
+                "title": _("Select country code: +90 for Turkey, +1 for USA/Canada"),
+            }
+        ),
+    )
 
     class Meta:
         model = Client
@@ -43,6 +57,17 @@ class TenantCompanyProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["contact_phone"].max_length = 15
+        self.fields["contact_phone"].widget.attrs.setdefault(
+            "placeholder",
+            _("Enter phone number"),
+        )
+        phone = ""
+        if self.instance and getattr(self.instance, "pk", None):
+            phone = (getattr(self.instance, "contact_phone", None) or "").strip()
+        area, local = split_phone_parts(phone)
+        self.fields["contact_phone_area_code"].initial = area
+        self.fields["contact_phone"].initial = local
         self.fields["printer_turkish_mode"].widget = forms.Select(
             choices=[
                 ("unicode", "Unicode (recommended)"),
@@ -72,6 +97,16 @@ class TenantCompanyProfileForm(forms.ModelForm):
                 code="invalid_logo_type",
             )
         return logo
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned:
+            return cleaned
+        cleaned["contact_phone"] = combine_phone_parts(
+            cleaned.get("contact_phone_area_code"),
+            cleaned.get("contact_phone"),
+        )
+        return cleaned
 
 
 class CreateTenantForm(forms.Form):

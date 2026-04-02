@@ -1,7 +1,24 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
 from django.db import models
 
 from core.models import BaseModel
+
+
+class UserManager(DjangoUserManager):
+    use_in_migrations = True
+
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        role = (extra_fields.get("role") or "").strip()
+        if not role:
+            raise ValueError("create_user() requires an explicit role.")
+        extra_fields["role"] = role
+        return super().create_user(username=username, email=email, password=password, **extra_fields)
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields["role"] = self.model.Role.ADMIN
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        return super().create_superuser(username=username, email=email, password=password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -12,16 +29,18 @@ class User(AbstractUser):
         OPERATOR = "OPERATOR", "Operator"
         CLIENT = "CLIENT", "Client"
 
-    base_role = Role.ADMIN
-
     role = models.CharField(max_length=50, choices=Role.choices)
     phone_number = models.CharField(max_length=20, blank=True, default="")
+    objects = UserManager()
 
-    def save(self, *args, **kwargs):
-        # Only apply default when role was never set (avoid treating valid values as falsy edge cases).
-        if not self.pk and (self.role is None or self.role == ""):
-            self.role = self.base_role
-        return super().save(*args, **kwargs)
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phone_number"],
+                condition=models.Q(phone_number__gt=""),
+                name="uniq_user_phone_nonempty",
+            ),
+        ]
 
 
 class ClientProfile(BaseModel):

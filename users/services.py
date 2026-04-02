@@ -1,11 +1,20 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils.crypto import get_random_string
 
 from reception.models import SlaughterOrder
 
 from .models import ClientProfile
 
 User = get_user_model()
+
+# Staff-created accounts: long enough for Django validators; cryptographically random.
+_RANDOM_PASSWORD_LENGTH = 20
+
+
+def generate_random_password(length: int = _RANDOM_PASSWORD_LENGTH) -> str:
+    """Return a one-time password suitable for create_user() when staff skip the password fields."""
+    return get_random_string(length)
 
 
 @transaction.atomic
@@ -32,6 +41,77 @@ def create_user_with_profile(
     if profile_data:
         ClientProfile.objects.create(user=user, **profile_data)
 
+    return user
+
+
+@transaction.atomic
+def update_user_credentials(
+    user: User,
+    *,
+    username: str,
+    email: str = "",
+    phone_number: str = "",
+    password: str = "",
+    role: str | None = None,
+    is_active: bool | None = None,
+) -> User:
+    user.username = username
+    user.email = email or ""
+    user.phone_number = phone_number or ""
+    if role is not None:
+        user.role = role
+    if is_active is not None:
+        user.is_active = is_active
+    if password:
+        user.set_password(password)
+        user.save()
+        return user
+
+    update_fields = ["username", "email", "phone_number"]
+    if role is not None:
+        update_fields.append("role")
+    if is_active is not None:
+        update_fields.append("is_active")
+    user.save(update_fields=update_fields)
+    return user
+
+
+@transaction.atomic
+def sync_client_contact_channels(
+    *,
+    user: User | None,
+    profile: ClientProfile,
+    email: str = "",
+    phone_number: str = "",
+) -> ClientProfile:
+    profile.phone_number = phone_number or ""
+    profile.save(update_fields=["phone_number", "updated_at"])
+    if user is not None:
+        user.email = email or ""
+        user.phone_number = phone_number or ""
+        user.save(update_fields=["email", "phone_number"])
+    return profile
+
+
+@transaction.atomic
+def update_self_service_contact_channels(
+    user: User,
+    *,
+    email: str = "",
+    phone_number: str = "",
+) -> User:
+    user.email = email or ""
+    user.phone_number = phone_number or ""
+    user.save(update_fields=["email", "phone_number"])
+
+    if getattr(user, "role", "") == User.Role.CLIENT:
+        try:
+            profile = user.client_profile
+        except ClientProfile.DoesNotExist:
+            profile = None
+        if profile is not None:
+            profile.phone_number = user.phone_number or ""
+            profile.save(update_fields=["phone_number", "updated_at"])
     return user
 
 

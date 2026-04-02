@@ -30,6 +30,7 @@ from tenants.services import (
     provision_tenant,
     reject_registration,
 )
+from users.policies import can_manage_company_settings
 
 
 def public_landing(request):
@@ -338,7 +339,7 @@ def tenant_company_settings_view(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
         raise Http404()
-    if request.user.role not in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER):
+    if not can_manage_company_settings(request.user):
         raise PermissionDenied()
 
     with schema_context(get_public_schema_name()):

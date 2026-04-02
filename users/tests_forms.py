@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from users.forms import ClientProfileRegisterForm, ClientUserCredentialsForm, UserRegistrationForm
+from users.forms import (
+    ClientProfileRegisterForm,
+    ClientUserCredentialsForm,
+    SelfServiceContactForm,
+    SelfServicePasswordForm,
+    UserRegistrationForm,
+)
 from users.models import ClientProfile, User
 
 pytestmark = pytest.mark.django_db
@@ -11,14 +17,29 @@ pytestmark = pytest.mark.django_db
 def test_client_user_credentials_form_require_password_updates_fields():
     form = ClientUserCredentialsForm(require_password=True)
 
-    assert form.fields["new_password1"].required is True
-    assert form.fields["new_password2"].required is True
-    assert form.fields["new_password1"].help_text == ""
+    assert form.fields["new_password1"].required is False
+    assert form.fields["new_password2"].required is False
+    assert "random" in str(form.fields["new_password1"].help_text).lower()
     assert form.fields["new_password1"].widget.attrs["autocomplete"] == "new-password"
 
 
+def test_client_user_credentials_form_require_password_allows_empty_when_creating():
+    form = ClientUserCredentialsForm(
+        data={
+            "username": "fresh-user",
+            "email": "",
+            "phone_number": "+15550001111",
+            "new_password1": "",
+            "new_password2": "",
+        },
+        require_password=True,
+        user_instance=None,
+    )
+    assert form.is_valid(), form.errors
+
+
 def test_client_user_credentials_form_rejects_duplicate_username():
-    User.objects.create_user(username="taken", password="password123")
+    User.objects.create_user(username="taken", password="password123", role=User.Role.CLIENT)
 
     form = ClientUserCredentialsForm(
         data={
@@ -35,7 +56,7 @@ def test_client_user_credentials_form_rejects_duplicate_username():
 
 
 def test_client_user_credentials_form_allows_current_user_username():
-    user = User.objects.create_user(username="current", password="password123")
+    user = User.objects.create_user(username="current", password="password123", role=User.Role.CLIENT)
 
     form = ClientUserCredentialsForm(
         data={
@@ -114,16 +135,24 @@ def test_client_user_credentials_form_initializes_email_and_phone_from_user_inst
         password="password123",
         email="contact@example.com",
         phone_number="+15551234567",
+        role=User.Role.CLIENT,
     )
 
     form = ClientUserCredentialsForm(user_instance=user)
 
+    assert form.fields["username"].initial == "contact-user"
     assert form.fields["email"].initial == "contact@example.com"
-    assert form.fields["phone_number"].initial == "+15551234567"
+    assert form.fields["phone_area_code"].initial == "+1"
+    assert form.fields["phone_number"].initial == "5551234567"
 
 
 def test_client_user_credentials_form_rejects_duplicate_email():
-    User.objects.create_user(username="existing-email", password="password123", email="taken@example.com")
+    User.objects.create_user(
+        username="existing-email",
+        password="password123",
+        email="taken@example.com",
+        role=User.Role.CLIENT,
+    )
 
     form = ClientUserCredentialsForm(
         data={
@@ -137,6 +166,87 @@ def test_client_user_credentials_form_rejects_duplicate_email():
 
     assert not form.is_valid()
     assert form.errors["email"] == ["A user with that email already exists in this tenant."]
+
+
+def test_client_user_credentials_form_rejects_duplicate_phone_number():
+    User.objects.create_user(
+        username="existing-phone",
+        password="password123",
+        phone_number="+15550001111",
+        role=User.Role.CLIENT,
+    )
+
+    form = ClientUserCredentialsForm(
+        data={
+            "username": "fresh-user",
+            "email": "",
+            "phone_area_code": "+1",
+            "phone_number": "5550001111",
+            "new_password1": "",
+            "new_password2": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["phone_number"] == ["A user with that phone number already exists in this tenant."]
+
+
+def test_self_service_contact_form_initializes_from_user():
+    user = User.objects.create_user(
+        username="self-service-user",
+        password="password123",
+        email="self@example.com",
+        phone_number="+15551234567",
+        role=User.Role.CLIENT,
+    )
+
+    form = SelfServiceContactForm(user_instance=user)
+
+    assert form.fields["email"].initial == "self@example.com"
+    assert form.fields["phone_area_code"].initial == "+1"
+    assert form.fields["phone_number"].initial == "5551234567"
+
+
+def test_self_service_contact_form_requires_email_or_phone():
+    form = SelfServiceContactForm(
+        data={
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.non_field_errors() == ["At least one of email or phone number is required."]
+
+
+def test_self_service_password_form_validates_current_password_and_new_password():
+    user = User.objects.create_user(username="password-user", password="StrongPass123!", role=User.Role.CLIENT)
+    form = SelfServicePasswordForm(
+        data={
+            "current_password": "StrongPass123!",
+            "new_password1": "NewStrongPass456!",
+            "new_password2": "NewStrongPass456!",
+        },
+        user_instance=user,
+    )
+
+    assert form.is_valid(), form.errors
+
+
+def test_self_service_password_form_rejects_wrong_current_password():
+    user = User.objects.create_user(username="wrong-password-user", password="StrongPass123!", role=User.Role.CLIENT)
+    form = SelfServicePasswordForm(
+        data={
+            "current_password": "wrong",
+            "new_password1": "NewStrongPass456!",
+            "new_password2": "NewStrongPass456!",
+        },
+        user_instance=user,
+    )
+
+    assert not form.is_valid()
+    assert form.errors["current_password"] == ["Your current password was entered incorrectly."]
 
 
 def test_user_registration_form_role_choices_for_privileged_user():
@@ -291,7 +401,12 @@ def test_client_profile_register_form_requires_email_or_phone():
 
 
 def test_client_profile_register_form_rejects_duplicate_email():
-    User.objects.create_user(username="existing", password="password123", email="alice@example.com")
+    User.objects.create_user(
+        username="existing",
+        password="password123",
+        email="alice@example.com",
+        role=User.Role.CLIENT,
+    )
 
     form = ClientProfileRegisterForm(
         data={
@@ -308,6 +423,38 @@ def test_client_profile_register_form_rejects_duplicate_email():
 
     assert not form.is_valid()
     assert form.errors["email"] == ["A user with that email already exists in this tenant."]
+
+
+def test_client_profile_register_form_rejects_duplicate_phone_number():
+    existing_user = User.objects.create_user(
+        username="existing-phone-client",
+        password="password123",
+        phone_number="+905551112233",
+        role=User.Role.CLIENT,
+    )
+    ClientProfile.objects.create(
+        user=existing_user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        contact_person="Existing",
+        phone_number="+905551112233",
+        address="123 Existing St",
+    )
+
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551112233",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["phone_number"] == ["A user with that phone number already exists in this tenant."]
 
 
 def test_client_profile_register_form_requires_enterprise_fields():

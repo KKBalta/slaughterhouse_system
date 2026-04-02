@@ -38,11 +38,7 @@
 
                     {% if user.is_authenticated %}
                         <a href="{% url 'dashboard' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">{% trans "Dashboard" %}</a>
-                        {% if tenant %}
-                        {% if user.role == 'OWNER' or user.role == 'ADMIN' or user.role == 'MANAGER' %}
-                        <a href="{% url 'tenant_company_settings' %}" class="inline-flex flex-1 justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 sm:flex-none">{% trans "Company settings" %}</a>
-                        {% endif %}
-                        {% endif %}
+                        <a href="{% url 'account_profile' %}" class="inline-flex flex-1 justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 sm:flex-none">{% trans "My account" %}</a>
                         <form action="{% url 'logout' %}" method="post" class="flex-1 sm:flex-none">
                             {% csrf_token %}
                             <button type="submit" class="inline-flex w-full justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">{% trans "Logout" %}</button>

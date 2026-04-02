@@ -69,7 +69,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    {% if user.role != 'CLIENT' %}
+    {% if role_caps.can_access_reception %}
     <!-- Reception App Section -->
     <div class="md:col-span-2 lg:col-span-3">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
@@ -186,7 +186,7 @@
     <!-- Processing App Section -->
     {% endif %}
 
-    {% if user.role == 'CLIENT' %}
+    {% if role_caps.is_client %}
     <!-- Client Portal Section -->
     <div class="md:col-span-2 lg:col-span-3">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
@@ -268,7 +268,7 @@
     </div>
     {% endif %}
 
-    {% if user.role == 'OPERATOR' or user.role == 'MANAGER' or user.role == 'ADMIN' or user.role == 'OWNER' %}
+    {% if role_caps.can_access_reception %}
     <!-- Processing App Section -->
     <div class="md:col-span-2 lg:col-span-3">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
@@ -371,7 +371,7 @@
     </div>
     {% endif %}
 
-    {% if user.role == 'MANAGER' or user.role == 'ADMIN' or user.role == 'OWNER' %}
+    {% if role_caps.can_manage_company_settings %}
     <!-- Management & Reporting Section -->
     <div class="md:col-span-2 lg:col-span-3">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
@@ -454,7 +454,7 @@
     </div>
     {% endif %}
 
-    {% if user.role == 'ADMIN' or user.role == 'OWNER' or user.role == 'MANAGER' %}
+    {% if role_caps.can_access_user_management or role_caps.can_manage_company_settings %}
     <!-- System Administration -->
     <div class="md:col-span-2 lg:col-span-3">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
@@ -468,31 +468,9 @@
             {% trans "System Administration" %}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <!-- Registered clients (public registrations) -->
-            <div
-                class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div class="p-4">
-                    <div class="flex items-center mb-3">
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                                </path>
-                            </svg>
-                        </div>
-                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Registered clients" %}</h3>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-4">{% trans "Clients who registered via the public form" %}</p>
-                    <a href="{% url 'client_profile_list' %}"
-                        class="w-full bg-purple-600 text-white py-2 px-3 rounded-md hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                        {% trans "View clients" %}
-                    </a>
-                </div>
-            </div>
-
             {% if tenant %}
-            {% if user.role == 'OWNER' or user.role == 'ADMIN' or user.role == 'MANAGER' %}
-            <!-- Company & label settings (tenant public Client row) — same access as tenant_company_settings view -->
+            {% if role_caps.can_manage_company_settings %}
+            <!-- Company settings (tenant public Client row) — same access as tenant_company_settings view -->
             <div
                 class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="p-4">
@@ -506,19 +484,19 @@
                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </div>
-                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Settings" %}</h3>
+                        <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Company settings" %}</h3>
                     </div>
                     <p class="text-sm text-gray-600 mb-4">{% trans "Company name, İşletme onay no, label printer mode" %}</p>
                     <a href="{% url 'tenant_company_settings' %}"
                         class="w-full bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                        {% trans "Company & label settings" %}
+                        {% trans "Company settings" %}
                     </a>
                 </div>
             </div>
             {% endif %}
             {% endif %}
 
-            {% if user.role == 'ADMIN' %}
+            {% if role_caps.can_access_user_management %}
             <!-- User Management -->
             <div
                 class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -533,10 +511,10 @@
                         </div>
                         <h3 class="ml-3 text-lg font-semibold text-gray-800">{% trans "Users" %}</h3>
                     </div>
-                    <p class="text-sm text-gray-600 mb-4">{% trans "Manage user accounts and permissions" %}</p>
-                    <a href="/admin/"
+                    <p class="text-sm text-gray-600 mb-4">{% trans "Manage staff roles, client accounts, and contact identifiers." %}</p>
+                    <a href="{% url 'tenant_user_list' %}"
                         class="w-full bg-red-600 text-white py-2 px-3 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors text-sm text-center block">
-                        {% trans "Django Admin" %}
+                        {% trans "Manage users" %}
                     </a>
                 </div>
             </div>
@@ -564,7 +542,8 @@
                 </div>
             </div>
 
-            <!-- Edge Management -->
+            {% if role_caps.can_manage_tenant_users %}
+            <!-- Edge Management (OWNER/ADMIN only) -->
             <div
                 class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="p-4">
@@ -584,6 +563,7 @@
                     </a>
                 </div>
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>

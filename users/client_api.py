@@ -13,6 +13,8 @@ from django.views.decorators.http import require_http_methods
 
 from .forms import ClientProfileRegisterForm
 from .models import ClientProfile, User
+from .policies import can_manage_client_accounts
+from .services import update_user_credentials
 
 PAGE_SIZE = 20
 CLIENT_PROFILE_FIELDS = (
@@ -26,9 +28,12 @@ CLIENT_PROFILE_FIELDS = (
 
 
 def _can_manage_clients(user) -> bool:
-    if not user.is_authenticated:
-        return False
-    return user.role in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER)
+    return can_manage_client_accounts(user)
+
+
+def _is_manageable_client_profile(profile: ClientProfile) -> bool:
+    linked_user = profile.user
+    return linked_user is None or linked_user.role == User.Role.CLIENT
 
 
 def _serialize_profile(p: ClientProfile) -> dict:
@@ -63,7 +68,9 @@ def client_profile_list_api(request):
         return JsonResponse({"detail": "You do not have permission to manage client profiles."}, status=403)
 
     search = (request.GET.get("search") or "").strip()
-    qs = ClientProfile.objects.select_related("user").order_by("-created_at")
+    qs = ClientProfile.objects.select_related("user").filter(
+        Q(user__isnull=True) | Q(user__role=User.Role.CLIENT)
+    ).order_by("-created_at")
     if search:
         qs = qs.filter(
             Q(company_name__icontains=search)
@@ -100,9 +107,13 @@ def client_profile_detail_api(request, pk):
 
     if request.method == "GET":
         profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+        if not _is_manageable_client_profile(profile):
+            return JsonResponse({"detail": "You do not have permission to manage this profile."}, status=403)
         return JsonResponse(_serialize_profile(profile))
 
-    profile = get_object_or_404(ClientProfile, pk=pk)
+    profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
+    if not _is_manageable_client_profile(profile):
+        return JsonResponse({"detail": "You do not have permission to manage this profile."}, status=403)
     try:
         payload = json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError:
@@ -124,5 +135,12 @@ def client_profile_detail_api(request, pk):
         return JsonResponse({"errors": form.errors}, status=400)
 
     form.save()
+    if profile.user is not None:
+        update_user_credentials(
+            profile.user,
+            username=profile.user.username,
+            email=profile.user.email or "",
+            phone_number=form.cleaned_data.get("phone_number") or "",
+        )
     profile.refresh_from_db()
     return JsonResponse(_serialize_profile(profile))
