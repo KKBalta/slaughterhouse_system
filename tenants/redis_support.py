@@ -34,7 +34,7 @@ def atomic_rate_incr(key: str, window: int) -> int:
         conn = get_redis_connection("default")
         return int(conn.eval(_LUA_RATE_INCR, 1, key, window))
     except Exception as exc:
-        logger.debug("atomic_rate_incr failed for key %r: %s", key, exc)
+        logger.warning("atomic_rate_incr failed for key %r (rate limiting bypassed): %s", key, exc)
         return 0
 
 

@@ -446,13 +446,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
+# Separate Redis DB for sessions so app-cache eviction cannot log users out.
+# Defaults to DB 1 on the same instance. Point to a separate Redis instance/DB
+# with maxmemory-policy noeviction in production (Cloud Memorystore supports multiple DBs).
+REDIS_SESSION_URL = config("REDIS_SESSION_URL", default=REDIS_URL)
 # If Redis is down at startup: when True, use in-process LocMemCache (dev/single-worker only).
 # Default follows DEBUG so local dev tolerates stopped Redis; set False in production.
 REDIS_FALLBACK_TO_LOCMEM = config("REDIS_FALLBACK_TO_LOCMEM", default=DEBUG, cast=bool)
 
 if USE_MULTITENANT:
-    # Sessions use the default cache; keys are prefixed with the current PostgreSQL schema
-    # (django_tenants.cache.make_key), so public (platform admin) and each tenant stay isolated.
+    # Cache keys are prefixed with the current PostgreSQL schema name
+    # (django_tenants.cache.make_key), isolating public and each tenant.
     _TENANT_CACHE_KEY_FN = "django_tenants.cache.make_key"
     _TENANT_CACHE_REVERSE_KEY_FN = "django_tenants.cache.reverse_key"
 
@@ -470,7 +474,19 @@ if USE_MULTITENANT:
                 },
                 "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
                 "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            }
+            },
+            # Dedicated alias for sessions — decoupled from app cache so a cache
+            # flush or eviction spike never terminates active user sessions.
+            "sessions": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": REDIS_SESSION_URL,
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                    "IGNORE_EXCEPTIONS": True,  # let Redis outages degrade gracefully (logged-out) rather than 500
+                },
+                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+            },
         }
     elif REDIS_FALLBACK_TO_LOCMEM:
         logging.getLogger(__name__).warning(
@@ -485,7 +501,13 @@ if USE_MULTITENANT:
                 "LOCATION": "carnitrack-mt-cache",
                 "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
                 "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            }
+            },
+            "sessions": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "carnitrack-mt-sessions",
+                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+            },
         }
     else:
         raise ImproperlyConfigured(
@@ -494,7 +516,7 @@ if USE_MULTITENANT:
         )
 
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-    SESSION_CACHE_ALIAS = "default"
+    SESSION_CACHE_ALIAS = "sessions"
 else:
     CACHES = {
         "default": {

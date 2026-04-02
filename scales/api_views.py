@@ -33,6 +33,24 @@ logger = logging.getLogger(__name__)
 # Rate limits for edge endpoints (per edgeId, per window).
 # Limits are generous relative to normal polling intervals so legitimate devices
 # are never blocked; they catch runaway loops or compromised edge nodes.
+_SESSIONS_PAYLOAD_TTL = 2  # seconds — short enough to surface session changes between 5 s polls
+
+
+def _bump_edge_sessions_version(edge_pk) -> None:
+    """Increment the per-edge cache version so the next edge_sessions poll skips the stale entry.
+
+    Uses cache.incr (atomic on both Redis and LocMemCache). Old cache entries expire naturally
+    via _SESSIONS_PAYLOAD_TTL; this ensures the very next poll after a session change gets
+    fresh data instead of waiting up to 2 s.
+    """
+    from django.core.cache import cache
+
+    _ver_key = f"edge_sessions_version:{edge_pk}"
+    try:
+        cache.incr(_ver_key)
+    except ValueError:
+        cache.set(_ver_key, 1, timeout=None)
+
 _SESSIONS_RL_LIMIT = 60   # 60 req / 60 s  (normal: 1 req/5 s = 12/min)
 _SESSIONS_RL_WINDOW = 60
 _HEARTBEAT_RL_LIMIT = 10  # 10 req / 60 s  (normal: 1 req/30 s = 2/min)
@@ -278,6 +296,19 @@ def edge_sessions(request):
         etag = _compute_sessions_etag(payload)
         return _sessions_response_with_etag(request, payload, etag)
 
+    from django.core.cache import cache
+
+    # Serve from cache when session data hasn't changed; avoids a DB query on every 5 s poll.
+    # TTL is short (2 s) so status changes surface within one polling cycle.
+    # The version suffix is bumped by _bump_edge_sessions_version() after any session.save(),
+    # so the very next poll after a state change always bypasses the stale entry.
+    _devices_hash = hashlib.md5(",".join(sorted(device_ids)).encode()).hexdigest()[:8]
+    _ver = cache.get(f"edge_sessions_version:{request.edge_device.pk}") or 0
+    _sessions_cache_key = f"edge_sessions:{request.edge_device.pk}:{_devices_hash}:{_ver}"
+    _cached = cache.get(_sessions_cache_key)
+    if _cached is not None:
+        return _sessions_response_with_etag(request, _cached[0], _cached[1])
+
     sessions = DisassemblySession.objects.filter(
         device__edge=request.edge_device,
         device__device_id__in=device_ids,
@@ -306,6 +337,7 @@ def edge_sessions(request):
     )
     payload = {"sessions": out}
     etag = _compute_sessions_etag(payload)
+    cache.set(_sessions_cache_key, (payload, etag), timeout=_SESSIONS_PAYLOAD_TTL)
     return _sessions_response_with_etag(request, payload, etag)
 
 
@@ -414,6 +446,7 @@ def edge_post_event(request):
         if session.status == "pending":
             session.status = "active"
         session.save(update_fields=["total_weight_grams", "event_count", "last_event_at", "status", "updated_at"])
+        _bump_edge_sessions_version(request.edge_device.pk)
 
     if offline_mode and offline_batch_id:
         batch, _ = OrphanedBatch.objects.get_or_create(
@@ -568,6 +601,7 @@ def edge_post_event_batch(request):
                     session.save(
                         update_fields=["total_weight_grams", "event_count", "last_event_at", "status", "updated_at"]
                     )
+                    _bump_edge_sessions_version(request.edge_device.pk)
 
                 if offline_mode and offline_batch_id:
                     batch, _ = OrphanedBatch.objects.get_or_create(
@@ -700,16 +734,25 @@ def edge_offline_batch_ack(request):
 
 
 # ---------- GET /config ----------
+_EDGE_CONFIG_TTL = 60  # seconds — config is mostly static; 60 s stale is acceptable
+
 @csrf_exempt
 @require_edge_id
 def edge_config(request):
     if request.method != "GET":
         return JsonResponse({"error": "Method not allowed"}, status=405)
+    from django.core.cache import cache
+
     edge = request.edge_device
     edge.last_seen_at = timezone.now()
     edge.save(update_fields=["last_seen_at", "updated_at"])
-    payload = _edge_runtime_config(request)
-    payload["edgeId"] = str(edge.id)
+
+    cache_key = f"edge_config:{edge.pk}"
+    payload = cache.get(cache_key)
+    if payload is None:
+        payload = _edge_runtime_config(request)
+        payload["edgeId"] = str(edge.id)
+        cache.set(cache_key, payload, timeout=_EDGE_CONFIG_TTL)
     return JsonResponse(payload)
 
 

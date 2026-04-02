@@ -556,6 +556,17 @@ def discover_tenants_api(request):
     if not email:
         return JsonResponse({"tenants": []})
 
+    from django.core.cache import cache
+    from django_tenants.utils import get_public_schema_name, schema_context
+
+    _DISCOVERY_CACHE_TTL = 300  # 5 minutes — safe; membership rows change rarely
+
+    with schema_context(get_public_schema_name()):
+        cache_key = f"tenant_discovery:{email}"
+        cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+
     from tenants.models import EmailTenantMembership
 
     qs = (
@@ -595,6 +606,10 @@ def discover_tenants_api(request):
             "public EmailTenantMembership row (created automatically on save, or run: "
             "python manage.py backfill_email_tenant_membership)."
         )
+
+    with schema_context(get_public_schema_name()):
+        cache.set(cache_key, out, timeout=_DISCOVERY_CACHE_TTL)
+
     return JsonResponse(out)
 
 

@@ -11,41 +11,54 @@ class ReportDataAggregator:
 
     def get_daily_slaughter_data(self):
         """Get daily slaughter data matching Excel format"""
-        from processing.models import Animal
+        from django.db.models import Prefetch
 
-        # Get animals that have reached carcass_ready state or beyond within the date range
-        animals = Animal.objects.filter(
-            slaughter_date__date__range=[self.start_date, self.end_date],
-            status__in=["carcass_ready", "disassembled", "packaged", "delivered"],
-        ).select_related("slaughter_order", "slaughter_order__client")
+        from processing.models import Animal, WeightLog
 
-        print(
-            f"DEBUG: Found {animals.count()} animals with carcass_ready+ status in date range {self.start_date} to {self.end_date}"
+        # Get animals that have reached carcass_ready state or beyond within the date range.
+        # prefetch_related for weight logs avoids one DB query per animal (_get_weight).
+        # select_related for detail models avoids one DB query per animal in _get_offal_bowels_status.
+        animals = (
+            Animal.objects.filter(
+                slaughter_date__date__range=[self.start_date, self.end_date],
+                status__in=["carcass_ready", "disassembled", "packaged", "delivered"],
+            )
+            .select_related(
+                "slaughter_order",
+                "slaughter_order__client",
+                "cattle_details",
+                "sheep_details",
+                "goat_details",
+                "lamb_details",
+                "oglak_details",
+                "calf_details",
+                "heifer_details",
+                "beef_details",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "individual_weight_logs",
+                    queryset=WeightLog.objects.filter(
+                        weight_type__in=["live_weight", "hot_carcass_weight", "cold_carcass_weight"]
+                    ),
+                    to_attr="_prefetched_weight_logs",
+                )
+            )
         )
 
         daily_data = []
 
         for animal in animals:
-            # Get weight data
             live_weight = self._get_weight(animal, "live_weight")
             hot_carcass_weight = self._get_weight(animal, "hot_carcass_weight")
             leather_weight = animal.leather_weight_kg or 0
 
-            # Get offal and bowels status from detail models
             offal_status, bowels_status = self._get_offal_bowels_status(animal)
-
-            # Get destination (customer who received)
             destination = self._get_destination(animal)
-
-            # Get client name
             client_name = self._get_client_name(animal)
 
-            # Determine Turkish animal type early and whether it's a small animal
             turkish_type = self._get_turkish_animal_type(animal.animal_type)
             is_small_animal = turkish_type in ["KUZU", "OGLAK", "KECI", "KOYUN"]
-
-            # Debug: Print animal details
-            print(f"DEBUG: Animal {animal.identification_tag} - Status: {offal_status}, Bowels: {bowels_status}")
 
             daily_data.append(
                 {
@@ -70,9 +83,29 @@ class ReportDataAggregator:
 
     def get_daily_summary_totals(self):
         """Get summary totals by animal type"""
-        daily_data = self.get_daily_slaughter_data()
+        return self._compute_summary(self.get_daily_slaughter_data())
 
-        # Group by animal type
+    def get_all_data(self):
+        """Get all data for report generation.
+
+        Calls get_daily_slaughter_data() exactly once; get_daily_summary_totals()
+        previously called it a second time, running the query twice.
+        """
+        daily_data = self.get_daily_slaughter_data()
+        return {
+            "date": self.start_date.strftime("%Y-%m-%d"),
+            "start_date": self.start_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d"),
+            "daily_data": daily_data,
+            "summary": self._compute_summary(daily_data),
+            "total_animals": sum(item["quantity"] for item in daily_data),
+            "total_live_weight": sum(item["live_weight"] for item in daily_data),
+            "total_hot_carcass_weight": sum(item["hot_carcass_weight"] for item in daily_data),
+            "total_leather_weight": sum(item["leather_weight"] for item in daily_data),
+        }
+
+    def _compute_summary(self, daily_data):
+        """Compute per-type summary totals from already-fetched daily_data."""
         summary = {
             "buyukbas": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
             "kuzu": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
@@ -80,81 +113,53 @@ class ReportDataAggregator:
             "koyun": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
             "keci": {"kesim": 0, "deri": 0, "bagirsak": 0, "sakatat": 0},
         }
-
         for item in daily_data:
-            animal_type = item["animal_type"].upper()  # Use uppercase Turkish type
+            animal_type = item["animal_type"].upper()
             leather_weight = item["leather_weight"] or 0
-            live_weight = item["live_weight"] or 0
-            hot_carcass_weight = item["hot_carcass_weight"] or 0
             quantity = item["quantity"]
-
-            if animal_type in ["SIGIR", "DUVE", "DANA"]:  # Büyükbaş
+            if animal_type in ["SIGIR", "DUVE", "DANA"]:
                 summary["buyukbas"]["kesim"] += quantity
-                summary["buyukbas"]["deri"] += leather_weight  # Already multiplied by quantity in aggregation
+                summary["buyukbas"]["deri"] += leather_weight
                 if item["bowels_status"] == "SAĞLAM":
                     summary["buyukbas"]["bagirsak"] += quantity
-                # Count animals with sakatat weight 1.0
                 if item.get("sakatat_weight", 0) == 1.0:
                     summary["buyukbas"]["sakatat"] += quantity
             elif animal_type == "KUZU":
                 summary["kuzu"]["kesim"] += quantity
-                summary["kuzu"]["deri"] += leather_weight  # Already multiplied by quantity in aggregation
+                summary["kuzu"]["deri"] += leather_weight
                 if item["bowels_status"] == "SAĞLAM":
                     summary["kuzu"]["bagirsak"] += quantity
-                # Count animals with sakatat weight 1.0
                 if item.get("sakatat_weight", 0) == 1.0:
                     summary["kuzu"]["sakatat"] += quantity
             elif animal_type == "OGLAK":
                 summary["oglak"]["kesim"] += quantity
-                summary["oglak"]["deri"] += leather_weight  # Already multiplied by quantity in aggregation
+                summary["oglak"]["deri"] += leather_weight
                 if item["bowels_status"] == "SAĞLAM":
                     summary["oglak"]["bagirsak"] += quantity
-                # Count animals with sakatat weight 1.0
                 if item.get("sakatat_weight", 0) == 1.0:
                     summary["oglak"]["sakatat"] += quantity
             elif animal_type == "KOYUN":
                 summary["koyun"]["kesim"] += quantity
-                summary["koyun"]["deri"] += leather_weight  # Already multiplied by quantity in aggregation
+                summary["koyun"]["deri"] += leather_weight
                 if item["bowels_status"] == "SAĞLAM":
                     summary["koyun"]["bagirsak"] += quantity
-                # Count animals with sakatat weight 1.0
                 if item.get("sakatat_weight", 0) == 1.0:
                     summary["koyun"]["sakatat"] += quantity
             elif animal_type == "KECI":
                 summary["keci"]["kesim"] += quantity
-                summary["keci"]["deri"] += leather_weight  # Already multiplied by quantity in aggregation
-                # Count animals with sakatat weight 1.0
+                summary["keci"]["deri"] += leather_weight
                 if item.get("sakatat_weight", 0) == 1.0:
                     summary["keci"]["sakatat"] += quantity
-                # Keçi için bağırsak sayısı gerekli değil
-
         return summary
 
-    def get_all_data(self):
-        """Get all data for report generation"""
-        daily_data = self.get_daily_slaughter_data()
-        return {
-            "date": self.start_date.strftime("%Y-%m-%d"),
-            "start_date": self.start_date.strftime("%Y-%m-%d"),
-            "end_date": self.end_date.strftime("%Y-%m-%d"),
-            "daily_data": daily_data,
-            "summary": self.get_daily_summary_totals(),
-            "total_animals": sum(item["quantity"] for item in daily_data),  # Total count of all animals
-            "total_live_weight": sum(
-                item["live_weight"] for item in daily_data
-            ),  # Already multiplied by quantity in aggregation
-            "total_hot_carcass_weight": sum(
-                item["hot_carcass_weight"] for item in daily_data
-            ),  # Already multiplied by quantity in aggregation
-            "total_leather_weight": sum(
-                item["leather_weight"] for item in daily_data
-            ),  # Already multiplied by quantity in aggregation
-        }
-
     def _get_weight(self, animal, weight_type):
-        """Get specific weight for animal"""
+        """Get specific weight for animal, using prefetched logs when available."""
         try:
-            weight_log = animal.individual_weight_logs.filter(weight_type=weight_type).first()
+            prefetched = getattr(animal, "_prefetched_weight_logs", None)
+            if prefetched is not None:
+                weight_log = next((log for log in prefetched if log.weight_type == weight_type), None)
+            else:
+                weight_log = animal.individual_weight_logs.filter(weight_type=weight_type).first()
             return float(weight_log.weight) if weight_log else 0
         except (TypeError, ValueError, AttributeError):
             return 0
@@ -184,10 +189,6 @@ class ReportDataAggregator:
             details = animal.beef_details
 
         if details:
-            # Debug: Print detail model info
-            print(f"DEBUG: Found {details.__class__.__name__} for {animal.identification_tag}")
-            print(f"DEBUG: sakatat_status = {details.sakatat_status}, bowels_status = {details.bowels_status}")
-
             # Set offal status based on sakatat_status
             if details.sakatat_status == 0:
                 offal_status = "ATIK"
@@ -204,12 +205,8 @@ class ReportDataAggregator:
             else:  # 1.0
                 bowels_status = "SAĞLAM"
         else:
-            # No detail model found - use default values (SAĞLAM = good)
-            print(
-                f"DEBUG: No detail model found for {animal.identification_tag} (type: {animal.animal_type}) - using defaults"
-            )
-            offal_status = "SAĞLAM"  # Default to good
-            bowels_status = "SAĞLAM"  # Default to good
+            offal_status = "SAĞLAM"
+            bowels_status = "SAĞLAM"
 
         return offal_status, bowels_status
 
