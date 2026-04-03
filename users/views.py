@@ -774,7 +774,7 @@ def _user_management_queryset_for(actor):
 
 def _staff_allowed_roles(actor) -> tuple[str, ...]:
     return tuple(
-        role for role in creatable_roles_for(actor) if role in (User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
+        role for role in creatable_roles_for(actor) if role in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
     )
 
 
