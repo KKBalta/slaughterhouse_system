@@ -39,7 +39,7 @@ TAILWIND_DIR ?= theme/static_src
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-restore-backup
 
 help:
 	@echo "CarniTrack Makefile"
@@ -55,6 +55,12 @@ help:
 	@echo "                          (proxy starts automatically on port $(STAGING_PROXY_PORT) and stops on exit)"
 	@echo "  make production-local   Gunicorn on :8080 — needs $(PROD_ENV) + proxy running"
 	@echo "  make prod-deploy        Docker build/push + Cloud Run deploy"
+	@echo "  make staging-deploy     Docker build/push + Cloud Run staging deploy"
+	@echo "  make staging-full-migration  Full single→multi-tenant migration (backup+migrate+tenant+deploy)"
+	@echo "  make staging-restore-backup  Restore staging DB from backup (BACKUP=sql_backup/file.sql)"
+	@echo "  make staging-reset-tenant    Reset a tenant schema and re-copy data from public"
+	@echo "                               SCHEMA=pomet DOMAIN=pomet.carnitrack.com TENANT_NAME=POMET"
+	@echo "  make staging-platform-admin  Create platform admin (EMAIL=x NAME=x PASS=x)"
 	@echo ""
 	@echo "  make db-setup-dev       Create local Postgres role+DB from $(DEV_ENV)"
 	@echo "  make migrate-dev        Run migrations using $(DEV_ENV)"
@@ -100,6 +106,34 @@ production-local:
 
 prod-deploy:
 	bash scripts/deploy_prod.sh
+
+staging-deploy:
+	bash deploy_staging.sh
+
+staging-full-migration:
+	bash scripts/staging_full_migration.sh
+
+staging-platform-admin:
+	@bash -c '\
+		echo "Starting Cloud SQL Proxy for staging on port $(STAGING_PROXY_PORT)..."; \
+		$(CLOUD_SQL_PROXY_V1) -instances=$(STAGING_CLOUDSQL_INSTANCE)=tcp:$(STAGING_PROXY_PORT) & \
+		PROXY_PID=$$!; \
+		sleep 2; \
+		trap "echo Stopping Cloud SQL Proxy...; kill $$PROXY_PID 2>/dev/null" EXIT INT TERM; \
+		set -a; . "$(STAGING_ENV)"; set +a; \
+		$(MANAGE) create_platform_admin --email="$(EMAIL)" --name="$(NAME)" --password="$(PASS)"; \
+	'
+
+staging-reset-tenant:
+	@bash -c '\
+		echo "Starting Cloud SQL Proxy for staging on port $(STAGING_PROXY_PORT)..."; \
+		$(CLOUD_SQL_PROXY_V1) -instances=$(STAGING_CLOUDSQL_INSTANCE)=tcp:$(STAGING_PROXY_PORT) & \
+		PROXY_PID=$$!; \
+		sleep 2; \
+		trap "echo Stopping Cloud SQL Proxy...; kill $$PROXY_PID 2>/dev/null" EXIT INT TERM; \
+		set -a; . "$(STAGING_ENV)"; set +a; \
+		bash scripts/reset_and_copy_tenant.sh "$(SCHEMA)" "$(DOMAIN)" "$(TENANT_NAME)" "$(STAGING_ENV)"; \
+	'
 
 proxy:
 	$(CLOUD_SQL_PROXY_V1) -instances=$(CLOUDSQL_INSTANCE)=tcp:$(PROXY_PORT)
@@ -155,6 +189,9 @@ import-prod-staging:
 
 import-prod-dev:
 	@bash scripts/import_prod_copy.sh dev
+
+staging-restore-backup:
+	@bash scripts/restore_staging_backup.sh "$(BACKUP)"
 
 redis-shell:
 	docker compose exec redis redis-cli

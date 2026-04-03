@@ -46,7 +46,9 @@ def _patch_discovery_context(monkeypatch):
     monkeypatch.setattr(tenant_utils, "get_public_schema_name", lambda: "public")
     monkeypatch.setattr(tenant_utils, "schema_context", lambda _schema: nullcontext())
     monkeypatch.setattr(email_index, "build_tenant_api_base_url", lambda tenant: f"http://{tenant.slug}.localhost:8000")
-    monkeypatch.setattr(email_index, "build_tenant_web_app_base_url", lambda tenant: f"http://{tenant.slug}.localhost:3000")
+    monkeypatch.setattr(
+        email_index, "build_tenant_web_app_base_url", lambda tenant: f"http://{tenant.slug}.localhost:3000"
+    )
     monkeypatch.setattr(
         email_index,
         "build_post_login_redirect_url",

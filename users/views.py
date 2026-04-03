@@ -141,6 +141,7 @@ def _password_for_create(cd: dict) -> tuple[str, bool]:
         return raw, False
     return generate_random_password(), True
 
+
 # New home view for the landing page
 def home_view(request):
     return render(request, "users/home.html")
@@ -712,6 +713,7 @@ def discover_tenants_api(request):
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")  # Redirect to logged_out page after logout
 
+
 @login_required
 def dashboard_view(request):
     return render(request, "users/dashboard.html", {})
@@ -771,7 +773,9 @@ def _user_management_queryset_for(actor):
 
 
 def _staff_allowed_roles(actor) -> tuple[str, ...]:
-    return tuple(role for role in creatable_roles_for(actor) if role in (User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR))
+    return tuple(
+        role for role in creatable_roles_for(actor) if role in (User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
+    )
 
 
 def _client_profile_form_instance(user: User | None, profile: ClientProfile | None) -> ClientProfile:
@@ -931,10 +935,7 @@ def _render_staff_user_form(request, *, user: User | None = None, initial_role: 
                     if password_generated:
                         messages.success(
                             request,
-                            _(
-                                "User created. Temporary password: %(pwd)s — copy it now; "
-                                "the user can change it later."
-                            )
+                            _("User created. Temporary password: %(pwd)s — copy it now; the user can change it later.")
                             % {"pwd": password},
                         )
                     else:
@@ -980,12 +981,16 @@ def tenant_user_list_view(request):
     role_filter = (request.GET.get("role") or "all").strip().upper()
 
     base_qs = _user_management_queryset_for(request.user)
-    allowed_roles = [User.Role.CLIENT] if not can_manage_tenant_users(request.user) else [
-        User.Role.ADMIN,
-        User.Role.MANAGER,
-        User.Role.OPERATOR,
-        User.Role.CLIENT,
-    ]
+    allowed_roles = (
+        [User.Role.CLIENT]
+        if not can_manage_tenant_users(request.user)
+        else [
+            User.Role.ADMIN,
+            User.Role.MANAGER,
+            User.Role.OPERATOR,
+            User.Role.CLIENT,
+        ]
+    )
     if role_filter != "ALL" and role_filter not in allowed_roles:
         role_filter = "ALL"
     if status not in {"all", "active", "inactive"}:
@@ -1081,7 +1086,9 @@ def tenant_user_edit_view(request, pk: int):
     if not can_edit_user(request.user, managed_user):
         raise PermissionDenied()
     if managed_user.role == User.Role.CLIENT:
-        return _render_client_account_form(request, user=managed_user, profile=getattr(managed_user, "client_profile", None))
+        return _render_client_account_form(
+            request, user=managed_user, profile=getattr(managed_user, "client_profile", None)
+        )
     return _render_staff_user_form(request, user=managed_user, initial_role=managed_user.role)
 
 

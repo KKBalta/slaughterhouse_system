@@ -39,6 +39,7 @@ ENV CSRF_TRUSTED_ORIGINS=https://localhost
 ENV USE_CLOUD_SQL=False
 ENV USE_SQLITE=True
 ENV SECRET_KEY=dummy-build-secret
+ENV TENANT_BASE_DOMAIN=localhost
 
 # Install Tailwind dependencies (with better error handling)
 RUN python manage.py tailwind install --no-input 2>/dev/null || echo "Tailwind install skipped - theme app not configured"

@@ -332,8 +332,6 @@ def tenant_company_settings_view(request):
     """
     from django_tenants.utils import get_public_schema_name, schema_context
 
-    from users.models import User
-
     if not getattr(settings, "USE_MULTITENANT", False):
         raise Http404()
     tenant = getattr(request, "tenant", None)

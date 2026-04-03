@@ -80,22 +80,28 @@ def test_owner_cannot_create_admin_role():
     )
 
 
-def test_owner_cannot_edit_admin_user():
-    owner = User.objects.create_user(username="owner-user", password="password123", role=User.Role.OWNER)
-    admin = User.objects.create_user(username="admin-user", password="password123", role=User.Role.ADMIN)
-
-    assert can_edit_user(owner, admin) is False
-
-
-def test_admin_can_create_and_edit_admin_role():
-    admin_actor = User.objects.create_user(username="admin-actor", password="password123", role=User.Role.ADMIN)
+def test_admin_can_edit_all_roles():
+    admin = User.objects.create_user(username="admin-actor", password="password123", role=User.Role.ADMIN)
+    owner = User.objects.create_user(username="owner-target", password="password123", role=User.Role.OWNER)
     admin_target = User.objects.create_user(username="admin-target", password="password123", role=User.Role.ADMIN)
+    manager = User.objects.create_user(username="manager-target", password="password123", role=User.Role.MANAGER)
 
-    assert can_create_role(admin_actor, User.Role.ADMIN) is True
-    assert creatable_roles_for(admin_actor) == (
+    assert can_edit_user(admin, owner) is True
+    assert can_edit_user(admin, admin_target) is True
+    assert can_edit_user(admin, manager) is True
+    assert can_create_role(admin, User.Role.OWNER) is True
+    assert can_create_role(admin, User.Role.ADMIN) is True
+    assert creatable_roles_for(admin) == (
+        User.Role.OWNER,
         User.Role.ADMIN,
         User.Role.MANAGER,
         User.Role.OPERATOR,
         User.Role.CLIENT,
     )
-    assert can_edit_user(admin_actor, admin_target) is True
+
+
+def test_owner_cannot_edit_admin_user():
+    owner = User.objects.create_user(username="owner-user", password="password123", role=User.Role.OWNER)
+    admin = User.objects.create_user(username="admin-user", password="password123", role=User.Role.ADMIN)
+
+    assert can_edit_user(owner, admin) is False

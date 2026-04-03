@@ -92,11 +92,17 @@ CSRF_COOKIE_HTTPONLY = config("CSRF_COOKIE_HTTPONLY", default=False, cast=bool)
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
 
-# django-cors-headers: regexes for dev SPAs on *.localhost (pomet.localhost:3000, etc.)
-# so each new tenant subdomain does not require editing CORS_ALLOWED_ORIGINS.
+# django-cors-headers: regexes for tenant subdomains and dev SPAs.
+# Allows *.carnitrack.com so each new tenant doesn't require editing CORS_ALLOWED_ORIGINS.
 CORS_ALLOWED_ORIGIN_REGEXES: list[str] = []
-if DEBUG and USE_MULTITENANT and config("CORS_DEV_LOCALHOST_REGEX", default=True, cast=bool):
+if USE_MULTITENANT:
+    _tenant_domain = config("TENANT_BASE_DOMAIN", default="localhost")
+    _escaped = _tenant_domain.replace(".", r"\.")
     CORS_ALLOWED_ORIGIN_REGEXES = [
+        rf"^https://([\w-]+\.)?{_escaped}$",
+    ]
+if DEBUG and USE_MULTITENANT and config("CORS_DEV_LOCALHOST_REGEX", default=True, cast=bool):
+    CORS_ALLOWED_ORIGIN_REGEXES += [
         r"^https?://([\w.-]+\.)?localhost(:\d+)?$",
         r"^https?://127\.0\.0\.1(:\d+)?$",
     ]
@@ -550,6 +556,10 @@ TAILWIND_APP_NAME = "theme"
 INTERNAL_IPS = ["127.0.0.1"]
 
 # -------------------------
+# Proxy headers — Cloudflare Worker forwards the original tenant domain
+# in X-Forwarded-Host so django-tenants can resolve the correct schema.
+USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", default=True, cast=bool)
+
 # Production Security
 # -------------------------
 if not DEBUG:

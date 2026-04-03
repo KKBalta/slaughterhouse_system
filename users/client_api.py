@@ -68,9 +68,11 @@ def client_profile_list_api(request):
         return JsonResponse({"detail": "You do not have permission to manage client profiles."}, status=403)
 
     search = (request.GET.get("search") or "").strip()
-    qs = ClientProfile.objects.select_related("user").filter(
-        Q(user__isnull=True) | Q(user__role=User.Role.CLIENT)
-    ).order_by("-created_at")
+    qs = (
+        ClientProfile.objects.select_related("user")
+        .filter(Q(user__isnull=True) | Q(user__role=User.Role.CLIENT))
+        .order_by("-created_at")
+    )
     if search:
         qs = qs.filter(
             Q(company_name__icontains=search)

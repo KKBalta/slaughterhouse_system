@@ -101,6 +101,7 @@ celerybeat.pid
 .env.local
 .env.*.local
 env.yaml
+env.staging.yaml
 .venv
 # Virtualenv named "env" at repo root only — do not use plain "env/" (would hide env/examples/)
 /env/
@@ -172,3 +173,6 @@ docs/*.btw
 docs/plu_clean.txt
 docs/mermaid.txt
 docs/logo.txt
+
+# Local SQL backups
+sql_backup/

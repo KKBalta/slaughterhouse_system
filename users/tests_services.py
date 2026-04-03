@@ -248,11 +248,14 @@ def test_archive_already_archived_profile(users_service_state):
 # Phone number DB-level uniqueness constraint
 # ---------------------------------------------------------------------------
 
+
 def test_duplicate_phone_number_raises_integrity_error():
     """DB constraint rejects two users with the same non-empty phone number."""
     User.objects.create_user(username="phone-a", password="pass", role=User.Role.CLIENT, phone_number="+905550001111")
     with pytest.raises(IntegrityError):
-        User.objects.create_user(username="phone-b", password="pass", role=User.Role.CLIENT, phone_number="+905550001111")
+        User.objects.create_user(
+            username="phone-b", password="pass", role=User.Role.CLIENT, phone_number="+905550001111"
+        )
 
 
 def test_multiple_users_without_phone_allowed():
@@ -267,12 +270,16 @@ def test_phone_uniqueness_enforced_across_roles():
     """The constraint applies regardless of role — OPERATOR cannot take CLIENT's phone."""
     User.objects.create_user(username="client-a", password="pass", role=User.Role.CLIENT, phone_number="+15550001111")
     with pytest.raises(IntegrityError):
-        User.objects.create_user(username="operator-b", password="pass", role=User.Role.OPERATOR, phone_number="+15550001111")
+        User.objects.create_user(
+            username="operator-b", password="pass", role=User.Role.OPERATOR, phone_number="+15550001111"
+        )
 
 
 def test_update_user_credentials_raises_on_duplicate_phone():
     """update_user_credentials raises IntegrityError when phone is already taken."""
-    User.objects.create_user(username="owner-phone", password="pass", role=User.Role.CLIENT, phone_number="+905559998888")
+    User.objects.create_user(
+        username="owner-phone", password="pass", role=User.Role.CLIENT, phone_number="+905559998888"
+    )
     other = User.objects.create_user(username="other-user", password="pass", role=User.Role.CLIENT, phone_number="")
 
     from .services import update_user_credentials
@@ -283,7 +290,9 @@ def test_update_user_credentials_raises_on_duplicate_phone():
 
 def test_user_can_keep_own_phone_on_update():
     """A user updating their own credentials with the same phone number should not raise."""
-    user = User.objects.create_user(username="self-update", password="pass", role=User.Role.CLIENT, phone_number="+905551234567")
+    user = User.objects.create_user(
+        username="self-update", password="pass", role=User.Role.CLIENT, phone_number="+905551234567"
+    )
 
     from .services import update_user_credentials
 
