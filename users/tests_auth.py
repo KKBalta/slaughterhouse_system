@@ -902,9 +902,9 @@ class TestTenantUserManagement:
         assert {row["user"].role for row in rows}.issubset({User.Role.CLIENT})
         assert not any(row["user"].role == User.Role.WALKIN for row in rows)
         client_rows = response.context["client_rows"]
-        assert any(
-            cr["profile"].user_id == walkin_user.pk for cr in client_rows
-        ), "Walk-in prospects should appear under Client accounts, not the main user table"
+        assert any(cr["profile"].user_id == walkin_user.pk for cr in client_rows), (
+            "Walk-in prospects should appear under Client accounts, not the main user table"
+        )
 
     def test_owner_cannot_edit_admin_user(self, client, auth_state):
         client.login(username=auth_state.owner_user.username, password="SecurePass123!")

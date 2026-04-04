@@ -89,7 +89,7 @@ def test_backfill_walkin_profiles_command_dry_run_rolls_back_changes():
 def test_backfill_walkin_profiles_command_reports_missing_default_destination_column(mocker):
     mocker.patch(
         "users.management.commands.backfill_walkin_profiles.backfill_legacy_walk_in_profiles_from_orders",
-        side_effect=ProgrammingError('column users_clientprofile.default_destination does not exist'),
+        side_effect=ProgrammingError("column users_clientprofile.default_destination does not exist"),
     )
 
     with pytest.raises(CommandError, match="missing users.0007"):

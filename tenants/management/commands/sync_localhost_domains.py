@@ -74,7 +74,5 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"{tenant.schema_name}: using existing domain {desired}"))
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Localhost domain sync complete. updated={updated} created={created} demoted={demoted}"
-            )
+            self.style.SUCCESS(f"Localhost domain sync complete. updated={updated} created={created} demoted={demoted}")
         )

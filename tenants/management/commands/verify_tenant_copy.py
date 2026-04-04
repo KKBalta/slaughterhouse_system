@@ -9,7 +9,6 @@ Usage:
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
-
 SHARED_ONLY_TABLES = {
     "django_migrations",
     "tenants_client",
@@ -73,17 +72,13 @@ class Command(BaseCommand):
                     status = self.style.ERROR("DIFF")
                     mismatches.append((table, pub_count, tenant_count))
 
-                self.stdout.write(
-                    f"  {table:<43} {pub_count:>8} {tenant_count:>8}   {status}"
-                )
+                self.stdout.write(f"  {table:<43} {pub_count:>8} {tenant_count:>8}   {status}")
 
             # Check platform admin exists
             self.stdout.write("")
             cursor.execute("SELECT COUNT(*) FROM public.tenants_platform_admin")
             admin_count = cursor.fetchone()[0]
-            cursor.execute(
-                "SELECT email, is_active FROM public.tenants_platform_admin"
-            )
+            cursor.execute("SELECT email, is_active FROM public.tenants_platform_admin")
             admins = cursor.fetchall()
             self.stdout.write(f"Platform admins: {admin_count}")
             for email, active in admins:
@@ -114,10 +109,6 @@ class Command(BaseCommand):
             if mismatches:
                 self.stdout.write(self.style.ERROR(f"MISMATCHES ({len(mismatches)}):"))
                 for table, pub, tenant in mismatches:
-                    self.stdout.write(
-                        self.style.ERROR(f"  {table}: public={pub}, {schema}={tenant}")
-                    )
+                    self.stdout.write(self.style.ERROR(f"  {table}: public={pub}, {schema}={tenant}"))
             else:
-                self.stdout.write(self.style.SUCCESS(
-                    f"All {len(comparable)} tables verified. Row counts match."
-                ))
+                self.stdout.write(self.style.SUCCESS(f"All {len(comparable)} tables verified. Row counts match."))

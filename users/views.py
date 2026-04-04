@@ -794,7 +794,9 @@ def _client_profile_row_kind(profile: ClientProfile) -> str:
 
 def _staff_allowed_roles(actor) -> tuple[str, ...]:
     return tuple(
-        role for role in creatable_roles_for(actor) if role in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
+        role
+        for role in creatable_roles_for(actor)
+        if role in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
     )
 
 
@@ -873,9 +875,7 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                 if user is None and cred_form:
                     if should_skip_user_creation:
                         profile_instance.user = (
-                            registered_phone_user
-                            if registered_phone_user.role in CLIENT_MANAGEMENT_ROLES
-                            else None
+                            registered_phone_user if registered_phone_user.role in CLIENT_MANAGEMENT_ROLES else None
                         )
                         saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
                         linked_orders = link_walk_in_orders_to_client_profile(
@@ -895,7 +895,9 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         else:
                             messages.success(
                                 request,
-                                _("Client profile created without creating a second login for this registered phone number."),
+                                _(
+                                    "Client profile created without creating a second login for this registered phone number."
+                                ),
                             )
                         if linked_orders:
                             messages.success(request, _("Matching walk-in orders were linked by phone number."))

@@ -131,9 +131,7 @@ class CreateTenantForm(forms.Form):
     def clean_schema_name(self):
         value = self.cleaned_data["schema_name"].lower()
         if not re.match(r"^[a-z0-9][a-z0-9\-]{0,62}$", value):
-            raise ValidationError(
-                _("Use lowercase letters, digits and hyphens; must start with a letter or digit.")
-            )
+            raise ValidationError(_("Use lowercase letters, digits and hyphens; must start with a letter or digit."))
         if value == "public":
             raise ValidationError(_('"public" is reserved.'))
         if Client.objects.filter(schema_name=value).exists():

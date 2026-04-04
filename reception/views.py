@@ -37,7 +37,9 @@ class ClientSearchView(LoginRequiredMixin, View):
             return JsonResponse({"clients": []})
 
         clients = (
-            ClientProfile.objects.select_related("user", "default_destination_client", "default_destination_client__user")
+            ClientProfile.objects.select_related(
+                "user", "default_destination_client", "default_destination_client__user"
+            )
             .filter(Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES))
             .filter(
                 Q(company_name__icontains=query)

@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from .forms import ClientProfileRegisterForm
-from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile, User
+from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 from .policies import can_manage_client_accounts
 from .services import update_user_credentials
 
@@ -46,7 +46,9 @@ def _serialize_profile(p: ClientProfile) -> dict:
         "phone_number": p.phone_number,
         "address": p.address,
         "default_destination": p.default_destination,
-        "default_destination_client_id": str(p.default_destination_client_id) if p.default_destination_client_id else None,
+        "default_destination_client_id": str(p.default_destination_client_id)
+        if p.default_destination_client_id
+        else None,
         "default_destination_client_name": (
             p.default_destination_client.get_full_name() if p.default_destination_client is not None else None
         ),

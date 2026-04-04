@@ -189,8 +189,7 @@ class Command(BaseCommand):
                     select_expr, cols = _build_copy_sql(cursor, schema, table)
                     col_list = ", ".join(cols)
                     self.stdout.write(
-                        f"INSERT INTO {schema}.{table} ({col_list})\n"
-                        f"  SELECT {select_expr} FROM public.{table};\n"
+                        f"INSERT INTO {schema}.{table} ({col_list})\n  SELECT {select_expr} FROM public.{table};\n"
                     )
                 return
 
@@ -269,6 +268,4 @@ class Command(BaseCommand):
                 for tbl, exc in errors:
                     self.stdout.write(self.style.ERROR(f"  {tbl}: {exc}"))
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(f"Done. {len(to_copy)} tables copied, sequences reset.")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Done. {len(to_copy)} tables copied, sequences reset."))

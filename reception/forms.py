@@ -272,9 +272,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         sp = self.fields["service_package"]
         qs = ServicePackage.objects.filter(is_active=True)
         if self.instance and getattr(self.instance, "service_package_id", None):
-            qs = ServicePackage.objects.filter(
-                Q(is_active=True) | Q(pk=self.instance.service_package_id)
-            )
+            qs = ServicePackage.objects.filter(Q(is_active=True) | Q(pk=self.instance.service_package_id))
         sp.queryset = qs
         sp.empty_label = _("Select service package")
         sp.label_from_instance = lambda obj: obj.localized_name()

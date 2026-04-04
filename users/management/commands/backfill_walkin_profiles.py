@@ -9,10 +9,7 @@ from users.services import backfill_legacy_walk_in_profiles_from_orders
 
 
 class Command(BaseCommand):
-    help = (
-        "Create WALKIN users/profiles for legacy walk-in orders and link matching "
-        "historical orders by phone number."
-    )
+    help = "Create WALKIN users/profiles for legacy walk-in orders and link matching historical orders by phone number."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -74,15 +71,15 @@ class Command(BaseCommand):
             if getattr(settings, "USE_MULTITENANT", False):
                 public_schema = get_public_schema_name()
                 with schema_context(public_schema):
-                    tenants = Client.objects.filter(is_active=True).exclude(schema_name=public_schema).order_by("schema_name")
+                    tenants = (
+                        Client.objects.filter(is_active=True).exclude(schema_name=public_schema).order_by("schema_name")
+                    )
                     if target_schemas:
                         tenants = tenants.filter(schema_name__in=sorted(target_schemas))
                     tenants = list(tenants)
 
                 if target_schemas and not tenants and not (include_public and public_schema in target_schemas):
-                    raise CommandError(
-                        f"No active tenant schemas matched: {', '.join(sorted(target_schemas))}"
-                    )
+                    raise CommandError(f"No active tenant schemas matched: {', '.join(sorted(target_schemas))}")
 
                 for tenant in tenants:
                     with schema_context(tenant.schema_name):

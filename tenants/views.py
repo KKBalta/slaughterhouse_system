@@ -276,9 +276,7 @@ def tenant_create_superuser(request, schema_name):
             form.add_error(None, _("Could not create user (unique constraint). Try a different username or email."))
         else:
             if not form.errors:
-                kind_label = (
-                    _("Django superuser plus app admin") if grant_django else _("Tenant app admin (ADMIN)")
-                )
+                kind_label = _("Django superuser plus app admin") if grant_django else _("Tenant app admin (ADMIN)")
                 messages.success(
                     request,
                     _(

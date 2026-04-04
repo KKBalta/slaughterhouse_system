@@ -8,7 +8,13 @@ TENANT_SETTINGS_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN})
 OPERATIONAL_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR})
 STAFF_MANAGED_ROLES = frozenset({User.Role.ADMIN, User.Role.OWNER, User.Role.MANAGER, User.Role.OPERATOR})
 OWNER_CREATABLE_TENANT_ROLES = (User.Role.MANAGER, User.Role.OPERATOR, User.Role.CLIENT)
-ADMIN_CREATABLE_TENANT_ROLES = (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR, User.Role.CLIENT)
+ADMIN_CREATABLE_TENANT_ROLES = (
+    User.Role.OWNER,
+    User.Role.ADMIN,
+    User.Role.MANAGER,
+    User.Role.OPERATOR,
+    User.Role.CLIENT,
+)
 
 
 def _role_of(user) -> str:
@@ -58,6 +64,7 @@ def can_create_role(actor, role: str) -> bool:
 
 
 MANAGER_CREATABLE_TENANT_ROLES = (User.Role.OPERATOR, User.Role.CLIENT)
+
 
 def creatable_roles_for(actor) -> tuple[str, ...]:
     actor_role = _role_of(actor)

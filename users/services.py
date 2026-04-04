@@ -179,9 +179,7 @@ def find_manageable_client_profile_by_phone(phone_number: str | None) -> ClientP
     if not candidates:
         return None
 
-    profiles = list(
-        ClientProfile.objects.select_related("user").filter(phone_number__in=candidates)
-    )
+    profiles = list(ClientProfile.objects.select_related("user").filter(phone_number__in=candidates))
     if not profiles:
         return None
 

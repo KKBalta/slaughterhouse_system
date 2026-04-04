@@ -62,9 +62,11 @@ class Command(BaseCommand):
                 user.is_superuser = True
                 user.is_active = True
                 user.save(update_fields=["role", "is_staff", "is_superuser", "is_active"])
-                self.stdout.write(self.style.SUCCESS(
-                    f"Promoted {email} from {old_role} to {role} in '{schema}' (is_staff=True, is_superuser=True)"
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Promoted {email} from {old_role} to {role} in '{schema}' (is_staff=True, is_superuser=True)"
+                    )
+                )
             else:
                 username = options.get("username")
                 password = options.get("password")
@@ -88,6 +90,6 @@ class Command(BaseCommand):
                 )
                 user.role = role
                 user.save(update_fields=["role"])
-                self.stdout.write(self.style.SUCCESS(
-                    f"Created {role} user '{username}' ({email}) in schema '{schema}'"
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Created {role} user '{username}' ({email}) in schema '{schema}'")
+                )
