@@ -174,7 +174,7 @@ msgid "Create New"
 msgstr ""
 
 msgid "Küpe No"
-msgstr ""
+msgstr "Ear tag number"
 
 msgid "Created By"
 msgstr ""
@@ -183,31 +183,31 @@ msgid "Product Information"
 msgstr ""
 
 msgid "Üretici"
-msgstr ""
+msgstr "Producer"
 
 msgid "Tüccar"
-msgstr ""
+msgstr "Trader"
 
 msgid "Cinsi"
-msgstr ""
+msgstr "Animal type"
 
 msgid "Ağırlık"
-msgstr ""
+msgstr "Weight"
 
 msgid "Kesim Tarihi"
-msgstr ""
+msgstr "Slaughter date"
 
 msgid "Son Tüketim Tarihi"
-msgstr ""
+msgstr "Expiration date"
 
 msgid "Sipariş No"
-msgstr ""
+msgstr "Order number"
 
 msgid "Sakatat Durumu"
-msgstr ""
+msgstr "Offal status"
 
 msgid "QR Verisi"
-msgstr ""
+msgstr "QR data"
 
 msgid "Create New Label"
 msgstr ""
@@ -3563,3 +3563,84 @@ msgstr ""
 
 msgid "Sign in."
 msgstr ""
+
+msgid "Üretici Ünvanı"
+msgstr "Producer name"
+
+msgid "Tüccar Ünvanı"
+msgstr "Trader name"
+
+msgid "Üretici adı"
+msgstr "Producer name"
+
+msgid "Küpe numarası"
+msgstr "Ear tag number"
+
+msgid "Tüccar adı (opsiyonel)"
+msgstr "Trader name (optional)"
+
+msgid "Sipariş numarası (opsiyonel)"
+msgstr "Order number (optional)"
+
+msgid "Ağırlık (kg)"
+msgstr "Weight (kg)"
+
+msgid "Sakatat durumu"
+msgstr "Offal status"
+
+msgid "QR kod verisi (opsiyonel)"
+msgstr "QR code data (optional)"
+
+msgid "Üretici / firma adı"
+msgstr "Producer / company name"
+
+msgid "Kulak küpe numarası / kimlik numarası"
+msgstr "Ear tag number / identification number"
+
+msgid "Tüccar adı"
+msgstr "Trader name"
+
+msgid "Kesim tarihi"
+msgstr "Slaughter date"
+
+msgid "Son tüketim tarihi"
+msgstr "Expiration date"
+
+msgid "Sipariş numarası"
+msgstr "Order number"
+
+msgid "Hayvan türü"
+msgstr "Animal type"
+
+msgid "Net ağırlık (kg)"
+msgstr "Net weight (kg)"
+
+msgid "Sakatat durum değeri"
+msgstr "Offal status value"
+
+msgid "İsteğe bağlı QR kod verisi"
+msgstr "Optional QR data"
+
+msgid "Sığır"
+msgstr "Cattle"
+
+msgid "Koyun"
+msgstr "Sheep"
+
+msgid "Keçi"
+msgstr "Goat"
+
+msgid "Kuzu"
+msgstr "Lamb"
+
+msgid "Oğlak"
+msgstr "Kid"
+
+msgid "Buzağı"
+msgstr "Calf"
+
+msgid "Düve"
+msgstr "Heifer"
+
+msgid "Dana"
+msgstr "Beef"

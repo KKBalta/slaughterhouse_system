@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -58,6 +59,7 @@ class SlaughterOrderForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
+        help_text=_("Add the phone number to save this walk-in as a reusable prospect."),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
@@ -76,7 +78,7 @@ class SlaughterOrderForm(forms.ModelForm):
         }
         help_texts = {
             "service_package": _("The service package selected for this order."),
-            "destination": _("Destination for the order."),
+            "destination": _("Destination for the order. Selecting a registered client can fill this automatically."),
         }
         widgets = {
             "order_datetime": forms.DateTimeInput(
@@ -97,7 +99,7 @@ class SlaughterOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sp = self.fields["service_package"]
-        sp.queryset = ServicePackage.objects.all()
+        sp.queryset = ServicePackage.objects.filter(is_active=True)
         sp.empty_label = _("Select service package")
         sp.label_from_instance = lambda obj: obj.localized_name()
         # Model allows null; orders must still pick a package at intake.
@@ -121,10 +123,11 @@ class SlaughterOrderForm(forms.ModelForm):
             raise forms.ValidationError(_("Please provide either a registered client or a walk-in client, not both."))
 
         # Combine area code with phone number
-        area_code = cleaned_data.get("client_phone_area_code")
+        area_code = cleaned_data.get("client_phone_area_code") or "+90"
         phone = cleaned_data.get("client_phone")
-        if phone and area_code:
-            cleaned_data["client_phone"] = f"{area_code}{phone}"
+        if phone:
+            phone = phone.strip()
+            cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
 
         return cleaned_data
 
@@ -180,6 +183,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
+        help_text=_("Add the phone number to save this walk-in as a reusable prospect."),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
@@ -198,7 +202,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         }
         help_texts = {
             "service_package": _("The service package selected for this order."),
-            "destination": _("Destination for the order."),
+            "destination": _("Destination for the order. Selecting a registered client can fill this automatically."),
         }
         widgets = {
             "order_datetime": forms.DateTimeInput(
@@ -219,7 +223,12 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sp = self.fields["service_package"]
-        sp.queryset = ServicePackage.objects.all()
+        qs = ServicePackage.objects.filter(is_active=True)
+        if self.instance and getattr(self.instance, "service_package_id", None):
+            qs = ServicePackage.objects.filter(
+                Q(is_active=True) | Q(pk=self.instance.service_package_id)
+            )
+        sp.queryset = qs
         sp.empty_label = _("Select service package")
         sp.label_from_instance = lambda obj: obj.localized_name()
         sp.required = True
@@ -263,10 +272,11 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
             raise forms.ValidationError(_("Please provide either a registered client or a walk-in client, not both."))
 
         # Combine area code with phone number
-        area_code = cleaned_data.get("client_phone_area_code")
+        area_code = cleaned_data.get("client_phone_area_code") or "+90"
         phone = cleaned_data.get("client_phone")
-        if phone and area_code:
-            cleaned_data["client_phone"] = f"{area_code}{phone}"
+        if phone:
+            phone = phone.strip()
+            cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
 
         return cleaned_data
 

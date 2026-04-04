@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from users.models import ClientProfile
 
-from .forms import BatchAnimalForm, SlaughterOrderForm
+from .forms import BatchAnimalForm, SlaughterOrderForm, SlaughterOrderUpdateForm
 from .models import ServicePackage, SlaughterOrder
 
 User = get_user_model()
@@ -83,6 +83,28 @@ class TestReceptionModels:
 
 class TestSlaughterOrderFormValidation:
     """SlaughterOrderForm must require a service package despite nullable FK on the model."""
+
+    def test_create_form_excludes_inactive_service_packages(self, reception_state):
+        inactive = ServicePackage.objects.create(name="Retired Package", is_active=False)
+        form = SlaughterOrderForm()
+        pks = set(form.fields["service_package"].queryset.values_list("pk", flat=True))
+        assert reception_state["service_package"].pk in pks
+        assert inactive.pk not in pks
+
+    def test_update_form_includes_inactive_package_when_already_on_order(self, reception_state):
+        ServicePackage.objects.create(name="Other Active Package")
+        pkg = reception_state["service_package"]
+        pkg.is_active = False
+        pkg.save(update_fields=["is_active"])
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            order_datetime=timezone.now(),
+            service_package=pkg,
+        )
+        form = SlaughterOrderUpdateForm(instance=order)
+        pks = set(form.fields["service_package"].queryset.values_list("pk", flat=True))
+        assert pkg.pk in pks
+        assert pks == set(ServicePackage.objects.filter(is_active=True).values_list("pk", flat=True)) | {pkg.pk}
 
     def test_service_package_required(self, reception_state):
         form_data = {

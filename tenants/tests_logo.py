@@ -4,10 +4,11 @@ from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from tenants.forms import TenantCompanyProfileForm
-from tenants.models import Client, tenant_logo_upload_to
+from tenants.models import Client, _get_public_storage, tenant_logo_upload_to
 
 try:
     from PIL import Image
@@ -35,6 +36,11 @@ def test_empty_company_uses_schema_in_filename():
     inst = SimpleNamespace(schema_name="pomet", company_name="", name="")
     path = tenant_logo_upload_to(inst, "logo.jpg")
     assert path == "tenant_logos/pomet/pomet_logo.jpg"
+
+
+def test_public_storage_falls_back_to_default_storage_without_gcs(settings):
+    settings.USE_GCS = False
+    assert _get_public_storage() is default_storage
 
 
 @pytest.mark.django_db

@@ -128,6 +128,16 @@
             text-overflow: ellipsis;
             max-width: 100%;
         }
+
+        .client-destination {
+            font-size: 0.75rem;
+            color: #1d4ed8;
+            margin-top: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
     </style>
 
     <div class="px-4 py-6 max-w-md mx-auto">
@@ -149,6 +159,9 @@
                             {% trans "Create New Client Account" %}
                         </a>
                     </p>
+                    <p class="mt-2 text-xs text-gray-500">
+                        {% trans "Tip: pick the same client for delivery orders so the saved destination fills automatically." %}
+                    </p>
                     
                     <!-- Client search results dropdown -->
                     <div id="client-search-results" class="hidden absolute z-10 left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg mt-1">
@@ -161,6 +174,7 @@
                             <div class="flex-1 min-w-0 pr-2">
                                 <div class="font-medium text-blue-900 truncate" id="selected-client-name"></div>
                                 <div class="text-sm text-blue-600 truncate" id="selected-client-info"></div>
+                                <div class="text-xs text-blue-700 truncate hidden" id="selected-client-destination"></div>
                             </div>
                             <button type="button" id="clear-client" class="flex-shrink-0 text-red-600 hover:text-red-800 p-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,6 +221,9 @@
                         </div>
                         {{ form.client_phone }}
                     </div>
+                    {% if form.client_phone.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.client_phone.help_text }}</p>
+                    {% endif %}
                     {% if form.client_phone.errors %}
                         <div class="mt-1">
                             {% for error in form.client_phone.errors %}
@@ -269,10 +286,57 @@
             const selectedClient = document.getElementById('selected-client');
             const selectedClientName = document.getElementById('selected-client-name');
             const selectedClientInfo = document.getElementById('selected-client-info');
+            const selectedClientDestination = document.getElementById('selected-client-destination');
             const clearClientBtn = document.getElementById('clear-client');
             const clientNameField = document.querySelector('input[name="client_name"]');
+            const clientPhoneField = document.querySelector('input[name="client_phone"]');
+            const destinationField = document.querySelector('input[name="destination"]');
             
             let searchTimeout;
+            let lastAutofilledDestination = '';
+
+            function truncateText(value, maxLength) {
+                if (!value) {
+                    return '';
+                }
+                return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
+            }
+
+            function setSelectedDestination(destination) {
+                const value = (destination || '').trim();
+                if (!selectedClientDestination) {
+                    return;
+                }
+                if (!value) {
+                    selectedClientDestination.textContent = '';
+                    selectedClientDestination.title = '';
+                    selectedClientDestination.classList.add('hidden');
+                    return;
+                }
+                const label = `{% trans "Delivery" %}: ${value}`;
+                selectedClientDestination.textContent = label;
+                selectedClientDestination.title = label;
+                selectedClientDestination.classList.remove('hidden');
+            }
+
+            function maybeAutofillDestination(destination) {
+                if (!destinationField) {
+                    return;
+                }
+                const nextValue = (destination || '').trim();
+                const currentValue = destinationField.value.trim();
+                if (!nextValue) {
+                    if (lastAutofilledDestination && currentValue === lastAutofilledDestination) {
+                        destinationField.value = '';
+                    }
+                    lastAutofilledDestination = '';
+                    return;
+                }
+                if (!currentValue || currentValue === lastAutofilledDestination) {
+                    destinationField.value = nextValue;
+                    lastAutofilledDestination = nextValue;
+                }
+            }
 
             clientSearch.addEventListener('input', function() {
                 const query = this.value.trim();
@@ -296,19 +360,17 @@
                                 data.clients.forEach(client => {
                                     const item = document.createElement('div');
                                     item.className = 'client-search-item';
-                                    
-                                    // Truncate long names for mobile
-                                    const displayName = client.display_name.length > 30 ? 
-                                        client.display_name.substring(0, 30) + '...' : 
-                                        client.display_name;
-                                    
-                                    const contactInfo = client.contact_info.length > 20 ? 
-                                        client.contact_info.substring(0, 20) + '...' : 
-                                        client.contact_info;
+                                    const displayName = truncateText(client.display_name, 30);
+                                    const infoText = [client.contact_info, client.phone].filter(Boolean).join(' • ');
+                                    const destinationText = (client.default_destination || '').trim();
+                                    const destinationHtml = destinationText
+                                        ? `<div class="client-destination" title="{% trans "Delivery" %}: ${client.default_destination}">{% trans "Delivery" %}: ${truncateText(client.default_destination, 28)}</div>`
+                                        : '';
                                     
                                     item.innerHTML = `
                                         <div class="client-name" title="${client.display_name}">${displayName}</div>
-                                        <div class="client-info" title="${client.contact_info} • ${client.phone}">${contactInfo} • ${client.phone}</div>
+                                        <div class="client-info" title="${infoText}">${truncateText(infoText, 42)}</div>
+                                        ${destinationHtml}
                                     `;
                                     item.addEventListener('click', () => selectClient(client));
                                     searchResults.appendChild(item);
@@ -331,16 +393,18 @@
                 selectedClientName.textContent = client.display_name;
                 selectedClientName.title = client.display_name; // Full text on hover
                 
-                const infoText = `${client.contact_info} • ${client.phone}`;
+                const infoText = [client.contact_info, client.phone].filter(Boolean).join(' • ');
                 selectedClientInfo.textContent = infoText;
                 selectedClientInfo.title = infoText; // Full text on hover
+                setSelectedDestination(client.default_destination);
                 
                 selectedClient.classList.remove('hidden');
                 searchResults.classList.add('hidden');
                 
                 // Clear walk-in client fields
                 clientNameField.value = '';
-                document.querySelector('input[name="client_phone"]').value = '';
+                clientPhoneField.value = '';
+                maybeAutofillDestination(client.default_destination);
             }
 
             clearClientBtn.addEventListener('click', function() {
@@ -348,6 +412,11 @@
                 clientSearch.value = '';
                 selectedClient.classList.add('hidden');
                 searchResults.classList.add('hidden');
+                setSelectedDestination('');
+                if (destinationField && lastAutofilledDestination && destinationField.value.trim() === lastAutofilledDestination) {
+                    destinationField.value = '';
+                }
+                lastAutofilledDestination = '';
             });
 
             // Hide search results when clicking outside
@@ -363,8 +432,26 @@
                     clientId.value = '';
                     clientSearch.value = '';
                     selectedClient.classList.add('hidden');
+                    setSelectedDestination('');
                 }
             });
+
+            clientPhoneField.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    clientId.value = '';
+                    clientSearch.value = '';
+                    selectedClient.classList.add('hidden');
+                    setSelectedDestination('');
+                }
+            });
+
+            if (destinationField) {
+                destinationField.addEventListener('input', function() {
+                    if (this.value.trim() !== lastAutofilledDestination) {
+                        lastAutofilledDestination = '';
+                    }
+                });
+            }
 
             // Default order datetime to now (local) when empty — most orders are for today.
             // Skips when the field already has a value (validation errors, user edits).

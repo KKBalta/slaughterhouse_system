@@ -57,6 +57,7 @@ class TenantCompanyProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["name"].label = _("Display name")
         self.fields["contact_phone"].max_length = 15
         self.fields["contact_phone"].widget.attrs.setdefault(
             "placeholder",
@@ -70,9 +71,9 @@ class TenantCompanyProfileForm(forms.ModelForm):
         self.fields["contact_phone"].initial = local
         self.fields["printer_turkish_mode"].widget = forms.Select(
             choices=[
-                ("unicode", "Unicode (recommended)"),
-                ("ascii", "ASCII (replace Turkish characters)"),
-                ("codepage1254", "Windows-1254"),
+                ("unicode", _("Unicode (recommended)")),
+                ("ascii", _("ASCII (replace Turkish characters)")),
+                ("codepage1254", _("Windows-1254")),
             ]
         )
         self.fields["logo"].widget = TenantLogoClearableFileInput(
@@ -114,50 +115,52 @@ class CreateTenantForm(forms.Form):
 
     schema_name = forms.SlugField(
         max_length=63,
-        label="Schema name",
-        help_text="Lowercase letters, digits and hyphens only. Used as PostgreSQL schema and subdomain.",
+        label=_("Schema name"),
+        help_text=_("Lowercase letters, digits and hyphens only. Used as PostgreSQL schema and subdomain."),
     )
-    name = forms.CharField(max_length=255, label="Display name")
+    name = forms.CharField(max_length=255, label=_("Display name"))
     domain = forms.CharField(
         max_length=253,
         required=False,
-        label="Custom domain",
-        help_text="Leave blank to auto-generate {schema}.{base_domain}.",
+        label=_("Custom domain"),
+        help_text=_("Leave blank to auto-generate {schema}.{base_domain}."),
     )
-    company_name = forms.CharField(max_length=255, required=False, label="Company name")
-    contact_email = forms.EmailField(required=False, label="Contact email")
+    company_name = forms.CharField(max_length=255, required=False, label=_("Company name"))
+    contact_email = forms.EmailField(required=False, label=_("Contact email"))
 
     def clean_schema_name(self):
         value = self.cleaned_data["schema_name"].lower()
         if not re.match(r"^[a-z0-9][a-z0-9\-]{0,62}$", value):
-            raise ValidationError("Use lowercase letters, digits and hyphens; must start with a letter or digit.")
+            raise ValidationError(
+                _("Use lowercase letters, digits and hyphens; must start with a letter or digit.")
+            )
         if value == "public":
-            raise ValidationError('"public" is reserved.')
+            raise ValidationError(_('"public" is reserved.'))
         if Client.objects.filter(schema_name=value).exists():
-            raise ValidationError(f'Schema "{value}" already exists.')
+            raise ValidationError(_('Schema "%(value)s" already exists.') % {"value": value})
         return value
 
     def clean_domain(self):
         value = self.cleaned_data.get("domain", "").strip().lower()
         if value and Domain.objects.filter(domain=value).exists():
-            raise ValidationError(f'Domain "{value}" is already in use.')
+            raise ValidationError(_('Domain "%(value)s" is already in use.') % {"value": value})
         return value
 
 
 class PlatformAdminSetupForm(forms.Form):
     """Creates the very first PlatformAdmin account (first-run only)."""
 
-    name = forms.CharField(max_length=255, label="Your name")
-    email = forms.EmailField(label="Email")
-    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
+    name = forms.CharField(max_length=255, label=_("Your name"))
+    email = forms.EmailField(label=_("Email"))
+    password1 = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
+    password2 = forms.CharField(label=_("Confirm password"), widget=forms.PasswordInput)
 
     def clean_email(self):
         from tenants.models import PlatformAdmin
 
         value = self.cleaned_data["email"].strip().lower()
         if PlatformAdmin.objects.filter(email__iexact=value).exists():
-            raise ValidationError("An account with that email already exists.")
+            raise ValidationError(_("An account with that email already exists."))
         return value
 
     def clean(self):
@@ -165,7 +168,7 @@ class PlatformAdminSetupForm(forms.Form):
         p1 = cleaned.get("password1")
         p2 = cleaned.get("password2")
         if p1 and p2 and p1 != p2:
-            raise ValidationError("Passwords do not match.")
+            raise ValidationError(_("Passwords do not match."))
         return cleaned
 
 
@@ -177,22 +180,22 @@ class CreateTenantSuperuserForm(forms.Form):
 
     username = forms.CharField(
         max_length=150,
-        label="Username",
-        help_text="Sign in with this or your email on the tenant site (language-prefixed /tr/login/ etc.).",
+        label=_("Username"),
+        help_text=_("Sign in with this or your email on the tenant site (language-prefixed /tr/login/ etc.)."),
     )
-    email = forms.EmailField(label="Email")
-    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
+    email = forms.EmailField(label=_("Email"))
+    password1 = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
+    password2 = forms.CharField(label=_("Confirm password"), widget=forms.PasswordInput)
     account_kind = forms.ChoiceField(
-        label="Account type",
+        label=_("Account type"),
         choices=[
             (
                 "app_admin",
-                "Tenant app admin (role ADMIN — full CarniTrack app access; not Django /admin/)",
+                _("Tenant app admin (role ADMIN, full CarniTrack app access; not Django /admin/)"),
             ),
             (
                 "django_superuser",
-                "Django superuser (role ADMIN + Django /admin/ on this tenant host)",
+                _("Django superuser (role ADMIN plus Django /admin/ on this tenant host)"),
             ),
         ],
         initial="app_admin",
@@ -202,14 +205,14 @@ class CreateTenantSuperuserForm(forms.Form):
         cleaned = super().clean()
         p1, p2 = cleaned.get("password1"), cleaned.get("password2")
         if p1 and p2 and p1 != p2:
-            raise ValidationError("Passwords do not match.")
+            raise ValidationError(_("Passwords do not match."))
         return cleaned
 
 
 class PlatformAdminAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["username"].label = "Email"
+        self.fields["username"].label = _("Email")
         self.fields["username"].widget = forms.EmailInput(
             attrs={
                 "autocomplete": "username",
@@ -219,32 +222,32 @@ class PlatformAdminAuthenticationForm(AuthenticationForm):
 
 
 class PublicTenantRegistrationForm(forms.Form):
-    company_name = forms.CharField(max_length=255, label="Company name")
-    owner_email = forms.EmailField(label="Owner email")
-    owner_password = forms.CharField(label="Password", widget=forms.PasswordInput(render_value=True), strip=False)
+    company_name = forms.CharField(max_length=255, label=_("Company name"))
+    owner_email = forms.EmailField(label=_("Owner email"))
+    owner_password = forms.CharField(label=_("Password"), widget=forms.PasswordInput(render_value=True), strip=False)
     owner_password_confirm = forms.CharField(
-        label="Confirm password",
+        label=_("Confirm password"),
         widget=forms.PasswordInput(render_value=True),
         strip=False,
     )
-    company_full_name = forms.CharField(max_length=255, required=False, label="Registered company name")
+    company_full_name = forms.CharField(max_length=255, required=False, label=_("Registered company name"))
     company_address = forms.CharField(
         max_length=500,
         required=False,
-        label="Address",
+        label=_("Address"),
         widget=forms.Textarea(attrs={"rows": 3}),
     )
-    contact_phone = forms.CharField(max_length=64, required=False, label="Phone")
+    contact_phone = forms.CharField(max_length=64, required=False, label=_("Phone"))
     license_no = forms.CharField(
         max_length=64,
         required=False,
-        label="İşletme onay no",
-        help_text="Government approval number on labels (ISLETME ONAY NO).",
+        label=_("İşletme onay no"),
+        help_text=_("Government approval number on labels (ISLETME ONAY NO)."),
     )
     operation_no = forms.CharField(
         max_length=64,
         required=False,
-        label="Vergi dairesi / işletme no (VD)",
+        label=_("Vergi dairesi / işletme no (VD)"),
     )
 
     def clean_owner_email(self):
@@ -255,7 +258,7 @@ class PublicTenantRegistrationForm(forms.Form):
         password = cleaned.get("owner_password") or ""
         password_confirm = cleaned.get("owner_password_confirm") or ""
         if password and password_confirm and password != password_confirm:
-            self.add_error("owner_password_confirm", "Passwords do not match.")
+            self.add_error("owner_password_confirm", _("Passwords do not match."))
         if password:
             try:
                 validate_password(password)

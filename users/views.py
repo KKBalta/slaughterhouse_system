@@ -111,7 +111,7 @@ from .forms import (
     SelfServicePasswordForm,
     TenantManagedUserForm,
 )
-from .models import ClientProfile, User
+from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile, User
 from .policies import (
     can_access_reception,
     can_access_user_management,
@@ -129,6 +129,7 @@ from .services import (
     create_user_with_profile,
     deactivate_user,
     generate_random_password,
+    link_walk_in_orders_to_client_profile,
     update_self_service_contact_channels,
     update_user_credentials,
 )
@@ -144,6 +145,8 @@ def _password_for_create(cd: dict) -> tuple[str, bool]:
 
 # New home view for the landing page
 def home_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
     return render(request, "users/home.html")
 
 
@@ -616,6 +619,7 @@ def discover_tenants_api(request):
         build_post_login_redirect_url,
         build_tenant_api_base_url,
         build_tenant_web_app_base_url,
+        get_tenant_public_host,
         normalize_email as normalize_login_email,
         normalize_phone as normalize_login_phone,
     )
@@ -677,8 +681,7 @@ def discover_tenants_api(request):
             if t.pk in seen_tenant_ids:
                 continue
             seen_tenant_ids.add(t.pk)
-            primary = t.get_primary_domain()
-            host = primary.domain if primary else f"{t.slug or t.schema_name}.localhost"
+            host = get_tenant_public_host(t)
             base = build_tenant_api_base_url(t)
             web_base = build_tenant_web_app_base_url(t)
             tenants_payload.append(
@@ -766,9 +769,9 @@ def _redirect_next_or(request, default_name: str, **kwargs):
 
 
 def _user_management_queryset_for(actor):
-    qs = User.objects.select_related("client_profile").exclude(role=User.Role.OWNER).order_by("username")
+    qs = User.objects.select_related("client_profile").order_by("username")
     if not can_manage_tenant_users(actor):
-        qs = qs.filter(role=User.Role.CLIENT)
+        qs = qs.filter(role__in=CLIENT_MANAGEMENT_ROLES)
     return qs
 
 
@@ -781,9 +784,14 @@ def _staff_allowed_roles(actor) -> tuple[str, ...]:
 def _client_profile_form_instance(user: User | None, profile: ClientProfile | None) -> ClientProfile:
     if profile is not None:
         return profile
+    account_type = (
+        ClientProfile.AccountType.UNCLASSIFIED
+        if user is not None and getattr(user, "role", "") == User.Role.WALKIN
+        else ClientProfile.AccountType.INDIVIDUAL
+    )
     return ClientProfile(
         user=user,
-        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        account_type=account_type,
         phone_number="",
         address="",
     )
@@ -795,6 +803,7 @@ def _save_client_profile(instance: ClientProfile, cleaned_data: dict) -> ClientP
         "contact_person": cleaned_data.get("contact_person") or "",
         "phone_number": cleaned_data.get("phone_number") or "",
         "address": cleaned_data["address"],
+        "default_destination": cleaned_data.get("default_destination") or None,
         "company_name": cleaned_data.get("company_name") or None,
         "tax_id": cleaned_data.get("tax_id") or None,
     }
@@ -804,15 +813,30 @@ def _save_client_profile(instance: ClientProfile, cleaned_data: dict) -> ClientP
     return instance
 
 
+def _linked_client_profile(user: User | None) -> ClientProfile | None:
+    if user is None:
+        return None
+    try:
+        return user.client_profile
+    except ClientProfile.DoesNotExist:
+        return None
+
+
 def _render_client_account_form(request, *, user: User | None = None, profile: ClientProfile | None = None):
     next_url = _get_safe_next_url(request)
     profile_instance = _client_profile_form_instance(user, profile)
     require_password = user is None
+    show_credentials_form = user is None or getattr(user, "role", "") == User.Role.CLIENT
     cred_form = None
 
     if request.method == "POST":
-        profile_form = ClientProfileRegisterForm(request.POST, instance=profile_instance)
-        if user is not None or profile is None:
+        allow_existing_phone_user = user is None and profile is None
+        profile_form = ClientProfileRegisterForm(
+            request.POST,
+            instance=profile_instance,
+            allow_existing_phone_user=allow_existing_phone_user,
+        )
+        if show_credentials_form:
             cred_form = ClientUserCredentialsForm(
                 request.POST,
                 user_instance=user,
@@ -820,11 +844,48 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                 require_contact=False,
             )
         profile_ok = profile_form.is_valid()
-        cred_ok = cred_form.is_valid() if cred_form else True
+        profile_phone = profile_form.cleaned_data.get("phone_number") or "" if profile_ok else ""
+        registered_phone_user = getattr(profile_form, "registered_phone_user", None) if profile_ok else None
+        registered_phone_profile = _linked_client_profile(registered_phone_user)
+        should_skip_user_creation = (
+            user is None and profile is None and registered_phone_user is not None and registered_phone_profile is None
+        )
+        cred_ok = True if should_skip_user_creation else cred_form.is_valid() if cred_form else True
         if profile_ok and cred_ok:
-            profile_phone = profile_form.cleaned_data.get("phone_number") or ""
             with transaction.atomic():
                 if user is None and cred_form:
+                    if should_skip_user_creation:
+                        profile_instance.user = (
+                            registered_phone_user
+                            if registered_phone_user.role in CLIENT_MANAGEMENT_ROLES
+                            else None
+                        )
+                        saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
+                        linked_orders = link_walk_in_orders_to_client_profile(
+                            profile=saved_profile,
+                            phone_number=profile_phone,
+                        )
+                        if registered_phone_user.role == User.Role.CLIENT:
+                            messages.success(
+                                request,
+                                _("Client profile created and linked to the existing registered account."),
+                            )
+                        elif registered_phone_user.role == User.Role.WALKIN:
+                            messages.success(
+                                request,
+                                _("Client profile created and linked to the existing walk-in record."),
+                            )
+                        else:
+                            messages.success(
+                                request,
+                                _("Client profile created without creating a second login for this registered phone number."),
+                            )
+                        if linked_orders:
+                            messages.success(request, _("Matching walk-in orders were linked by phone number."))
+                        if saved_profile.pk and not next_url:
+                            return redirect("client_profile_detail", pk=saved_profile.pk)
+                        return _redirect_next_or(request, "tenant_user_list")
+
                     cd = cred_form.cleaned_data
                     password, password_generated = _password_for_create(cd)
                     created_user = create_user_with_profile(
@@ -837,8 +898,15 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         account_type=profile_form.cleaned_data["account_type"],
                         contact_person=profile_form.cleaned_data.get("contact_person") or "",
                         address=profile_form.cleaned_data["address"],
+                        default_destination=profile_form.cleaned_data.get("default_destination") or None,
                         company_name=profile_form.cleaned_data.get("company_name") or None,
                         tax_id=profile_form.cleaned_data.get("tax_id") or None,
+                    )
+                    saved_profile = _linked_client_profile(created_user)
+                    linked_orders = (
+                        link_walk_in_orders_to_client_profile(profile=saved_profile, phone_number=profile_phone)
+                        if saved_profile is not None
+                        else 0
                     )
                     redirect_response = _redirect_next_or(request, "tenant_user_list")
                     if next_url:
@@ -853,6 +921,8 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                             )
                         else:
                             messages.success(request, _("Client created."))
+                        if linked_orders:
+                            messages.success(request, _("Matching walk-in orders were linked by phone number."))
                         return redirect_response
                     if password_generated:
                         messages.success(
@@ -863,9 +933,17 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                             )
                             % {"pwd": password},
                         )
+                    else:
+                        messages.success(request, _("Client created."))
+                    if linked_orders:
+                        messages.success(request, _("Matching walk-in orders were linked by phone number."))
                     return redirect("tenant_user_edit", pk=created_user.pk)
 
                 saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
+                linked_orders = link_walk_in_orders_to_client_profile(
+                    profile=saved_profile,
+                    phone_number=profile_phone,
+                )
                 if user is not None and cred_form:
                     cd = cred_form.cleaned_data
                     update_user_credentials(
@@ -875,13 +953,18 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         phone_number=profile_phone,
                         password=(cd.get("new_password1") or "").strip(),
                     )
-                messages.success(request, "Client updated.")
+                if user is not None and getattr(user, "role", "") == User.Role.WALKIN:
+                    messages.success(request, "Walk-in prospect updated.")
+                else:
+                    messages.success(request, "Client updated.")
+                if linked_orders:
+                    messages.success(request, _("Matching walk-in orders were linked by phone number."))
                 if saved_profile.pk and not next_url:
                     return redirect("client_profile_detail", pk=saved_profile.pk)
                 return _redirect_next_or(request, "tenant_user_list")
     else:
         profile_form = ClientProfileRegisterForm(instance=profile_instance)
-        if user is not None or profile is None:
+        if show_credentials_form:
             cred_form = ClientUserCredentialsForm(
                 initial={"username": user.username, "email": user.email or ""} if user else None,
                 user_instance=user,
@@ -982,13 +1065,15 @@ def tenant_user_list_view(request):
 
     base_qs = _user_management_queryset_for(request.user)
     allowed_roles = (
-        [User.Role.CLIENT]
+        [User.Role.CLIENT, User.Role.WALKIN]
         if not can_manage_tenant_users(request.user)
         else [
+            User.Role.OWNER,
             User.Role.ADMIN,
             User.Role.MANAGER,
             User.Role.OPERATOR,
             User.Role.CLIENT,
+            User.Role.WALKIN,
         ]
     )
     if role_filter != "ALL" and role_filter not in allowed_roles:
@@ -1028,7 +1113,7 @@ def tenant_user_list_view(request):
             profile = managed_user.client_profile
         except ClientProfile.DoesNotExist:
             profile = None
-        if managed_user.role == User.Role.CLIENT and profile is not None:
+        if managed_user.role in CLIENT_MANAGEMENT_ROLES and profile is not None:
             display_name = profile.get_full_name()
             secondary_text = profile.contact_person or profile.company_name or ""
             legacy_detail_url = reverse("client_profile_detail", kwargs={"pk": profile.pk})
@@ -1051,16 +1136,38 @@ def tenant_user_list_view(request):
             }
         )
 
+    # Include user-less ClientProfiles (visible to OWNER, ADMIN, MANAGER)
+    client_rows = []
+    if can_manage_client_accounts(request.user):
+        cp_qs = ClientProfile.objects.filter(user__isnull=True).order_by("company_name", "contact_person")
+        if role_filter in {"CLIENT", "WALKIN", "ALL"}:
+            if q:
+                cp_qs = cp_qs.filter(
+                    Q(company_name__icontains=q)
+                    | Q(contact_person__icontains=q)
+                    | Q(phone_number__icontains=q)
+                    | Q(tax_id__icontains=q)
+                )
+            for profile in cp_qs:
+                client_rows.append({
+                    "profile": profile,
+                    "display_name": profile.get_full_name(),
+                    "secondary_text": profile.contact_person or "",
+                    "phone": profile.phone_number or "—",
+                    "detail_url": reverse("client_profile_detail", kwargs={"pk": profile.pk}),
+                })
+
     return render(
         request,
         "users/user_management_list.html",
         {
             "user_rows": user_rows,
+            "client_rows": client_rows,
             "q": q,
             "status_filter": status,
             "role_filter": role_filter,
             "role_filters": role_filters,
-            "count_all": counts["all"],
+            "count_all": counts["all"] + len(client_rows),
             "count_active": counts["active"],
             "count_inactive": counts["inactive"],
             "creatable_roles": creatable_roles_for(request.user),
@@ -1085,7 +1192,7 @@ def tenant_user_edit_view(request, pk: int):
     managed_user = get_object_or_404(User.objects.select_related("client_profile"), pk=pk)
     if not can_edit_user(request.user, managed_user):
         raise PermissionDenied()
-    if managed_user.role == User.Role.CLIENT:
+    if managed_user.role in CLIENT_MANAGEMENT_ROLES:
         return _render_client_account_form(
             request, user=managed_user, profile=getattr(managed_user, "client_profile", None)
         )
@@ -1100,7 +1207,7 @@ def client_profile_list_view(request):
         status = "all"
 
     manageable_qs = ClientProfile.objects.select_related("user").filter(
-        Q(user__isnull=True) | Q(user__role=User.Role.CLIENT)
+        Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES)
     )
     qs = manageable_qs.order_by("-created_at")
     if q:
@@ -1108,6 +1215,7 @@ def client_profile_list_view(request):
             Q(company_name__icontains=q)
             | Q(contact_person__icontains=q)
             | Q(phone_number__icontains=q)
+            | Q(default_destination__icontains=q)
             | Q(user__username__icontains=q)
             | Q(user__first_name__icontains=q)
             | Q(user__last_name__icontains=q)
@@ -1138,7 +1246,7 @@ def client_profile_list_view(request):
 
 def _assert_staff_may_manage_client_profile(profile: ClientProfile) -> None:
     u = profile.user
-    if u is not None and u.role != User.Role.CLIENT:
+    if u is not None and u.role not in CLIENT_MANAGEMENT_ROLES:
         raise PermissionDenied("This account cannot be managed from the client list.")
 
 

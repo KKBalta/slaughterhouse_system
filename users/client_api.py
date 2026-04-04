@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from .forms import ClientProfileRegisterForm
-from .models import ClientProfile, User
+from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile, User
 from .policies import can_manage_client_accounts
 from .services import update_user_credentials
 
@@ -22,6 +22,7 @@ CLIENT_PROFILE_FIELDS = (
     "contact_person",
     "phone_number",
     "address",
+    "default_destination",
     "company_name",
     "tax_id",
 )
@@ -33,7 +34,7 @@ def _can_manage_clients(user) -> bool:
 
 def _is_manageable_client_profile(profile: ClientProfile) -> bool:
     linked_user = profile.user
-    return linked_user is None or linked_user.role == User.Role.CLIENT
+    return linked_user is None or linked_user.role in CLIENT_MANAGEMENT_ROLES
 
 
 def _serialize_profile(p: ClientProfile) -> dict:
@@ -44,6 +45,7 @@ def _serialize_profile(p: ClientProfile) -> dict:
         "contact_person": p.contact_person,
         "phone_number": p.phone_number,
         "address": p.address,
+        "default_destination": p.default_destination,
         "company_name": p.company_name,
         "tax_id": p.tax_id,
         "is_active": p.is_active,
@@ -56,6 +58,7 @@ def _serialize_profile(p: ClientProfile) -> dict:
             "id": u.id,
             "username": u.username,
             "email": u.email or "",
+            "role": u.role,
             "is_active": u.is_active,
         }
     return out
@@ -70,7 +73,7 @@ def client_profile_list_api(request):
     search = (request.GET.get("search") or "").strip()
     qs = (
         ClientProfile.objects.select_related("user")
-        .filter(Q(user__isnull=True) | Q(user__role=User.Role.CLIENT))
+        .filter(Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES))
         .order_by("-created_at")
     )
     if search:
@@ -78,6 +81,7 @@ def client_profile_list_api(request):
             Q(company_name__icontains=search)
             | Q(contact_person__icontains=search)
             | Q(phone_number__icontains=search)
+            | Q(default_destination__icontains=search)
             | Q(user__username__icontains=search)
             | Q(user__first_name__icontains=search)
             | Q(user__last_name__icontains=search)

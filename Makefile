@@ -22,6 +22,8 @@ COVERAGE_MIN ?= 59.50
 DEV_ENV     ?= .env.dev
 STAGING_ENV ?= .env.staging
 PROD_ENV    ?= .env.production
+BACKUP_DIR  ?= sql_backup
+BACKUP_PREFIX ?= staging_backup
 
 # Production Cloud SQL (used by proxy / proxy-v2 and production-local)
 CLOUDSQL_INSTANCE ?= carnitrack:europe-west1:carnitrack-db-belgium
@@ -39,7 +41,7 @@ TAILWIND_DIR ?= theme/static_src
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-restore-backup
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup
 
 help:
 	@echo "CarniTrack Makefile"
@@ -53,6 +55,7 @@ help:
 	@echo "  make dev                Django runserver — local Postgres ($(DEV_ENV))"
 	@echo "  make staging            Django runserver — GCP Cloud SQL staging via proxy ($(STAGING_ENV))"
 	@echo "                          (proxy starts automatically on port $(STAGING_PROXY_PORT) and stops on exit)"
+	@echo "  make staging-dump       Dump current staging DB to $(BACKUP_DIR)/$(BACKUP_PREFIX)_YYYYMMDD_HHMMSS.sql"
 	@echo "  make production-local   Gunicorn on :8080 — needs $(PROD_ENV) + proxy running"
 	@echo "  make prod-deploy        Docker build/push + Cloud Run deploy"
 	@echo "  make staging-deploy     Docker build/push + Cloud Run staging deploy"
@@ -63,6 +66,7 @@ help:
 	@echo "  make staging-platform-admin  Create platform admin (EMAIL=x NAME=x PASS=x)"
 	@echo ""
 	@echo "  make db-setup-dev       Create local Postgres role+DB from $(DEV_ENV)"
+	@echo "  make db-fix-dev-ownership  Reassign imported local DB objects to the $(DEV_ENV) DB_USER"
 	@echo "  make migrate-dev        Run migrations using $(DEV_ENV)"
 	@echo "  make tenant-superuser-dev  createsuperuser in tenant DB (SCHEMA=$(SCHEMA) by default; needs a Client + Domain)"
 	@echo "  make migrate-staging    Run migrations using $(STAGING_ENV)"
@@ -99,6 +103,15 @@ staging:
 		set -a; . "$(STAGING_ENV)"; set +a; \
 		$(MANAGE) runserver; \
 	'
+
+staging-dump:
+	@if [ ! -f "$(STAGING_ENV)" ]; then echo "Missing $(STAGING_ENV) — run: cp env/examples/.env.staging.example .env.staging"; exit 1; fi
+	@ENV_FILE="$(STAGING_ENV)" \
+	PROXY_PORT="$(STAGING_PROXY_PORT)" \
+	STAGING_INSTANCE="$(STAGING_CLOUDSQL_INSTANCE)" \
+	BACKUP_DIR="$(BACKUP_DIR)" \
+	BACKUP_PREFIX="$(BACKUP_PREFIX)" \
+	bash scripts/dump_staging_backup.sh
 
 production-local:
 	@if [ ! -f "$(PROD_ENV)" ]; then echo "Missing $(PROD_ENV)"; exit 1; fi
@@ -162,6 +175,10 @@ test-cov:
 db-setup-dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi
 	@bash scripts/setup_local_postgres_from_env.sh "$(DEV_ENV)"
+
+db-fix-dev-ownership:
+	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi
+	@bash scripts/repair_local_postgres_ownership_from_env.sh "$(DEV_ENV)"
 
 migrate-dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV)"; exit 1; fi

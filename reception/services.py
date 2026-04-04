@@ -9,6 +9,7 @@ from django.utils import timezone
 from processing.models import Animal  # Add Animal import
 from processing.services import create_animal
 from users.models import ClientProfile
+from users.services import get_or_create_walk_in_profile
 
 from .models import ServicePackage, SlaughterOrder
 
@@ -16,6 +17,33 @@ logger = logging.getLogger(__name__)
 
 # Maximum retry attempts for order creation under race conditions
 MAX_ORDER_CREATION_RETRIES = 10
+
+
+def _clean_text(value: str | None) -> str:
+    return (value or "").strip()
+
+
+def _resolve_order_client_reference(
+    *,
+    client_id: str | None,
+    client_name: str | None,
+    client_phone: str | None,
+    destination: str | None,
+) -> tuple[ClientProfile | None, str, str]:
+    if client_id:
+        return ClientProfile.objects.get(id=client_id), "", ""
+
+    raw_client_name = _clean_text(client_name)
+    raw_client_phone = _clean_text(client_phone)
+    if raw_client_name and raw_client_phone:
+        profile = get_or_create_walk_in_profile(
+            contact_name=raw_client_name,
+            phone_number=raw_client_phone,
+            destination=destination,
+        )
+        if profile is not None:
+            return profile, raw_client_name, raw_client_phone
+    return None, raw_client_name, raw_client_phone
 
 
 def _is_slaughter_order_no_unique_violation(exc: IntegrityError) -> bool:
@@ -116,9 +144,12 @@ def create_slaughter_order(
     the first order of the day simultaneously (when select_for_update has no rows
     to lock).
     """
-    client_profile = None
-    if client_id:
-        client_profile = ClientProfile.objects.get(id=client_id)
+    client_profile, raw_client_name, raw_client_phone = _resolve_order_client_reference(
+        client_id=client_id,
+        client_name=client_name,
+        client_phone=client_phone,
+        destination=destination,
+    )
 
     service_package = ServicePackage.objects.get(id=service_package_id)
 
@@ -136,8 +167,8 @@ def create_slaughter_order(
                     client=client_profile,
                     service_package=service_package,
                     order_datetime=order_datetime,
-                    client_name=client_name if not client_profile else "",
-                    client_phone=client_phone if not client_profile else "",
+                    client_name=raw_client_name,
+                    client_phone=raw_client_phone,
                     destination=destination,
                     slaughter_order_no=order_number,
                 )
@@ -163,6 +194,31 @@ def create_slaughter_order(
         exc_info=(type(last_exception), last_exception, last_exception.__traceback__),
     )
     raise ValidationError("Failed to create order after multiple attempts due to high concurrency. Please try again.")
+
+
+@transaction.atomic
+def assign_client_to_order(
+    order: SlaughterOrder,
+    *,
+    client_id: str | None,
+    client_name: str | None = None,
+    client_phone: str | None = None,
+    destination: str | None = None,
+) -> SlaughterOrder:
+    if order.status != SlaughterOrder.Status.PENDING:
+        raise ValidationError("Cannot update an order that is already in progress, completed, or cancelled.")
+
+    client_profile, raw_client_name, raw_client_phone = _resolve_order_client_reference(
+        client_id=client_id,
+        client_name=client_name,
+        client_phone=client_phone,
+        destination=destination,
+    )
+    order.client = client_profile
+    order.client_name = raw_client_name
+    order.client_phone = raw_client_phone
+    order.save(update_fields=["client", "client_name", "client_phone"])
+    return order
 
 
 @transaction.atomic

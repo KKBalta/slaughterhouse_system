@@ -632,9 +632,13 @@
                                 data.clients.forEach(client => {
                                     const item = document.createElement('div');
                                     item.className = 'p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100';
+                                    const destinationLine = client.default_destination
+                                        ? `<div class="text-xs text-blue-700">{% trans "Delivery" %}: ${client.default_destination}</div>`
+                                        : '';
                                     item.innerHTML = `
                                             <div class="font-medium text-gray-900">${client.display_name}</div>
                                             <div class="text-sm text-gray-600">${client.contact_info} • ${client.phone}</div>
+                                            ${destinationLine}
                                         `;
                                     item.addEventListener('click', () => {
                                         // You can add client selection logic here

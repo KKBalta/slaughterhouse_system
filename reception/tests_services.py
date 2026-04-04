@@ -97,6 +97,58 @@ class TestReceptionServices:
         with pytest.raises(ValidationError):
             update_slaughter_order(order=order, destination="Another Market")
 
+    def test_create_slaughter_order_creates_walkin_prospect(self, reception_state):
+        order = create_slaughter_order(
+            client_id=None,
+            service_package_id=reception_state["service_package"].id,
+            order_datetime=timezone.now(),
+            animals_data=[],
+            client_name="Potential Client",
+            client_phone="+905551234999",
+            destination="Prospect Depot",
+        )
+
+        assert order.client is not None
+        assert order.client.account_type == ClientProfile.AccountType.UNCLASSIFIED
+        assert order.client.contact_person == "Potential Client"
+        assert order.client.default_destination == "Prospect Depot"
+        assert order.client.user is not None
+        assert order.client.user.role == User.Role.WALKIN
+        assert order.client_name == "Potential Client"
+        assert order.client_phone == "+905551234999"
+
+    def test_create_slaughter_order_reuses_existing_walkin_prospect(self, reception_state):
+        walkin_user = User.objects.create_user(
+            username="known-walkin",
+            password=None,
+            role=User.Role.WALKIN,
+            phone_number="+905551234998",
+        )
+        walkin_user.set_unusable_password()
+        walkin_user.save(update_fields=["password"])
+        profile = ClientProfile.objects.create(
+            user=walkin_user,
+            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+            contact_person="Known Prospect",
+            phone_number="+905551234998",
+            address="",
+            default_destination="",
+        )
+
+        order = create_slaughter_order(
+            client_id=None,
+            service_package_id=reception_state["service_package"].id,
+            order_datetime=timezone.now(),
+            animals_data=[],
+            client_name="Known Prospect",
+            client_phone="+905551234998",
+            destination="Second Stop",
+        )
+
+        profile.refresh_from_db()
+        assert order.client == profile
+        assert profile.default_destination == "Second Stop"
+
     def test_cancel_slaughter_order_service(self, reception_state):
         order = create_slaughter_order(
             client_id=reception_state["client_profile"].id,

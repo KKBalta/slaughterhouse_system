@@ -463,7 +463,7 @@ class TestUserRoles:
     """Tests for user role functionality."""
 
     def test_user_role_choices(self):
-        expected_roles = ["OWNER", "ADMIN", "OPERATOR", "MANAGER", "CLIENT"]
+        expected_roles = ["OWNER", "ADMIN", "OPERATOR", "MANAGER", "CLIENT", "WALKIN"]
         actual_roles = [choice[0] for choice in User.Role.choices]
 
         for role in expected_roles:
@@ -535,6 +535,7 @@ class TestClientProfileRegistration:
                 "phone_area_code": "+90",
                 "phone_number": "5554443322",
                 "address": "100 St",
+                "default_destination": "Istanbul Delivery Center",
             },
         )
 
@@ -543,6 +544,7 @@ class TestClientProfileRegistration:
         assert user.role == User.Role.CLIENT
         assert user.phone_number == "+905554443322"
         assert user.client_profile.phone_number == "+905554443322"
+        assert user.client_profile.default_destination == "Istanbul Delivery Center"
 
     def test_post_creates_client_user_with_generated_password_when_empty(self, client, auth_state):
         client.login(username=auth_state.admin_user.username, password="SecurePass123!")
@@ -588,6 +590,70 @@ class TestClientProfileRegistration:
         assert user.role == User.Role.CLIENT
         assert user.phone_number == ""
         assert user.client_profile.phone_number == ""
+
+    def test_post_links_existing_walk_in_orders_by_phone_and_keeps_walk_in_fields(self, client, auth_state):
+        from core.models import ServicePackage
+        from reception.models import SlaughterOrder
+
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        package = ServicePackage.objects.create(name="Walk-in Link Package")
+        order = SlaughterOrder.objects.create(
+            client_name="Walk-in Joe",
+            client_phone="+905551234000",
+            service_package=package,
+        )
+
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.CLIENT]),
+            {
+                "username": "walkin-linked-client",
+                "email": "",
+                "new_password1": "SecurePass123!",
+                "new_password2": "SecurePass123!",
+                "account_type": "INDIVIDUAL",
+                "contact_person": "Linked Client",
+                "phone_area_code": "+90",
+                "phone_number": "5551234000",
+                "address": "100 St",
+            },
+        )
+
+        assert response.status_code == 302
+        created_user = User.objects.get(username="walkin-linked-client")
+        order.refresh_from_db()
+        assert order.client == created_user.client_profile
+        assert order.client_name == "Walk-in Joe"
+        assert order.client_phone == "+905551234000"
+
+    def test_post_creates_profile_without_new_user_when_phone_is_already_registered(self, client, auth_state):
+        client.login(username=auth_state.admin_user.username, password="SecurePass123!")
+        existing_user = User.objects.create_user(
+            username="registered-phone-user",
+            password="SecurePass123!",
+            phone_number="+905551239999",
+            role=User.Role.CLIENT,
+        )
+
+        response = client.post(
+            reverse("tenant_user_create", args=[User.Role.CLIENT]),
+            {
+                "username": "",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": "INDIVIDUAL",
+                "contact_person": "Existing Registered Phone",
+                "phone_area_code": "+90",
+                "phone_number": "5551239999",
+                "address": "100 St",
+            },
+        )
+
+        assert response.status_code == 302
+        assert User.objects.filter(username="registered-phone-user").count() == 1
+        existing_user.refresh_from_db()
+        assert existing_user.client_profile.contact_person == "Existing Registered Phone"
+        assert existing_user.client_profile.phone_number == "+905551239999"
 
     def test_operator_can_create_client_account(self, client, auth_state):
         client.login(username=auth_state.operator_user.username, password="SecurePass123!")
@@ -635,6 +701,18 @@ class TestClientProfileAPI:
         assert "results" in payload
         assert "count" in payload
 
+    def test_list_search_matches_default_destination(self, client, auth_state):
+        auth_state.client_profile.default_destination = "Ankara Delivery Hub"
+        auth_state.client_profile.save(update_fields=["default_destination"])
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        response = client.get("/api/v1/clients/", {"search": "Ankara"})
+
+        assert response.status_code == 200
+        payload = json.loads(response.content)
+        assert payload["results"]
+        assert payload["results"][0]["default_destination"] == "Ankara Delivery Hub"
+
     def test_detail_ok_for_manager(self, client, auth_state):
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
         response = client.get(f"/api/v1/clients/{auth_state.client_profile.id}/")
@@ -647,7 +725,7 @@ class TestClientProfileAPI:
         profile_id = str(auth_state.client_profile.id)
         response = client.patch(
             f"/api/v1/clients/{profile_id}/",
-            data=json.dumps({"phone_number": "+909998887777"}),
+            data=json.dumps({"phone_number": "+909998887777", "default_destination": "Cold Storage A"}),
             content_type="application/json",
         )
         assert response.status_code == 200
@@ -655,6 +733,7 @@ class TestClientProfileAPI:
         auth_state.client_profile.refresh_from_db()
         assert auth_state.client_user.phone_number == "+909998887777"
         assert auth_state.client_profile.phone_number == "+909998887777"
+        assert auth_state.client_profile.default_destination == "Cold Storage A"
 
     def test_api_rejects_non_client_profile_records(self, client, auth_state):
         staff_user = User.objects.create_user(
@@ -674,6 +753,28 @@ class TestClientProfileAPI:
         response = client.get(f"/api/v1/clients/{staff_profile.id}/")
 
         assert response.status_code == 403
+
+    def test_api_allows_walkin_profile_records(self, client, auth_state):
+        walkin_user = User.objects.create_user(
+            username="walkin-prospect",
+            password=None,
+            phone_number="+15554443322",
+            role=User.Role.WALKIN,
+        )
+        walkin_user.set_unusable_password()
+        walkin_user.save(update_fields=["password"])
+        walkin_profile = ClientProfile.objects.create(
+            user=walkin_user,
+            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+            contact_person="Walk-in Prospect",
+            phone_number="+15554443322",
+            address="",
+        )
+
+        client.login(username=auth_state.operator_user.username, password="SecurePass123!")
+        response = client.get(f"/api/v1/clients/{walkin_profile.id}/")
+
+        assert response.status_code == 200
 
 
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
@@ -774,7 +875,23 @@ class TestTenantUserManagement:
 
         assert response.status_code == 403
 
-    def test_operator_user_list_is_limited_to_clients(self, client, auth_state):
+    def test_operator_user_list_is_limited_to_client_facing_roles(self, client, auth_state):
+        walkin_user = User.objects.create_user(
+            username="operator-visible-walkin",
+            password=None,
+            phone_number="+15554440000",
+            role=User.Role.WALKIN,
+        )
+        walkin_user.set_unusable_password()
+        walkin_user.save(update_fields=["password"])
+        ClientProfile.objects.create(
+            user=walkin_user,
+            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+            contact_person="Visible Walk-in",
+            phone_number="+15554440000",
+            address="",
+        )
+
         client.login(username=auth_state.operator_user.username, password="SecurePass123!")
 
         response = client.get(reverse("tenant_user_list"))
@@ -782,7 +899,8 @@ class TestTenantUserManagement:
         assert response.status_code == 200
         rows = response.context["user_rows"]
         assert rows
-        assert all(row["user"].role == User.Role.CLIENT for row in rows)
+        assert {row["user"].role for row in rows}.issubset({User.Role.CLIENT, User.Role.WALKIN})
+        assert any(row["user"].role == User.Role.WALKIN for row in rows)
 
     def test_owner_cannot_edit_admin_user(self, client, auth_state):
         client.login(username=auth_state.owner_user.username, password="SecurePass123!")

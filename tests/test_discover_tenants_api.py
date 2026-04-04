@@ -191,6 +191,51 @@ def test_discover_tenants_empty_result_includes_hint(monkeypatch):
 
 
 @pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, DEBUG=True, TENANT_BASE_DOMAIN="localhost", ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_prefers_localhost_hosts_in_debug_for_imported_remote_domains(monkeypatch):
+    import tenants.models as tenant_models
+
+    cache.clear()
+    monkeypatch.setattr(tenant_utils, "get_public_schema_name", lambda: "public")
+    monkeypatch.setattr(tenant_utils, "schema_context", lambda _schema: nullcontext())
+    monkeypatch.setattr(
+        email_index,
+        "build_post_login_redirect_url",
+        lambda tenant, use_api_host=None: "http://pomet.localhost:3000/dashboard",
+    )
+
+    fake_tenant = _fake_tenant(domain="pomet.carnitrack.com")
+    memberships = [SimpleNamespace(tenant=fake_tenant, role=User.Role.CLIENT)]
+    manager = _FakeMembershipManager(memberships)
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "user@example.com"}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 200
+    assert _json_body(response) == {
+        "tenants": [
+            {
+                "schema_name": "pomet",
+                "name": "Pomet",
+                "slug": "pomet",
+                "primary_domain": "pomet.localhost",
+                "api_base_url": "http://pomet.localhost:8000",
+                "auth_login_url": "http://pomet.localhost:8000/api/v1/auth/login/",
+                "web_app_base_url": "http://pomet.localhost:3000",
+                "post_login_redirect_url": "http://pomet.localhost:3000/dashboard",
+                "role": User.Role.CLIENT,
+            }
+        ]
+    }
+
+
+@pytest.mark.django_db
 @override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
 def test_discover_tenants_without_identifier_returns_empty_list(monkeypatch):
     cache.clear()

@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django import forms
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from .models import CustomLabel
 
@@ -104,6 +105,58 @@ class CustomLabelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        localized_labels = {
+            "uretici": _("Üretici Ünvanı"),
+            "kupe_no": _("Küpe No"),
+            "tuccar": _("Tüccar Ünvanı"),
+            "kesim_tarihi": _("Kesim Tarihi"),
+            "stt": _("Son Tüketim Tarihi"),
+            "siparis_no": _("Sipariş No"),
+            "cinsi": _("Cinsi"),
+            "weight": _("Ağırlık (kg)"),
+            "sakatat_status": _("Sakatat Durumu"),
+            "qr_data": _("QR Verisi"),
+        }
+        localized_placeholders = {
+            "uretici": _("Üretici adı"),
+            "kupe_no": _("Küpe numarası"),
+            "tuccar": _("Tüccar adı (opsiyonel)"),
+            "siparis_no": _("Sipariş numarası (opsiyonel)"),
+            "weight": _("Ağırlık (kg)"),
+            "sakatat_status": _("Sakatat durumu"),
+            "qr_data": _("QR kod verisi (opsiyonel)"),
+        }
+        localized_help_texts = {
+            "uretici": _("Üretici / firma adı"),
+            "kupe_no": _("Kulak küpe numarası / kimlik numarası"),
+            "tuccar": _("Tüccar adı"),
+            "kesim_tarihi": _("Kesim tarihi"),
+            "stt": _("Son tüketim tarihi"),
+            "siparis_no": _("Sipariş numarası"),
+            "cinsi": _("Hayvan türü"),
+            "weight": _("Net ağırlık (kg)"),
+            "sakatat_status": _("Sakatat durum değeri"),
+            "qr_data": _("İsteğe bağlı QR kod verisi"),
+        }
+
+        for field_name, label in localized_labels.items():
+            self.fields[field_name].label = label
+        for field_name, placeholder in localized_placeholders.items():
+            self.fields[field_name].widget.attrs["placeholder"] = placeholder
+        for field_name, help_text in localized_help_texts.items():
+            self.fields[field_name].help_text = help_text
+
+        self.fields["cinsi"].choices = [
+            ("SIGIR", _("Sığır")),
+            ("KOYUN", _("Koyun")),
+            ("KECI", _("Keçi")),
+            ("KUZU", _("Kuzu")),
+            ("OGLAK", _("Oğlak")),
+            ("BUZA", _("Buzağı")),
+            ("DUVE", _("Düve")),
+            ("DANA", _("Dana")),
+        ]
+
         # Set default values
         today = timezone.now().date()
         self.fields["kesim_tarihi"].initial = today
@@ -127,7 +180,7 @@ class CustomLabelForm(forms.ModelForm):
     def clean_weight(self):
         weight = self.cleaned_data.get("weight")
         if weight is not None and weight <= 0:
-            raise forms.ValidationError("Ağırlık 0'dan büyük olmalıdır.")
+            raise forms.ValidationError(_("Ağırlık 0'dan büyük olmalıdır."))
         return weight
 
     def clean(self):
@@ -136,6 +189,6 @@ class CustomLabelForm(forms.ModelForm):
         stt = cleaned_data.get("stt")
 
         if kesim_tarihi and stt and stt < kesim_tarihi:
-            raise forms.ValidationError("Son tüketim tarihi kesim tarihinden önce olamaz.")
+            raise forms.ValidationError(_("Son tüketim tarihi kesim tarihinden önce olamaz."))
 
         return cleaned_data

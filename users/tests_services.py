@@ -17,6 +17,7 @@ from .services import (
     create_user_with_profile,
     deactivate_user,
     generate_random_password,
+    get_or_create_walk_in_profile,
     reactivate_user,
     update_self_service_contact_channels,
     update_user_profile,
@@ -140,6 +141,9 @@ def test_convert_walk_in_to_profile_service(users_service_state):
     assert User.objects.count() == 2
     assert ClientProfile.objects.count() == 2
     assert SlaughterOrder.objects.filter(client=new_profile).count() == 1
+    linked_order = SlaughterOrder.objects.get(client=new_profile)
+    assert linked_order.client_name == "Walk-in Joe"
+    assert linked_order.client_phone == walk_in_phone
 
 
 def test_deactivate_and_reactivate_user_service(users_service_state):
@@ -226,6 +230,54 @@ def test_convert_walk_in_with_no_matching_orders(users_service_state):
     assert User.objects.count() == 2
     assert ClientProfile.objects.count() == 2
     assert SlaughterOrder.objects.filter(client=new_profile).count() == 0
+
+
+def test_get_or_create_walk_in_profile_creates_prospect_user_and_profile():
+    profile = get_or_create_walk_in_profile(
+        contact_name="Fresh Walk-in",
+        phone_number="+905551119988",
+        destination="North Gate",
+    )
+
+    assert profile is not None
+    assert profile.account_type == ClientProfile.AccountType.UNCLASSIFIED
+    assert profile.contact_person == "Fresh Walk-in"
+    assert profile.default_destination == "North Gate"
+    assert profile.address == ""
+    assert profile.user is not None
+    assert profile.user.role == User.Role.WALKIN
+    assert profile.user.phone_number == "+905551119988"
+    assert profile.user.has_usable_password() is False
+
+
+def test_get_or_create_walk_in_profile_reuses_existing_profile():
+    existing_user = User.objects.create_user(
+        username="walkin-existing",
+        password=None,
+        role=User.Role.WALKIN,
+        phone_number="+905551117777",
+    )
+    existing_user.set_unusable_password()
+    existing_user.save(update_fields=["password"])
+    existing_profile = ClientProfile.objects.create(
+        user=existing_user,
+        account_type=ClientProfile.AccountType.UNCLASSIFIED,
+        contact_person="",
+        phone_number="+905551117777",
+        address="",
+        default_destination="",
+    )
+
+    profile = get_or_create_walk_in_profile(
+        contact_name="Walk-in Reused",
+        phone_number="+905551117777",
+        destination="East Ramp",
+    )
+
+    existing_profile.refresh_from_db()
+    assert profile == existing_profile
+    assert existing_profile.contact_person == "Walk-in Reused"
+    assert existing_profile.default_destination == "East Ramp"
 
 
 def test_deactivate_already_inactive_user(users_service_state):

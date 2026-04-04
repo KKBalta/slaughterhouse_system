@@ -10,9 +10,10 @@
 #   1. Backs up the staging database
 #   2. Runs shared schema migrations (creates tenants_client, tenants_domain, etc.)
 #   3. Creates the tenant + copies all data from public → tenant schema
-#   4. Creates a platform admin account
-#   5. Verifies the migration
-#   6. Deploys to Cloud Run staging
+#   4. Runs tenant schema migrations (e.g. logo storage changes)
+#   5. Creates a platform admin account
+#   6. Verifies the migration
+#   7. Deploys to Cloud Run staging
 #
 # Prerequisites:
 #   - .env.staging filled in (DB_PASSWORD, SECRET_KEY, REDIS_URL)
@@ -91,7 +92,7 @@ PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NA
 # ============================================================================
 # Step 1: Backup
 # ============================================================================
-step "Step 1/6 — Backing up staging database..."
+step "Step 1/7 — Backing up staging database..."
 mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/staging_pre_migration_$(date +%Y%m%d_%H%M%S).sql"
 PGPASSWORD="$DB_PASSWORD" pg_dump \
@@ -102,37 +103,43 @@ echo "    Backup saved: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
 # ============================================================================
 # Step 2: Run shared schema migrations
 # ============================================================================
-step "Step 2/6 — Running shared schema migrations..."
+step "Step 2/7 — Running shared schema migrations..."
 python manage.py migrate_schemas --shared 2>&1 | tail -5
 
 # ============================================================================
 # Step 3: Create tenant + copy data
 # ============================================================================
-step "Step 3/6 — Creating tenant '$SCHEMA' and copying data..."
+step "Step 3/7 — Creating tenant '$SCHEMA' and copying data..."
 bash scripts/reset_and_copy_tenant.sh "$SCHEMA" "$DOMAIN" "$TENANT_NAME" "$ENV_FILE"
 
 # ============================================================================
-# Step 4: Create platform admin
+# Step 4: Run tenant schema migrations
 # ============================================================================
-step "Step 4/6 — Creating platform admin ($ADMIN_EMAIL)..."
+step "Step 4/7 — Running tenant schema migrations for '$SCHEMA'..."
+python manage.py migrate_schemas --tenant 2>&1 | tail -5
+
+# ============================================================================
+# Step 5: Create platform admin
+# ============================================================================
+step "Step 5/7 — Creating platform admin ($ADMIN_EMAIL)..."
 python manage.py create_platform_admin \
   --email="$ADMIN_EMAIL" \
   --name="$ADMIN_NAME" \
   --password="$ADMIN_PASS"
 
 # ============================================================================
-# Step 5: Verify migration
+# Step 6: Verify migration
 # ============================================================================
-step "Step 5/6 — Verifying migration..."
+step "Step 6/7 — Verifying migration..."
 python manage.py verify_tenant_copy --schema="$SCHEMA"
 
 # ============================================================================
-# Step 6: Deploy to Cloud Run
+# Step 7: Deploy to Cloud Run
 # ============================================================================
 if [ "$SKIP_DEPLOY" = "1" ]; then
   warn "Skipping Cloud Run deploy (SKIP_DEPLOY=1)"
 else
-  step "Step 6/6 — Deploying to Cloud Run staging..."
+  step "Step 7/7 — Deploying to Cloud Run staging..."
   bash deploy_staging.sh "$ENV_YAML"
 fi
 

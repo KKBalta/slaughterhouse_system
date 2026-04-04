@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils.crypto import get_random_string
 
 from reception.models import SlaughterOrder
+from tenants.email_index import normalize_phone
 
-from .models import ClientProfile
+from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 
 User = get_user_model()
 
@@ -12,9 +13,195 @@ User = get_user_model()
 _RANDOM_PASSWORD_LENGTH = 20
 
 
+def _client_management_role_for(user: User | None) -> bool:
+    return bool(user is not None and getattr(user, "role", "") in CLIENT_MANAGEMENT_ROLES)
+
+
+def phone_lookup_candidates(phone_number: str | None) -> tuple[str, ...]:
+    """Return exact-match candidates for legacy/raw and normalized phone storage."""
+    raw = (phone_number or "").strip()
+    if not raw:
+        return ()
+
+    candidates: list[str] = []
+
+    def _add(value: str | None) -> None:
+        cleaned = (value or "").strip()
+        if cleaned and cleaned not in candidates:
+            candidates.append(cleaned)
+
+    _add(raw)
+
+    normalized = normalize_phone(raw)
+    _add(normalized)
+    _add(normalized.lstrip("+"))
+
+    if normalized.startswith("+90"):
+        _add(normalized[3:])
+    elif normalized.startswith("+1"):
+        _add(normalized[2:])
+
+    digits = "".join(char for char in raw if char.isdigit())
+    _add(digits)
+
+    return tuple(candidates)
+
+
 def generate_random_password(length: int = _RANDOM_PASSWORD_LENGTH) -> str:
     """Return a one-time password suitable for create_user() when staff skip the password fields."""
     return get_random_string(length)
+
+
+def generate_walk_in_username(phone_number: str | None = None) -> str:
+    normalized_phone = normalize_phone(phone_number)
+    digits = normalized_phone.lstrip("+")
+    base = f"walkin-{digits}" if digits else f"walkin-{get_random_string(8).lower()}"
+    username = base[:150]
+    suffix = 2
+    while User.objects.filter(username__iexact=username).exists():
+        candidate = f"{base}-{suffix}"
+        username = candidate[:150]
+        suffix += 1
+    return username
+
+
+def _apply_walk_in_profile_defaults(
+    profile: ClientProfile,
+    *,
+    contact_name: str,
+    destination: str | None,
+) -> ClientProfile:
+    update_fields: list[str] = []
+    if not (profile.contact_person or "").strip() and (contact_name or "").strip():
+        profile.contact_person = contact_name.strip()
+        update_fields.append("contact_person")
+    if not (profile.default_destination or "").strip() and (destination or "").strip():
+        profile.default_destination = destination.strip()
+        update_fields.append("default_destination")
+    if update_fields:
+        update_fields.append("updated_at")
+        profile.save(update_fields=update_fields)
+    return profile
+
+
+@transaction.atomic
+def link_walk_in_orders_to_client_profile(*, profile: ClientProfile, phone_number: str | None = None) -> int:
+    """
+    Attach historical walk-in orders to a profile by phone number.
+
+    Walk-in name/phone fields are intentionally preserved for audit/history.
+    """
+    candidates = phone_lookup_candidates(phone_number or profile.phone_number)
+    if not candidates:
+        return 0
+
+    return SlaughterOrder.objects.filter(client__isnull=True, client_phone__in=candidates).update(client=profile)
+
+
+def find_manageable_client_profile_by_phone(phone_number: str | None) -> ClientProfile | None:
+    candidates = phone_lookup_candidates(phone_number)
+    if not candidates:
+        return None
+
+    profiles = list(
+        ClientProfile.objects.select_related("user").filter(phone_number__in=candidates)
+    )
+    if not profiles:
+        return None
+
+    def _priority(profile: ClientProfile) -> int:
+        linked_user = profile.user
+        if linked_user is None:
+            return 2
+        if linked_user.role == User.Role.CLIENT:
+            return 0
+        if linked_user.role == User.Role.WALKIN:
+            return 1
+        return 3
+
+    manageable = [profile for profile in profiles if profile.user is None or _client_management_role_for(profile.user)]
+    if not manageable:
+        return None
+    manageable.sort(key=_priority)
+    return manageable[0]
+
+
+@transaction.atomic
+def get_or_create_walk_in_profile(
+    *,
+    contact_name: str,
+    phone_number: str | None,
+    destination: str | None = None,
+) -> ClientProfile | None:
+    normalized_phone = normalize_phone(phone_number)
+    if not normalized_phone:
+        return None
+
+    default_destination = (destination or "").strip() or None
+    for _attempt in range(3):
+        profile = find_manageable_client_profile_by_phone(normalized_phone)
+        if profile is not None:
+            return _apply_walk_in_profile_defaults(
+                profile,
+                contact_name=contact_name,
+                destination=default_destination,
+            )
+
+        existing_user = User.objects.filter(phone_number=normalized_phone).first()
+        if existing_user is not None:
+            if not _client_management_role_for(existing_user):
+                return None
+            try:
+                profile = existing_user.client_profile
+            except ClientProfile.DoesNotExist:
+                try:
+                    with transaction.atomic():
+                        profile = ClientProfile.objects.create(
+                            user=existing_user,
+                            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+                            contact_person=(contact_name or "").strip(),
+                            phone_number=normalized_phone,
+                            address="",
+                            default_destination=default_destination,
+                        )
+                except IntegrityError:
+                    continue
+            return _apply_walk_in_profile_defaults(
+                profile,
+                contact_name=contact_name,
+                destination=default_destination,
+            )
+
+        try:
+            with transaction.atomic():
+                walk_in_user = User.objects.create_user(
+                    username=generate_walk_in_username(normalized_phone),
+                    password=None,
+                    role=User.Role.WALKIN,
+                    phone_number=normalized_phone,
+                )
+                walk_in_user.set_unusable_password()
+                walk_in_user.save(update_fields=["password"])
+                profile = ClientProfile.objects.create(
+                    user=walk_in_user,
+                    account_type=ClientProfile.AccountType.UNCLASSIFIED,
+                    contact_person=(contact_name or "").strip(),
+                    phone_number=normalized_phone,
+                    address="",
+                    default_destination=default_destination,
+                )
+        except IntegrityError:
+            continue
+        return profile
+
+    profile = find_manageable_client_profile_by_phone(normalized_phone)
+    if profile is not None:
+        return _apply_walk_in_profile_defaults(
+            profile,
+            contact_name=contact_name,
+            destination=default_destination,
+        )
+    return None
 
 
 @transaction.atomic
@@ -104,7 +291,7 @@ def update_self_service_contact_channels(
     user.phone_number = phone_number or ""
     user.save(update_fields=["email", "phone_number"])
 
-    if getattr(user, "role", "") == User.Role.CLIENT:
+    if getattr(user, "role", "") in CLIENT_MANAGEMENT_ROLES:
         try:
             profile = user.client_profile
         except ClientProfile.DoesNotExist:
@@ -147,11 +334,7 @@ def convert_walk_in_to_profile(phone_number: str, user_data: dict, profile_data:
     user = User.objects.create_user(**user_data)
     profile_data["user"] = user
     profile = ClientProfile.objects.create(**profile_data)
-
-    orders_to_update = SlaughterOrder.objects.filter(client__isnull=True, client_phone=phone_number)
-
-    # Perform a bulk update for efficiency.
-    orders_to_update.update(client=profile, client_name="", client_phone="")
+    link_walk_in_orders_to_client_profile(profile=profile, phone_number=phone_number)
 
     return profile
 

@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from tenants.email_index import normalize_email, normalize_phone
 
 from .models import ClientProfile, User
+from .services import phone_lookup_candidates
 
 # Same country codes as reception walk-in phone (SlaughterOrderForm).
 PHONE_AREA_CODE_CHOICES = [
@@ -36,8 +37,8 @@ def combine_phone_parts(phone_area_code: str | None, phone_number: str | None) -
 class ClientUserCredentialsForm(forms.Form):
     """Staff edit of login identifiers and optional password reset for a client user."""
 
-    username = forms.CharField(max_length=150)
-    email = forms.EmailField(required=False)
+    username = forms.CharField(max_length=150, label=_("Username"))
+    email = forms.EmailField(required=False, label=_("Email"))
     phone_area_code = forms.ChoiceField(
         choices=PHONE_AREA_CODE_CHOICES,
         initial="+90",
@@ -54,13 +55,13 @@ class ClientUserCredentialsForm(forms.Form):
         help_text=_("At least one of email or phone is required."),
     )
     new_password1 = forms.CharField(
-        label="New password",
+        label=_("New password"),
         widget=forms.PasswordInput(render_value=False),
         required=False,
-        help_text="Leave blank to keep the current password.",
+        help_text=_("Leave blank to keep the current password."),
     )
     new_password2 = forms.CharField(
-        label="Confirm new password",
+        label=_("Confirm new password"),
         widget=forms.PasswordInput(render_value=False),
         required=False,
     )
@@ -97,7 +98,7 @@ class ClientUserCredentialsForm(forms.Form):
         if self.user_instance and getattr(self.user_instance, "pk", None):
             qs = qs.exclude(pk=self.user_instance.pk)
         if qs.exists():
-            raise forms.ValidationError("A user with that username already exists.")
+            raise forms.ValidationError(_("A user with that username already exists."))
         return username
 
     def clean_email(self):
@@ -118,7 +119,7 @@ class ClientUserCredentialsForm(forms.Form):
         )
         if not phone_number:
             return ""
-        qs = User.objects.filter(phone_number=phone_number)
+        qs = User.objects.filter(phone_number__in=phone_lookup_candidates(phone_number))
         if self.user_instance and getattr(self.user_instance, "pk", None):
             qs = qs.exclude(pk=self.user_instance.pk)
         if qs.exists():
@@ -139,14 +140,14 @@ class ClientUserCredentialsForm(forms.Form):
             if not self.user_instance and not p1 and not p2:
                 pass
             elif p1 != p2:
-                self.add_error("new_password2", "The two password fields don't match.")
+                self.add_error("new_password2", _("The two password fields don't match."))
             elif len(p1) < 8:
-                self.add_error("new_password1", "Password must be at least 8 characters.")
+                self.add_error("new_password1", _("Password must be at least 8 characters."))
         elif p1 or p2:
             if p1 != p2:
-                self.add_error("new_password2", "The two password fields don't match.")
+                self.add_error("new_password2", _("The two password fields don't match."))
             elif len(p1) < 8:
-                self.add_error("new_password1", "Password must be at least 8 characters.")
+                self.add_error("new_password1", _("Password must be at least 8 characters."))
         return cleaned_data
 
 
@@ -215,7 +216,7 @@ class SelfServiceContactForm(forms.Form):
         )
         if not phone_number:
             return ""
-        qs = User.objects.filter(phone_number=phone_number)
+        qs = User.objects.filter(phone_number__in=phone_lookup_candidates(phone_number))
         if self.user_instance and getattr(self.user_instance, "pk", None):
             qs = qs.exclude(pk=self.user_instance.pk)
         if qs.exists():
@@ -298,8 +299,8 @@ class UserRegistrationForm(UserCreationForm):
             self.fields["role"].choices = User.Role.choices
         else:
             allowed_roles = [
-                (User.Role.CLIENT, "Client"),
-                (User.Role.OPERATOR, "Operator"),
+                (User.Role.CLIENT, _("Client")),
+                (User.Role.OPERATOR, _("Operator")),
             ]
             self.fields["role"].choices = allowed_roles
 
@@ -343,15 +344,20 @@ class ClientProfileRegisterForm(forms.ModelForm):
             "contact_person",
             "phone_number",
             "address",
+            "default_destination",
             "company_name",
             "tax_id",
         ]
 
     def __init__(self, *args, **kwargs):
+        self.allow_existing_phone_user = kwargs.pop("allow_existing_phone_user", False)
+        self.registered_phone_user = None
         super().__init__(*args, **kwargs)
         self.fields["company_name"].required = False
         self.fields["tax_id"].required = False
         self.fields["contact_person"].required = False
+        self.fields["address"].required = False
+        self.fields["default_destination"].required = False
         self.fields["phone_number"].required = False
         self.fields["phone_number"].max_length = 15
         self.fields["phone_number"].widget = forms.TextInput(
@@ -392,6 +398,7 @@ class ClientProfileRegisterForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        self.registered_phone_user = None
         if not cleaned_data:
             return cleaned_data
 
@@ -410,12 +417,22 @@ class ClientProfileRegisterForm(forms.ModelForm):
 
         phone_number = cleaned_data.get("phone_number") or ""
         if phone_number:
-            qs = User.objects.filter(phone_number=phone_number)
+            phone_candidates = phone_lookup_candidates(phone_number)
+            qs = User.objects.filter(phone_number__in=phone_candidates)
             linked_user = getattr(getattr(self, "instance", None), "user", None)
             if linked_user and getattr(linked_user, "pk", None):
                 qs = qs.exclude(pk=linked_user.pk)
-            if qs.exists():
+            self.registered_phone_user = qs.first()
+            if self.registered_phone_user is not None and not self.allow_existing_phone_user:
                 self.add_error("phone_number", _("A user with that phone number already exists in this tenant."))
+
+            if self.registered_phone_user is None or self.allow_existing_phone_user:
+                profile_qs = ClientProfile.objects.filter(phone_number__in=phone_candidates)
+                inst = getattr(self, "instance", None)
+                if inst and getattr(inst, "pk", None):
+                    profile_qs = profile_qs.exclude(pk=inst.pk)
+                if profile_qs.exists():
+                    self.add_error("phone_number", _("A client profile with that phone number already exists."))
 
         # ModelForm may supply TextChoices members or plain strings depending on Django version.
         account_type = cleaned_data.get("account_type")
@@ -432,18 +449,27 @@ class ClientProfileRegisterForm(forms.ModelForm):
             return v
 
         contact_person = _strip("contact_person")
+        address = _strip("address") or ""
+        _strip("default_destination")
         company_name = _strip("company_name")
         tax_id = _strip("tax_id")
+        cleaned_data["address"] = address
 
         if at_val == ClientProfile.AccountType.ENTERPRISE.value:
             if not company_name:
-                self.add_error("company_name", "Company name is required for enterprise accounts.")
+                self.add_error("company_name", _("Company name is required for enterprise accounts."))
             if not tax_id:
-                self.add_error("tax_id", "Tax ID is required for enterprise accounts.")
+                self.add_error("tax_id", _("Tax ID is required for enterprise accounts."))
             if not contact_person:
-                self.add_error("contact_person", "Contact person is required for enterprise accounts.")
+                self.add_error("contact_person", _("Contact person is required for enterprise accounts."))
+            if not address:
+                self.add_error("address", _("Address is required for enterprise accounts."))
+        elif at_val == ClientProfile.AccountType.INDIVIDUAL.value:
+            if not contact_person:
+                self.add_error("contact_person", _("Contact person is required for individual accounts."))
+            if not address:
+                self.add_error("address", _("Address is required for individual accounts."))
         else:
-            # INDIVIDUAL (and any non-enterprise value)
             if not contact_person:
-                self.add_error("contact_person", "Contact person is required for individual accounts.")
+                self.add_error("contact_person", _("Name is required for walk-in accounts."))
         return cleaned_data

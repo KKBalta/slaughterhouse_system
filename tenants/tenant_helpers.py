@@ -23,12 +23,7 @@ def get_tenant_site_url() -> str:
     if tenant.schema_name == get_public_schema_name():
         return getattr(settings, "SITE_URL_FALLBACK", "http://localhost:8000")
 
-    scheme = "http" if settings.DEBUG else "https"
-    domain_obj = None
-    if hasattr(tenant, "domains"):
-        domain_obj = tenant.domains.filter(is_primary=True).first() or tenant.domains.first()
-    if domain_obj and domain_obj.domain:
-        return f"{scheme}://{domain_obj.domain}"
+    from tenants.email_index import get_tenant_public_host
 
-    base = settings.TENANT_BASE_DOMAIN
-    return f"{scheme}://{tenant.schema_name}.{base}"
+    scheme = "http" if settings.DEBUG else "https"
+    return f"{scheme}://{get_tenant_public_host(tenant)}"

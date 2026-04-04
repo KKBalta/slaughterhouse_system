@@ -28,6 +28,7 @@ class User(AbstractUser):
         MANAGER = "MANAGER", "Manager"
         OPERATOR = "OPERATOR", "Operator"
         CLIENT = "CLIENT", "Client"
+        WALKIN = "WALKIN", "Walk-in"
 
     role = models.CharField(max_length=50, choices=Role.choices)
     phone_number = models.CharField(max_length=20, blank=True, default="")
@@ -45,6 +46,7 @@ class User(AbstractUser):
 
 class ClientProfile(BaseModel):
     class AccountType(models.TextChoices):
+        UNCLASSIFIED = "UNCLASSIFIED", "Unclassified"
         INDIVIDUAL = "INDIVIDUAL", "Individual"
         ENTERPRISE = "ENTERPRISE", "Enterprise"
 
@@ -56,7 +58,13 @@ class ClientProfile(BaseModel):
     # Fields for all account types
     contact_person = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20)
-    address = models.TextField()
+    address = models.TextField(blank=True)
+    default_destination = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Preferred delivery destination for this client. Used to prefill new orders.",
+    )
 
     # Enterprise-specific fields
     company_name = models.CharField(max_length=255, blank=True, null=True)
@@ -66,15 +74,22 @@ class ClientProfile(BaseModel):
         """Return the appropriate display name for the client."""
         if self.account_type == self.AccountType.ENTERPRISE:
             return self.company_name or "Unknown Company"
-        else:
+        if self.account_type == self.AccountType.INDIVIDUAL:
             if self.user:
                 return self.user.get_full_name() or self.user.username
             return self.contact_person or "Unknown Individual"
+        if self.user:
+            return self.contact_person or self.company_name or self.user.get_full_name() or self.user.username
+        return self.contact_person or self.company_name or "Unknown Walk-in"
 
     def __str__(self):
         if self.account_type == self.AccountType.ENTERPRISE:
             return f"{self.company_name} (Enterprise)"
-        else:
+        if self.account_type == self.AccountType.INDIVIDUAL:
             if self.user:
                 return f"{self.user.get_full_name()} (Individual)"
             return f"{self.contact_person} (Individual)"
+        return f"{self.get_full_name()} ({self.get_account_type_display()})"
+
+
+CLIENT_MANAGEMENT_ROLES = (User.Role.CLIENT, User.Role.WALKIN)

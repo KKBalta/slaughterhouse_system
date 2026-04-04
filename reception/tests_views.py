@@ -103,6 +103,42 @@ def _response_text(response):
     return response.content.decode(response.charset or "utf-8")
 
 
+class TestClientSearchAPI:
+    def test_search_matches_default_destination(self, reception_admin_client, reception_client_user):
+        profile = ClientProfile.objects.create(
+            user=reception_client_user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            contact_person="Delivery Client",
+            phone_number="+905551234567",
+            address="123 Reception Test St",
+            default_destination="Ankara Cold Storage",
+        )
+
+        response = reception_admin_client.get(reverse("reception:client_search"), {"q": "Ankara"})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["clients"]
+        assert payload["clients"][0]["id"] == str(profile.id)
+        assert payload["clients"][0]["default_destination"] == "Ankara Cold Storage"
+
+    def test_search_returns_destination_in_payload(self, reception_admin_client, reception_client_user):
+        ClientProfile.objects.create(
+            user=reception_client_user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            contact_person="Fast Select",
+            phone_number="+905559999888",
+            address="123 Reception Test St",
+            default_destination="Istanbul Delivery Hub",
+        )
+
+        response = reception_admin_client.get(reverse("reception:client_search"), {"q": "Fast"})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["clients"][0]["default_destination"] == "Istanbul Delivery Hub"
+
+
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
 class TestSlaughterOrderListView:
     """Tests for slaughter order list view."""
@@ -429,9 +465,12 @@ class TestClientSelection:
 
         if response.status_code == 302:
             order = SlaughterOrder.objects.last()
-            if order and order.client is None:
+            if order:
+                assert order.client is not None
+                assert order.client.user is not None
+                assert order.client.user.role == User.Role.WALKIN
                 assert order.client_name == "Walk-in John"
-                assert order.client_phone == "5551234567"
+                assert order.client_phone == "+905551234567"
 
 
 class TestOrderStatusTransitions:

@@ -27,6 +27,7 @@ set +a
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-5432}"
 SUPERUSER="${POSTGRES_SUPERUSER:-postgres}"
+FALLBACK_SUPERUSER="${USER:-}"
 
 escape_sql_literal() {
   printf '%s' "$1" | sed "s/'/''/g"
@@ -41,8 +42,15 @@ psql_super() {
 echo "Connecting to PostgreSQL at ${DB_HOST}:${DB_PORT} as superuser '${SUPERUSER}' (database postgres)…"
 
 if ! psql_super -tc "SELECT 1" >/dev/null 2>&1; then
+  if [[ -z "${POSTGRES_SUPERUSER:-}" && -n "$FALLBACK_SUPERUSER" && "$FALLBACK_SUPERUSER" != "$SUPERUSER" ]]; then
+    SUPERUSER="$FALLBACK_SUPERUSER"
+    echo "Could not connect as 'postgres'; retrying with OS user '${SUPERUSER}'…" >&2
+  fi
+fi
+
+if ! psql_super -tc "SELECT 1" >/dev/null 2>&1; then
   echo "Could not connect. Ensure PostgreSQL is running and you can connect as superuser." >&2
-  echo "Tip: export PGPASSWORD for '${SUPERUSER}', or set POSTGRES_SUPERUSER to your OS user on macOS (peer auth)." >&2
+  echo "Tip: export PGPASSWORD for '${SUPERUSER}', or set POSTGRES_SUPERUSER explicitly." >&2
   exit 1
 fi
 

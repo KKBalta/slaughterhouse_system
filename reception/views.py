@@ -12,12 +12,13 @@ from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
 
 from processing.models import Animal
-from users.models import ClientProfile
+from users.models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 
 from .forms import AnimalForm, BatchAnimalForm, SlaughterOrderForm, SlaughterOrderUpdateForm
 from .models import SlaughterOrder
 from .services import (
     add_animal_to_order,
+    assign_client_to_order,
     bill_order,
     cancel_slaughter_order,
     create_batch_animals,
@@ -35,21 +36,26 @@ class ClientSearchView(LoginRequiredMixin, View):
         if len(query) < 2:
             return JsonResponse({"clients": []})
 
-        clients = ClientProfile.objects.filter(
-            Q(company_name__icontains=query)
-            | Q(contact_person__icontains=query)
-            | Q(phone_number__icontains=query)
-            | Q(user__username__icontains=query)
-            | Q(user__first_name__icontains=query)
-            | Q(user__last_name__icontains=query)
-        ).select_related("user")[:10]  # Limit to 10 results
+        clients = (
+            ClientProfile.objects.select_related("user")
+            .filter(Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES))
+            .filter(
+                Q(company_name__icontains=query)
+                | Q(contact_person__icontains=query)
+                | Q(phone_number__icontains=query)
+                | Q(default_destination__icontains=query)
+                | Q(user__username__icontains=query)
+                | Q(user__first_name__icontains=query)
+                | Q(user__last_name__icontains=query)
+            )[:10]
+        )  # Limit to 10 results
 
         client_list = []
         for client in clients:
             if client.account_type == ClientProfile.AccountType.ENTERPRISE:
                 display_name = (client.company_name or "").strip() or "—"
                 contact_info = client.contact_person or "No contact person"
-            else:
+            elif client.account_type == ClientProfile.AccountType.INDIVIDUAL:
                 # Individual: prefer profile contact name (registration), then Django name, then login.
                 u = client.user
                 cp = (client.contact_person or "").strip()
@@ -65,6 +71,12 @@ class ClientSearchView(LoginRequiredMixin, View):
                 else:
                     display_name = cp or "—"
                     contact_info = "Individual"
+            else:
+                u = client.user
+                cp = (client.contact_person or "").strip()
+                full = (u.get_full_name() or "").strip() if u else ""
+                display_name = cp or full or (u.username if u else "") or "—"
+                contact_info = _("Walk-in prospect")
 
             client_list.append(
                 {
@@ -72,6 +84,7 @@ class ClientSearchView(LoginRequiredMixin, View):
                     "display_name": display_name,
                     "contact_info": contact_info,
                     "phone": client.phone_number,
+                    "default_destination": client.default_destination or "",
                 }
             )
 
@@ -176,24 +189,13 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-            # Get client data from form
-            client_id = form.cleaned_data.get("client_id")
-            client_name = form.cleaned_data.get("client_name", "")
-            client_phone = form.cleaned_data.get("client_phone", "")
-
-            # Update client information
-            if client_id:
-                try:
-                    client = ClientProfile.objects.get(id=client_id)
-                    self.object.client = client
-                    self.object.client_name = ""
-                    self.object.client_phone = ""
-                except ClientProfile.DoesNotExist:
-                    pass
-            else:
-                self.object.client = None
-                self.object.client_name = client_name
-                self.object.client_phone = client_phone
+            assign_client_to_order(
+                self.object,
+                client_id=form.cleaned_data.get("client_id"),
+                client_name=form.cleaned_data.get("client_name", ""),
+                client_phone=form.cleaned_data.get("client_phone", ""),
+                destination=form.cleaned_data["destination"],
+            )
 
             # Update other fields
             update_data = {
@@ -201,11 +203,14 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
                 "destination": form.cleaned_data["destination"],
                 "order_datetime": form.cleaned_data["order_datetime"],
             }
-            update_slaughter_order(order=self.get_object(), **update_data)
+            update_slaughter_order(order=self.object, **update_data)
             messages.success(self.request, "Order updated successfully!")
-            return super().form_valid(form)
+            return redirect(self.get_success_url())
         except ValidationError as e:
             form.add_error(None, e)
+            return self.form_invalid(form)
+        except ClientProfile.DoesNotExist:
+            form.add_error(None, _("The selected client could not be found. Please choose it again."))
             return self.form_invalid(form)
 
 

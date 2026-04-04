@@ -109,9 +109,22 @@
             </div>
             {% if profile_form.address.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.address.errors }}</p>{% endif %}
         </div>
+        <div>
+            <label for="{{ profile_form.default_destination.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ profile_form.default_destination.label }}</label>
+            <div class="mt-1">
+                {% render_field profile_form.default_destination class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            </div>
+            {% if profile_form.default_destination.help_text %}<p class="mt-1 text-xs text-gray-500">{{ profile_form.default_destination.help_text }}</p>{% endif %}
+            {% if profile_form.default_destination.errors %}<p class="mt-1 text-sm text-red-600">{{ profile_form.default_destination.errors }}</p>{% endif %}
+        </div>
 
         {% if cred_form %}
         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide pt-2">{% trans "Login" %}</h3>
+        {% if mode == 'add' %}
+        <p class="text-xs text-gray-500 -mt-3">
+            {% trans "If the phone number already belongs to a registered account, this form will create only the client profile and link matching walk-in orders by phone." %}
+        </p>
+        {% endif %}
         <div>
             <label for="{{ cred_form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ cred_form.username.label }}</label>
             <div class="mt-1">
@@ -157,7 +170,9 @@
             {% if cred_form.new_password2.errors %}<p class="mt-1 text-sm text-red-600">{{ cred_form.new_password2.errors }}</p>{% endif %}
         </div>
         {% else %}
-        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">{% trans "This profile has no login account. Only profile fields can be edited." %}</p>
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
+            {% trans "This profile has no client login yet. Save the walk-in details now and promote it to a full client account later." %}
+        </p>
         {% endif %}
 
         <div>

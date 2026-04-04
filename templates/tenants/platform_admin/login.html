@@ -1,9 +1,11 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in — Platform admin | CarniTrack</title>
+    <title>{% trans "Sign in" %} - {% trans "Platform admin" %} | CarniTrack</title>
     <style>
         :root {
             --fg: #1a1a1a;
@@ -142,10 +144,14 @@
 <body>
     <div class="card">
         <p class="brand">CarniTrack</p>
-        <h1>Platform admin</h1>
-        <p class="sub">Sign in to manage tenants and open each tenant app from the dashboard.</p>
+        <h1>{% trans "Platform admin" %}</h1>
+        <p class="sub">{% trans "Sign in to manage tenants and open each tenant app from the dashboard." %}</p>
         {% if public_site_url %}
-        <p class="hint">Use your <strong>public</strong> app URL (not a tenant subdomain), for example <code>{{ public_site_url }}/platform-admin/login/</code></p>
+        <p class="hint">
+            {% blocktrans with site_url=public_site_url trimmed %}
+            Use your <strong>public</strong> app URL (not a tenant subdomain), for example <code>{{ site_url }}/platform-admin/login/</code>
+            {% endblocktrans %}
+        </p>
         {% endif %}
         {% if form.non_field_errors %}
             <div class="nonfield">{{ form.non_field_errors }}</div>
@@ -161,10 +167,10 @@
             <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
             {{ form.password }}
             {% if form.password.errors %}<ul class="errorlist">{% for e in form.password.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-            <button type="submit">Sign in</button>
+            <button type="submit">{% trans "Sign in" %}</button>
         </form>
         <p class="footer-links">
-            First time? <a href="{% url 'platform_admin_setup' %}">Create an account</a>
+            {% trans "First time?" %} <a href="{% url 'platform_admin_setup' %}">{% trans "Create an account" %}</a>
         </p>
     </div>
 </body>

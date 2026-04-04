@@ -52,7 +52,7 @@ def public_setup(request):
     registration_enabled = getattr(settings, "USE_MULTITENANT", False)
     form = PublicTenantRegistrationForm(request.POST or None)
     if not registration_enabled:
-        messages.error(request, "Tenant registration is only available in multi-tenant mode.")
+        messages.error(request, _("Tenant registration is only available in multi-tenant mode."))
     elif request.method == "POST" and form.is_valid():
         reg, raw_token = create_registration_request(**form.registration_kwargs())
         return redirect(f"{reverse('public_setup_status', args=[reg.id])}?token={raw_token}")
@@ -72,9 +72,9 @@ def public_setup_status(request, registration_id):
     status_payload = None
     status_error = ""
     if not getattr(settings, "USE_MULTITENANT", False):
-        status_error = "Tenant registration is only available in multi-tenant mode."
+        status_error = _("Tenant registration is only available in multi-tenant mode.")
     elif not token:
-        status_error = "Missing status token."
+        status_error = _("Missing status token.")
     else:
         try:
             status_payload = get_tenant_registration_status_payload(registration_id, token)
@@ -143,7 +143,10 @@ def platform_admin_dashboard(request):
                 contact_email=create_form.cleaned_data.get("contact_email", ""),
                 domain_name=domain_name,
             )
-            messages.success(request, f'Tenant "{schema}" provisioned at {domain_name}.')
+            messages.success(
+                request,
+                _('Tenant "%(schema)s" provisioned at %(domain)s.') % {"schema": schema, "domain": domain_name},
+            )
             return redirect("platform_admin_dashboard")
 
     pending_regs = (
@@ -181,7 +184,8 @@ def tenant_registration_approve(request, registration_id):
         approve_registration(reg, request.user)
         messages.success(
             request,
-            f'Approved registration "{reg.company_name}" — tenant «{reg.derived_schema_name}» provisioned.',
+            _('Approved registration "%(company)s"; tenant "%(schema)s" was provisioned.')
+            % {"company": reg.company_name, "schema": reg.derived_schema_name},
         )
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
@@ -202,7 +206,7 @@ def tenant_registration_reject(request, registration_id):
     reason = (request.POST.get("rejection_reason") or "").strip()
     try:
         reject_registration(reg, request.user, reason=reason)
-        messages.success(request, f'Rejected registration for "{reg.company_name}".')
+        messages.success(request, _('Rejected registration for "%(company)s".') % {"company": reg.company_name})
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
     return redirect("platform_admin_dashboard")
@@ -225,14 +229,26 @@ def tenant_create_superuser(request, schema_name):
     User = get_user_model()
     lang_code = getattr(settings, "LANGUAGE_CODE", "tr") or "tr"
     tenant_login_url = f"{build_tenant_api_base_url(tenant).rstrip('/')}/{lang_code}/login/"
+    role_labels = {
+        User.Role.OWNER.value: _("Owner"),
+        User.Role.ADMIN.value: _("Admin"),
+        User.Role.MANAGER.value: _("Manager"),
+        User.Role.OPERATOR.value: _("Operator"),
+        User.Role.CLIENT.value: _("Client"),
+    }
 
     existing_users = []
     with tenant_context(tenant):
-        existing_users = list(
-            User.objects.order_by("username").values(
-                "username", "email", "role", "is_active", "is_staff", "is_superuser"
+        for user in User.objects.order_by("username"):
+            existing_users.append(
+                {
+                    "username": user.username,
+                    "email": user.email,
+                    "role_label": role_labels.get(user.role, user.role),
+                    "is_active": user.is_active,
+                    "is_superuser": user.is_superuser,
+                }
             )
-        )
 
     form = CreateTenantSuperuserForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -244,9 +260,9 @@ def tenant_create_superuser(request, schema_name):
         try:
             with tenant_context(tenant):
                 if User.objects.filter(username__iexact=username).exists():
-                    form.add_error("username", "A user with this username already exists in this tenant.")
+                    form.add_error("username", _("A user with this username already exists in this tenant."))
                 elif User.objects.filter(email__iexact=email).exists():
-                    form.add_error("email", "A user with this email already exists in this tenant.")
+                    form.add_error("email", _("A user with this email already exists in this tenant."))
                 else:
                     User.objects.create_user(
                         username=username,
@@ -257,14 +273,24 @@ def tenant_create_superuser(request, schema_name):
                         is_superuser=grant_django,
                     )
         except IntegrityError:
-            form.add_error(None, "Could not create user (unique constraint). Try a different username or email.")
+            form.add_error(None, _("Could not create user (unique constraint). Try a different username or email."))
         else:
             if not form.errors:
-                kind_label = "Django superuser + app admin" if grant_django else "tenant app admin (ADMIN)"
+                kind_label = (
+                    _("Django superuser plus app admin") if grant_django else _("Tenant app admin (ADMIN)")
+                )
                 messages.success(
                     request,
-                    f'User "{username}" created for tenant "{schema_name}" ({kind_label}). '
-                    f"Sign in at the tenant app login page (not platform-admin): {tenant_login_url}",
+                    _(
+                        'User "%(username)s" created for tenant "%(schema)s" (%(kind)s). '
+                        "Sign in at the tenant app login page (not platform-admin): %(url)s"
+                    )
+                    % {
+                        "username": username,
+                        "schema": schema_name,
+                        "kind": kind_label,
+                        "url": tenant_login_url,
+                    },
                 )
                 return redirect("platform_admin_dashboard")
 
@@ -292,7 +318,8 @@ def tenant_hard_delete(request, schema_name):
     if confirm != schema_name:
         messages.error(
             request,
-            f'Confirmation failed: type the schema name exactly ("{schema_name}") to delete this tenant.',
+            _('Confirmation failed: type the schema name exactly ("%(schema)s") to delete this tenant.')
+            % {"schema": schema_name},
         )
         return redirect("platform_admin_dashboard")
     try:
@@ -302,7 +329,7 @@ def tenant_hard_delete(request, schema_name):
         return redirect("platform_admin_dashboard")
     messages.success(
         request,
-        f'Tenant "{schema_name}" was permanently deleted (PostgreSQL schema dropped).',
+        _('Tenant "%(schema)s" was permanently deleted (PostgreSQL schema dropped).') % {"schema": schema_name},
     )
     return redirect("platform_admin_dashboard")
 
@@ -316,8 +343,8 @@ def toggle_tenant_active(request, schema_name):
     tenant = get_object_or_404(Client, schema_name=schema_name)
     tenant.is_active = not tenant.is_active
     tenant.save(update_fields=["is_active"])
-    state = "activated" if tenant.is_active else "deactivated"
-    messages.success(request, f'Tenant "{schema_name}" {state}.')
+    state = _("activated") if tenant.is_active else _("deactivated")
+    messages.success(request, _('Tenant "%(schema)s" %(state)s.') % {"schema": schema_name, "state": state})
     return redirect("platform_admin_dashboard")
 
 
@@ -369,7 +396,7 @@ def platform_admin_setup(request):
     Redirects to login once any PlatformAdmin exists.
     """
     if PlatformAdmin.objects.exists():
-        messages.info(request, "Setup already complete. Please sign in.")
+        messages.info(request, _("Setup already complete. Please sign in."))
         return redirect("platform_admin_login")
 
     form = PlatformAdminSetupForm(request.POST or None)
@@ -381,7 +408,7 @@ def platform_admin_setup(request):
         admin.set_password(form.cleaned_data["password1"])
         admin.is_active = True
         admin.save()
-        messages.success(request, "Account created. Please sign in.")
+        messages.success(request, _("Account created. Please sign in."))
         return redirect("platform_admin_login")
 
     return render(request, "tenants/platform_admin/setup.html", {"form": form})

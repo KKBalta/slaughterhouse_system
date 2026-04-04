@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from users.models import User
+from users.models import CLIENT_MANAGEMENT_ROLES, User
 
 TENANT_USER_MANAGER_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN})
 CLIENT_ACCOUNT_MANAGER_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR})
@@ -52,7 +52,7 @@ def can_create_role(actor, role: str) -> bool:
     # MANAGER can create OPERATOR and CLIENT
     if actor_role == User.Role.MANAGER:
         return role in (User.Role.OPERATOR, User.Role.CLIENT)
-    if role == User.Role.CLIENT:
+    if role in CLIENT_MANAGEMENT_ROLES:
         return can_manage_client_accounts(actor)
     return False
 
@@ -83,10 +83,10 @@ def can_edit_user(actor, target) -> bool:
     # OWNER can edit everyone except ADMIN
     if actor_role == User.Role.OWNER:
         return target_role != User.Role.ADMIN
-    # MANAGER can edit OPERATOR and CLIENT
+    # MANAGER can edit OPERATOR and client-facing roles
     if actor_role == User.Role.MANAGER:
-        return target_role in (User.Role.OPERATOR, User.Role.CLIENT)
-    if target_role == User.Role.CLIENT:
+        return target_role in (User.Role.OPERATOR, *CLIENT_MANAGEMENT_ROLES)
+    if target_role in CLIENT_MANAGEMENT_ROLES:
         return can_manage_client_accounts(actor)
     return False
 

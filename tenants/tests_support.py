@@ -16,6 +16,7 @@ from core.models import ServicePackage
 from scales.models import Site
 from tenants.auth_backends import PlatformAdminBackend, PublicSchemaSafeModelBackend
 from tenants.context_processors import tenant_context
+from tenants.email_index import build_tenant_api_base_url, build_tenant_web_app_base_url
 from tenants.models import PlatformAdmin
 from tenants.redis_support import atomic_rate_incr, is_redis_reachable
 from tenants.signals import ensure_default_scales_site, ensure_default_service_packages_signal
@@ -89,6 +90,19 @@ def test_get_tenant_site_url_uses_primary_domain(monkeypatch, settings):
 
     with patch("django_tenants.utils.get_public_schema_name", return_value="public"):
         assert get_tenant_site_url() == "https://acme.example.com"
+
+
+def test_build_tenant_urls_prefer_localhost_in_debug_for_imported_remote_domains(settings):
+    settings.DEBUG = True
+    settings.TENANT_BASE_DOMAIN = "localhost"
+    tenant = SimpleNamespace(
+        schema_name="acme",
+        slug="acme",
+        get_primary_domain=lambda: SimpleNamespace(domain="acme.carnitrack.com"),
+    )
+
+    assert build_tenant_api_base_url(tenant) == "http://acme.localhost:8000"
+    assert build_tenant_web_app_base_url(tenant) == "http://acme.localhost:3000"
 
 
 def test_get_tenant_site_url_falls_back_to_schema_subdomain(monkeypatch, settings):

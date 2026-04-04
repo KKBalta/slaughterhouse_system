@@ -333,6 +333,7 @@ def test_client_profile_register_form_combines_area_code_and_strips_fields():
             "phone_area_code": "+1",
             "phone_number": " 5551234 ",
             "address": "123 Test St",
+            "default_destination": " Main Delivery Hub ",
             "company_name": " ",
             "tax_id": " ",
         }
@@ -341,6 +342,7 @@ def test_client_profile_register_form_combines_area_code_and_strips_fields():
     assert form.is_valid()
     assert form.cleaned_data["contact_person"] == "Alice"
     assert form.cleaned_data["phone_number"] == "+15551234"
+    assert form.cleaned_data["default_destination"] == "Main Delivery Hub"
     assert form.cleaned_data["company_name"] is None
     assert form.cleaned_data["tax_id"] is None
 
@@ -457,6 +459,59 @@ def test_client_profile_register_form_rejects_duplicate_phone_number():
     assert form.errors["phone_number"] == ["A user with that phone number already exists in this tenant."]
 
 
+def test_client_profile_register_form_allows_registered_phone_when_configured():
+    existing_user = User.objects.create_user(
+        username="existing-registered-phone",
+        password="password123",
+        phone_number="+905551112244",
+        role=User.Role.CLIENT,
+    )
+
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551112244",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        },
+        allow_existing_phone_user=True,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["phone_number"] == "+905551112244"
+    assert form.registered_phone_user == existing_user
+
+
+def test_client_profile_register_form_rejects_duplicate_profile_phone_without_user():
+    ClientProfile.objects.create(
+        user=None,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        contact_person="Existing Walk-in",
+        phone_number="+905551112255",
+        address="123 Existing St",
+    )
+
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551112255",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["phone_number"] == ["A client profile with that phone number already exists."]
+
+
 def test_client_profile_register_form_requires_enterprise_fields():
     form = ClientProfileRegisterForm(
         data={
@@ -493,3 +548,39 @@ def test_client_profile_register_form_requires_contact_person_for_individual():
 
     assert not form.is_valid()
     assert form.errors["contact_person"] == ["Contact person is required for individual accounts."]
+
+
+def test_client_profile_register_form_allows_unclassified_without_address():
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.UNCLASSIFIED,
+            "contact_person": "Walk-in Prospect",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551234567",
+            "address": " ",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["address"] == ""
+
+
+def test_client_profile_register_form_requires_name_for_unclassified():
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.UNCLASSIFIED,
+            "contact_person": " ",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551234567",
+            "address": "",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert form.errors["contact_person"] == ["Name is required for walk-in accounts."]

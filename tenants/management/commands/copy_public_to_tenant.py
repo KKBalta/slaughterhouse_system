@@ -244,24 +244,24 @@ class Command(BaseCommand):
                     errors.append((table, str(exc)))
                     self.stdout.write(self.style.ERROR(f"  ERR {table}: {exc}"))
 
-            # Reset sequences so new inserts don't collide with copied IDs
+            # Reset sequences so new inserts don't collide with copied IDs.
+            # Uses pg_get_serial_sequence for reliable column→sequence mapping.
             cursor.execute(
-                "SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = %s",
-                [schema],
+                "SELECT table_name, column_name "
+                "FROM information_schema.columns "
+                "WHERE table_schema = %s AND column_default LIKE %s",
+                [schema, "nextval(%"],
             )
-            for (seq,) in cursor.fetchall():
-                cursor.execute(
-                    "SELECT table_name, column_name FROM information_schema.columns "
-                    "WHERE table_schema = %s AND column_default LIKE %s",
-                    [schema, f"%{seq}%"],
-                )
-                row = cursor.fetchone()
-                if row:
-                    tbl, col = row
+            seq_cols = cursor.fetchall()
+            for tbl, col in seq_cols:
+                try:
                     cursor.execute(
-                        f"SELECT setval('{schema}.{seq}',"
+                        f"SELECT setval(pg_get_serial_sequence('{schema}.{tbl}', '{col}'),"
                         f" COALESCE((SELECT MAX({col}) FROM {schema}.{tbl}), 1))"
                     )
+                    self.stdout.write(f"  SEQ {schema}.{tbl}.{col} reset")
+                except Exception as exc:
+                    self.stdout.write(self.style.WARNING(f"  SEQ {schema}.{tbl}.{col} skip: {exc}"))
 
             self.stdout.write("")
             if errors:

@@ -28,17 +28,49 @@ def normalize_phone(phone: str | None) -> str:
     return f"+{digits}"
 
 
-def _tenant_primary_host(tenant: Client) -> str:
-    primary = tenant.get_primary_domain()
-    return primary.domain if primary else f"{tenant.slug or tenant.schema_name}.localhost"
+def _host_is_local(host: str) -> bool:
+    value = (host or "").strip().lower()
+    return "localhost" in value or value.startswith("127.0.0.1")
+
+
+def _tenant_domain_label(tenant: Client) -> str:
+    return ((getattr(tenant, "slug", "") or getattr(tenant, "schema_name", "") or "tenant").strip() or "tenant").lower()
+
+
+def get_tenant_public_host(tenant: Client) -> str:
+    """
+    Resolve the tenant host used by discovery and redirect URLs.
+
+    In local DEBUG mode, imported staging/prod domains should not send the browser
+    back to remote infrastructure. When TENANT_BASE_DOMAIN is localhost, prefer the
+    local schema host even if the primary Domain row still points at a remote host.
+    """
+    primary = None
+    if hasattr(tenant, "get_primary_domain"):
+        primary = tenant.get_primary_domain()
+    elif hasattr(tenant, "domains"):
+        primary = tenant.domains.filter(is_primary=True).first() or tenant.domains.first()
+    host = (getattr(primary, "domain", "") or "").strip()
+    base_domain = (getattr(settings, "TENANT_BASE_DOMAIN", "localhost") or "localhost").strip().lstrip(".")
+    fallback = f"{_tenant_domain_label(tenant)}.{base_domain}"
+
+    if (
+        getattr(settings, "PREFER_DEBUG_TENANT_BASE_DOMAIN", True)
+        and getattr(settings, "DEBUG", False)
+        and base_domain.endswith("localhost")
+        and host
+        and not _host_is_local(host)
+    ):
+        return fallback
+    return host or fallback
 
 
 def build_tenant_api_base_url(tenant: Client) -> str:
     """
     Base URL for tenant API host (scheme + host + optional port for local dev).
     """
-    host = _tenant_primary_host(tenant)
-    if "localhost" in host or host.startswith("127.0.0.1"):
+    host = get_tenant_public_host(tenant)
+    if _host_is_local(host):
         port = getattr(settings, "PUBLIC_TENANT_HTTP_PORT", "8000")
         return f"http://{host}:{port}"
     return f"https://{host}"
@@ -49,8 +81,8 @@ def build_tenant_web_app_base_url(tenant: Client) -> str:
     Base URL for the tenant-facing web app (SPA) used after login redirects.
     Local dev typically uses a different port than the API (e.g. 3000 vs 8000).
     """
-    host = _tenant_primary_host(tenant)
-    if "localhost" in host or host.startswith("127.0.0.1"):
+    host = get_tenant_public_host(tenant)
+    if _host_is_local(host):
         port = getattr(settings, "PUBLIC_TENANT_WEB_HTTP_PORT", "3000")
         return f"http://{host}:{port}"
     return f"https://{host}"

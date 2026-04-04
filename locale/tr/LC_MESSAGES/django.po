@@ -344,10 +344,10 @@ msgid "Heifer Details"
 msgstr "Düve Detayları"
 
 msgid "Beef Details"
-msgstr "Koyun Detayları"
+msgstr "Dana Detayları"
 
 msgid "Weight Logs"
-msgstr "Ağırlık Kaydı"
+msgstr "Ağırlık Kayıtları"
 
 msgid "Leather Weight"
 msgstr "Deri Ağırlığı"
@@ -411,10 +411,10 @@ msgid "Weight Type"
 msgstr "Ağırlık Türü"
 
 msgid "Weight (kg)"
-msgstr "Toplam Ağırlık"
+msgstr "Ağırlık (kg)"
 
 msgid "Enter weight in kg"
-msgstr "Deri Ağırlığı Eksik"
+msgstr "Ağırlığı kilogram olarak girin"
 
 msgid "Weight seems unusually high. Please verify."
 msgstr "Ağırlık alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
@@ -456,10 +456,10 @@ msgstr ""
 "%(status)s durumundadır."
 
 msgid "Leather Weight (kg)"
-msgstr "Deri Ağırlığı"
+msgstr "Deri Ağırlığı (kg)"
 
 msgid "Enter leather weight in kg"
-msgstr "Eksik deri ağırlığı"
+msgstr "Deri ağırlığını kilogram olarak girin"
 
 msgid "Leather weight seems unusually high. Please verify."
 msgstr ""
@@ -517,23 +517,17 @@ msgstr ""
 msgid "Invalid order selected."
 msgstr "Geçersiz sipariş seçildi."
 
-#, fuzzy
-#| msgid "Enter the combined weight of all animals in the batch"
 msgid "Enter the updated combined weight of all animals in the batch"
-msgstr "Partideki tüm hayvanların toplam ağırlığını girin"
+msgstr "Partideki tüm hayvanların güncellenmiş toplam ağırlığını girin"
 
-#, fuzzy
-#| msgid "No batch weight data found"
 msgid "Selected batch weight log could not be found."
-msgstr "Toplu ağırlık verisi bulunamadı"
+msgstr "Seçilen toplu ağırlık kaydı bulunamadı."
 
-#, fuzzy
-#| msgid "No batch weights logged yet"
 msgid "Only batch weight logs can be edited here."
-msgstr "Henüz toplu ağırlık kaydedilmedi"
+msgstr "Burada yalnızca toplu ağırlık kayıtları düzenlenebilir."
 
 msgid "This batch weight log has no animal count and cannot be edited."
-msgstr ""
+msgstr "Bu toplu ağırlık kaydında hayvan sayısı yok; düzenlenemez."
 
 msgid "Breed"
 msgstr "Irk"
@@ -643,7 +637,7 @@ msgid "Date and time the animal was received."
 msgstr "Hayvanın alındığı tarih ve saat."
 
 msgid "Date and time the animal was slaughtered."
-msgstr "Hayvan kesildi olarak işaretlensin mi?"
+msgstr "Hayvanın kesildiği tarih ve saat."
 
 msgid "Current status of the animal in the processing workflow."
 msgstr "İşleme akışında hayvanın mevcut durumu."
@@ -740,26 +734,26 @@ msgid "Details for Heifer: %(tag)s"
 msgstr "Düve Detayları: %(tag)s"
 
 msgid "The associated beef animal."
-msgstr "İlişkili koyun hayvanı."
+msgstr "İlişkili dana hayvanı."
 
 msgid "Breed of the beef."
-msgstr "Koyunun ırkı."
+msgstr "Dana ırkı."
 
 #, python-format
 msgid "Details for Beef: %(tag)s"
-msgstr "Sığır Detayları: %(tag)s"
+msgstr "Dana Detayları: %(tag)s"
 
 msgid "Live Weight Group"
-msgstr "Canlı Ağırlık"
+msgstr "Canlı Ağırlık Grubu"
 
 msgid "Hot Carcass Weight Group"
-msgstr "Sıcak Karkas Ağırlığını Kaydet"
+msgstr "Sıcak Karkas Ağırlığı Grubu"
 
 msgid "Cold Carcass Weight Group"
-msgstr "Sıcak Karkas Ağırlığını Kaydet"
+msgstr "Soğuk Karkas Ağırlığı Grubu"
 
 msgid "Final Weight Group"
-msgstr "Toplam Ağırlık"
+msgstr "Son Ağırlık Grubu"
 
 msgid "The animal whose weight is being logged (for individual weights)."
 msgstr "Ağırlığı kaydedilen hayvan (bireysel ağırlıklar için)."
@@ -1235,7 +1229,7 @@ msgid "No order"
 msgstr "Sipariş yok"
 
 msgid "Walk-in Client"
-msgstr "Parakende Müsteri"
+msgstr "Parakende Müşteri"
 
 msgid "Error loading results: "
 msgstr "Sonuçlar yüklenirken hata oluştu: "
@@ -1265,10 +1259,10 @@ msgid "Orders Ready for Slaughter"
 msgstr "Kesime Hazır Siparişler"
 
 msgid "animals ready"
-msgstr "Tartılan Hayvanlar"
+msgstr "kesime hazır hayvan"
 
 msgid "Composition"
-msgstr ""
+msgstr "Bileşim"
 
 msgid "Back to Dashboard"
 msgstr "Anasayfaya Dön"
@@ -1466,36 +1460,30 @@ msgstr "Son Toplu Ağırlıklar"
 msgid "total"
 msgstr "toplam"
 
-#, fuzzy
-#| msgid "Edit Details"
 msgid "Edit total"
-msgstr "Detayları Düzenle"
+msgstr "Toplamı düzenle"
 
-#, fuzzy
-#| msgid "Close Session"
 msgid "Close edit"
-msgstr "Oturumu Kapat"
+msgstr "Düzenlemeyi kapat"
 
 msgid "Logged"
 msgstr "Kaydedildi"
 
 msgid "Only the total weight is editable. Animal count stays fixed."
-msgstr ""
+msgstr "Yalnızca toplam ağırlık düzenlenebilir. Hayvan sayısı sabittir."
 
-#, fuzzy
-#| msgid "Save Details"
 msgid "Save total"
-msgstr "Detayları Kaydet"
+msgstr "Toplamı kaydet"
 
 #, python-format
 msgid "Page %(page)s of %(pages)s (%(count)s batches)"
-msgstr ""
+msgstr "Sayfa %(page)s / %(pages)s (%(count)s parti)"
 
 msgid "Show fewer"
-msgstr ""
+msgstr "Daha az göster"
 
 msgid "See more batches"
-msgstr ""
+msgstr "Daha fazla parti gör"
 
 msgid "No batch weights logged yet"
 msgstr "Henüz toplu ağırlık kaydedilmedi"
@@ -1570,7 +1558,7 @@ msgstr[0] "%(count)s hayvan"
 msgstr[1] "%(count)s hayvan"
 
 msgid "animals received"
-msgstr "Son zamanlarda alınan hayvan yok"
+msgstr "hayvan alındı"
 
 msgid "Process Batch"
 msgstr "Toplu İşle"
@@ -1873,7 +1861,7 @@ msgid "Error logging weight: %(error)s"
 msgstr "Ağırlık kaydedilirken hata oluştu: %(error)s"
 
 msgid "Please select an order."
-msgstr "Seçili Siparişi İşle"
+msgstr "Lütfen bir sipariş seçin."
 
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
@@ -1885,22 +1873,17 @@ msgstr "%(count)s hayvan işlenemedi."
 
 #, python-format
 msgid "%(field)s: %(error)s"
-msgstr ""
+msgstr "%(field)s: %(error)s"
 
-#, fuzzy, python-format
-#| msgid ""
-#| "✅ Batch weight logged successfully! All %(available_count)s animals for "
-#| "%(weight_type)s are now weighed. Individual weight logs have been "
-#| "automatically created with average weight of %(average_weight).2fkg per "
-#| "animal."
+#, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
 "%(weight_type)s are now weighed, and individual weight logs were created at "
 "%(average_weight).2fkg average."
 msgstr ""
-"✅ Toplu ağırlık başarıyla kaydedildi! %(weight_type)s için tüm "
-"%(available_count)s hayvan artık tartıldı. Bireysel ağırlık kayıtları hayvan "
-"başına %(average_weight).2fkg ortalama ağırlıkla otomatik olarak oluşturuldu."
+"Toplu ağırlık başarıyla kaydedildi. %(weight_type)s için tüm "
+"%(available_count)s hayvan tartıldı; bireysel ağırlık kayıtları hayvan "
+"başına %(average_weight).2f kg ortalama ile oluşturuldu."
 
 #, python-format
 msgid ""
@@ -1922,17 +1905,21 @@ msgid ""
 "resynced to %(average_weight).2fkg average across %(available_count)s "
 "animals."
 msgstr ""
+"%(weight_type)s için toplu tutar güncellendi. Bireysel hayvan ağırlıkları "
+"%(available_count)s hayvanda %(average_weight).2f kg ortalamaya yeniden "
+"senkronize edildi."
 
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
 "pending, so individual animal logs for this type were removed."
 msgstr ""
+"%(weight_type)s için toplam güncellendi. %(remaining)s hayvan hâlâ "
+"beklemede; bu tür için bireysel kayıtlar kaldırıldı."
 
-#, fuzzy, python-format
-#| msgid "Error logging batch weight: %(error)s"
+#, python-format
 msgid "Error updating batch weight: %(error)s"
-msgstr "Toplu ağırlık kaydedilirken hata oluştu: %(error)s"
+msgstr "Toplu ağırlık güncellenirken hata oluştu: %(error)s"
 
 #, python-format
 msgid "Order %(order_no)s status updated."
@@ -1955,10 +1942,10 @@ msgid "No detail form available for %(animal_type)s."
 msgstr "%(animal_type)s için detay formu mevcut değil."
 
 msgid "updated"
-msgstr "Siparişi Güncelle"
+msgstr "güncellendi"
 
 msgid "created"
-msgstr "Sipariş Oluştur"
+msgstr "oluşturuldu"
 
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
@@ -2011,7 +1998,7 @@ msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr "\"%(cut)s\" parçası başarıyla silindi."
 
 msgid "Search Registered Client"
-msgstr "Üretici Ünvanı"
+msgstr "Kayıtlı Müşteri Ara"
 
 msgid "Type client name to search..."
 msgstr "Aramak için müşteri adını yazın..."
@@ -2222,7 +2209,7 @@ msgid "Service:"
 msgstr "Hizmet:"
 
 msgid "Destination:"
-msgstr "Tüccar Ünvanı:"
+msgstr "Varış yeri:"
 
 msgid "Edit Order"
 msgstr "Siparişi Düzenle"
@@ -2338,13 +2325,13 @@ msgstr ""
 "ve yönetin."
 
 msgid "Daily Reports"
-msgstr "Raporları Filtrele"
+msgstr "Günlük Raporlar"
 
 msgid "Generate daily slaughter reports with detailed animal processing data."
 msgstr "Detaylı hayvan işleme verileri ile günlük kesim raporları oluşturun."
 
 msgid "Generate"
-msgstr "Oluşturulan Etiketler"
+msgstr "Oluştur"
 
 msgid "Test"
 msgstr "Test"
@@ -2353,7 +2340,7 @@ msgid "No daily reports configured"
 msgstr "Günlük rapor yapılandırması yok"
 
 msgid "Monthly Reports"
-msgstr "Raporu Yazdır"
+msgstr "Aylık Raporlar"
 
 msgid "Generate monthly operational and performance reports."
 msgstr "Aylık operasyonel ve performans raporları oluşturun."
@@ -2362,7 +2349,7 @@ msgid "No monthly reports configured"
 msgstr "Aylık rapor yapılandırması yok"
 
 msgid "Yearly Reports"
-msgstr "Raporları Filtrele"
+msgstr "Yıllık Raporlar"
 
 msgid "Generate annual summary and trend reports."
 msgstr "Yıllık özet ve trend raporları oluşturun."
@@ -2371,13 +2358,13 @@ msgid "No yearly reports configured"
 msgstr "Yıllık rapor yapılandırması yok"
 
 msgid "Today's Report"
-msgstr "Bugünün Toplamı"
+msgstr "Bugünün Raporu"
 
 msgid "Generate daily slaughter report for today"
 msgstr "Bugün için günlük kesim raporu oluştur"
 
 msgid "Generate Now"
-msgstr "Yeni Etiket Oluştur"
+msgstr "Şimdi Oluştur"
 
 msgid "View Reports"
 msgstr "Raporları Görüntüle"
@@ -2386,10 +2373,10 @@ msgid "Browse previously generated reports"
 msgstr "Daha önce oluşturulan raporları görüntüle"
 
 msgid "View All"
-msgstr "Hayvanları Görüntüle"
+msgstr "Tümünü Görüntüle"
 
 msgid "Test Generation"
-msgstr "Varış Yeri"
+msgstr "Test Üretimi"
 
 msgid "Test report generation with sample data"
 msgstr "Örnek verilerle rapor oluşturmayı test et"
@@ -2398,7 +2385,7 @@ msgid "Test Now"
 msgstr "Şimdi Test Et"
 
 msgid "Generating Report"
-msgstr "Raporu Yazdır"
+msgstr "Rapor Oluşturuluyor"
 
 msgid "Please wait while we generate your report..."
 msgstr "Raporunuz oluşturulurken lütfen bekleyin..."
@@ -2407,10 +2394,10 @@ msgid "Report generation started for"
 msgstr "Rapor oluşturma başlatıldı:"
 
 msgid "Error generating report"
-msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
+msgstr "Rapor oluşturulurken hata oluştu"
 
 msgid "Generated Reports"
-msgstr "Oluşturulan Etiketler"
+msgstr "Oluşturulan Raporlar"
 
 msgid "Archive"
 msgstr "Arşiv"
@@ -2422,16 +2409,16 @@ msgid "Report Name"
 msgstr "Rapor Adı"
 
 msgid "Generated At"
-msgstr "Oluşturulan Etiketler"
+msgstr "Oluşturulma Zamanı"
 
 msgid "Generated By"
-msgstr "Oluşturulan Etiketler"
+msgstr "Oluşturan"
 
 msgid "Download"
-msgstr "PRN İndir"
+msgstr "İndir"
 
 msgid "Details"
-msgstr "Keçi Detayları"
+msgstr "Detaylar"
 
 msgid "No reports generated yet"
 msgstr "Henüz rapor oluşturulmamış"
@@ -2443,25 +2430,25 @@ msgid "Go to Dashboard"
 msgstr "Anasayfaya Dön"
 
 msgid "← Back to Reports Dashboard"
-msgstr "Anasayfaya Dön"
+msgstr "← Raporlar paneline dön"
 
 msgid "Report details for ID"
 msgstr "ID için rapor detayları"
 
 msgid "Generate Report"
-msgstr "Raporu Yazdır"
+msgstr "Rapor Oluştur"
 
 msgid "Select date range and download your report"
 msgstr "Tarih aralığını seçin ve raporunuzu indirin"
 
 msgid "Start Date"
-msgstr "Yazdırma Tarihi"
+msgstr "Başlangıç Tarihi"
 
 msgid "End Date"
-msgstr "Yazdırma Tarihi"
+msgstr "Bitiş Tarihi"
 
 msgid "Output Format"
-msgstr "PRN Formatı"
+msgstr "Çıktı Formatı"
 
 msgid "Excel (.xlsx)"
 msgstr "Excel (.xlsx)"
@@ -2479,7 +2466,7 @@ msgid "Please wait..."
 msgstr "Lütfen bekleyin..."
 
 msgid "Please select both start and end dates"
-msgstr "Lütfen en az bir hayvan seçin."
+msgstr "Lütfen hem başlangıç hem bitiş tarihini seçin."
 
 msgid "Start date cannot be after end date"
 msgstr "Başlangıç tarihi bitiş tarihinden sonra olamaz"
@@ -2488,7 +2475,7 @@ msgid "Test Report Generation"
 msgstr "Test Raporu Oluşturma"
 
 msgid "Testing"
-msgstr "Ayarlar"
+msgstr "Test"
 
 msgid ""
 "Test the report generation system with sample data to ensure everything is "
@@ -2498,7 +2485,7 @@ msgstr ""
 "çalıştığından emin olun."
 
 msgid "Generate Test Report"
-msgstr "İlk Etiketi Oluştur"
+msgstr "Test Raporu Oluştur"
 
 msgid ""
 "This will generate a sample daily slaughter report using test data to verify "
@@ -2511,13 +2498,13 @@ msgid "The test report will include:"
 msgstr "Test raporu şunları içerecektir:"
 
 msgid "Sample animal data"
-msgstr "Hayvan türünü seçin"
+msgstr "Örnek hayvan verileri"
 
 msgid "Weight information"
-msgstr "Etiket Bilgileri"
+msgstr "Ağırlık bilgileri"
 
 msgid "Offal and bowels status"
-msgstr "Bağırsak Durumu"
+msgstr "Sakatat ve bağırsak durumu"
 
 msgid "Summary totals by animal type"
 msgstr "Hayvan türüne göre özet toplamlar"
@@ -2526,7 +2513,7 @@ msgid "Generating..."
 msgstr "Oluşturuluyor..."
 
 msgid "Error generating test report"
-msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
+msgstr "Test raporu oluşturulurken hata oluştu"
 
 msgid "No animals"
 msgstr "Hayvan yok"
@@ -2927,369 +2914,375 @@ msgid "Batch reconciled to animal %(tag)s."
 msgstr "Toplu işlem hayvan %(tag)s ile eşleştirildi."
 
 msgid "CarniTrack"
-msgstr ""
+msgstr "CarniTrack"
 
 msgid "Public fallback"
-msgstr ""
+msgstr "Genel yedek giriş"
 
-#, fuzzy
-#| msgid "Batch Slaughter Operations"
 msgid "Built for modern slaughterhouse operations."
-msgstr "Toplu Kesim İşlemleri"
+msgstr "Modern mezbahane operasyonları için geliştirildi."
 
 msgid ""
 "Fallback access on the public host uses the same tenant discovery and "
 "approval pipeline as the React frontend."
 msgstr ""
+"Genel ana bilgisayarda yedek erişim, React ön ucu ile aynı tenant keşfi ve "
+"onay akışını kullanır."
 
 msgid "Facilities operating on isolated tenant workspaces."
-msgstr ""
+msgstr "İzole tenant çalışma alanlarında çalışan tesisler."
 
 msgid "Animals tracked through receiving, processing, and labeling."
-msgstr ""
+msgstr "Hayvanlar kabul, işleme ve etiketleme boyunca izlenir."
 
 msgid "Platform admin"
-msgstr ""
+msgstr "Platform yöneticisi"
 
 msgid "Public access"
-msgstr ""
+msgstr "Genel erişim"
 
 msgid "One platform for slaughterhouse traceability and operations."
-msgstr ""
+msgstr "Mezbahane izlenebilirliği ve operasyonları için tek platform."
 
 msgid ""
 "Use the public host when you need a fallback to sign in, request a tenant "
 "workspace, or track a registration without the React frontend."
 msgstr ""
+"React ön ucu olmadan giriş yapmak, tenant çalışma alanı istemek veya bir "
+"kaydı takip etmek için genel ana bilgisayarı kullanın."
 
 msgid ""
 "The underlying discovery, approval, and tenant login APIs are the same ones "
 "used by the production web app."
 msgstr ""
+"Alttaki keşif, onay ve tenant giriş API’leri üretim web uygulamasıyla "
+"aynıdır."
 
 msgid "Tenant routing stays intact"
-msgstr ""
+msgstr "Tenant yönlendirmesi korunur"
 
 msgid ""
 "Approved companies receive their own isolated tenant subdomain. "
 "Authentication still completes on that tenant host so the browser stores the "
 "correct session cookie."
 msgstr ""
+"Onaylanan şirketler kendi izole tenant alt alan adını alır. Kimlik doğrulama "
+"yine o tenant ana bilgisayarında tamamlanır; tarayıcı doğru oturum "
+"çerezini saklar."
 
 msgid "Choose a flow"
-msgstr ""
+msgstr "Bir akış seçin"
 
 msgid ""
 "These pages are hosted directly by Django and follow the same public "
 "workflow as the React frontend."
 msgstr ""
+"Bu sayfalar doğrudan Django tarafından sunulur ve React ön ucu ile aynı "
+"genel iş akışını izler."
 
 msgid "Sign in to a tenant workspace"
-msgstr ""
+msgstr "Tenant çalışma alanına giriş"
 
 msgid ""
 "Start with your email, choose your workspace if needed, then finish "
 "authentication on the tenant host."
 msgstr ""
+"E-postanızla başlayın; gerekirse çalışma alanınızı seçin, ardından tenant "
+"ana bilgisayarında kimlik doğrulamayı tamamlayın."
 
 msgid "Request a tenant workspace"
-msgstr ""
+msgstr "Tenant çalışma alanı talep et"
 
-#, fuzzy
-#| msgid "Started"
 msgid "Start"
-msgstr "Başlatıldı"
+msgstr "Başla"
 
 msgid "Submit your company and owner details for platform-admin approval."
 msgstr ""
+"Şirket ve sahip bilgilerinizi platform yöneticisi onayı için gönderin."
 
 msgid "Already approved?"
-msgstr ""
+msgstr "Zaten onaylandınız mı?"
 
 msgid ""
 "If your tenant is already active, use the sign-in flow here or go directly "
 "to the tenant URL provided by your administrator."
 msgstr ""
+"Tenantınız zaten etkinse buradan giriş akışını kullanın veya yöneticinizin "
+"verdiği tenant URL’sine doğrudan gidin."
 
-#, fuzzy
-#| msgid "Client Registration"
 msgid "Tenant registration"
-msgstr "Müşteri Girişi"
+msgstr "Tenant kaydı"
 
 msgid "Request a CarniTrack tenant workspace."
-msgstr ""
+msgstr "CarniTrack tenant çalışma alanı talep edin."
 
 msgid ""
 "This fallback form creates the same pending tenant-registration request as "
 "the React setup page."
 msgstr ""
+"Bu yedek form, React kurulum sayfası ile aynı bekleyen tenant kayıt "
+"talebini oluşturur."
 
 msgid ""
 "Platform admins review the request, approve the tenant, and the owner "
 "account is created from the submitted email and password."
 msgstr ""
+"Platform yöneticileri talebi inceler, tenantı onaylar; sahip hesabı "
+"gönderilen e-posta ve paroladan oluşturulur."
 
 msgid "Step 1"
-msgstr ""
+msgstr "Adım 1"
 
 msgid "Submit your company and owner details."
-msgstr ""
+msgstr "Şirket ve sahip bilgilerinizi gönderin."
 
 msgid "Step 2"
-msgstr ""
+msgstr "Adım 2"
 
 msgid "Track approval status with the private status token link."
-msgstr ""
+msgstr "Onay durumunu özel durum belirteci bağlantısı ile takip edin."
 
 msgid "Step 3"
-msgstr ""
+msgstr "Adım 3"
 
 msgid "After approval, sign in and land on your tenant dashboard."
-msgstr ""
+msgstr "Onaydan sonra giriş yapın ve tenant panonuza düşün."
 
 msgid "Create your request"
-msgstr ""
+msgstr "Talebinizi oluşturun"
 
 msgid ""
 "Required fields match the public API. Optional fields help platform admin "
 "review your request faster."
 msgstr ""
+"Zorunlu alanlar genel API ile uyumludur. İsteğe bağlı alanlar platform "
+"yöneticisinin talebinizi daha hızlı incelemesine yardımcı olur."
 
-#, fuzzy
-#| msgid "Compliance"
 msgid "Company name"
-msgstr "Uyumluluk"
+msgstr "Şirket adı"
 
 msgid "Owner email"
-msgstr ""
+msgstr "Sahip e-postası"
 
 msgid "Password"
 msgstr "Şifre"
 
 msgid "Confirm password"
-msgstr ""
+msgstr "Şifreyi onayla"
 
 msgid "Optional company details"
-msgstr ""
+msgstr "İsteğe bağlı şirket bilgileri"
 
-#, fuzzy
-#| msgid "Register as a Client"
 msgid "Registered company name"
-msgstr "Üretici Ünvanı"
+msgstr "Ticari unvan (kayıtlı)"
 
 msgid "Address"
-msgstr ""
+msgstr "Adres"
 
-#, fuzzy
-#| msgid "Phone:"
 msgid "Phone"
-msgstr "Telefon:"
+msgstr "Telefon"
 
-#, fuzzy
-#| msgid "Enter phone number"
 msgid "License number"
-msgstr "Telefon numarası girin"
+msgstr "Ruhsat numarası"
 
-#, fuzzy
-#| msgid "Operation Dashboard"
 msgid "Operation number"
-msgstr "Operasyon Paneli"
+msgstr "İşletme numarası"
 
 msgid "Submit request"
-msgstr ""
+msgstr "Talebi gönder"
 
-#, fuzzy
-#| msgid "Already have an account?"
 msgid "Already have an approved tenant?"
-msgstr "Zaten bir hesabınız var mı?"
+msgstr "Onaylı bir tenantınız var mı?"
 
 msgid "Sign in"
 msgstr "Giriş Yap"
 
-#, fuzzy
-#| msgid "Client Registration"
 msgid "Registration status"
-msgstr "Müşteri Girişi"
+msgstr "Kayıt durumu"
 
-#, fuzzy
-#| msgid "Track your order status and progress"
 msgid "Track your tenant approval status."
-msgstr "Sipariş durumunuzu ve ilerlemesini takip edin"
+msgstr "Tenant onay durumunuzu takip edin."
 
 msgid ""
 "The status page reads the same approval endpoint used by the React app. Keep "
 "the private token in the URL if you want to refresh or revisit this page "
 "later."
 msgstr ""
+"Durum sayfası React uygulamasının kullandığı onay uç noktasını okur. Sayfayı "
+"sonra yenilemek veya tekrar ziyaret etmek istiyorsanız URL’deki özel "
+"belirteci koruyun."
 
-#, fuzzy
-#| msgid "All statuses"
 msgid "Approval states"
-msgstr "Tüm durumlar"
+msgstr "Onay durumları"
 
 msgid "Pending: waiting for platform-admin review."
-msgstr ""
+msgstr "Beklemede: platform yöneticisi incelemesi bekleniyor."
 
 msgid "Approved: tenant created and owner account ready."
-msgstr ""
+msgstr "Onaylandı: tenant oluşturuldu, sahip hesabı hazır."
 
 msgid "Rejected: review the reason before submitting again."
-msgstr ""
+msgstr "Reddedildi: yeniden göndermeden önce nedeni inceleyin."
 
 msgid "Follow your request"
-msgstr ""
+msgstr "Talebinizi takip edin"
 
 msgid "This page refreshes automatically while your request is still pending."
-msgstr ""
+msgstr "Talebiniz beklemedeyken bu sayfa otomatik yenilenir."
 
 msgid ""
 "Your request is still pending review. We will keep checking automatically."
 msgstr ""
+"Talebiniz hâlâ incelemede. Otomatik olarak kontrol etmeye devam edeceğiz."
 
 msgid ""
 "Your tenant is approved. Continue to sign in and finish setup on the tenant "
 "host."
 msgstr ""
+"Tenantınız onaylandı. Girişe devam edin ve kurulumu tenant ana bilgisayarında "
+"tamamlayın."
 
 msgid ""
 "This request was rejected. Review the reason below before submitting a new "
 "request."
 msgstr ""
+"Bu talep reddedildi. Yeni bir talep göndermeden önce aşağıdaki nedeni "
+"inceleyin."
 
 msgid "Could not load registration status."
-msgstr ""
+msgstr "Kayıt durumu yüklenemedi."
 
 msgid "Workspace preview"
-msgstr ""
+msgstr "Çalışma alanı önizlemesi"
 
-#, fuzzy
-#| msgid "Current Image:"
 msgid "Current status"
-msgstr "Mevcut Resim:"
+msgstr "Mevcut durum"
 
 msgid "Rejection reason"
-msgstr ""
+msgstr "Red nedeni"
 
 msgid "Continue to sign in"
-msgstr ""
+msgstr "Girişe devam et"
 
 msgid "Submit another request"
-msgstr ""
+msgstr "Başka bir talep gönder"
 
-#, fuzzy
-#| msgid "Back to Animal"
 msgid "Back to home"
-msgstr "Hayvana Geri Dön"
+msgstr "Ana sayfaya dön"
 
 msgid "Find your workspace first, then sign in on the tenant host."
 msgstr ""
+"Önce çalışma alanınızı bulun, ardından tenant ana bilgisayarında giriş yapın."
 
 msgid ""
 "This Django-hosted fallback keeps the React email-first workflow: discover "
 "by email, choose the workspace if there are multiple matches, then "
 "authenticate directly against that tenant."
 msgstr ""
+"Bu Django yedek akışı React’in e-posta öncelikli iş akışını korur: e-posta "
+"ile keşif, birden fazla eşleşmede çalışma alanı seçimi, ardından doğrudan o "
+"tenant’a kimlik doğrulama."
 
 msgid "Authentication stays tenant-scoped"
-msgstr ""
+msgstr "Kimlik doğrulama tenant kapsamında kalır"
 
 msgid ""
 "The final password POST goes to the tenant origin so the browser receives a "
 "real tenant session cookie and the Django dashboard opens without a second "
 "login step."
 msgstr ""
+"Son parola POST’u tenant kaynağına gider; tarayıcı gerçek tenant oturum "
+"çerezini alır ve Django panosu ikinci bir giriş adımı olmadan açılır."
 
 msgid "Tenant sign in"
-msgstr ""
+msgstr "Tenant girişi"
 
 msgid ""
 "Start with your work email. We will find the correct tenant before asking "
 "for your password."
 msgstr ""
+"İş e-postanızla başlayın. Parolanızı istemeden önce doğru tenantı buluruz."
 
 msgid "Email-first tenant sign in is only available in multi-tenant mode."
 msgstr ""
+"E-posta öncelikli tenant girişi yalnızca çok kiracılı modda kullanılabilir."
 
 msgid ""
 "This sign-in fallback requires JavaScript because the final authentication "
 "step must call the tenant login API from your browser."
 msgstr ""
+"Bu yedek giriş JavaScript gerektirir; son kimlik doğrulama adımı tarayıcınızdan "
+"tenant giriş API’sini çağırmalıdır."
 
 msgid "Work email"
-msgstr ""
+msgstr "İş e-postası"
 
 msgid "Continue"
-msgstr ""
+msgstr "Devam"
 
-#, fuzzy
-#| msgid "Select cut name"
 msgid "Select your workspace"
-msgstr "Parça adını seçin"
+msgstr "Çalışma alanınızı seçin"
 
 msgid ""
 "This email exists in more than one tenant. Pick the correct workspace to "
 "continue."
 msgstr ""
+"Bu e-posta birden fazla tenantta kayıtlı. Devam etmek için doğru çalışma "
+"alanını seçin."
 
 msgid "Back"
-msgstr ""
+msgstr "Geri"
 
 msgid "Workspace"
-msgstr ""
+msgstr "Çalışma alanı"
 
 msgid ""
 "No tenant account was found for this email. Check the address or request a "
 "workspace below."
 msgstr ""
+"Bu e-posta için tenant hesabı bulunamadı. Adresi kontrol edin veya aşağıdan "
+"erişim talep edin."
 
 msgid "Try another email"
-msgstr ""
+msgstr "Başka bir e-posta dene"
 
 msgid "Request access"
-msgstr ""
+msgstr "Erişim talep et"
 
 msgid "Looking up workspaces..."
-msgstr ""
+msgstr "Çalışma alanları aranıyor..."
 
-#, fuzzy
-#| msgid "Sign in."
 msgid "Signing in..."
-msgstr "Giriş yapın."
+msgstr "Giriş yapılıyor..."
 
 msgid "Enter a valid email address."
-msgstr ""
+msgstr "Geçerli bir e-posta adresi girin."
 
-#, fuzzy
-#| msgid "Sign in to your account"
 msgid "Could not look up your account."
-msgstr "Hesabınıza giriş yapın"
+msgstr "Hesabınız bulunamadı."
 
-#, fuzzy
-#| msgid "Select a valid service package."
 msgid "Select a workspace."
-msgstr "Geçerli bir hizmet paketi seçin."
+msgstr "Bir çalışma alanı seçin."
 
 msgid "Password is required."
-msgstr ""
+msgstr "Şifre gereklidir."
 
-#, fuzzy
-#| msgid "Sign in."
 msgid "Sign in failed."
-msgstr "Giriş yapın."
+msgstr "Giriş başarısız."
 
-#, fuzzy
-#| msgid "PDF not available"
 msgid "Tenant host unavailable"
-msgstr "PDF mevcut değil"
+msgstr "Tenant ana bilgisayarı kullanılamıyor"
 
 msgid "Company & label settings"
-msgstr ""
+msgstr "Şirket ve etiket ayarları"
 
 msgid ""
 "These values appear on printed labels (company block, İşletme onay no, VD "
 "number) and on PDF reports. İşletme onay no must match your official "
 "registration."
 msgstr ""
+"Bu değerler basılı etiketlerde (şirket bloğu, işletme onay no, VD numarası) "
+"ve PDF raporlarında görünür. İşletme onay no resmi kayıtla eşleşmelidir."
 
 msgid "Current logo"
 msgstr "Mevcut logo"
@@ -3305,21 +3298,23 @@ msgstr ""
 "işaret)."
 
 msgid "Identity"
-msgstr ""
+msgstr "Kimlik"
 
 msgid "Labels and reports — company block"
-msgstr ""
+msgstr "Etiketler ve raporlar — şirket bloğu"
 
 msgid ""
 "İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
 "with official registrations."
 msgstr ""
+"İşletme onay no ve VD numaraları et ürünü etiketlerinde basılır; resmi "
+"kayıtlarla uyumlu tutun."
 
 msgid "Branding and contact"
-msgstr ""
+msgstr "Marka ve iletişim"
 
 msgid "Locale and printing"
-msgstr ""
+msgstr "Yerel ayar ve yazdırma"
 
 msgid "Remove current logo"
 msgstr "Mevcut logoyu kaldır"
@@ -3334,64 +3329,65 @@ msgid "Please upload a PNG, JPEG, WebP, or GIF image."
 msgstr "Lütfen PNG, JPEG, WebP veya GIF formatında bir görsel yükleyin."
 
 msgid "Company name (label header)"
-msgstr ""
+msgstr "Şirket adı (etiket üst bilgisi)"
 
 msgid "Short trading name printed on labels."
-msgstr ""
+msgstr "Etiketlerde basılan kısa ticari unvan."
 
 msgid "Legal company name"
-msgstr ""
+msgstr "Yasal şirket unvanı"
 
 msgid "Full legal title on labels."
-msgstr ""
+msgstr "Etiketlerde tam yasal unvan."
 
 msgid "Company address"
-msgstr ""
+msgstr "Şirket adresi"
 
 msgid "Address block on labels and reports."
-msgstr ""
+msgstr "Etiket ve raporlardaki adres bloğu."
 
 msgid "İşletme onay no"
-msgstr ""
+msgstr "İşletme onay no"
 
 msgid ""
 "Government approval number; same value as ISLETME ONAY NO on printed labels."
 msgstr ""
+"Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
 
 msgid "Vergi dairesi / işletme no (VD)"
-msgstr ""
+msgstr "Vergi dairesi / işletme no (VD)"
 
 msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr ""
+"Vergi dairesi / işletme numarası (ör. etiketlerdeki ÇKALE VD satırı)."
 
 msgid "Logo"
 msgstr "Logo"
 
 msgid "Optional branding image in the app header."
-msgstr ""
+msgstr "Uygulama üst çubuğunda isteğe bağlı marka görseli."
 
 msgid "Contact email"
-msgstr ""
+msgstr "İletişim e-postası"
 
 msgid "Contact phone"
-msgstr ""
+msgstr "İletişim telefonu"
 
 msgid "Printer Turkish mode"
-msgstr ""
+msgstr "Yazıcı Türkçe modu"
 
 msgid "unicode, ascii, or codepage1254 for label printers."
-msgstr ""
+msgstr "Etiket yazıcıları için unicode, ascii veya codepage1254."
 
-#, fuzzy
-#| msgid "Time"
 msgid "Timezone"
-msgstr "Saat"
+msgstr "Saat dilimi"
 
 msgid "Language code"
-msgstr ""
+msgstr "Dil kodu"
 
 msgid "Company and label settings saved. They apply to new labels and reports."
 msgstr ""
+"Şirket ve etiket ayarları kaydedildi. Yeni etiket ve raporlara uygulanır."
 
 msgid "Company logo"
 msgstr "Şirket logosu"
@@ -3405,207 +3401,169 @@ msgstr "Çıkış"
 msgid "Login"
 msgstr "Giriş"
 
-#, fuzzy
-#| msgid "Area Code"
 msgid "Area code"
-msgstr "Alan Kodu"
+msgstr "Alan kodu"
 
-#, fuzzy
-#| msgid "Enter phone number"
 msgid "Phone number"
-msgstr "Telefon numarası girin"
+msgstr "Telefon numarası"
 
-#, fuzzy
-#| msgid "Archive"
 msgid "Archive client"
-msgstr "Arşiv"
+msgstr "Müşteriyi arşivle"
 
 msgid "Archive this client?"
-msgstr ""
+msgstr "Bu müşteri arşivlensin mi?"
 
 #, python-format
 msgid ""
 "This will deactivate the profile <strong>%(name)s</strong> and disable login "
 "for the linked user."
 msgstr ""
+"<strong>%(name)s</strong> profilini devre dışı bırakır ve bağlı kullanıcı "
+"için girişi kapatır."
 
 msgid ""
 "Slaughter orders and history are kept; the account can no longer sign in."
 msgstr ""
+"Kesim siparişleri ve geçmiş korunur; hesap artık giriş yapamaz."
 
-#, fuzzy
-#| msgid "Archive"
 msgid "Yes, archive"
-msgstr "Arşiv"
+msgstr "Evet, arşivle"
 
-#, fuzzy
-#| msgid "active"
 msgid "Active"
-msgstr "aktif"
+msgstr "Aktif"
 
-#, fuzzy
-#| msgid "Archive"
 msgid "Archived"
-msgstr "Arşiv"
+msgstr "Arşivlendi"
 
 msgid "List"
-msgstr ""
+msgstr "Liste"
 
-#, fuzzy
-#| msgid "Reactivate"
 msgid "Activate"
-msgstr "Yeniden Etkinleştir"
+msgstr "Etkinleştir"
 
 msgid "Account type"
-msgstr ""
+msgstr "Hesap türü"
 
-#, fuzzy
-#| msgid "Compliance"
 msgid "Company"
-msgstr "Uyumluluk"
+msgstr "Şirket"
 
 msgid "Tax ID"
-msgstr ""
+msgstr "Vergi numarası"
 
 msgid "Contact person"
-msgstr ""
+msgstr "İletişim kişisi"
 
 msgid "Username"
 msgstr "Kullanıcı Adı"
 
 msgid "Email"
-msgstr ""
+msgstr "E-posta"
 
-#, fuzzy
-#| msgid "active"
 msgid "Login active"
-msgstr "aktif"
+msgstr "Giriş etkin"
 
 msgid "Yes"
-msgstr ""
+msgstr "Evet"
 
 msgid "No"
-msgstr ""
+msgstr "Hayır"
 
-#, fuzzy
-#| msgid "active"
 msgid "Profile active"
-msgstr "aktif"
+msgstr "Profil etkin"
 
-#, fuzzy
-#| msgid "Register"
 msgid "Registered"
-msgstr "Kayıt Ol"
+msgstr "Kayıtlı"
 
-#, fuzzy
-#| msgid "Selected client"
 msgid "Add client"
-msgstr "Seçili müşteri"
+msgstr "Müşteri ekle"
 
-#, fuzzy
-#| msgid "Edit event"
 msgid "Edit client"
-msgstr "Olayı düzenle"
+msgstr "Müşteriyi düzenle"
 
-#, fuzzy
-#| msgid "View Profile"
 msgid "Profile"
-msgstr "Profili Görüntüle"
+msgstr "Profil"
 
 msgid "This profile has no login account. Only profile fields can be edited."
 msgstr ""
+"Bu profilde giriş hesabı yok. Yalnızca profil alanları düzenlenebilir."
 
-#, fuzzy
-#| msgid "Selected client"
 msgid "Create client"
-msgstr "Seçili müşteri"
+msgstr "Müşteri oluştur"
 
 msgid "Save changes"
-msgstr ""
+msgstr "Değişiklikleri kaydet"
 
-#, fuzzy
-#| msgid "Register as Client"
 msgid "Registered clients"
-msgstr "Üretici Ünvanı"
+msgstr "Kayıtlı müşteriler"
 
-#, fuzzy
-#| msgid "Client"
 msgid "Clients"
-msgstr "Müşteri"
+msgstr "Müşteriler"
 
 msgid ""
 "Manage registered customer accounts and quickly open profiles for updates."
 msgstr ""
+"Kayıtlı müşteri hesaplarını yönetin ve güncellemeler için profilleri hızlıca "
+"açın."
 
-#, fuzzy
-#| msgid "All Statuses"
 msgid "Status filters"
-msgstr "Tüm Durumlar"
+msgstr "Durum filtreleri"
 
 msgid "All"
-msgstr ""
+msgstr "Tümü"
 
-#, fuzzy
-#| msgid "Search Clients"
 msgid "Search clients"
-msgstr "Müşteri Ara"
+msgstr "Müşteri ara"
 
 msgid "Search name, company, phone, username…"
-msgstr ""
+msgstr "Ad, şirket, telefon, kullanıcı adı ara…"
 
 #, python-format
 msgid "Showing %(total)s client."
 msgid_plural "Showing %(total)s clients."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(total)s müşteri gösteriliyor."
+msgstr[1] "Toplam %(total)s müşteri gösteriliyor."
 
-#, fuzzy
-#| msgid "Type"
 msgid "Type:"
-msgstr "Tür"
+msgstr "Tür:"
 
-#, fuzzy
-#| msgid "Register"
 msgid "Registered:"
-msgstr "Kayıt Ol"
+msgstr "Kayıt:"
 
 msgid "Try a different search term or clear the current filter."
 msgstr ""
+"Farklı bir arama terimi deneyin veya geçerli filtreyi temizleyin."
 
-#, fuzzy
-#| msgid "Get started by creating your first slaughter order."
 msgid "Get started by creating your first client profile."
-msgstr "İlk kesim siparişinizi oluşturarak başlayın."
+msgstr "İlk müşteri profilinizi oluşturarak başlayın."
 
 msgid "Clear search"
-msgstr ""
+msgstr "Aramayı temizle"
 
 msgid "Client Registration"
-msgstr "Müşteri Girişi"
+msgstr "Müşteri kaydı"
 
 msgid "Register as a Client"
-msgstr "Üretici Ünvanı"
+msgstr "Müşteri olarak kaydolun"
 
 msgid "Register as Client"
-msgstr "Üretici Ünvanı"
+msgstr "Müşteri kaydı"
 
-#, fuzzy
-#| msgid "Register as Client"
 msgid "Registration complete"
-msgstr "Üretici Ünvanı"
+msgstr "Kayıt tamamlandı"
 
 msgid "Your client account is ready"
-msgstr ""
+msgstr "Müşteri hesabınız hazır"
 
 msgid "Save these credentials now. They will not be shown again."
 msgstr ""
+"Bu kimlik bilgilerini şimdi kaydedin; bir daha gösterilmeyecek."
 
 #, python-format
 msgid "Welcome, %(username)s!"
 msgstr "Hoş geldin, %(username)s!"
 
 msgid "Owner"
-msgstr ""
+msgstr "Sahip"
 
 msgid "System Administrator"
 msgstr "Sistem Yöneticisi"
@@ -3707,27 +3665,25 @@ msgid "Financial Reports"
 msgstr "Finansal Raporlar"
 
 msgid "Generate daily slaughter reports"
-msgstr "Tüm kesim siparişlerini görüntüleyin ve yönetin"
+msgstr "Günlük kesim raporları oluşturun"
 
 msgid "Generate Reports"
-msgstr "Raport Oluştur"
+msgstr "Rapor Oluştur"
 
 msgid "System Administration"
 msgstr "Sistem Yönetimi"
 
 msgid "Clients who registered via the public form"
-msgstr ""
+msgstr "Genel form üzerinden kayıt olan müşteriler"
 
-#, fuzzy
-#| msgid "View Documents"
 msgid "View clients"
-msgstr "Belgeleri Görüntüle"
+msgstr "Müşterileri görüntüle"
 
 msgid "Settings"
 msgstr "Ayarlar"
 
 msgid "Company name, İşletme onay no, label printer mode"
-msgstr ""
+msgstr "Şirket adı, işletme onay no, etiket yazıcı modu"
 
 msgid "Users"
 msgstr "Kullanıcılar"
@@ -3809,10 +3765,8 @@ msgstr "Tekrar giriş yap"
 msgid "Sign in to your account"
 msgstr "Hesabınıza giriş yapın"
 
-#, fuzzy
-#| msgid "Username"
 msgid "Username or email"
-msgstr "Kullanıcı Adı"
+msgstr "Kullanıcı adı veya e-posta"
 
 msgid "Don't have an account?"
 msgstr "Hesabınız yok mu?"
@@ -3831,6 +3785,244 @@ msgstr "Zaten bir hesabınız var mı?"
 
 msgid "Sign in."
 msgstr "Giriş yapın."
+
+msgid "Display name"
+msgstr "Görünen ad"
+
+msgid "Unicode (recommended)"
+msgstr "Unicode (önerilen)"
+
+msgid "ASCII (replace Turkish characters)"
+msgstr "ASCII (Türkçe karakterleri değiştir)"
+
+msgid "Windows-1254"
+msgstr "Windows-1254"
+
+msgid "Schema name"
+msgstr "Şema adı"
+
+msgid "Custom domain"
+msgstr "Özel alan adı"
+
+msgid "Lowercase letters, digits and hyphens only. Used as PostgreSQL schema and subdomain."
+msgstr "Yalnızca küçük harfler, rakamlar ve kısa çizgi kullanın. PostgreSQL şeması ve alt alan adı olarak kullanılır."
+
+msgid "Leave blank to auto-generate {schema}.{base_domain}."
+msgstr "{schema}.{base_domain} otomatik oluşturulsun diye boş bırakın."
+
+msgid "Use lowercase letters, digits and hyphens; must start with a letter or digit."
+msgstr "Küçük harf, rakam ve kısa çizgi kullanın; harf veya rakamla başlamalıdır."
+
+msgid "\"public\" is reserved."
+msgstr "\"public\" ayrılmıştır."
+
+#, python-format
+msgid "Schema \"%(value)s\" already exists."
+msgstr "\"%(value)s\" şeması zaten mevcut."
+
+#, python-format
+msgid "Domain \"%(value)s\" is already in use."
+msgstr "\"%(value)s\" alan adı zaten kullanımda."
+
+msgid "Your name"
+msgstr "Adınız"
+
+msgid "An account with that email already exists."
+msgstr "Bu e-posta ile bir hesap zaten mevcut."
+
+msgid "Passwords do not match."
+msgstr "Parolalar eşleşmiyor."
+
+msgid "Sign in with this or your email on the tenant site (language-prefixed /tr/login/ etc.)."
+msgstr "Tenant sitesinde bununla veya e-postanızla giriş yapın (/tr/login/ vb. dil önekli adreslerde)."
+
+msgid "Tenant app admin (role ADMIN, full CarniTrack app access; not Django /admin/)"
+msgstr "Tenant uygulama yöneticisi (ADMIN rolü, tam CarniTrack erişimi; Django /admin/ değil)"
+
+msgid "Django superuser (role ADMIN plus Django /admin/ on this tenant host)"
+msgstr "Django süper kullanıcısı (ADMIN rolü ve bu tenant alan adında Django /admin/ erişimi)"
+
+msgid "Admin"
+msgstr "Yönetici"
+
+msgid "Tenant registration is only available in multi-tenant mode."
+msgstr "Tenant kaydı yalnızca çok kiracılı modda kullanılabilir."
+
+msgid "Missing status token."
+msgstr "Durum belirteci eksik."
+
+#, python-format
+msgid "Tenant \"%(schema)s\" provisioned at %(domain)s."
+msgstr "\"%(schema)s\" tenantı %(domain)s adresinde oluşturuldu."
+
+#, python-format
+msgid "Approved registration \"%(company)s\"; tenant \"%(schema)s\" was provisioned."
+msgstr "\"%(company)s\" kaydı onaylandı; \"%(schema)s\" tenantı oluşturuldu."
+
+#, python-format
+msgid "Rejected registration for \"%(company)s\"."
+msgstr "\"%(company)s\" kaydı reddedildi."
+
+msgid "A user with this username already exists in this tenant."
+msgstr "Bu tenantta bu kullanıcı adına sahip bir kullanıcı zaten var."
+
+msgid "A user with this email already exists in this tenant."
+msgstr "Bu tenantta bu e-posta ile bir kullanıcı zaten var."
+
+msgid "Could not create user (unique constraint). Try a different username or email."
+msgstr "Kullanıcı oluşturulamadı (benzersizlik kısıtı). Farklı bir kullanıcı adı veya e-posta deneyin."
+
+msgid "Django superuser plus app admin"
+msgstr "Django süper kullanıcısı ve uygulama yöneticisi"
+
+msgid "Tenant app admin (ADMIN)"
+msgstr "Tenant uygulama yöneticisi (ADMIN)"
+
+#, python-format
+msgid "User \"%(username)s\" created for tenant \"%(schema)s\" (%(kind)s). Sign in at the tenant app login page (not platform-admin): %(url)s"
+msgstr "\"%(schema)s\" tenantı için \"%(username)s\" kullanıcısı (%(kind)s) oluşturuldu. Tenant uygulama giriş sayfasından giriş yapın (platform-admin değil): %(url)s"
+
+#, python-format
+msgid "Confirmation failed: type the schema name exactly (\"%(schema)s\") to delete this tenant."
+msgstr "Onay başarısız: bu tenantı silmek için şema adını tam olarak (\"%(schema)s\") yazın."
+
+#, python-format
+msgid "Tenant \"%(schema)s\" was permanently deleted (PostgreSQL schema dropped)."
+msgstr "\"%(schema)s\" tenantı kalıcı olarak silindi (PostgreSQL şeması düşürüldü)."
+
+msgid "activated"
+msgstr "etkinleştirildi"
+
+msgid "deactivated"
+msgstr "devre dışı bırakıldı"
+
+#, python-format
+msgid "Tenant \"%(schema)s\" %(state)s."
+msgstr "\"%(schema)s\" tenantı %(state)s."
+
+msgid "Setup already complete. Please sign in."
+msgstr "Kurulum zaten tamamlandı. Lütfen giriş yapın."
+
+msgid "Account created. Please sign in."
+msgstr "Hesap oluşturuldu. Lütfen giriş yapın."
+
+msgid "Platform setup"
+msgstr "Platform kurulumu"
+
+msgid "Create the first platform admin account"
+msgstr "İlk platform yöneticisi hesabını oluşturun"
+
+msgid "This page is only available until the first account is created, then it disables itself."
+msgstr "Bu sayfa yalnızca ilk hesap oluşturulana kadar kullanılabilir; ardından devre dışı kalır."
+
+msgid "Sign in to manage tenants and open each tenant app from the dashboard."
+msgstr "Tenantları yönetmek ve her tenant uygulamasını panodan açmak için giriş yapın."
+
+#, python-format
+msgid "Use your <strong>public</strong> app URL (not a tenant subdomain), for example <code>%(site_url)s/platform-admin/login/</code>"
+msgstr "<strong>public</strong> uygulama URL'nizi kullanın (tenant alt alan adı değil); örneğin <code>%(site_url)s/platform-admin/login/</code>"
+
+msgid "First time?"
+msgstr "İlk kez mi?"
+
+msgid "Create an account"
+msgstr "Hesap oluştur"
+
+msgid "Tenants"
+msgstr "Tenantlar"
+
+#, python-format
+msgid "Signed in as %(email)s"
+msgstr "%(email)s olarak giriş yapıldı"
+
+msgid "Each row links to that tenant app on its hostname. The app URL opens the tenant-scoped CarniTrack interface directly."
+msgstr "Her satır, kendi alan adındaki tenant uygulamasına bağlanır. Uygulama URL'si tenant kapsamlı CarniTrack arayüzünü doğrudan açar."
+
+msgid "Sign out"
+msgstr "Çıkış yap"
+
+msgid "Pending tenant registrations"
+msgstr "Bekleyen tenant kayıtları"
+
+msgid "Schema (preview)"
+msgstr "Şema (önizleme)"
+
+msgid "Submitted"
+msgstr "Gönderildi"
+
+msgid "Approve"
+msgstr "Onayla"
+
+msgid "Reject"
+msgstr "Reddet"
+
+msgid "Approving creates the tenant schema, domain, and an OWNER user without Django admin access."
+msgstr "Onay verildiğinde tenant şeması, alan adı ve Django admin erişimi olmayan bir OWNER kullanıcısı oluşturulur."
+
+msgid "Provision new tenant"
+msgstr "Yeni tenant oluştur"
+
+msgid "Provision tenant"
+msgstr "Tenant oluştur"
+
+msgid "Creates the PostgreSQL schema and runs migrations automatically."
+msgstr "PostgreSQL şemasını oluşturur ve migrasyonları otomatik olarak çalıştırır."
+
+msgid "Tenant URL"
+msgstr "Tenant URL'si"
+
+msgid "Create admin user"
+msgstr "Yönetici kullanıcı oluştur"
+
+#, python-format
+msgid "Deactivate %(schema)s?"
+msgstr "%(schema)s devre dışı bırakılsın mı?"
+
+msgid "Deactivate"
+msgstr "Devre dışı bırak"
+
+#, python-format
+msgid "Permanently delete tenant \"%(schema)s\"? This runs DROP SCHEMA ... CASCADE and cannot be undone."
+msgstr "\"%(schema)s\" tenantı kalıcı olarak silinsin mi? Bu işlem DROP SCHEMA ... CASCADE çalıştırır ve geri alınamaz."
+
+#, python-format
+msgid "Type schema name %(schema)s to confirm deletion"
+msgstr "Silmeyi onaylamak için %(schema)s şema adını yazın"
+
+msgid "Delete forever"
+msgstr "Kalıcı sil"
+
+msgid "No tenants yet. Use 'Provision new tenant' above to get started."
+msgstr "Henüz tenant yok. Başlamak için yukarıdaki 'Yeni tenant oluştur' seçeneğini kullanın."
+
+#, python-format
+msgid "Tenant user - %(schema)s"
+msgstr "Tenant kullanıcısı - %(schema)s"
+
+#, python-format
+msgid "Tenant users - %(schema)s"
+msgstr "Tenant kullanıcıları - %(schema)s"
+
+msgid "Primary host"
+msgstr "Birincil ana makine"
+
+msgid "Sign in on the tenant host (not the platform-admin host). Use the app login URL:"
+msgstr "Tenant alan adında giriş yapın (platform-admin alan adında değil). Uygulama giriş URL'sini kullanın:"
+
+msgid "Back to tenants"
+msgstr "Tenantlara dön"
+
+msgid "Users in this tenant"
+msgstr "Bu tenanttaki kullanıcılar"
+
+msgid "No users yet in this schema."
+msgstr "Bu şemada henüz kullanıcı yok."
+
+msgid "Create user"
+msgstr "Kullanıcı oluştur"
+
+msgid "Creates an ADMIN user. Choose tenant app admin or Django superuser. OWNER is reserved for the first user created when a registration is approved."
+msgstr "Bir ADMIN kullanıcısı oluşturur. Tenant uygulama yöneticisi veya Django süper kullanıcısı seçin. OWNER rolü, bir kayıt onaylandığında oluşturulan ilk kullanıcı için ayrılmıştır."
 
 #~ msgid "Operation dashboard"
 #~ msgstr "Operasyon paneli"

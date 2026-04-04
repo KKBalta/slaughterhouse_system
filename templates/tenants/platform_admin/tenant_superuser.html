@@ -1,9 +1,11 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tenant user — {{ tenant.schema_name }}</title>
+    <title>{% blocktrans with schema=tenant.schema_name %}Tenant user - {{ schema }}{% endblocktrans %}</title>
     <style>
         :root {
             --fg: #1a1a1a; --muted: #5c5c5c; --border: #e0e0e0;
@@ -50,11 +52,11 @@
 <body>
     <div class="wrap">
         <header>
-            <h1>Tenant users — {{ tenant.schema_name }}</h1>
-            <p class="meta">Primary host <code>{% if domain_hint %}{{ domain_hint }}{% else %}—{% endif %}</code></p>
-            <p class="meta" style="margin-top:0.5rem">Sign in on the <strong>tenant host</strong> (not 127.0.0.1 platform-admin). Use the app login URL:</p>
+            <h1>{% blocktrans with schema=tenant.schema_name %}Tenant users - {{ schema }}{% endblocktrans %}</h1>
+            <p class="meta">{% trans "Primary host" %} <code>{% if domain_hint %}{{ domain_hint }}{% else %}—{% endif %}</code></p>
+            <p class="meta" style="margin-top:0.5rem">{% trans "Sign in on the tenant host (not the platform-admin host). Use the app login URL:" %}</p>
             <p class="meta"><code class="login-url">{{ tenant_login_url }}</code></p>
-            <p><a class="back" href="{% url 'platform_admin_dashboard' %}">← Back to tenants</a></p>
+            <p><a class="back" href="{% url 'platform_admin_dashboard' %}">{% trans "Back to tenants" %}</a></p>
         </header>
 
         {% if messages %}
@@ -66,16 +68,16 @@
         {% endif %}
 
         <div class="panel">
-            <h2>Users in this tenant ({{ existing_users|length }})</h2>
+            <h2>{% trans "Users in this tenant" %} ({{ existing_users|length }})</h2>
             {% if existing_users %}
                 <table>
                     <thead>
                         <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Active</th>
-                            <th>Django admin</th>
+                            <th>{% trans "Username" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Role" %}</th>
+                            <th>{% trans "Active" %}</th>
+                            <th>{% trans "Django admin" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,23 +85,22 @@
                         <tr>
                             <td><code>{{ u.username }}</code></td>
                             <td>{{ u.email|default:"—" }}</td>
-                            <td>{{ u.role }}</td>
-                            <td>{% if u.is_active %}yes{% else %}no{% endif %}</td>
-                            <td>{% if u.is_superuser %}yes{% else %}no{% endif %}</td>
+                            <td>{{ u.role_label }}</td>
+                            <td>{% if u.is_active %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</td>
+                            <td>{% if u.is_superuser %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             {% else %}
-                <p class="meta">No users yet in this schema.</p>
+                <p class="meta">{% trans "No users yet in this schema." %}</p>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h2>Create user</h2>
+            <h2>{% trans "Create user" %}</h2>
             <p class="meta" style="margin-top:0;margin-bottom:1rem">
-                Creates an <strong>ADMIN</strong> user (platform operator). Choose tenant app admin or Django superuser.
-                The <strong>OWNER</strong> role is reserved for the first user created when a <strong>registration is approved</strong> — not created here.
+                {% trans "Creates an ADMIN user. Choose tenant app admin or Django superuser. OWNER is reserved for the first user created when a registration is approved." %}
             </p>
             {% if form.non_field_errors %}
                 <div class="non-field-errors">{{ form.non_field_errors }}</div>
@@ -133,7 +134,7 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">Create user</button>
+                    <button type="submit" class="btn-primary">{% trans "Create user" %}</button>
                 </div>
             </form>
         </div>

@@ -2,10 +2,22 @@ import os
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser
+from django.core.files.storage import default_storage
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_tenants.models import DomainMixin, TenantMixin
+
+
+def _get_public_storage():
+    from django.conf import settings
+
+    if getattr(settings, "USE_GCS", False):
+        from tenants.storage import PublicGCSStorage
+
+        return PublicGCSStorage()
+    return default_storage
+
 
 _LOGO_SLUG_MAX_LEN = 80
 LOGO_ALLOWED_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".gif"})
@@ -70,6 +82,7 @@ class Client(TenantMixin):
     )
     logo = models.ImageField(
         upload_to=tenant_logo_upload_to,
+        storage=_get_public_storage,
         blank=True,
         null=True,
         verbose_name=_("Logo"),
