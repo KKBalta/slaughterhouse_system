@@ -59,13 +59,32 @@ class SlaughterOrderForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
-        help_text=_("Add the phone number to save this walk-in as a reusable prospect."),
+        help_text=_("Required for walk-in clients so this customer can be saved as a reusable prospect."),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
                 "placeholder": _("Enter phone number"),
             }
         ),
+    )
+
+    destination_search = forms.CharField(
+        max_length=255,
+        required=False,
+        label=_("Destination Client"),
+        help_text=_("Type to search destination clients. Select one to keep it linked for future orders."),
+        widget=forms.TextInput(
+            attrs={
+                "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
+                "placeholder": _("Type destination client name to search..."),
+                "id": "destination-search",
+                "autocomplete": "off",
+            }
+        ),
+    )
+    destination_client_id = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(attrs={"id": "destination-client-id"}),
     )
 
     class Meta:
@@ -78,7 +97,7 @@ class SlaughterOrderForm(forms.ModelForm):
         }
         help_texts = {
             "service_package": _("The service package selected for this order."),
-            "destination": _("Destination for the order. Selecting a registered client can fill this automatically."),
+            "destination": _("Hidden snapshot of the selected destination client."),
         }
         widgets = {
             "order_datetime": forms.DateTimeInput(
@@ -87,10 +106,9 @@ class SlaughterOrderForm(forms.ModelForm):
                     "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
                 }
             ),
-            "destination": forms.TextInput(
+            "destination": forms.HiddenInput(
                 attrs={
-                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
-                    "placeholder": _("Enter destination (optional)"),
+                    "id": "destination-text",
                 }
             ),
             "service_package": forms.Select(attrs={"class": "modern-select-full"}),
@@ -111,8 +129,10 @@ class SlaughterOrderForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        client_id = cleaned_data.get("client_id")
-        client_name = cleaned_data.get("client_name")
+        client_id = (cleaned_data.get("client_id") or "").strip()
+        client_name = (cleaned_data.get("client_name") or "").strip()
+        cleaned_data["client_id"] = client_id
+        cleaned_data["client_name"] = client_name
 
         if not client_id and not client_name:
             raise forms.ValidationError(
@@ -124,10 +144,19 @@ class SlaughterOrderForm(forms.ModelForm):
 
         # Combine area code with phone number
         area_code = cleaned_data.get("client_phone_area_code") or "+90"
-        phone = cleaned_data.get("client_phone")
-        if phone:
-            phone = phone.strip()
+        phone = (cleaned_data.get("client_phone") or "").strip()
+        if client_name and not phone:
+            self.add_error("client_phone", _("Walk-in client phone is required."))
+            cleaned_data["client_phone"] = ""
+        elif phone:
             cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+        else:
+            cleaned_data["client_phone"] = ""
+
+        destination_search = (cleaned_data.get("destination_search") or "").strip()
+        cleaned_data["destination_search"] = destination_search
+        cleaned_data["destination_client_id"] = (cleaned_data.get("destination_client_id") or "").strip()
+        cleaned_data["destination"] = destination_search or None
 
         return cleaned_data
 
@@ -183,13 +212,32 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
-        help_text=_("Add the phone number to save this walk-in as a reusable prospect."),
+        help_text=_("Required for walk-in clients so this customer can be saved as a reusable prospect."),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
                 "placeholder": _("Enter phone number"),
             }
         ),
+    )
+
+    destination_search = forms.CharField(
+        max_length=255,
+        required=False,
+        label=_("Destination Client"),
+        help_text=_("Type to search destination clients. Select one to keep it linked for future orders."),
+        widget=forms.TextInput(
+            attrs={
+                "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
+                "placeholder": _("Type destination client name to search..."),
+                "id": "destination-search",
+                "autocomplete": "off",
+            }
+        ),
+    )
+    destination_client_id = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(attrs={"id": "destination-client-id"}),
     )
 
     class Meta:
@@ -202,7 +250,7 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         }
         help_texts = {
             "service_package": _("The service package selected for this order."),
-            "destination": _("Destination for the order. Selecting a registered client can fill this automatically."),
+            "destination": _("Hidden snapshot of the selected destination client."),
         }
         widgets = {
             "order_datetime": forms.DateTimeInput(
@@ -211,10 +259,9 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
                     "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
                 }
             ),
-            "destination": forms.TextInput(
+            "destination": forms.HiddenInput(
                 attrs={
-                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
-                    "placeholder": _("Enter destination (optional)"),
+                    "id": "destination-text",
                 }
             ),
             "service_package": forms.Select(attrs={"class": "modern-select-full"}),
@@ -257,11 +304,18 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
                         self.fields["client_phone"].initial = phone[2:]
                     else:
                         self.fields["client_phone"].initial = phone
+            if self.instance.destination_client:
+                self.fields["destination_search"].initial = self.instance.destination_client.get_full_name()
+                self.fields["destination_client_id"].initial = self.instance.destination_client.pk
+            else:
+                self.fields["destination_search"].initial = self.instance.destination or ""
 
     def clean(self):
         cleaned_data = super().clean()
-        client_id = cleaned_data.get("client_id")
-        client_name = cleaned_data.get("client_name")
+        client_id = (cleaned_data.get("client_id") or "").strip()
+        client_name = (cleaned_data.get("client_name") or "").strip()
+        cleaned_data["client_id"] = client_id
+        cleaned_data["client_name"] = client_name
 
         if not client_id and not client_name:
             raise forms.ValidationError(
@@ -273,10 +327,19 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
 
         # Combine area code with phone number
         area_code = cleaned_data.get("client_phone_area_code") or "+90"
-        phone = cleaned_data.get("client_phone")
-        if phone:
-            phone = phone.strip()
+        phone = (cleaned_data.get("client_phone") or "").strip()
+        if client_name and not phone:
+            self.add_error("client_phone", _("Walk-in client phone is required."))
+            cleaned_data["client_phone"] = ""
+        elif phone:
             cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+        else:
+            cleaned_data["client_phone"] = ""
+
+        destination_search = (cleaned_data.get("destination_search") or "").strip()
+        cleaned_data["destination_search"] = destination_search
+        cleaned_data["destination_client_id"] = (cleaned_data.get("destination_client_id") or "").strip()
+        cleaned_data["destination"] = destination_search or None
 
         return cleaned_data
 

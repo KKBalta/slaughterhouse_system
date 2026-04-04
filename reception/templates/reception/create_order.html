@@ -146,6 +146,7 @@
 
             <form method="post" class="space-y-4">
                 {% csrf_token %}
+                {{ form.destination }}
                 
                 <!-- Client Search Section -->
                 <div class="form-group relative">
@@ -160,7 +161,7 @@
                         </a>
                     </p>
                     <p class="mt-2 text-xs text-gray-500">
-                        {% trans "Tip: pick the same client for delivery orders so the saved destination fills automatically." %}
+                        {% trans "Tip: after you link a destination client once, picking the same client can fill it automatically." %}
                     </p>
                     
                     <!-- Client search results dropdown -->
@@ -233,9 +234,45 @@
                     {% endif %}
                 </div>
 
+                <!-- Destination Client Search -->
+                <div class="form-group relative">
+                    <label for="destination-search" class="block text-sm font-medium text-gray-900 mb-1">
+                        {{ form.destination_search.label }}
+                    </label>
+                    {{ form.destination_search }}
+                    {{ form.destination_client_id }}
+                    {% if form.destination_search.help_text %}
+                        <p class="mt-1 text-xs text-gray-600">{{ form.destination_search.help_text }}</p>
+                    {% endif %}
+                    {% if form.destination_search.errors %}
+                        <div class="mt-1">
+                            {% for error in form.destination_search.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div id="destination-search-results" class="hidden absolute z-10 left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg mt-1">
+                    </div>
+
+                    <div id="selected-destination-client" class="hidden mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-md">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="font-medium text-emerald-900 truncate" id="selected-destination-client-name"></div>
+                                <div class="text-sm text-emerald-700 truncate" id="selected-destination-client-info"></div>
+                            </div>
+                            <button type="button" id="clear-destination-client" class="flex-shrink-0 text-red-600 hover:text-red-800 p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Other form fields -->
                 {% for field in form %}
-                    {% if field.name not in 'client_search,client_id,client_name,client_phone,client_phone_area_code' %}
+                    {% if field.name not in 'client_search,client_id,client_name,client_phone,client_phone_area_code,destination_search,destination_client_id,destination' %}
                         <div class="form-group">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-900 mb-1">
                                 {{ field.label }}
@@ -290,10 +327,19 @@
             const clearClientBtn = document.getElementById('clear-client');
             const clientNameField = document.querySelector('input[name="client_name"]');
             const clientPhoneField = document.querySelector('input[name="client_phone"]');
-            const destinationField = document.querySelector('input[name="destination"]');
+            const destinationField = document.getElementById('destination-text');
+            const destinationSearch = document.getElementById('destination-search');
+            const destinationClientId = document.getElementById('destination-client-id');
+            const destinationSearchResults = document.getElementById('destination-search-results');
+            const selectedDestinationClient = document.getElementById('selected-destination-client');
+            const selectedDestinationClientName = document.getElementById('selected-destination-client-name');
+            const selectedDestinationClientInfo = document.getElementById('selected-destination-client-info');
+            const clearDestinationClientBtn = document.getElementById('clear-destination-client');
             
             let searchTimeout;
-            let lastAutofilledDestination = '';
+            let destinationSearchTimeout;
+            let lastAutofilledDestinationName = '';
+            let lastAutofilledDestinationId = '';
 
             function truncateText(value, maxLength) {
                 if (!value) {
@@ -313,28 +359,145 @@
                     selectedClientDestination.classList.add('hidden');
                     return;
                 }
-                const label = `{% trans "Delivery" %}: ${value}`;
+                const label = `{% trans "Preferred destination" %}: ${value}`;
                 selectedClientDestination.textContent = label;
                 selectedClientDestination.title = label;
                 selectedClientDestination.classList.remove('hidden');
             }
 
-            function maybeAutofillDestination(destination) {
-                if (!destinationField) {
+            function destinationInfoText(client) {
+                return [client.contact_info, client.phone].filter(Boolean).join(' • ');
+            }
+
+            function syncWalkInPhoneRequirement() {
+                const requiresWalkInPhone = !clientId.value.trim() && clientNameField.value.trim().length > 0;
+                clientPhoneField.required = requiresWalkInPhone;
+                clientPhoneField.setAttribute('aria-required', requiresWalkInPhone ? 'true' : 'false');
+            }
+
+            function renderSearchResults(resultsEl, clients, onSelect) {
+                resultsEl.innerHTML = '';
+
+                if (clients.length === 0) {
+                    resultsEl.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
+                } else {
+                    clients.forEach(client => {
+                        const item = document.createElement('div');
+                        item.className = 'client-search-item';
+                        const displayName = truncateText(client.display_name, 30);
+                        const infoText = destinationInfoText(client);
+                        const destinationText = (client.default_destination || '').trim();
+                        const destinationHtml = destinationText
+                            ? `<div class="client-destination" title="{% trans "Preferred destination" %}: ${client.default_destination}">{% trans "Preferred destination" %}: ${truncateText(client.default_destination, 28)}</div>`
+                            : '';
+
+                        item.innerHTML = `
+                            <div class="client-name" title="${client.display_name}">${displayName}</div>
+                            <div class="client-info" title="${infoText}">${truncateText(infoText, 42)}</div>
+                            ${destinationHtml}
+                        `;
+                        item.addEventListener('click', () => onSelect(client));
+                        resultsEl.appendChild(item);
+                    });
+                }
+
+                resultsEl.classList.remove('hidden');
+            }
+
+            function setDestinationSnapshot(value) {
+                if (destinationField) {
+                    destinationField.value = (value || '').trim();
+                }
+            }
+
+            function selectDestinationClient(client, options = {}) {
+                const name = (client.display_name || '').trim();
+                const infoText = destinationInfoText(client);
+
+                if (destinationClientId) {
+                    destinationClientId.value = client.id || '';
+                }
+                if (destinationSearch) {
+                    destinationSearch.value = name;
+                }
+                setDestinationSnapshot(name);
+
+                if (selectedDestinationClientName) {
+                    selectedDestinationClientName.textContent = name;
+                    selectedDestinationClientName.title = name;
+                }
+                if (selectedDestinationClientInfo) {
+                    selectedDestinationClientInfo.textContent = infoText;
+                    selectedDestinationClientInfo.title = infoText;
+                }
+                if (selectedDestinationClient) {
+                    selectedDestinationClient.classList.remove('hidden');
+                }
+                if (destinationSearchResults) {
+                    destinationSearchResults.classList.add('hidden');
+                }
+
+                if (options.autofilled) {
+                    lastAutofilledDestinationName = name;
+                    lastAutofilledDestinationId = client.id || '';
+                } else {
+                    lastAutofilledDestinationName = '';
+                    lastAutofilledDestinationId = '';
+                }
+            }
+
+            function clearDestinationClient(options = {}) {
+                if (destinationClientId) {
+                    destinationClientId.value = '';
+                }
+                if (destinationSearch && !options.keepSearchText) {
+                    destinationSearch.value = '';
+                }
+                if (selectedDestinationClient) {
+                    selectedDestinationClient.classList.add('hidden');
+                }
+                if (destinationSearchResults) {
+                    destinationSearchResults.classList.add('hidden');
+                }
+                if (!options.keepSnapshot) {
+                    setDestinationSnapshot(destinationSearch ? destinationSearch.value : '');
+                }
+                lastAutofilledDestinationName = '';
+                lastAutofilledDestinationId = '';
+            }
+
+            function maybeAutofillDestinationClient(client) {
+                if (!destinationSearch) {
                     return;
                 }
-                const nextValue = (destination || '').trim();
-                const currentValue = destinationField.value.trim();
-                if (!nextValue) {
-                    if (lastAutofilledDestination && currentValue === lastAutofilledDestination) {
-                        destinationField.value = '';
+                const preferredId = (client.default_destination_client_id || '').trim();
+                const preferredName = (client.default_destination_client_name || '').trim();
+                const currentValue = destinationSearch.value.trim();
+
+                if (!preferredId || !preferredName) {
+                    if (
+                        lastAutofilledDestinationName &&
+                        (currentValue === lastAutofilledDestinationName || !currentValue)
+                    ) {
+                        clearDestinationClient();
                     }
-                    lastAutofilledDestination = '';
                     return;
                 }
-                if (!currentValue || currentValue === lastAutofilledDestination) {
-                    destinationField.value = nextValue;
-                    lastAutofilledDestination = nextValue;
+
+                if (
+                    !currentValue ||
+                    currentValue === lastAutofilledDestinationName ||
+                    destinationClientId.value === lastAutofilledDestinationId
+                ) {
+                    selectDestinationClient(
+                        {
+                            id: preferredId,
+                            display_name: preferredName,
+                            contact_info: '{% trans "Preferred destination client" %}',
+                            phone: '',
+                        },
+                        { autofilled: true }
+                    );
                 }
             }
 
@@ -352,32 +515,7 @@
                     fetch(`{% url 'reception:client_search' %}?q=${encodeURIComponent(query)}`)
                         .then(response => response.json())
                         .then(data => {
-                            searchResults.innerHTML = '';
-                            
-                            if (data.clients.length === 0) {
-                                searchResults.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
-                            } else {
-                                data.clients.forEach(client => {
-                                    const item = document.createElement('div');
-                                    item.className = 'client-search-item';
-                                    const displayName = truncateText(client.display_name, 30);
-                                    const infoText = [client.contact_info, client.phone].filter(Boolean).join(' • ');
-                                    const destinationText = (client.default_destination || '').trim();
-                                    const destinationHtml = destinationText
-                                        ? `<div class="client-destination" title="{% trans "Delivery" %}: ${client.default_destination}">{% trans "Delivery" %}: ${truncateText(client.default_destination, 28)}</div>`
-                                        : '';
-                                    
-                                    item.innerHTML = `
-                                        <div class="client-name" title="${client.display_name}">${displayName}</div>
-                                        <div class="client-info" title="${infoText}">${truncateText(infoText, 42)}</div>
-                                        ${destinationHtml}
-                                    `;
-                                    item.addEventListener('click', () => selectClient(client));
-                                    searchResults.appendChild(item);
-                                });
-                            }
-                            
-                            searchResults.classList.remove('hidden');
+                            renderSearchResults(searchResults, data.clients, selectClient);
                         })
                         .catch(error => {
                             console.error('Error fetching clients:', error);
@@ -393,7 +531,7 @@
                 selectedClientName.textContent = client.display_name;
                 selectedClientName.title = client.display_name; // Full text on hover
                 
-                const infoText = [client.contact_info, client.phone].filter(Boolean).join(' • ');
+                const infoText = destinationInfoText(client);
                 selectedClientInfo.textContent = infoText;
                 selectedClientInfo.title = infoText; // Full text on hover
                 setSelectedDestination(client.default_destination);
@@ -404,7 +542,8 @@
                 // Clear walk-in client fields
                 clientNameField.value = '';
                 clientPhoneField.value = '';
-                maybeAutofillDestination(client.default_destination);
+                syncWalkInPhoneRequirement();
+                maybeAutofillDestinationClient(client);
             }
 
             clearClientBtn.addEventListener('click', function() {
@@ -413,16 +552,60 @@
                 selectedClient.classList.add('hidden');
                 searchResults.classList.add('hidden');
                 setSelectedDestination('');
-                if (destinationField && lastAutofilledDestination && destinationField.value.trim() === lastAutofilledDestination) {
-                    destinationField.value = '';
-                }
-                lastAutofilledDestination = '';
+                syncWalkInPhoneRequirement();
             });
+
+            if (destinationSearch) {
+                destinationSearch.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    setDestinationSnapshot(query);
+
+                    if (destinationClientId.value && query !== selectedDestinationClientName.textContent.trim()) {
+                        destinationClientId.value = '';
+                        if (selectedDestinationClient) {
+                            selectedDestinationClient.classList.add('hidden');
+                        }
+                    }
+                    if (query !== lastAutofilledDestinationName) {
+                        lastAutofilledDestinationName = '';
+                        lastAutofilledDestinationId = '';
+                    }
+
+                    clearTimeout(destinationSearchTimeout);
+
+                    if (query.length < 2) {
+                        destinationSearchResults.classList.add('hidden');
+                        return;
+                    }
+
+                    destinationSearchTimeout = setTimeout(() => {
+                        fetch(`{% url 'reception:client_search' %}?q=${encodeURIComponent(query)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                renderSearchResults(destinationSearchResults, data.clients, client => {
+                                    selectDestinationClient(client);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error fetching destination clients:', error);
+                            });
+                    }, 300);
+                });
+            }
+
+            if (clearDestinationClientBtn) {
+                clearDestinationClientBtn.addEventListener('click', function() {
+                    clearDestinationClient();
+                });
+            }
 
             // Hide search results when clicking outside
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#client-search') && !e.target.closest('#client-search-results')) {
                     searchResults.classList.add('hidden');
+                }
+                if (!e.target.closest('#destination-search') && !e.target.closest('#destination-search-results')) {
+                    destinationSearchResults.classList.add('hidden');
                 }
             });
 
@@ -434,6 +617,7 @@
                     selectedClient.classList.add('hidden');
                     setSelectedDestination('');
                 }
+                syncWalkInPhoneRequirement();
             });
 
             clientPhoneField.addEventListener('input', function() {
@@ -443,15 +627,8 @@
                     selectedClient.classList.add('hidden');
                     setSelectedDestination('');
                 }
+                syncWalkInPhoneRequirement();
             });
-
-            if (destinationField) {
-                destinationField.addEventListener('input', function() {
-                    if (this.value.trim() !== lastAutofilledDestination) {
-                        lastAutofilledDestination = '';
-                    }
-                });
-            }
 
             // Default order datetime to now (local) when empty — most orders are for today.
             // Skips when the field already has a value (validation errors, user edits).
@@ -463,6 +640,8 @@
                     d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
                     'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
             }
+
+            syncWalkInPhoneRequirement();
         });
     </script>
 {% endblock %}

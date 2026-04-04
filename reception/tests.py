@@ -109,7 +109,9 @@ class TestSlaughterOrderFormValidation:
     def test_service_package_required(self, reception_state):
         form_data = {
             "client_name": "Walk-in Customer",
+            "client_phone": "5551234567",
             "order_datetime": "2026-04-01T12:00",
+            "destination_search": "",
             "destination": "",
             "service_package": "",
         }
@@ -117,6 +119,79 @@ class TestSlaughterOrderFormValidation:
         assert not form.is_valid()
         assert "service_package" in form.errors
         assert "service package" in str(form.errors["service_package"]).lower()
+
+    def test_walk_in_phone_required_for_create_form(self, reception_state):
+        form = SlaughterOrderForm(
+            data={
+                "client_name": "Walk-in Customer",
+                "client_phone_area_code": "+90",
+                "client_phone": "",
+                "destination_search": "",
+                "destination": "",
+                "service_package": str(reception_state["service_package"].id),
+                "order_datetime": "2026-04-01T12:00",
+            }
+        )
+
+        assert not form.is_valid()
+        assert "client_phone" in form.errors
+        assert "required" in str(form.errors["client_phone"]).lower()
+
+    def test_walk_in_phone_required_for_update_form(self, reception_state):
+        order = SlaughterOrder.objects.create(
+            client_name="Walk-in Customer",
+            client_phone="",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+        )
+        form = SlaughterOrderUpdateForm(
+            instance=order,
+            data={
+                "client_name": "Walk-in Customer",
+                "client_phone_area_code": "+90",
+                "client_phone": "",
+                "destination_search": "",
+                "destination": "",
+                "service_package": str(reception_state["service_package"].id),
+                "order_datetime": "2026-04-01T12:00",
+            },
+        )
+
+        assert not form.is_valid()
+        assert "client_phone" in form.errors
+        assert "required" in str(form.errors["client_phone"]).lower()
+
+    def test_destination_search_populates_destination_snapshot(self, reception_state):
+        destination_user = User.objects.create_user(
+            username="destination-form-user",
+            password="password123",
+            role=User.Role.CLIENT,
+        )
+        destination_client = ClientProfile.objects.create(
+            user=destination_user,
+            account_type=ClientProfile.AccountType.ENTERPRISE,
+            company_name="Receiver Co",
+            contact_person="Receiver",
+            phone_number="+905551230099",
+            address="Destination Address",
+            tax_id="FORM-1",
+        )
+        form = SlaughterOrderForm(
+            data={
+                "client_name": "Walk-in Customer",
+                "client_phone_area_code": "+90",
+                "client_phone": "5551234567",
+                "destination_search": "Receiver Co",
+                "destination_client_id": str(destination_client.id),
+                "service_package": str(reception_state["service_package"].id),
+                "order_datetime": "2026-04-01T12:00",
+            }
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["destination_search"] == "Receiver Co"
+        assert form.cleaned_data["destination"] == "Receiver Co"
+        assert form.cleaned_data["destination_client_id"] == str(destination_client.id)
 
 
 class TestBatchAnimalForm:

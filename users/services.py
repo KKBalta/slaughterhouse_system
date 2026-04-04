@@ -65,6 +65,82 @@ def generate_walk_in_username(phone_number: str | None = None) -> str:
     return username
 
 
+@transaction.atomic
+def backfill_legacy_walk_in_profiles_from_orders() -> dict[str, int]:
+    """
+    Backfill WALKIN users / profiles for legacy walk-in orders.
+
+    Legacy orders may contain only `client_name` + `client_phone` with no linked
+    `client` profile because they were created before walk-in prospects were
+    auto-created. This routine creates or reuses one manageable profile per
+    normalized phone number, then links all matching historical orders.
+    """
+    unlinked_orders = SlaughterOrder.objects.filter(client__isnull=True)
+    ordered_unlinked_orders = list(unlinked_orders.order_by("-order_datetime", "-created_at", "-pk"))
+
+    stats = {
+        "unlinked_orders": unlinked_orders.count(),
+        "eligible_orders": 0,
+        "skipped_missing_name_or_phone": 0,
+        "processed_phone_groups": 0,
+        "skipped_invalid_phone_groups": 0,
+        "skipped_unmanageable_phone_groups": 0,
+        "created_users": 0,
+        "created_profiles": 0,
+        "reused_profiles": 0,
+        "linked_orders": 0,
+    }
+
+    representative_orders: dict[str, SlaughterOrder] = {}
+    grouped_order_ids: dict[str, set[str]] = {}
+    for order in ordered_unlinked_orders:
+        normalized_phone = normalize_phone(order.client_phone)
+        if normalized_phone:
+            grouped_order_ids.setdefault(normalized_phone, set()).add(str(order.pk))
+
+        if not (order.client_name or "").strip() or not (order.client_phone or "").strip():
+            stats["skipped_missing_name_or_phone"] += 1
+            continue
+
+        stats["eligible_orders"] += 1
+        if not normalized_phone:
+            stats["skipped_invalid_phone_groups"] += 1
+            continue
+        representative_orders.setdefault(normalized_phone, order)
+
+    stats["processed_phone_groups"] = len(representative_orders)
+
+    for normalized_phone, order in representative_orders.items():
+        existing_profile = find_manageable_client_profile_by_phone(normalized_phone)
+        existing_user = User.objects.filter(phone_number=normalized_phone).first()
+
+        profile = get_or_create_walk_in_profile(
+            contact_name=(order.client_name or "").strip(),
+            phone_number=normalized_phone,
+            destination=order.destination,
+        )
+        if profile is None:
+            stats["skipped_unmanageable_phone_groups"] += 1
+            continue
+
+        if existing_profile is None:
+            stats["created_profiles"] += 1
+        else:
+            stats["reused_profiles"] += 1
+
+        if existing_user is None and profile.user_id:
+            stats["created_users"] += 1
+
+        stats["linked_orders"] += SlaughterOrder.objects.filter(
+            client__isnull=True,
+            pk__in=grouped_order_ids.get(normalized_phone, set()),
+        ).update(
+            client=profile,
+        )
+
+    return stats
+
+
 def _apply_walk_in_profile_defaults(
     profile: ClientProfile,
     *,

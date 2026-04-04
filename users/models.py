@@ -65,6 +65,14 @@ class ClientProfile(BaseModel):
         null=True,
         help_text="Preferred delivery destination for this client. Used to prefill new orders.",
     )
+    default_destination_client = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="source_clients",
+        null=True,
+        blank=True,
+        help_text="Preferred destination client for this client. Used to prefill new orders.",
+    )
 
     # Enterprise-specific fields
     company_name = models.CharField(max_length=255, blank=True, null=True)

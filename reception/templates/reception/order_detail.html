@@ -39,10 +39,10 @@
                 <span class="font-medium text-gray-600">{% trans "Service:" %}</span>
                 <span class="text-gray-900">{{ order.service_package.localized_name }}</span>
             </div>
-            {% if order.destination %}
+            {% if order.destination_client or order.destination %}
             <div class="flex justify-between py-2 border-b border-gray-100">
                 <span class="font-medium text-gray-600">{% trans "Destination:" %}</span>
-                <span class="text-gray-900">{{ order.destination }}</span>
+                <span class="text-gray-900">{{ order.destination_client.get_full_name|default:order.destination }}</span>
             </div>
             {% endif %}
         </div>

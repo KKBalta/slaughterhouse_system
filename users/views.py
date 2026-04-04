@@ -775,6 +775,23 @@ def _user_management_queryset_for(actor):
     return qs
 
 
+def _account_type_label(account_type: str) -> str:
+    if account_type == ClientProfile.AccountType.INDIVIDUAL:
+        return _("Individual")
+    if account_type == ClientProfile.AccountType.ENTERPRISE:
+        return _("Enterprise")
+    if account_type == ClientProfile.AccountType.UNCLASSIFIED:
+        return _("Unclassified")
+    return account_type
+
+
+def _client_profile_row_kind(profile: ClientProfile) -> str:
+    """Label for how the client is stored (walk-in prospect vs profile without login)."""
+    if profile.user_id and getattr(profile.user, "role", None) == User.Role.WALKIN:
+        return _("Walk-in")
+    return _("Profile (no login)")
+
+
 def _staff_allowed_roles(actor) -> tuple[str, ...]:
     return tuple(
         role for role in creatable_roles_for(actor) if role in (User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR)
@@ -1109,6 +1126,9 @@ def tenant_user_list_view(request):
     }
     user_rows = []
     for managed_user in qs:
+        if managed_user.role == User.Role.WALKIN:
+            # Shown under "Client accounts" with other walk-in / profile-only records
+            continue
         try:
             profile = managed_user.client_profile
         except ClientProfile.DoesNotExist:
@@ -1121,12 +1141,14 @@ def tenant_user_list_view(request):
             display_name = managed_user.get_full_name() or managed_user.username
             secondary_text = managed_user.username
             legacy_detail_url = ""
+        account_type_label = _account_type_label(profile.account_type) if profile is not None else ""
         user_rows.append(
             {
                 "user": managed_user,
                 "profile": profile,
                 "display_name": display_name,
                 "secondary_text": secondary_text,
+                "account_type_label": account_type_label,
                 "edit_url": (
                     reverse("tenant_user_edit", kwargs={"pk": managed_user.pk})
                     if can_edit_user(request.user, managed_user)
@@ -1136,26 +1158,48 @@ def tenant_user_list_view(request):
             }
         )
 
-    # Include user-less ClientProfiles (visible to OWNER, ADMIN, MANAGER)
+    # Profiles without login + walk-in prospects (WALKIN user + profile)
     client_rows = []
     if can_manage_client_accounts(request.user):
-        cp_qs = ClientProfile.objects.filter(user__isnull=True).order_by("company_name", "contact_person")
         if role_filter in {"CLIENT", "WALKIN", "ALL"}:
+            cp_qs = (
+                ClientProfile.objects.select_related("user")
+                .filter(Q(user__isnull=True) | Q(user__role=User.Role.WALKIN))
+                .order_by("company_name", "contact_person", "user__username")
+            )
+            if role_filter == "WALKIN":
+                cp_qs = cp_qs.filter(user__role=User.Role.WALKIN)
+            elif role_filter == "CLIENT":
+                cp_qs = cp_qs.filter(user__isnull=True)
             if q:
                 cp_qs = cp_qs.filter(
                     Q(company_name__icontains=q)
                     | Q(contact_person__icontains=q)
                     | Q(phone_number__icontains=q)
                     | Q(tax_id__icontains=q)
+                    | Q(user__username__icontains=q)
+                    | Q(user__first_name__icontains=q)
+                    | Q(user__last_name__icontains=q)
                 )
             for profile in cp_qs:
-                client_rows.append({
-                    "profile": profile,
-                    "display_name": profile.get_full_name(),
-                    "secondary_text": profile.contact_person or "",
-                    "phone": profile.phone_number or "—",
-                    "detail_url": reverse("client_profile_detail", kwargs={"pk": profile.pk}),
-                })
+                linked_user = profile.user
+                edit_url = ""
+                if linked_user is not None and can_edit_user(request.user, linked_user):
+                    edit_url = reverse("tenant_user_edit", kwargs={"pk": linked_user.pk})
+                client_rows.append(
+                    {
+                        "profile": profile,
+                        "display_name": profile.get_full_name(),
+                        "secondary_text": profile.contact_person or "",
+                        "phone": profile.phone_number or "—",
+                        "detail_url": reverse("client_profile_detail", kwargs={"pk": profile.pk}),
+                        "account_type_label": _account_type_label(profile.account_type),
+                        "row_kind_label": _client_profile_row_kind(profile),
+                        "edit_url": edit_url,
+                    }
+                )
+
+    count_all = qs.exclude(role=User.Role.WALKIN).count() + len(client_rows)
 
     return render(
         request,
@@ -1167,7 +1211,7 @@ def tenant_user_list_view(request):
             "status_filter": status,
             "role_filter": role_filter,
             "role_filters": role_filters,
-            "count_all": counts["all"] + len(client_rows),
+            "count_all": count_all,
             "count_active": counts["active"],
             "count_inactive": counts["inactive"],
             "creatable_roles": creatable_roles_for(request.user),
@@ -1216,6 +1260,11 @@ def client_profile_list_view(request):
             | Q(contact_person__icontains=q)
             | Q(phone_number__icontains=q)
             | Q(default_destination__icontains=q)
+            | Q(default_destination_client__company_name__icontains=q)
+            | Q(default_destination_client__contact_person__icontains=q)
+            | Q(default_destination_client__user__username__icontains=q)
+            | Q(default_destination_client__user__first_name__icontains=q)
+            | Q(default_destination_client__user__last_name__icontains=q)
             | Q(user__username__icontains=q)
             | Q(user__first_name__icontains=q)
             | Q(user__last_name__icontains=q)

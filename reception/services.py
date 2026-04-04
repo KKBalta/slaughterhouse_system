@@ -23,6 +23,40 @@ def _clean_text(value: str | None) -> str:
     return (value or "").strip()
 
 
+def _resolve_destination_client(destination_client_id: str | None) -> ClientProfile | None:
+    if not destination_client_id:
+        return None
+    return ClientProfile.objects.get(id=destination_client_id)
+
+
+def _destination_display_name(destination_client: ClientProfile | None, destination: str | None) -> str:
+    if destination_client is not None:
+        return destination_client.get_full_name()
+    return _clean_text(destination) or None
+
+
+def _sync_preferred_destination_client(
+    *,
+    client_profile: ClientProfile | None,
+    destination_client: ClientProfile | None,
+) -> ClientProfile | None:
+    if client_profile is None or destination_client is None:
+        return client_profile
+
+    destination_name = destination_client.get_full_name()
+    update_fields: list[str] = []
+    if client_profile.default_destination_client_id != destination_client.id:
+        client_profile.default_destination_client = destination_client
+        update_fields.append("default_destination_client")
+    if (client_profile.default_destination or "").strip() != destination_name:
+        client_profile.default_destination = destination_name
+        update_fields.append("default_destination")
+    if update_fields:
+        update_fields.append("updated_at")
+        client_profile.save(update_fields=update_fields)
+    return client_profile
+
+
 def _resolve_order_client_reference(
     *,
     client_id: str | None,
@@ -134,6 +168,7 @@ def create_slaughter_order(
     client_name: str = None,
     client_phone: str = None,
     destination: str = None,
+    destination_client_id: str | None = None,
 ) -> SlaughterOrder:
     """
     Creates a new SlaughterOrder and all its associated animals.
@@ -150,6 +185,8 @@ def create_slaughter_order(
         client_phone=client_phone,
         destination=destination,
     )
+    destination_client = _resolve_destination_client(destination_client_id)
+    destination_display = _destination_display_name(destination_client, destination)
 
     service_package = ServicePackage.objects.get(id=service_package_id)
 
@@ -165,17 +202,22 @@ def create_slaughter_order(
 
                 order = SlaughterOrder.objects.create(
                     client=client_profile,
+                    destination_client=destination_client,
                     service_package=service_package,
                     order_datetime=order_datetime,
                     client_name=raw_client_name,
                     client_phone=raw_client_phone,
-                    destination=destination,
+                    destination=destination_display,
                     slaughter_order_no=order_number,
                 )
 
                 for animal_data in animals_data:
                     create_animal(order=order, **animal_data)
 
+                _sync_preferred_destination_client(
+                    client_profile=client_profile,
+                    destination_client=destination_client,
+                )
                 order.refresh_from_db()
                 return order
 
@@ -204,6 +246,7 @@ def assign_client_to_order(
     client_name: str | None = None,
     client_phone: str | None = None,
     destination: str | None = None,
+    destination_client_id: str | None = None,
 ) -> SlaughterOrder:
     if order.status != SlaughterOrder.Status.PENDING:
         raise ValidationError("Cannot update an order that is already in progress, completed, or cancelled.")
@@ -214,10 +257,17 @@ def assign_client_to_order(
         client_phone=client_phone,
         destination=destination,
     )
+    destination_client = _resolve_destination_client(destination_client_id)
     order.client = client_profile
+    order.destination_client = destination_client
     order.client_name = raw_client_name
     order.client_phone = raw_client_phone
-    order.save(update_fields=["client", "client_name", "client_phone"])
+    order.destination = _destination_display_name(destination_client, destination)
+    order.save(update_fields=["client", "destination_client", "client_name", "client_phone", "destination"])
+    _sync_preferred_destination_client(
+        client_profile=client_profile,
+        destination_client=destination_client,
+    )
     return order
 
 

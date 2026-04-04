@@ -37,13 +37,18 @@ class ClientSearchView(LoginRequiredMixin, View):
             return JsonResponse({"clients": []})
 
         clients = (
-            ClientProfile.objects.select_related("user")
+            ClientProfile.objects.select_related("user", "default_destination_client", "default_destination_client__user")
             .filter(Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES))
             .filter(
                 Q(company_name__icontains=query)
                 | Q(contact_person__icontains=query)
                 | Q(phone_number__icontains=query)
                 | Q(default_destination__icontains=query)
+                | Q(default_destination_client__company_name__icontains=query)
+                | Q(default_destination_client__contact_person__icontains=query)
+                | Q(default_destination_client__user__username__icontains=query)
+                | Q(default_destination_client__user__first_name__icontains=query)
+                | Q(default_destination_client__user__last_name__icontains=query)
                 | Q(user__username__icontains=query)
                 | Q(user__first_name__icontains=query)
                 | Q(user__last_name__icontains=query)
@@ -52,6 +57,12 @@ class ClientSearchView(LoginRequiredMixin, View):
 
         client_list = []
         for client in clients:
+            preferred_destination_client = client.default_destination_client
+            preferred_destination_name = (
+                preferred_destination_client.get_full_name()
+                if preferred_destination_client is not None
+                else (client.default_destination or "")
+            )
             if client.account_type == ClientProfile.AccountType.ENTERPRISE:
                 display_name = (client.company_name or "").strip() or "—"
                 contact_info = client.contact_person or "No contact person"
@@ -84,7 +95,11 @@ class ClientSearchView(LoginRequiredMixin, View):
                     "display_name": display_name,
                     "contact_info": contact_info,
                     "phone": client.phone_number,
-                    "default_destination": client.default_destination or "",
+                    "default_destination": preferred_destination_name,
+                    "default_destination_client_id": (
+                        str(preferred_destination_client.id) if preferred_destination_client is not None else ""
+                    ),
+                    "default_destination_client_name": preferred_destination_name,
                 }
             )
 
@@ -114,6 +129,7 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
                     service_package_id=form.cleaned_data["service_package"].id,
                     order_datetime=form.cleaned_data["order_datetime"],
                     destination=form.cleaned_data["destination"],
+                    destination_client_id=form.cleaned_data.get("destination_client_id"),
                     client_name=form.cleaned_data.get("client_name", ""),
                     client_phone=form.cleaned_data.get("client_phone", ""),
                     animals_data=[],
@@ -143,9 +159,13 @@ class SlaughterOrderListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = SlaughterOrder.objects.select_related("client", "client__user", "service_package").order_by(
-            "-order_datetime"
-        )
+        queryset = SlaughterOrder.objects.select_related(
+            "client",
+            "client__user",
+            "destination_client",
+            "destination_client__user",
+            "service_package",
+        ).order_by("-order_datetime")
 
         # Search functionality
         search = self.request.GET.get("search", "").strip()
@@ -158,6 +178,10 @@ class SlaughterOrderListView(LoginRequiredMixin, ListView):
                 | Q(client__contact_person__icontains=search)
                 | Q(client_name__icontains=search)
                 | Q(destination__icontains=search)
+                | Q(destination_client__company_name__icontains=search)
+                | Q(destination_client__contact_person__icontains=search)
+                | Q(destination_client__user__first_name__icontains=search)
+                | Q(destination_client__user__last_name__icontains=search)
             )
 
         return queryset
@@ -195,6 +219,7 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
                 client_name=form.cleaned_data.get("client_name", ""),
                 client_phone=form.cleaned_data.get("client_phone", ""),
                 destination=form.cleaned_data["destination"],
+                destination_client_id=form.cleaned_data.get("destination_client_id"),
             )
 
             # Update other fields

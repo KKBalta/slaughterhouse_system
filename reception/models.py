@@ -24,6 +24,14 @@ class SlaughterOrder(BaseModel):
     client = models.ForeignKey(
         ClientProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="slaughter_orders"
     )
+    destination_client = models.ForeignKey(
+        ClientProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="destination_orders",
+        help_text="Destination client selected for this order.",
+    )
 
     # For walk-in clients
     client_name = models.CharField(max_length=255, blank=True)

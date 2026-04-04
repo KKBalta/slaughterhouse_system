@@ -46,6 +46,10 @@ def _serialize_profile(p: ClientProfile) -> dict:
         "phone_number": p.phone_number,
         "address": p.address,
         "default_destination": p.default_destination,
+        "default_destination_client_id": str(p.default_destination_client_id) if p.default_destination_client_id else None,
+        "default_destination_client_name": (
+            p.default_destination_client.get_full_name() if p.default_destination_client is not None else None
+        ),
         "company_name": p.company_name,
         "tax_id": p.tax_id,
         "is_active": p.is_active,
@@ -82,6 +86,11 @@ def client_profile_list_api(request):
             | Q(contact_person__icontains=search)
             | Q(phone_number__icontains=search)
             | Q(default_destination__icontains=search)
+            | Q(default_destination_client__company_name__icontains=search)
+            | Q(default_destination_client__contact_person__icontains=search)
+            | Q(default_destination_client__user__username__icontains=search)
+            | Q(default_destination_client__user__first_name__icontains=search)
+            | Q(default_destination_client__user__last_name__icontains=search)
             | Q(user__username__icontains=search)
             | Q(user__first_name__icontains=search)
             | Q(user__last_name__icontains=search)

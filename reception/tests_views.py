@@ -138,6 +138,39 @@ class TestClientSearchAPI:
         payload = response.json()
         assert payload["clients"][0]["default_destination"] == "Istanbul Delivery Hub"
 
+    def test_search_returns_default_destination_client_metadata(self, reception_admin_client, reception_client_user):
+        destination_user = User.objects.create_user(
+            username="destination-meta-user",
+            password="testpass123",
+            role=User.Role.CLIENT,
+        )
+        destination_client = ClientProfile.objects.create(
+            user=destination_user,
+            account_type=ClientProfile.AccountType.ENTERPRISE,
+            company_name="Meta Destination Co",
+            contact_person="Receiver",
+            phone_number="+905550000111",
+            address="Destination Address",
+            tax_id="DEST-1",
+        )
+        profile = ClientProfile.objects.create(
+            user=reception_client_user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            contact_person="Source Client",
+            phone_number="+905559999777",
+            address="123 Reception Test St",
+            default_destination_client=destination_client,
+            default_destination="Meta Destination Co",
+        )
+
+        response = reception_admin_client.get(reverse("reception:client_search"), {"q": "Source"})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["clients"][0]["id"] == str(profile.id)
+        assert payload["clients"][0]["default_destination_client_id"] == str(destination_client.id)
+        assert payload["clients"][0]["default_destination_client_name"] == "Meta Destination Co"
+
 
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
 class TestSlaughterOrderListView:
@@ -471,6 +504,51 @@ class TestClientSelection:
                 assert order.client.user.role == User.Role.WALKIN
                 assert order.client_name == "Walk-in John"
                 assert order.client_phone == "+905551234567"
+
+    def test_walk_in_phone_required(self, authenticated_client, service_package_factory):
+        service = service_package_factory()
+
+        response = authenticated_client.post(
+            reverse("reception:create_slaughter_order"),
+            {
+                "client_name": "Walk-in John",
+                "client_phone": "",
+                "service_package": str(service.id),
+                "order_datetime": timezone.now().strftime("%Y-%m-%d %H:%M"),
+            },
+        )
+
+        assert response.status_code == 200
+        assert SlaughterOrder.objects.count() == 0
+        assert "client_phone" in response.context["form"].errors
+
+
+@pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
+class TestSlaughterOrderUpdateView:
+    def test_update_walk_in_phone_required(self, reception_admin_client, reception_service_package):
+        order = SlaughterOrder.objects.create(
+            client_name="Walk-in John",
+            client_phone="",
+            service_package=reception_service_package,
+            order_datetime=timezone.now(),
+        )
+
+        response = reception_admin_client.post(
+            reverse("reception:slaughter_order_update", kwargs={"pk": order.pk}),
+            {
+                "client_name": "Walk-in John",
+                "client_phone": "",
+                "service_package": str(reception_service_package.id),
+                "order_datetime": timezone.now().strftime("%Y-%m-%d %H:%M"),
+                "destination_search": "",
+                "destination": "",
+            },
+        )
+
+        assert response.status_code == 200
+        order.refresh_from_db()
+        assert order.client_phone == ""
+        assert "client_phone" in response.context["form"].errors
 
 
 class TestOrderStatusTransitions:

@@ -13,6 +13,7 @@ from processing.models import Animal, WeightLog
 from reception.models import SlaughterOrder
 from reception.services import (
     add_animal_to_order,
+    assign_client_to_order,
     bill_order,
     cancel_slaughter_order,
     create_batch_animals,
@@ -66,6 +67,17 @@ def make_order(reception_state):
 
 
 class TestReceptionServices:
+    def _make_destination_client(self, *, phone, name="Destination Client", company_name=""):
+        user = User.objects.create_user(username=f"dest-{phone[-4:]}", role=User.Role.CLIENT)
+        return ClientProfile.objects.create(
+            user=user,
+            account_type=ClientProfile.AccountType.ENTERPRISE if company_name else ClientProfile.AccountType.INDIVIDUAL,
+            contact_person=name,
+            company_name=company_name or None,
+            phone_number=phone,
+            address="Destination Address",
+        )
+
     def test_create_slaughter_order_service(self, reception_state):
         animals_data = [
             {"animal_type": "cattle", "identification_tag": "CATTLE-001", "details_data": {"breed": "Angus"}},
@@ -79,6 +91,26 @@ class TestReceptionServices:
         )
         assert SlaughterOrder.objects.count() == 1
         assert order.animals.count() == 2
+
+    def test_create_slaughter_order_updates_registered_client_default_destination_client(self, reception_state):
+        destination_client = self._make_destination_client(
+            phone="+905551230001",
+            company_name="Central Delivery Hub",
+        )
+        order = create_slaughter_order(
+            client_id=reception_state["client_profile"].id,
+            service_package_id=reception_state["service_package"].id,
+            order_datetime=timezone.now(),
+            animals_data=[],
+            destination_client_id=str(destination_client.id),
+        )
+
+        reception_state["client_profile"].refresh_from_db()
+        assert order.client == reception_state["client_profile"]
+        assert order.destination_client == destination_client
+        assert order.destination == "Central Delivery Hub"
+        assert reception_state["client_profile"].default_destination_client == destination_client
+        assert reception_state["client_profile"].default_destination == "Central Delivery Hub"
 
     def test_update_slaughter_order_service(self, reception_state, make_order):
         order = make_order()
@@ -98,6 +130,10 @@ class TestReceptionServices:
             update_slaughter_order(order=order, destination="Another Market")
 
     def test_create_slaughter_order_creates_walkin_prospect(self, reception_state):
+        destination_client = self._make_destination_client(
+            phone="+905551230002",
+            company_name="Prospect Depot",
+        )
         order = create_slaughter_order(
             client_id=None,
             service_package_id=reception_state["service_package"].id,
@@ -106,12 +142,15 @@ class TestReceptionServices:
             client_name="Potential Client",
             client_phone="+905551234999",
             destination="Prospect Depot",
+            destination_client_id=str(destination_client.id),
         )
 
         assert order.client is not None
+        assert order.destination_client == destination_client
         assert order.client.account_type == ClientProfile.AccountType.UNCLASSIFIED
         assert order.client.contact_person == "Potential Client"
         assert order.client.default_destination == "Prospect Depot"
+        assert order.client.default_destination_client == destination_client
         assert order.client.user is not None
         assert order.client.user.role == User.Role.WALKIN
         assert order.client_name == "Potential Client"
@@ -134,6 +173,10 @@ class TestReceptionServices:
             address="",
             default_destination="",
         )
+        destination_client = self._make_destination_client(
+            phone="+905551230003",
+            company_name="Second Stop",
+        )
 
         order = create_slaughter_order(
             client_id=None,
@@ -143,11 +186,62 @@ class TestReceptionServices:
             client_name="Known Prospect",
             client_phone="+905551234998",
             destination="Second Stop",
+            destination_client_id=str(destination_client.id),
         )
 
         profile.refresh_from_db()
         assert order.client == profile
+        assert order.destination_client == destination_client
         assert profile.default_destination == "Second Stop"
+        assert profile.default_destination_client == destination_client
+
+    def test_blank_order_destination_does_not_clear_client_default_destination(self, reception_state):
+        reception_state["client_profile"].default_destination = "Saved Warehouse"
+        destination_client = self._make_destination_client(
+            phone="+905551230004",
+            company_name="Saved Warehouse",
+        )
+        reception_state["client_profile"].default_destination_client = destination_client
+        reception_state["client_profile"].save(update_fields=["default_destination", "default_destination_client"])
+        order = create_slaughter_order(
+            client_id=reception_state["client_profile"].id,
+            service_package_id=reception_state["service_package"].id,
+            order_datetime=timezone.now(),
+            animals_data=[],
+            destination="",
+        )
+
+        reception_state["client_profile"].refresh_from_db()
+        assert order.destination is None
+        assert reception_state["client_profile"].default_destination == "Saved Warehouse"
+        assert reception_state["client_profile"].default_destination_client == destination_client
+
+    def test_assign_client_to_order_updates_client_default_destination_client(self, reception_state):
+        destination_client = self._make_destination_client(
+            phone="+905551230005",
+            company_name="Updated Delivery Point",
+        )
+        order = SlaughterOrder.objects.create(
+            client_name="Walk-in Prospect",
+            client_phone="+905551234777",
+            destination="Old Route",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+        )
+
+        assign_client_to_order(
+            order,
+            client_id=str(reception_state["client_profile"].id),
+            destination="Updated Delivery Point",
+            destination_client_id=str(destination_client.id),
+        )
+
+        order.refresh_from_db()
+        reception_state["client_profile"].refresh_from_db()
+        assert order.client == reception_state["client_profile"]
+        assert order.destination_client == destination_client
+        assert reception_state["client_profile"].default_destination_client == destination_client
+        assert reception_state["client_profile"].default_destination == "Updated Delivery Point"
 
     def test_cancel_slaughter_order_service(self, reception_state):
         order = create_slaughter_order(

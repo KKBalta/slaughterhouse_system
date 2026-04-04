@@ -67,7 +67,9 @@
         </div>
         <div class="sm:col-span-2">
             <dt class="text-xs font-semibold text-gray-500 uppercase">{% trans "Default destination" %}</dt>
-            <dd class="mt-1 text-gray-900">{{ profile.default_destination|default:"—" }}</dd>
+            <dd class="mt-1 text-gray-900">
+                {{ profile.default_destination_client.get_full_name|default:profile.default_destination|default:"—" }}
+            </dd>
         </div>
         {% if profile.user %}
         <div>
