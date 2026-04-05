@@ -1129,3 +1129,317 @@ class TestLeatherWeightLogViewExtra:
 
         assert response.status_code == 302
         assert Animal.objects.get(pk=animal.pk).leather_weight_kg is None
+
+
+@pytest.mark.django_db
+class TestQuickProcessView:
+    """Tests for QuickProcessView GET, POST, Save & Next, and Save & Print Label."""
+
+    # -- Helper to test internal methods without template rendering -----------
+
+    def _view_instance(self):
+        from processing.views import QuickProcessView
+
+        return QuickProcessView()
+
+    # -- GET ------------------------------------------------------------------
+
+    def test_get_defaults_sakatat_bowels_to_good(self, admin_user, animal_factory):
+        view = self._view_instance()
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        initial = view._build_initial(animal)
+        assert initial["sakatat_status"] == 1.0
+        assert initial["bowels_status"] == 1.0
+
+    def test_get_prefills_existing_data(self, admin_user, animal_factory, weight_log_factory):
+        view = self._view_instance()
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+        CattleDetails.objects.create(animal=animal, breed="Angus", sakatat_status=0.5, bowels_status=1.0)
+        weight_log_factory(animal=animal, weight=350.0, weight_type="live_weight")
+
+        initial = view._build_initial(animal)
+        assert initial["breed"] == "Angus"
+        assert float(initial["sakatat_status"]) == 0.5
+        assert float(initial["live_weight"]) == 350.0
+
+    def test_get_requires_login(self, client, animal_factory):
+        animal = animal_factory()
+        response = client.get(f"/tr/processing/animals/{animal.pk}/quick/")
+        assert response.status_code == 302
+        assert "login" in response.url
+
+    # -- POST: Save All -------------------------------------------------------
+
+    def test_post_saves_details_and_weights(self, admin_user, animal_factory):
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {
+            "save": "",
+            "breed": "Holstein",
+            "sakatat_status": "1.0",
+            "bowels_status": "0.5",
+            "live_weight": "450.00",
+            "hot_carcass_weight": "220.00",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        # Verify details saved
+        details = CattleDetails.objects.get(animal=animal)
+        assert details.breed == "Holstein"
+        assert float(details.bowels_status) == 0.5
+        # Verify weights saved
+        assert WeightLog.objects.filter(animal=animal, weight_type="live_weight").exists()
+        assert WeightLog.objects.filter(animal=animal, weight_type="hot_carcass_weight").exists()
+
+    def test_post_saves_leather_weight(self, admin_user, animal_factory):
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {
+            "save": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+            "leather_weight": "12.50",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        # Re-fetch from DB (refresh_from_db blocked by django-fsm protected status)
+        updated = Animal.objects.get(pk=animal.pk)
+        assert float(updated.leather_weight_kg) == 12.50
+
+    def test_post_no_changes_shows_info(self, admin_user, animal_factory):
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="lamb", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {
+            "save": "",
+            "sakatat_status": "",
+            "bowels_status": "",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+
+    def test_post_invalid_weight_rerenders_form(self, admin_user, animal_factory):
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {
+            "save": "",
+            "live_weight": "99999",  # exceeds 2000 limit
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        # Re-renders the form (not a redirect)
+        assert response.status_code == 200
+
+    # -- POST: Save & Next ----------------------------------------------------
+
+    def test_save_next_redirects_to_sibling(self, admin_user, slaughter_order_factory, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        order = slaughter_order_factory()
+        a1 = animal_factory(slaughter_order=order, animal_type="sheep", status="received")
+        a1.perform_slaughter()
+        a1.save()
+        a2 = animal_factory(slaughter_order=order, animal_type="sheep", status="received")
+
+        request = _auth_post_request(admin_user, {
+            "save_next": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+        })
+        response = QuickProcessView.as_view()(request, pk=a1.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:quick_process", kwargs={"pk": a2.pk})
+
+    def test_save_next_cycles_back_to_first(self, admin_user, slaughter_order_factory, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        order = slaughter_order_factory()
+        a1 = animal_factory(slaughter_order=order, animal_type="sheep", status="received")
+        a2 = animal_factory(slaughter_order=order, animal_type="sheep", status="received")
+        a2.perform_slaughter()
+        a2.save()
+
+        request = _auth_post_request(admin_user, {
+            "save_next": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+        })
+        response = QuickProcessView.as_view()(request, pk=a2.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("processing:quick_process", kwargs={"pk": a1.pk})
+
+    def test_save_next_single_animal_stays(self, admin_user, animal_factory):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="sheep", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        request = _auth_post_request(admin_user, {
+            "save_next": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        # Falls through to default redirect (same animal) since no next sibling
+        assert response.url == reverse("processing:quick_process", kwargs={"pk": animal.pk})
+
+    # -- POST: Save & Print Label ---------------------------------------------
+
+    def test_save_print_generates_label_and_redirects(self, admin_user, animal_factory, mocker):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        # Mock label generation to avoid file I/O
+        mock_label = SimpleNamespace(pk="00000000-0000-0000-0000-000000000099")
+        mock_create = mocker.patch(
+            "labeling.utils.create_animal_label",
+            return_value=mock_label,
+        )
+
+        request = _auth_post_request(admin_user, {
+            "save_print": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+            "hot_carcass_weight": "200.00",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        assert response.url == reverse("labeling:animal_label_detail", kwargs={"pk": mock_label.pk})
+        mock_create.assert_called_once()
+        # Verify weight was still saved
+        assert WeightLog.objects.filter(animal=animal, weight_type="hot_carcass_weight").exists()
+
+    def test_save_print_without_weight_falls_through(self, admin_user, animal_factory, mocker):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="sheep", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        mock_create = mocker.patch("labeling.utils.create_animal_label")
+
+        request = _auth_post_request(admin_user, {
+            "save_print": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+            # No hot_carcass_weight
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        assert response.status_code == 302
+        # Should redirect to self, not label detail
+        assert response.url == reverse("processing:quick_process", kwargs={"pk": animal.pk})
+        mock_create.assert_not_called()
+
+    def test_save_print_label_error_falls_through(self, admin_user, animal_factory, mocker):
+        from django.urls import reverse
+
+        from processing.views import QuickProcessView
+
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        mocker.patch(
+            "labeling.utils.create_animal_label",
+            side_effect=Exception("Printer on fire"),
+        )
+
+        request = _auth_post_request(admin_user, {
+            "save_print": "",
+            "sakatat_status": "1.0",
+            "bowels_status": "1.0",
+            "hot_carcass_weight": "200.00",
+        })
+        response = QuickProcessView.as_view()(request, pk=animal.pk)
+
+        # Falls through to default redirect with error message
+        assert response.status_code == 302
+        assert response.url == reverse("processing:quick_process", kwargs={"pk": animal.pk})
+
+    # -- Progress tracking ----------------------------------------------------
+
+    def test_progress_tracks_filled_fields(self, admin_user, animal_factory, weight_log_factory):
+        view = self._view_instance()
+        animal = animal_factory(animal_type="cattle", status="received")
+        animal.perform_slaughter()
+        animal.save()
+        CattleDetails.objects.create(animal=animal, breed="Angus", sakatat_status=1.0, bowels_status=1.0)
+        weight_log_factory(animal=animal, weight=350.0, weight_type="live_weight")
+
+        progress = view._get_progress(animal)
+        assert progress["sakatat_status"] is True
+        assert progress["bowels_status"] is True
+        assert progress["breed"] is True
+        assert progress["live_weight"] is True
+        assert progress["hot_carcass_weight"] is False
+        assert progress["leather_weight"] is False
+        filled = sum(1 for v in progress.values() if v)
+        assert filled == 4
+        assert len(progress) == 6
+
+    # -- Form field visibility ------------------------------------------------
+
+    def test_lamb_has_no_breed_or_leather(self, admin_user, animal_factory):
+        from processing.forms import QuickProcessForm
+
+        animal = animal_factory(animal_type="lamb", status="received")
+        animal.perform_slaughter()
+        animal.save()
+
+        form = QuickProcessForm(animal=animal)
+        assert "breed" not in form.fields
+        assert "leather_weight" not in form.fields
+        assert "sakatat_status" in form.fields
+
+    def test_received_animal_hides_hot_carcass_and_leather(self, admin_user, animal_factory):
+        from processing.forms import QuickProcessForm
+
+        animal = animal_factory(animal_type="cattle", status="received")
+
+        form = QuickProcessForm(animal=animal)
+        assert "hot_carcass_weight" not in form.fields
+        assert "leather_weight" not in form.fields
+        assert "live_weight" in form.fields

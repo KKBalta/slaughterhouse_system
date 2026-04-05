@@ -3,5 +3,6 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 routes = [
+  { pattern = "carnitrack.com/*", zone_name = "carnitrack.com" },
   { pattern = "*.carnitrack.com/*", zone_name = "carnitrack.com" },
 ]

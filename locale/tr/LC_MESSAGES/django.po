@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 02:54+0300\n"
+"POT-Creation-Date: 2026-04-05 07:35+0300\n"
 "PO-Revision-Date: 2025-08-20 05:18+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
@@ -874,7 +874,7 @@ msgstr ""
 "Deri ağırlığı kesimden sonra kaydedilmelidir. Hayvan %(tag)s şu anda "
 "%(status)s durumundadır."
 
-#: processing/forms.py:228 processing/forms.py:777 processing/views.py:587
+#: processing/forms.py:228 processing/forms.py:777 processing/views.py:598
 msgid "Leather Weight (kg)"
 msgstr "Deri Ağırlığı (kg)"
 
@@ -884,7 +884,8 @@ msgstr "Deri ağırlığını kilogram olarak girin"
 
 #: processing/forms.py:247 processing/forms.py:826
 msgid "Leather weight seems unusually high. Please verify."
-msgstr "Deri ağırlığı alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
+msgstr ""
+"Deri ağırlığı alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
 
 #: processing/forms.py:259
 #: processing/templates/processing/animal_detail.html:683
@@ -970,21 +971,21 @@ msgstr "Bu toplu ağırlık kaydında hayvan sayısı yok; düzenlenemez."
 
 #: processing/forms.py:458 processing/forms.py:489 processing/forms.py:520
 #: processing/forms.py:599 processing/forms.py:630 processing/forms.py:661
-#: processing/forms.py:721 processing/views.py:582
+#: processing/forms.py:721 processing/views.py:593
 msgid "Breed"
 msgstr "Irk"
 
 #: processing/forms.py:459 processing/forms.py:490 processing/forms.py:521
 #: processing/forms.py:551 processing/forms.py:575 processing/forms.py:600
 #: processing/forms.py:631 processing/forms.py:662 processing/forms.py:729
-#: processing/views.py:583
+#: processing/views.py:594
 msgid "Sakatat Status"
 msgstr "Sakatat Durumu"
 
 #: processing/forms.py:460 processing/forms.py:491 processing/forms.py:522
 #: processing/forms.py:552 processing/forms.py:576 processing/forms.py:601
 #: processing/forms.py:632 processing/forms.py:663 processing/forms.py:743
-#: processing/views.py:584
+#: processing/views.py:595
 msgid "Bowels Status"
 msgstr "Bağırsak Durumu"
 
@@ -1027,7 +1028,7 @@ msgstr "Fena Değil"
 msgid "Good"
 msgstr "İyi"
 
-#: processing/forms.py:759 processing/views.py:585
+#: processing/forms.py:759 processing/views.py:596
 msgid "Live Weight (kg)"
 msgstr "Canlı Ağırlık (kg)"
 
@@ -1035,7 +1036,7 @@ msgstr "Canlı Ağırlık (kg)"
 msgid "kg"
 msgstr "kg"
 
-#: processing/forms.py:768 processing/views.py:586
+#: processing/forms.py:768 processing/views.py:597
 msgid "Hot Carcass Weight (kg)"
 msgstr "Sıcak Karkas Ağırlığı (kg)"
 
@@ -1797,6 +1798,7 @@ msgstr "Hızlı İşlemler"
 
 #: processing/templates/processing/animal_detail.html:781
 #: processing/templates/processing/quick_process.html:4
+#: reception/templates/reception/order_detail.html:147
 msgid "Quick Process"
 msgstr "Hızlı İşlem"
 
@@ -1972,7 +1974,7 @@ msgid "No order"
 msgstr "Sipariş yok"
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1146 processing/views.py:1223
+#: processing/views.py:1172 processing/views.py:1249
 msgid "Walk-in Client"
 msgstr "Parakende Müşteri"
 
@@ -2769,8 +2771,8 @@ msgstr "Etiket"
 
 #: processing/templates/processing/disassembly_detail.html:352
 #: processing/templates/processing/disassembly_detail.html:375
-#: reception/templates/reception/order_detail.html:114
-#: reception/templates/reception/order_detail.html:146
+#: reception/templates/reception/order_detail.html:115
+#: reception/templates/reception/order_detail.html:155
 #: scales/templates/scales/session_detail.html:68
 #: scales/templates/scales/session_detail.html:121
 #: scales/templates/scales/session_detail.html:174
@@ -2861,15 +2863,19 @@ msgstr "Hayvan Detayları"
 msgid "Weights"
 msgstr "Ağırlıklar"
 
-#: processing/templates/processing/quick_process.html:180
+#: processing/templates/processing/quick_process.html:166
+msgid "Save & Print Label"
+msgstr ""
+
+#: processing/templates/processing/quick_process.html:189
 msgid "Save All"
 msgstr "Tümünü Kaydet"
 
-#: processing/templates/processing/quick_process.html:185
+#: processing/templates/processing/quick_process.html:194
 msgid "Save & Next"
 msgstr "Kaydet ve Sonraki"
 
-#: processing/templates/processing/quick_process.html:195
+#: processing/templates/processing/quick_process.html:204
 #, python-format
 msgid "Next: %(tag)s (%(type)s)"
 msgstr "Sonraki: %(tag)s (%(type)s)"
@@ -2895,81 +2901,87 @@ msgstr "Kantar fişi görüntüsü yüklenemedi."
 msgid "%(animal_type)s Details"
 msgstr "%(animal_type)s Detayları"
 
-#: processing/views.py:635
+#: processing/views.py:646
 msgid "details"
 msgstr "detaylar"
 
-#: processing/views.py:640
+#: processing/views.py:651
 msgid "live weight"
 msgstr "canlı ağırlık"
 
-#: processing/views.py:644
+#: processing/views.py:655
 msgid "hot carcass weight"
 msgstr "sıcak karkas ağırlığı"
 
-#: processing/views.py:648
+#: processing/views.py:659
 msgid "leather weight"
 msgstr "deri ağırlığı"
 
-#: processing/views.py:653
+#: processing/views.py:664
 #, python-format
 msgid "Saved %(items)s for %(tag)s."
 msgstr "%(tag)s için %(items)s kaydedildi."
 
-#: processing/views.py:659
+#: processing/views.py:670
 msgid "No changes to save."
 msgstr "Kaydedilecek değişiklik yok."
 
-#: processing/views.py:677
+#: processing/views.py:685
+#, fuzzy, python-format
+#| msgid "Error generating label: %(error)s"
+msgid "Label generation failed: %(error)s"
+msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
+
+#: processing/views.py:703
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr "Hayvan %(tag)s kesildi olarak işaretlendi."
 
-#: processing/views.py:679
+#: processing/views.py:705
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr "Hayvan kesildi olarak işaretlenirken hata oluştu: %(error)s"
 
-#: processing/views.py:699 processing/views.py:1177
+#: processing/views.py:725 processing/views.py:1203
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için deri ağırlığı (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:712
+#: processing/views.py:738
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s %(weight)s kg olarak güncellendi."
 
-#: processing/views.py:722
+#: processing/views.py:748
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:730
+#: processing/views.py:756
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr "Ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:796
+#: processing/views.py:822
 msgid "Please select an order."
 msgstr "Lütfen bir sipariş seçin."
 
-#: processing/views.py:813
+#: processing/views.py:839
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr "%(count)s hayvan başarıyla kesildi."
 
-#: processing/views.py:815
+#: processing/views.py:841
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr "%(count)s hayvan işlenemedi."
 
-#: processing/views.py:855
+#: processing/views.py:881
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr "%(field)s: %(error)s"
 
-#: processing/views.py:986
+#: processing/views.py:1012
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2980,7 +2992,7 @@ msgstr ""
 "%(available_count)s hayvan tartıldı; bireysel ağırlık kayıtları hayvan "
 "başına %(average_weight).2f kg ortalama ile oluşturuldu."
 
-#: processing/views.py:998
+#: processing/views.py:1024
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -2991,12 +3003,12 @@ msgstr ""
 "(%(total_weight)skg toplam, %(average_weight).2fkg ortalama). "
 "%(weight_type)s için %(remaining)s hayvan kaldı."
 
-#: processing/views.py:1010
+#: processing/views.py:1036
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr "Toplu ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1041
+#: processing/views.py:1067
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -3007,7 +3019,7 @@ msgstr ""
 "%(available_count)s hayvanda %(average_weight).2f kg ortalamaya yeniden "
 "senkronize edildi."
 
-#: processing/views.py:1053
+#: processing/views.py:1079
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
@@ -3016,22 +3028,22 @@ msgstr ""
 "%(weight_type)s için toplam güncellendi. %(remaining)s hayvan hâlâ "
 "beklemede; bu tür için bireysel kayıtlar kaldırıldı."
 
-#: processing/views.py:1062
+#: processing/views.py:1088
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr "Toplu ağırlık güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1113
+#: processing/views.py:1139
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr "Sipariş %(order_no)s durumu güncellendi."
 
-#: processing/views.py:1181
+#: processing/views.py:1207
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr "Deri ağırlığı kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1267
+#: processing/views.py:1293
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
@@ -3040,29 +3052,29 @@ msgstr ""
 "Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. Mevcut "
 "durum: %(status)s. Lütfen önce hayvanı kesin."
 
-#: processing/views.py:1280
+#: processing/views.py:1306
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr "%(animal_type)s için detay formu mevcut değil."
 
-#: processing/views.py:1288
+#: processing/views.py:1314
 msgid "updated"
 msgstr "güncellendi"
 
-#: processing/views.py:1292
+#: processing/views.py:1318
 msgid "created"
 msgstr "oluşturuldu"
 
-#: processing/views.py:1301
+#: processing/views.py:1327
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr "%(tag)s için %(animal_type)s detayları başarıyla %(action)s."
 
-#: processing/views.py:1445 processing/views.py:1458
+#: processing/views.py:1471 processing/views.py:1484
 msgid "No animal found matching the query"
 msgstr "Sorguya uyan hayvan bulunamadı"
 
-#: processing/views.py:1455
+#: processing/views.py:1481
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
@@ -3070,38 +3082,38 @@ msgstr ""
 "Bu hayvan parçalamaya uygun değil. Sipariş parçalama hizmeti içermeyebilir "
 "veya sıcak karkas ağırlığı henüz kaydedilmemiş olabilir."
 
-#: processing/views.py:1701
+#: processing/views.py:1727
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr "Kemiksiz et ağırlığı (%(weight)s kg) başarıyla kaydedildi."
 
-#: processing/views.py:1706
+#: processing/views.py:1732
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr "\"%(cut)s\" parçası (%(weight)s kg) başarıyla eklendi."
 
-#: processing/views.py:1710
+#: processing/views.py:1736
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr "Parça kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1742 processing/views.py:1752
+#: processing/views.py:1768 processing/views.py:1778
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 "Kantar kaynaklı parçalar salt okunurdur. Kantar Oturumunda kaynak olayı "
 "düzenleyin."
 
-#: processing/views.py:1759
+#: processing/views.py:1785
 msgid "Cut updated successfully."
 msgstr "Parça başarıyla güncellendi."
 
-#: processing/views.py:1762
+#: processing/views.py:1788
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr "Parça güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1780
+#: processing/views.py:1806
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
@@ -3109,7 +3121,7 @@ msgstr ""
 "Kantar kaynaklı parçalar doğrudan silinemez. Kaynak kantar olayını silin "
 "veya yeniden atayın."
 
-#: processing/views.py:1787
+#: processing/views.py:1813
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr "\"%(cut)s\" parçası başarıyla silindi."
@@ -3152,6 +3164,8 @@ msgid ""
 "Required for walk-in clients so this customer can be saved as a reusable "
 "prospect."
 msgstr ""
+"Bu müşterinin tekrar kullanılabilir bir aday müşteri olarak kaydedilebilmesi "
+"için parakende müşterilerde telefon zorunludur."
 
 #: reception/forms.py:66 reception/forms.py:219 tenants/forms.py:64
 #: users/forms.py:366
@@ -3159,22 +3173,20 @@ msgid "Enter phone number"
 msgstr "Telefon numarası girin"
 
 #: reception/forms.py:74 reception/forms.py:227
-#, fuzzy
-#| msgid "Destination"
 msgid "Destination Client"
-msgstr "Varış Yeri"
+msgstr "Teslimat Müşterisi"
 
 #: reception/forms.py:75 reception/forms.py:228
 msgid ""
 "Type to search destination clients. Select one to keep it linked for future "
 "orders."
 msgstr ""
+"Teslimat müşterilerini aramak için yazın. Gelecek siparişlerde bağlı kalması "
+"için bir müşteri seçin."
 
 #: reception/forms.py:79 reception/forms.py:232
-#, fuzzy
-#| msgid "Type client name to search..."
 msgid "Type destination client name to search..."
-msgstr "Aramak için müşteri adını yazın..."
+msgstr "Aramak için teslimat müşterisi adını yazın..."
 
 #: reception/forms.py:94 reception/forms.py:247
 msgid "Service package"
@@ -3194,7 +3206,7 @@ msgstr "Bu sipariş için seçilen hizmet paketi."
 
 #: reception/forms.py:100 reception/forms.py:253
 msgid "Hidden snapshot of the selected destination client."
-msgstr ""
+msgstr "Seçilen teslimat müşterisinin saklanan anlık kopyası."
 
 #: reception/forms.py:121 reception/forms.py:277
 msgid "Select service package"
@@ -3224,10 +3236,8 @@ msgstr ""
 "birden değil."
 
 #: reception/forms.py:149 reception/forms.py:330
-#, fuzzy
-#| msgid "Walk-in Client Phone"
 msgid "Walk-in client phone is required."
-msgstr "Parakende Müşteri Telefonu"
+msgstr "Parakende müşteri telefonu zorunludur."
 
 #: reception/forms.py:281
 msgid "Please choose a service package before saving the order."
@@ -3292,9 +3302,44 @@ msgstr ""
 "Fotoğrafsız hayvan oluşturmak için bunu işaretleyin (fotoğraflar daha sonra "
 "eklenebilir)"
 
-#: reception/forms.py:466
+#: reception/forms.py:466 reception/services.py:403
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr "Tek bir toplu işlemde en fazla 100 hayvan oluşturulabilir."
+
+#: reception/services.py:240
+msgid ""
+"Failed to create order after multiple attempts due to high concurrency. "
+"Please try again."
+msgstr ""
+"Yüksek eşzamanlılık nedeniyle sipariş birden fazla denemeden sonra "
+"oluşturulamadı. Lütfen tekrar deneyin."
+
+#: reception/services.py:256 reception/services.py:287
+msgid ""
+"Cannot update an order that is already in progress, completed, or cancelled."
+msgstr ""
+"Devam eden, tamamlanmış veya iptal edilmiş bir sipariş güncellenemez."
+
+#: reception/services.py:306
+msgid "Cannot cancel an order that is already in progress or completed."
+msgstr ""
+"Devam eden veya tamamlanmış bir sipariş iptal edilemez."
+
+#: reception/services.py:343
+msgid "Cannot bill an order that is not yet completed."
+msgstr "Henüz tamamlanmamış bir sipariş faturalandırılamaz."
+
+#: reception/services.py:356 reception/services.py:400
+msgid "Can only add animals to a PENDING order."
+msgstr "Hayvanlar yalnızca beklemedeki siparişe eklenebilir."
+
+#: reception/services.py:368
+msgid "Can only remove animals from a PENDING order."
+msgstr "Hayvanlar yalnızca beklemedeki siparişten kaldırılabilir."
+
+#: reception/services.py:371
+msgid "Animal does not belong to the specified order."
+msgstr "Hayvan belirtilen siparişe ait değil."
 
 #: reception/templates/reception/add_animal.html:4
 msgid "Add Animal to Order"
@@ -3323,7 +3368,7 @@ msgid "Batch Add Animals to Order"
 msgstr "Siparişe Toplu Hayvan Ekle"
 
 #: reception/templates/reception/batch_add_animals.html:47
-#: reception/templates/reception/order_detail.html:181
+#: reception/templates/reception/order_detail.html:190
 msgid "Batch Add Animals"
 msgstr "Toplu Hayvan Ekle"
 
@@ -3384,10 +3429,8 @@ msgid "Create New Order"
 msgstr "Yeni Kesim Oluştur"
 
 #: reception/templates/reception/create_order.html:160
-#, fuzzy
-#| msgid "Create New Client Profile"
 msgid "Create New Client Account"
-msgstr "Yeni Müşteri Profili Oluştur"
+msgstr "Yeni Müşteri Hesabı Oluştur"
 
 #: reception/templates/reception/create_order.html:164
 #: reception/templates/reception/update_order.html:146
@@ -3395,6 +3438,8 @@ msgid ""
 "Tip: after you link a destination client once, picking the same client can "
 "fill it automatically."
 msgstr ""
+"İpucu: Bir teslimat müşterisini bir kez bağladıktan sonra, aynı müşteriyi "
+"seçtiğinizde sistem bunu otomatik doldurabilir."
 
 #: reception/templates/reception/create_order.html:192
 #: reception/templates/reception/update_order.html:180
@@ -3406,34 +3451,34 @@ msgstr "VEYA"
 msgid "Create Order"
 msgstr "Kesim Oluştur"
 
-#: reception/templates/reception/create_order.html:362
-#: reception/templates/reception/create_order.html:391
+#: reception/templates/reception/create_order.html:317
 #: reception/templates/reception/update_order.html:165
 #: reception/templates/reception/update_order.html:359
 #: reception/templates/reception/update_order.html:388
 #: users/templates/users/dashboard.html:636
-#, fuzzy
-#| msgid "Destination"
 msgid "Preferred destination"
-msgstr "Varış Yeri"
+msgstr "Tercih edilen teslimat"
 
-#: reception/templates/reception/create_order.html:382
+#: reception/templates/reception/create_order.html:318
 #: reception/templates/reception/update_order.html:379
 #: users/templates/users/client_profile_list.html:201
 #: users/templates/users/dashboard.html:630
 msgid "No clients found"
 msgstr "Müşteri bulunamadı"
 
-#: reception/templates/reception/create_order.html:496
+#: reception/templates/reception/create_order.html:319
 #: reception/templates/reception/update_order.html:492
-#, fuzzy
-#| msgid "Enter destination (optional)"
 msgid "Preferred destination client"
-msgstr "Varış yeri girin (isteğe bağlı)"
+msgstr "Tercih edilen teslimat müşterisi"
 
 #: reception/templates/reception/edit_animal.html:4
 msgid "Edit Animal in Order"
 msgstr "Siparişteki Hayvanı Düzenle"
+
+#: reception/templates/reception/edit_animal.html:60
+#, python-format
+msgid "Current %(label)s"
+msgstr "Mevcut %(label)s"
 
 #: reception/templates/reception/edit_animal.html:95
 msgid "Update Animal"
@@ -3494,20 +3539,24 @@ msgstr "Toplu Ekle"
 msgid "Species"
 msgstr "Tür"
 
-#: reception/templates/reception/order_detail.html:115
-#: reception/templates/reception/order_detail.html:158
+#: reception/templates/reception/order_detail.html:114
+msgid "Process"
+msgstr "İşle"
+
+#: reception/templates/reception/order_detail.html:116
+#: reception/templates/reception/order_detail.html:167
 msgid "Remove"
 msgstr "Kaldır"
 
-#: reception/templates/reception/order_detail.html:157
+#: reception/templates/reception/order_detail.html:166
 msgid "Are you sure you want to remove this animal?"
 msgstr "Bu hayvanı kaldırmak istediğinizden emin misiniz?"
 
-#: reception/templates/reception/order_detail.html:172
+#: reception/templates/reception/order_detail.html:181
 msgid "No animals in this order yet."
 msgstr "Bu siparişte henüz hayvan yok."
 
-#: reception/templates/reception/order_detail.html:177
+#: reception/templates/reception/order_detail.html:186
 msgid "Add First Animal"
 msgstr "İlk Hayvanı Ekle"
 
@@ -3521,10 +3570,9 @@ msgid "New Order"
 msgstr "Yeni Kesim"
 
 #: reception/templates/reception/order_list.html:20
-#, fuzzy
-#| msgid "Search by order number, client name, or destination..."
 msgid "Search by order number, client name, or destination client..."
-msgstr "Sipariş numarası, müşteri adı veya varış yerine göre ara..."
+msgstr ""
+"Sipariş numarası, müşteri adı veya teslimat müşterisine göre arayın..."
 
 #: reception/templates/reception/order_list.html:29
 #: users/templates/users/client_profile_list.html:66
@@ -3559,6 +3607,10 @@ msgstr ""
 "                            <span class=\"font-semibold\">%(count)s</span> \n"
 "                            sipariş"
 
+#: reception/templates/reception/order_list.html:141
+msgid "Pagination"
+msgstr "Sayfalandırma"
+
 #: reception/templates/reception/order_list.html:218
 msgid "No orders yet"
 msgstr "Henüz sipariş yok"
@@ -3580,13 +3632,24 @@ msgstr "Kesim Siparişini Güncelle"
 msgid "Update Order"
 msgstr "Siparişi Güncelle"
 
-#: reception/views.py:92
-#, fuzzy
-#| msgid "Walk-in Client"
-msgid "Walk-in prospect"
-msgstr "Parakende Müşteri"
+#: reception/views.py:77
+msgid "No contact person"
+msgstr "İletişim kişisi yok"
 
-#: reception/views.py:145
+#: reception/views.py:90 reception/views.py:93 users/views.py:780
+msgid "Individual"
+msgstr "Bireysel"
+
+#: reception/views.py:99
+msgid "Walk-in prospect"
+msgstr "Perakende müşteri adayı"
+
+#: reception/views.py:148
+#, python-format
+msgid "Slaughter order %(order_no)s created successfully."
+msgstr "%(order_no)s kesim siparişi başarıyla oluşturuldu."
+
+#: reception/views.py:155
 msgid ""
 "We could not save this order. Please try again, or contact support if it "
 "keeps happening."
@@ -3594,15 +3657,51 @@ msgstr ""
 "Bu sipariş kaydedilemedi. Lütfen tekrar deneyin; sorun sürerse destek ile "
 "iletişime geçin."
 
-#: reception/views.py:150
+#: reception/views.py:160
 msgid "Check the highlighted fields below, fix any issues, and submit again."
 msgstr ""
 "Aşağıda vurgulanan alanları kontrol edin, gerekli düzeltmeleri yapıp tekrar "
 "gönderin."
 
-#: reception/views.py:240
+#: reception/views.py:244
+msgid "Order updated successfully."
+msgstr "Sipariş başarıyla güncellendi."
+
+#: reception/views.py:250
 msgid "The selected client could not be found. Please choose it again."
+msgstr "Seçilen müşteri bulunamadı. Lütfen tekrar seçin."
+
+#: reception/views.py:261
+#, python-format
+msgid "Order %(order_no)s has been cancelled."
+msgstr "%(order_no)s numaralı sipariş iptal edildi."
+
+#: reception/views.py:275
+#, python-format
+msgid "Order %(order_no)s has been marked as billed."
+msgstr "%(order_no)s numaralı sipariş faturalandı olarak işaretlendi."
+
+#: reception/views.py:294
+msgid "Animal added to the order successfully."
+msgstr "Hayvan siparişe başarıyla eklendi."
+
+#: reception/views.py:317
+msgid "Animal details updated successfully."
+msgstr "Hayvan bilgileri başarıyla güncellendi."
+
+#: reception/views.py:333
+#, python-format
+msgid "Animal %(tag)s removed from the order."
+msgstr "%(tag)s hayvanı siparişten kaldırıldı."
+
+#: reception/views.py:370
+#, python-format
+msgid ""
+"Successfully created %(count)d %(animal_type)s animals for order "
+"%(order_no)s."
 msgstr ""
+"%(order_no)s siparişi için %(count)d %(animal_type)s hayvanı başarıyla "
+"oluşturuldu."
 
 #: reporting/templates/reporting/dashboard.html:4
 #: reporting/templates/reporting/dashboard.html:9
@@ -5596,10 +5695,6 @@ msgstr "Hesap oluşturuldu. Lütfen giriş yapın."
 msgid "Company logo"
 msgstr "Şirket logosu"
 
-#: theme/templates/base.html:41
-msgid "My account"
-msgstr ""
-
 #: theme/templates/base.html:44
 msgid "Logout"
 msgstr "Çıkış"
@@ -5722,12 +5817,11 @@ msgstr ""
 msgid "Name is required for walk-in accounts."
 msgstr ""
 
+#: theme/templates/base.html:41
 #: users/templates/users/account_profile.html:4
 #: users/templates/users/account_profile.html:28
-#, fuzzy
-#| msgid "Account type"
 msgid "My Account"
-msgstr "Hesap türü"
+msgstr "Hesabım"
 
 #: users/templates/users/account_profile.html:29
 msgid "Update your contact details and change your password."
@@ -6326,12 +6420,6 @@ msgstr ""
 #: users/views.py:191
 msgid "Unknown account action."
 msgstr ""
-
-#: users/views.py:780
-#, fuzzy
-#| msgid "Individual Cuts:"
-msgid "Individual"
-msgstr "Bireysel Parçalar:"
 
 #: users/views.py:782
 msgid "Enterprise"

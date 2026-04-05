@@ -5,6 +5,7 @@ from datetime import datetime
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from processing.models import Animal  # Add Animal import
 from processing.services import create_animal
@@ -235,7 +236,9 @@ def create_slaughter_order(
         MAX_ORDER_CREATION_RETRIES,
         exc_info=(type(last_exception), last_exception, last_exception.__traceback__),
     )
-    raise ValidationError("Failed to create order after multiple attempts due to high concurrency. Please try again.")
+    raise ValidationError(
+        _("Failed to create order after multiple attempts due to high concurrency. Please try again.")
+    )
 
 
 @transaction.atomic
@@ -249,7 +252,9 @@ def assign_client_to_order(
     destination_client_id: str | None = None,
 ) -> SlaughterOrder:
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Cannot update an order that is already in progress, completed, or cancelled.")
+        raise ValidationError(
+            _("Cannot update an order that is already in progress, completed, or cancelled.")
+        )
 
     client_profile, raw_client_name, raw_client_phone = _resolve_order_client_reference(
         client_id=client_id,
@@ -278,7 +283,9 @@ def update_slaughter_order(order: SlaughterOrder, **data) -> SlaughterOrder:
     Prevents updates if the order is no longer pending.
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Cannot update an order that is already in progress, completed, or cancelled.")
+        raise ValidationError(
+            _("Cannot update an order that is already in progress, completed, or cancelled.")
+        )
 
     allowed_fields = ["service_package", "destination", "order_datetime"]
     for field, value in data.items():
@@ -296,7 +303,7 @@ def cancel_slaughter_order(order: SlaughterOrder) -> SlaughterOrder:
     Associated animals are also marked as disposed.
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Cannot cancel an order that is already in progress or completed.")
+        raise ValidationError(_("Cannot cancel an order that is already in progress or completed."))
 
     order.status = SlaughterOrder.Status.CANCELLED
     order.save()
@@ -333,7 +340,7 @@ def bill_order(order: SlaughterOrder) -> SlaughterOrder:
     Marks an order as billed if it is complete.
     """
     if order.status != SlaughterOrder.Status.COMPLETED:
-        raise ValidationError("Cannot bill an order that is not yet completed.")
+        raise ValidationError(_("Cannot bill an order that is not yet completed."))
 
     order.status = SlaughterOrder.Status.BILLED
     order.save()
@@ -346,7 +353,7 @@ def add_animal_to_order(order: SlaughterOrder, animal_data: dict) -> Animal:
     Adds a new animal to a PENDING order.
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Can only add animals to a PENDING order.")
+        raise ValidationError(_("Can only add animals to a PENDING order."))
 
     animal = create_animal(order=order, **animal_data)
     return animal
@@ -358,10 +365,10 @@ def remove_animal_from_order(order: SlaughterOrder, animal: Animal):
     Removes an animal from a PENDING order.
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Can only remove animals from a PENDING order.")
+        raise ValidationError(_("Can only remove animals from a PENDING order."))
 
     if animal.slaughter_order != order:
-        raise ValidationError("Animal does not belong to the specified order.")
+        raise ValidationError(_("Animal does not belong to the specified order."))
 
     animal.delete()
 
@@ -390,10 +397,10 @@ def create_batch_animals(
         List of created Animal objects
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError("Can only add animals to a PENDING order.")
+        raise ValidationError(_("Can only add animals to a PENDING order."))
 
     if quantity > 100:
-        raise ValidationError("Maximum 100 animals can be created in a single batch.")
+        raise ValidationError(_("Maximum 100 animals can be created in a single batch."))
 
     created_animals = []
     current_time = received_date or timezone.now()

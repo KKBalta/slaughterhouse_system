@@ -111,6 +111,7 @@
                             <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Tag" %}</th>
                             <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Species" %}</th>
                             <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Status" %}</th>
+                            <th class="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Process" %}</th>
                             <th class="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Edit" %}</th>
                             <th class="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{% trans "Remove" %}</th>
                         </tr>
@@ -139,6 +140,14 @@
                                     {% endif %}">
                                     {{ animal.get_status_display }}
                                 </span>
+                            </td>
+                            <td class="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-sm font-medium">
+                                {% if animal.status == 'slaughtered' or animal.status == 'carcass_ready' or animal.status == 'disassembled' or animal.status == 'packaged' or animal.status == 'delivered' %}
+                                    <a href="{% url 'processing:quick_process' animal.pk %}"
+                                       class="text-emerald-600 hover:text-emerald-900">{% trans "Quick Process" %}</a>
+                                {% else %}
+                                    <span class="text-gray-400">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-sm font-medium">
                                 {% if order.status == 'PENDING' %}

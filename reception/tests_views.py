@@ -351,6 +351,33 @@ class TestSlaughterOrderDetailView:
             assert response.context["animal_count"] == 2
             assert "Operation Dashboard" in _response_text(response)
 
+    @override_settings(LANGUAGE_CODE="en")
+    def test_order_detail_quick_process_hidden_for_received_animal(
+        self,
+        reception_admin_client,
+        reception_client_profile,
+        reception_service_package,
+    ):
+        order, _animal = self._create_order(reception_client_profile, reception_service_package)
+        response = reception_admin_client.get(reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk}))
+        if response.status_code == 200:
+            assert "Quick Process" not in _response_text(response)
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_order_detail_quick_process_shown_for_slaughtered_animal(
+        self,
+        reception_admin_client,
+        reception_client_profile,
+        reception_service_package,
+    ):
+        order, animal = self._create_order(reception_client_profile, reception_service_package)
+        animal.perform_slaughter()
+        animal.save()
+
+        response = reception_admin_client.get(reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk}))
+        if response.status_code == 200:
+            assert "Quick Process" in _response_text(response)
+
 
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
 class TestAddAnimalToOrderView:

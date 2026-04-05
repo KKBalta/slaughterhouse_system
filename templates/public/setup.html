@@ -50,7 +50,7 @@
     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div>
             <label for="id_company_name" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Company name" %}</label>
-            <input id="id_company_name" name="company_name" type="text" value="{{ form.company_name.value|default_if_none:'' }}" autocomplete="organization"
+            <input id="id_company_name" name="company_name" type="text" value="{{ form.company_name.value|default_if_none:'' }}" autocomplete="organization" required
                    class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.company_name.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
                    {% if not registration_enabled %}disabled{% endif %}>
             {% for error in form.company_name.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
@@ -58,7 +58,7 @@
 
         <div class="mt-4">
             <label for="id_owner_email" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Owner email" %}</label>
-            <input id="id_owner_email" name="owner_email" type="email" value="{{ form.owner_email.value|default_if_none:'' }}" autocomplete="email"
+            <input id="id_owner_email" name="owner_email" type="email" value="{{ form.owner_email.value|default_if_none:'' }}" autocomplete="email" required
                    class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_email.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
                    {% if not registration_enabled %}disabled{% endif %}>
             {% for error in form.owner_email.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
@@ -67,14 +67,14 @@
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="id_owner_password" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Password" %}</label>
-                <input id="id_owner_password" name="owner_password" type="password" autocomplete="new-password"
+                <input id="id_owner_password" name="owner_password" type="password" autocomplete="new-password" required
                        class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_password.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
                        {% if not registration_enabled %}disabled{% endif %}>
                 {% for error in form.owner_password.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}
             </div>
             <div>
                 <label for="id_owner_password_confirm" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Confirm password" %}</label>
-                <input id="id_owner_password_confirm" name="owner_password_confirm" type="password" autocomplete="new-password"
+                <input id="id_owner_password_confirm" name="owner_password_confirm" type="password" autocomplete="new-password" required
                        class="h-11 w-full rounded-md border px-3 text-sm text-slate-900 outline-none transition {% if form.owner_password_confirm.errors %}border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100{% else %}border-slate-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100{% endif %}"
                        {% if not registration_enabled %}disabled{% endif %}>
                 {% for error in form.owner_password_confirm.errors %}<p class="mt-1.5 text-xs text-red-600">{{ error }}</p>{% endfor %}

@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load static i18n %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
@@ -173,5 +173,6 @@
             {% trans "First time?" %} <a href="{% url 'platform_admin_setup' %}">{% trans "Create an account" %}</a>
         </p>
     </div>
+    <script src="{% static 'theme/js/required-field-indicators.js' %}"></script>
 </body>
 </html>

@@ -156,6 +156,15 @@
                     {% for error in form.hot_carcass_weight.errors %}
                     <p class="text-xs text-red-600 mt-1">{{ error }}</p>
                     {% endfor %}
+                    <!-- Save & Print Label (appears when weight is entered) -->
+                    <button type="submit" name="save_print" id="save-print-btn"
+                            class="hidden mt-2 w-full bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 transition-all text-sm font-semibold flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        {% trans "Save & Print Label" %}
+                    </button>
                 </div>
                 {% endif %}
                 {% if form.leather_weight %}
@@ -200,14 +209,34 @@
 </div>
 
 <script>
-    // Auto-focus first empty input
     document.addEventListener('DOMContentLoaded', function() {
-        const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
-        for (const input of inputs) {
-            if (!input.value) {
-                input.focus();
-                break;
+        // Auto-focus first empty input
+        var inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+        for (var i = 0; i < inputs.length; i++) {
+            if (!inputs[i].value) { inputs[i].focus(); break; }
+        }
+
+        // Show "Save & Print Label" button when hot carcass weight has a value
+        var hcField = document.getElementById('id_hot_carcass_weight');
+        var printBtn = document.getElementById('save-print-btn');
+        if (hcField && printBtn) {
+            var timer = null;
+            function togglePrint() {
+                var val = parseFloat(hcField.value);
+                if (val > 0) {
+                    printBtn.classList.remove('hidden');
+                    printBtn.classList.add('flex');
+                } else {
+                    printBtn.classList.add('hidden');
+                    printBtn.classList.remove('flex');
+                }
             }
+            hcField.addEventListener('input', function() {
+                clearTimeout(timer);
+                timer = setTimeout(togglePrint, 400);
+            });
+            // Check on page load (pre-filled value)
+            togglePrint();
         }
     });
 </script>

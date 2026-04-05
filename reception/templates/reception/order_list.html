@@ -138,7 +138,7 @@
                         </p>
                     </div>
                     <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="{% trans 'Pagination' %}">
                             <!-- Previous Button -->
                             {% if page_obj.has_previous %}
                                 <a href="?{% if current_search %}search={{ current_search }}&{% endif %}page={{ page_obj.previous_page_number }}" 

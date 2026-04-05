@@ -314,9 +314,19 @@
         </div>
     </div>
 
+    {% trans "Preferred destination" as preferred_destination_label %}
+    {% trans "No clients found" as no_clients_found_label %}
+    {% trans "Preferred destination client" as preferred_destination_client_label %}
+
     <!-- JavaScript for client search -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const i18n = {
+                preferredDestination: "{{ preferred_destination_label|escapejs }}",
+                noClientsFound: "{{ no_clients_found_label|escapejs }}",
+                preferredDestinationClient: "{{ preferred_destination_client_label|escapejs }}"
+            };
+
             const clientSearch = document.getElementById('client-search');
             const clientId = document.getElementById('client-id');
             const searchResults = document.getElementById('client-search-results');
@@ -359,7 +369,7 @@
                     selectedClientDestination.classList.add('hidden');
                     return;
                 }
-                const label = `{% trans "Preferred destination" %}: ${value}`;
+                const label = `${i18n.preferredDestination}: ${value}`;
                 selectedClientDestination.textContent = label;
                 selectedClientDestination.title = label;
                 selectedClientDestination.classList.remove('hidden');
@@ -379,7 +389,7 @@
                 resultsEl.innerHTML = '';
 
                 if (clients.length === 0) {
-                    resultsEl.innerHTML = '<div class="p-3 text-gray-500 text-sm text-center">{% trans "No clients found" %}</div>';
+                    resultsEl.innerHTML = `<div class="p-3 text-gray-500 text-sm text-center">${i18n.noClientsFound}</div>`;
                 } else {
                     clients.forEach(client => {
                         const item = document.createElement('div');
@@ -388,7 +398,7 @@
                         const infoText = destinationInfoText(client);
                         const destinationText = (client.default_destination || '').trim();
                         const destinationHtml = destinationText
-                            ? `<div class="client-destination" title="{% trans "Preferred destination" %}: ${client.default_destination}">{% trans "Preferred destination" %}: ${truncateText(client.default_destination, 28)}</div>`
+                            ? `<div class="client-destination" title="${i18n.preferredDestination}: ${client.default_destination}">${i18n.preferredDestination}: ${truncateText(client.default_destination, 28)}</div>`
                             : '';
 
                         item.innerHTML = `
@@ -493,7 +503,7 @@
                         {
                             id: preferredId,
                             display_name: preferredName,
-                            contact_info: '{% trans "Preferred destination client" %}',
+                            contact_info: i18n.preferredDestinationClient,
                             phone: '',
                         },
                         { autofilled: true }

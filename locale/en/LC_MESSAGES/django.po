@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 02:54+0300\n"
+"POT-Creation-Date: 2026-04-05 07:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -838,7 +838,7 @@ msgid ""
 "%(status)s."
 msgstr ""
 
-#: processing/forms.py:228 processing/forms.py:777 processing/views.py:587
+#: processing/forms.py:228 processing/forms.py:777 processing/views.py:598
 msgid "Leather Weight (kg)"
 msgstr ""
 
@@ -925,21 +925,21 @@ msgstr ""
 
 #: processing/forms.py:458 processing/forms.py:489 processing/forms.py:520
 #: processing/forms.py:599 processing/forms.py:630 processing/forms.py:661
-#: processing/forms.py:721 processing/views.py:582
+#: processing/forms.py:721 processing/views.py:593
 msgid "Breed"
 msgstr ""
 
 #: processing/forms.py:459 processing/forms.py:490 processing/forms.py:521
 #: processing/forms.py:551 processing/forms.py:575 processing/forms.py:600
 #: processing/forms.py:631 processing/forms.py:662 processing/forms.py:729
-#: processing/views.py:583
+#: processing/views.py:594
 msgid "Sakatat Status"
 msgstr ""
 
 #: processing/forms.py:460 processing/forms.py:491 processing/forms.py:522
 #: processing/forms.py:552 processing/forms.py:576 processing/forms.py:601
 #: processing/forms.py:632 processing/forms.py:663 processing/forms.py:743
-#: processing/views.py:584
+#: processing/views.py:595
 msgid "Bowels Status"
 msgstr ""
 
@@ -982,7 +982,7 @@ msgstr ""
 msgid "Good"
 msgstr ""
 
-#: processing/forms.py:759 processing/views.py:585
+#: processing/forms.py:759 processing/views.py:596
 msgid "Live Weight (kg)"
 msgstr ""
 
@@ -990,7 +990,7 @@ msgstr ""
 msgid "kg"
 msgstr ""
 
-#: processing/forms.py:768 processing/views.py:586
+#: processing/forms.py:768 processing/views.py:597
 msgid "Hot Carcass Weight (kg)"
 msgstr ""
 
@@ -1725,6 +1725,7 @@ msgstr ""
 
 #: processing/templates/processing/animal_detail.html:781
 #: processing/templates/processing/quick_process.html:4
+#: reception/templates/reception/order_detail.html:147
 msgid "Quick Process"
 msgstr ""
 
@@ -1890,7 +1891,7 @@ msgid "No order"
 msgstr ""
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1146 processing/views.py:1223
+#: processing/views.py:1172 processing/views.py:1249
 msgid "Walk-in Client"
 msgstr ""
 
@@ -2662,8 +2663,8 @@ msgstr ""
 
 #: processing/templates/processing/disassembly_detail.html:352
 #: processing/templates/processing/disassembly_detail.html:375
-#: reception/templates/reception/order_detail.html:114
-#: reception/templates/reception/order_detail.html:146
+#: reception/templates/reception/order_detail.html:115
+#: reception/templates/reception/order_detail.html:155
 #: scales/templates/scales/session_detail.html:68
 #: scales/templates/scales/session_detail.html:121
 #: scales/templates/scales/session_detail.html:174
@@ -2756,15 +2757,19 @@ msgstr ""
 msgid "Weights"
 msgstr ""
 
-#: processing/templates/processing/quick_process.html:180
+#: processing/templates/processing/quick_process.html:166
+msgid "Save & Print Label"
+msgstr ""
+
+#: processing/templates/processing/quick_process.html:189
 msgid "Save All"
 msgstr ""
 
-#: processing/templates/processing/quick_process.html:185
+#: processing/templates/processing/quick_process.html:194
 msgid "Save & Next"
 msgstr ""
 
-#: processing/templates/processing/quick_process.html:195
+#: processing/templates/processing/quick_process.html:204
 #, python-format
 msgid "Next: %(tag)s (%(type)s)"
 msgstr ""
@@ -2790,81 +2795,86 @@ msgstr ""
 msgid "%(animal_type)s Details"
 msgstr ""
 
-#: processing/views.py:635
+#: processing/views.py:646
 msgid "details"
 msgstr ""
 
-#: processing/views.py:640
+#: processing/views.py:651
 msgid "live weight"
 msgstr ""
 
-#: processing/views.py:644
+#: processing/views.py:655
 msgid "hot carcass weight"
 msgstr ""
 
-#: processing/views.py:648
+#: processing/views.py:659
 msgid "leather weight"
 msgstr ""
 
-#: processing/views.py:653
+#: processing/views.py:664
 #, python-format
 msgid "Saved %(items)s for %(tag)s."
 msgstr ""
 
-#: processing/views.py:659
+#: processing/views.py:670
 msgid "No changes to save."
 msgstr ""
 
-#: processing/views.py:677
+#: processing/views.py:685
+#, python-format
+msgid "Label generation failed: %(error)s"
+msgstr ""
+
+#: processing/views.py:703
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr ""
 
-#: processing/views.py:679
+#: processing/views.py:705
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr ""
 
-#: processing/views.py:699 processing/views.py:1177
+#: processing/views.py:725 processing/views.py:1203
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:712
+#: processing/views.py:738
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr ""
 
-#: processing/views.py:722
+#: processing/views.py:748
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:730
+#: processing/views.py:756
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:796
+#: processing/views.py:822
 msgid "Please select an order."
 msgstr ""
 
-#: processing/views.py:813
+#: processing/views.py:839
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr ""
 
-#: processing/views.py:815
+#: processing/views.py:841
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr ""
 
-#: processing/views.py:855
+#: processing/views.py:881
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr ""
 
-#: processing/views.py:986
+#: processing/views.py:1012
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2872,7 +2882,7 @@ msgid ""
 "%(average_weight).2fkg average."
 msgstr ""
 
-#: processing/views.py:998
+#: processing/views.py:1024
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -2880,12 +2890,12 @@ msgid ""
 "%(weight_type)s."
 msgstr ""
 
-#: processing/views.py:1010
+#: processing/views.py:1036
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1041
+#: processing/views.py:1067
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -2893,99 +2903,99 @@ msgid ""
 "animals."
 msgstr ""
 
-#: processing/views.py:1053
+#: processing/views.py:1079
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
 "pending, so individual animal logs for this type were removed."
 msgstr ""
 
-#: processing/views.py:1062
+#: processing/views.py:1088
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1113
+#: processing/views.py:1139
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr ""
 
-#: processing/views.py:1181
+#: processing/views.py:1207
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1267
+#: processing/views.py:1293
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
 "Current status: %(status)s. Please slaughter the animal first."
 msgstr ""
 
-#: processing/views.py:1280
+#: processing/views.py:1306
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr ""
 
-#: processing/views.py:1288
+#: processing/views.py:1314
 msgid "updated"
 msgstr ""
 
-#: processing/views.py:1292
+#: processing/views.py:1318
 msgid "created"
 msgstr ""
 
-#: processing/views.py:1301
+#: processing/views.py:1327
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr ""
 
-#: processing/views.py:1445 processing/views.py:1458
+#: processing/views.py:1471 processing/views.py:1484
 msgid "No animal found matching the query"
 msgstr ""
 
-#: processing/views.py:1455
+#: processing/views.py:1481
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
 msgstr ""
 
-#: processing/views.py:1701
+#: processing/views.py:1727
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr ""
 
-#: processing/views.py:1706
+#: processing/views.py:1732
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr ""
 
-#: processing/views.py:1710
+#: processing/views.py:1736
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1742 processing/views.py:1752
+#: processing/views.py:1768 processing/views.py:1778
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 
-#: processing/views.py:1759
+#: processing/views.py:1785
 msgid "Cut updated successfully."
 msgstr ""
 
-#: processing/views.py:1762
+#: processing/views.py:1788
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1780
+#: processing/views.py:1806
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
 msgstr ""
 
-#: processing/views.py:1787
+#: processing/views.py:1813
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr ""
@@ -3151,8 +3161,39 @@ msgstr ""
 msgid "Check this to create animals without photos (photos can be added later)"
 msgstr ""
 
-#: reception/forms.py:466
+#: reception/forms.py:466 reception/services.py:403
 msgid "Maximum 100 animals can be created in a single batch."
+msgstr ""
+
+#: reception/services.py:240
+msgid ""
+"Failed to create order after multiple attempts due to high concurrency. "
+"Please try again."
+msgstr ""
+
+#: reception/services.py:256 reception/services.py:287
+msgid ""
+"Cannot update an order that is already in progress, completed, or cancelled."
+msgstr ""
+
+#: reception/services.py:306
+msgid "Cannot cancel an order that is already in progress or completed."
+msgstr ""
+
+#: reception/services.py:343
+msgid "Cannot bill an order that is not yet completed."
+msgstr ""
+
+#: reception/services.py:356 reception/services.py:400
+msgid "Can only add animals to a PENDING order."
+msgstr ""
+
+#: reception/services.py:368
+msgid "Can only remove animals from a PENDING order."
+msgstr ""
+
+#: reception/services.py:371
+msgid "Animal does not belong to the specified order."
 msgstr ""
 
 #: reception/templates/reception/add_animal.html:4
@@ -3182,7 +3223,7 @@ msgid "Batch Add Animals to Order"
 msgstr ""
 
 #: reception/templates/reception/batch_add_animals.html:47
-#: reception/templates/reception/order_detail.html:181
+#: reception/templates/reception/order_detail.html:190
 msgid "Batch Add Animals"
 msgstr ""
 
@@ -3260,8 +3301,7 @@ msgstr ""
 msgid "Create Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:362
-#: reception/templates/reception/create_order.html:391
+#: reception/templates/reception/create_order.html:317
 #: reception/templates/reception/update_order.html:165
 #: reception/templates/reception/update_order.html:359
 #: reception/templates/reception/update_order.html:388
@@ -3269,14 +3309,14 @@ msgstr ""
 msgid "Preferred destination"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:382
+#: reception/templates/reception/create_order.html:318
 #: reception/templates/reception/update_order.html:379
 #: users/templates/users/client_profile_list.html:201
 #: users/templates/users/dashboard.html:630
 msgid "No clients found"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:496
+#: reception/templates/reception/create_order.html:319
 #: reception/templates/reception/update_order.html:492
 msgid "Preferred destination client"
 msgstr ""
@@ -3284,6 +3324,12 @@ msgstr ""
 #: reception/templates/reception/edit_animal.html:4
 msgid "Edit Animal in Order"
 msgstr ""
+
+#: reception/templates/reception/edit_animal.html:60
+#, fuzzy, python-format
+#| msgid "Current file"
+msgid "Current %(label)s"
+msgstr "Current file"
 
 #: reception/templates/reception/edit_animal.html:95
 msgid "Update Animal"
@@ -3343,20 +3389,24 @@ msgstr ""
 msgid "Species"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:115
-#: reception/templates/reception/order_detail.html:158
+#: reception/templates/reception/order_detail.html:114
+msgid "Process"
+msgstr ""
+
+#: reception/templates/reception/order_detail.html:116
+#: reception/templates/reception/order_detail.html:167
 msgid "Remove"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:157
+#: reception/templates/reception/order_detail.html:166
 msgid "Are you sure you want to remove this animal?"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:172
+#: reception/templates/reception/order_detail.html:181
 msgid "No animals in this order yet."
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:177
+#: reception/templates/reception/order_detail.html:186
 msgid "Add First Animal"
 msgstr ""
 
@@ -3399,6 +3449,10 @@ msgid ""
 "                            orders"
 msgstr ""
 
+#: reception/templates/reception/order_list.html:141
+msgid "Pagination"
+msgstr ""
+
 #: reception/templates/reception/order_list.html:218
 msgid "No orders yet"
 msgstr ""
@@ -3420,22 +3474,49 @@ msgstr ""
 msgid "Update Order"
 msgstr ""
 
-#: reception/views.py:92
+#: reception/views.py:77
+msgid "No contact person"
+msgstr ""
+
+#: reception/views.py:90 reception/views.py:93 users/views.py:780
+msgid "Individual"
+msgstr ""
+
+#: reception/views.py:99
 msgid "Walk-in prospect"
 msgstr ""
 
-#: reception/views.py:145
+#: reception/views.py:148
+#, python-format
+msgid "Slaughter order %(order_no)s created successfully."
+msgstr ""
+
+#: reception/views.py:155
 msgid ""
 "We could not save this order. Please try again, or contact support if it "
 "keeps happening."
 msgstr ""
 
-#: reception/views.py:150
+#: reception/views.py:160
 msgid "Check the highlighted fields below, fix any issues, and submit again."
 msgstr ""
 
-#: reception/views.py:240
+#: reception/views.py:244
+msgid "Order updated successfully."
+msgstr ""
+
+#: reception/views.py:250
 msgid "The selected client could not be found. Please choose it again."
+msgstr ""
+
+#: reception/views.py:272
+#, python-format
+msgid "Order %(order_no)s has been marked as billed."
+msgstr ""
+
+#: reception/views.py:330
+#, python-format
+msgid "Animal %(tag)s removed from the order."
 msgstr ""
 
 #: reporting/templates/reporting/dashboard.html:4
@@ -5300,10 +5381,6 @@ msgstr ""
 msgid "Company logo"
 msgstr "Company logo"
 
-#: theme/templates/base.html:41
-msgid "My account"
-msgstr ""
-
 #: theme/templates/base.html:44
 msgid "Logout"
 msgstr ""
@@ -5410,6 +5487,7 @@ msgstr ""
 msgid "Name is required for walk-in accounts."
 msgstr ""
 
+#: theme/templates/base.html:41
 #: users/templates/users/account_profile.html:4
 #: users/templates/users/account_profile.html:28
 msgid "My Account"
@@ -5958,10 +6036,6 @@ msgstr ""
 
 #: users/views.py:191
 msgid "Unknown account action."
-msgstr ""
-
-#: users/views.py:780
-msgid "Individual"
 msgstr ""
 
 #: users/views.py:782

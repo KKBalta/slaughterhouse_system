@@ -30,6 +30,13 @@ from .services import (
 logger = logging.getLogger(__name__)
 
 
+def _validation_error_user_message(exc: ValidationError) -> str:
+    """Join ValidationError messages for flash display (gettext_lazy-safe)."""
+    if hasattr(exc, "messages") and exc.messages:
+        return " ".join(str(m) for m in exc.messages)
+    return str(exc)
+
+
 class ClientSearchView(LoginRequiredMixin, View):
     def get(self, request):
         query = request.GET.get("q", "").strip()
@@ -67,7 +74,7 @@ class ClientSearchView(LoginRequiredMixin, View):
             )
             if client.account_type == ClientProfile.AccountType.ENTERPRISE:
                 display_name = (client.company_name or "").strip() or "—"
-                contact_info = client.contact_person or "No contact person"
+                contact_info = client.contact_person or _("No contact person")
             elif client.account_type == ClientProfile.AccountType.INDIVIDUAL:
                 # Individual: prefer profile contact name (registration), then Django name, then login.
                 u = client.user
@@ -80,10 +87,10 @@ class ClientSearchView(LoginRequiredMixin, View):
                         parts.append(full)
                     if u.username and u.username != display_name:
                         parts.append(f"@{u.username}")
-                    contact_info = " · ".join(parts) if parts else "Individual"
+                    contact_info = " · ".join(parts) if parts else _("Individual")
                 else:
                     display_name = cp or "—"
-                    contact_info = "Individual"
+                    contact_info = _("Individual")
             else:
                 u = client.user
                 cp = (client.contact_person or "").strip()
@@ -136,7 +143,10 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
                     client_phone=form.cleaned_data.get("client_phone", ""),
                     animals_data=[],
                 )
-                messages.success(request, f"Slaughter Order {order.slaughter_order_no} created successfully!")
+                messages.success(
+                    request,
+                    _("Slaughter order %(order_no)s created successfully.") % {"order_no": order.slaughter_order_no},
+                )
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk}))
             except Exception:
                 logger.exception("Create slaughter order failed")
@@ -231,7 +241,7 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
                 "order_datetime": form.cleaned_data["order_datetime"],
             }
             update_slaughter_order(order=self.object, **update_data)
-            messages.success(self.request, "Order updated successfully!")
+            messages.success(self.request, _("Order updated successfully."))
             return redirect(self.get_success_url())
         except ValidationError as e:
             form.add_error(None, e)
@@ -246,9 +256,12 @@ class CancelSlaughterOrderView(LoginRequiredMixin, View):
         order = get_object_or_404(SlaughterOrder, pk=pk)
         try:
             cancel_slaughter_order(order)
-            messages.success(request, f"Order {order.slaughter_order_no} has been cancelled.")
+            messages.success(
+                request,
+                _("Order %(order_no)s has been cancelled.") % {"order_no": order.slaughter_order_no},
+            )
         except ValidationError as e:
-            messages.error(request, str(e))
+            messages.error(request, _validation_error_user_message(e))
         return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": pk}))
 
 
@@ -257,9 +270,12 @@ class BillOrderView(LoginRequiredMixin, View):
         order = get_object_or_404(SlaughterOrder, pk=pk)
         try:
             bill_order(order)
-            messages.success(request, f"Order {order.slaughter_order_no} has been marked as billed.")
+            messages.success(
+                request,
+                _("Order %(order_no)s has been marked as billed.") % {"order_no": order.slaughter_order_no},
+            )
         except ValidationError as e:
-            messages.error(request, str(e))
+            messages.error(request, _validation_error_user_message(e))
         return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": pk}))
 
 
@@ -275,10 +291,10 @@ class AddAnimalToOrderView(LoginRequiredMixin, View):
         if form.is_valid():
             try:
                 add_animal_to_order(order=order, animal_data=form.cleaned_data)
-                messages.success(request, "Animal added to order successfully.")
+                messages.success(request, _("Animal added to the order successfully."))
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order_pk}))
             except ValidationError as e:
-                messages.error(request, str(e))
+                messages.error(request, _validation_error_user_message(e))
 
         return render(request, "reception/add_animal.html", {"form": form, "order": order})
 
@@ -298,10 +314,10 @@ class EditAnimalInOrderView(LoginRequiredMixin, View):
             try:
                 # A service function `update_animal_in_order` would be better.
                 form.save()
-                messages.success(request, "Animal details updated successfully.")
+                messages.success(request, _("Animal details updated successfully."))
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order_pk}))
             except ValidationError as e:
-                messages.error(request, str(e))
+                messages.error(request, _validation_error_user_message(e))
 
         return render(request, "reception/edit_animal.html", {"form": form, "order": order, "animal": animal})
 
@@ -312,9 +328,12 @@ class RemoveAnimalFromOrderView(LoginRequiredMixin, View):
         animal = get_object_or_404(Animal, pk=animal_pk)
         try:
             remove_animal_from_order(order=order, animal=animal)
-            messages.success(request, f"Animal {animal.identification_tag} removed from order.")
+            messages.success(
+                request,
+                _("Animal %(tag)s removed from the order.") % {"tag": animal.identification_tag},
+            )
         except ValidationError as e:
-            messages.error(request, str(e))
+            messages.error(request, _validation_error_user_message(e))
         return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order_pk}))
 
 
@@ -345,14 +364,20 @@ class BatchAddAnimalsToOrderView(LoginRequiredMixin, View):
                     skip_photos=skip_photos,
                 )
 
+                animal_type_label = dict(Animal.ANIMAL_TYPES).get(animal_type, animal_type)
                 messages.success(
                     request,
-                    f"Successfully created {len(created_animals)} {animal_type} animals for order {order.slaughter_order_no}.",
+                    _("Successfully created %(count)d %(animal_type)s animals for order %(order_no)s.")
+                    % {
+                        "count": len(created_animals),
+                        "animal_type": str(animal_type_label),
+                        "order_no": order.slaughter_order_no,
+                    },
                 )
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order_pk}))
 
             except ValidationError as e:
-                messages.error(request, str(e))
+                messages.error(request, _validation_error_user_message(e))
 
         return render(request, "reception/batch_add_animals.html", {"form": form, "order": order})
 

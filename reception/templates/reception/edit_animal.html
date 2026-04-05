@@ -56,8 +56,8 @@
                                 <div class="mb-3 p-3 bg-gray-50 rounded-lg border">
                                     <p class="text-xs text-gray-600 mb-2 font-medium">{% trans "Current Image:" %}</p>
                                     <div class="flex items-center space-x-3">
-                                        <img src="{{ field.value.url }}" 
-                                             alt="Current {{ field.label }}" 
+                                        <img src="{{ field.value.url }}"
+                                             alt="{% blocktrans with label=field.label %}Current {{ label }}{% endblocktrans %}"
                                              class="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm">
                                         <div class="flex-1">
                                             <p class="text-xs text-gray-700 font-medium">{{ field.value.name|basename }}</p>

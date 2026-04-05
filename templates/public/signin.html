@@ -54,7 +54,7 @@
                 <form id="discover-form" class="space-y-4">
                     <div>
                         <label for="signin-email" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Work email" %}</label>
-                        <input id="signin-email" type="email" value="{{ initial_email|default_if_none:'' }}" autocomplete="email"
+                        <input id="signin-email" type="email" value="{{ initial_email|default_if_none:'' }}" autocomplete="email" required
                                class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                     </div>
                     <p id="discover-error" class="hidden text-sm text-red-600"></p>
@@ -87,7 +87,7 @@
             <form id="password-form" class="space-y-4">
                 <div>
                     <label for="signin-password" class="mb-1.5 block text-sm font-medium text-slate-700">{% trans "Password" %}</label>
-                    <input id="signin-password" type="password" autocomplete="current-password"
+                    <input id="signin-password" type="password" autocomplete="current-password" required
                            class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                 </div>
                 <p id="login-error" class="hidden text-sm text-red-600"></p>

@@ -509,9 +509,13 @@ class QuickProcessView(LoginRequiredMixin, View):
 
     def _build_initial(self, animal):
         """Pre-fill form with existing data."""
-        initial = {}
+        # Default sakatat & bowels to "Good" (1.0) so workers only change exceptions
+        initial = {
+            "sakatat_status": 1.0,
+            "bowels_status": 1.0,
+        }
 
-        # Existing detail values
+        # Overwrite with existing detail values if they exist
         detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
         if detail_model:
             try:
@@ -565,16 +569,23 @@ class QuickProcessView(LoginRequiredMixin, View):
         return progress
 
     def _get_next_animal(self, animal):
-        """Find the next animal in the same order that still needs processing."""
-        return (
-            Animal.objects.filter(
-                slaughter_order=animal.slaughter_order,
-                status__in=["slaughtered", "carcass_ready"],
-            )
-            .exclude(pk=animal.pk)
-            .order_by("received_date")
-            .first()
+        """Find the next animal in the same order, cycling through all siblings by creation order."""
+        siblings = list(
+            Animal.objects.filter(slaughter_order=animal.slaughter_order)
+            .order_by("created_at", "pk")
+            .values_list("pk", flat=True)
         )
+        if len(siblings) <= 1:
+            return None
+        try:
+            idx = siblings.index(animal.pk)
+        except ValueError:
+            return None
+        # Wrap around to the beginning after the last animal
+        next_pk = siblings[(idx + 1) % len(siblings)]
+        if next_pk == animal.pk:
+            return None
+        return Animal.objects.get(pk=next_pk)
 
     def _progress_rows(self, progress):
         """Human-readable, translated labels for completion pills (match QuickProcessForm labels)."""
@@ -657,6 +668,21 @@ class QuickProcessView(LoginRequiredMixin, View):
             )
         else:
             messages.info(request, _("No changes to save."))
+
+        # If user clicked "Save & Print Label", generate label and go to label detail
+        if "save_print" in request.POST and form.cleaned_data.get("hot_carcass_weight"):
+            try:
+                from labeling.utils import create_animal_label
+
+                # Re-fetch animal so the label picks up the just-saved weight
+                # (refresh_from_db is incompatible with django-fsm protected fields)
+                animal = Animal.objects.select_related(
+                    "slaughter_order", "slaughter_order__service_package"
+                ).get(pk=animal.pk)
+                label = create_animal_label(animal=animal, label_type="hot_carcass", user=request.user)
+                return redirect("labeling:animal_label_detail", pk=label.pk)
+            except Exception as e:
+                messages.error(request, _("Label generation failed: %(error)s") % {"error": str(e)})
 
         # If user clicked "Save & Next", redirect to next animal
         if "save_next" in request.POST:
