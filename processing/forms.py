@@ -695,6 +695,138 @@ ANIMAL_DETAIL_FORMS = {
 }
 
 
+LEATHER_WEIGHT_ANIMAL_TYPES = {"cattle", "calf", "heifer", "beef"}
+BREED_ANIMAL_TYPES = {"cattle", "sheep", "goat", "calf", "heifer", "beef"}
+
+
+class QuickProcessForm(forms.Form):
+    """
+    Combined form for rapid animal processing data entry.
+    Collects details (sakatat/bowels/breed) + weights in a single submission.
+    """
+
+    INPUT_CLASS = (
+        "w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 "
+        "bg-white placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+    )
+    SELECT_CLASS = (
+        "w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 "
+        "bg-white focus:ring-blue-500 focus:border-blue-500"
+    )
+
+    # --- Animal Details ---
+    breed = forms.CharField(
+        max_length=100,
+        required=False,
+        label=_("Breed"),
+        widget=forms.TextInput(attrs={"placeholder": _("Enter breed")}),
+    )
+
+    sakatat_status = forms.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        required=False,
+        label=_("Sakatat Status"),
+        widget=forms.Select(
+            choices=[
+                (0.0, _("Not Usable")),
+                (0.5, _("Not Bad")),
+                (1.0, _("Good")),
+            ]
+        ),
+    )
+
+    bowels_status = forms.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        required=False,
+        label=_("Bowels Status"),
+        widget=forms.Select(
+            choices=[
+                (0.0, _("Not Usable")),
+                (0.5, _("Not Bad")),
+                (1.0, _("Good")),
+            ]
+        ),
+    )
+
+    # --- Weights ---
+    live_weight = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        required=False,
+        label=_("Live Weight (kg)"),
+        widget=forms.NumberInput(attrs={"placeholder": _("kg"), "step": "0.01"}),
+    )
+
+    hot_carcass_weight = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        required=False,
+        label=_("Hot Carcass Weight (kg)"),
+        widget=forms.NumberInput(attrs={"placeholder": _("kg"), "step": "0.01"}),
+    )
+
+    leather_weight = forms.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=0.01,
+        required=False,
+        label=_("Leather Weight (kg)"),
+        widget=forms.NumberInput(attrs={"placeholder": _("kg"), "step": "0.01"}),
+    )
+
+    def __init__(self, *args, animal=None, **kwargs):
+        self.animal = animal
+        super().__init__(*args, **kwargs)
+
+        # Apply CSS classes to all widgets
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault("class", self.SELECT_CLASS)
+            else:
+                field.widget.attrs.setdefault("class", self.INPUT_CLASS)
+
+        if not animal:
+            return
+
+        # Hide breed for animal types that don't have it
+        if animal.animal_type not in BREED_ANIMAL_TYPES:
+            del self.fields["breed"]
+
+        # Hide leather weight for animal types that don't track it
+        if animal.animal_type not in LEATHER_WEIGHT_ANIMAL_TYPES:
+            del self.fields["leather_weight"]
+
+        # Hide hot_carcass_weight if status doesn't allow it
+        if animal.status not in ("slaughtered", "carcass_ready"):
+            del self.fields["hot_carcass_weight"]
+
+        # Hide leather if still in received status
+        if animal.status == "received" and "leather_weight" in self.fields:
+            del self.fields["leather_weight"]
+
+    def clean_live_weight(self):
+        w = self.cleaned_data.get("live_weight")
+        if w and w > 2000:
+            raise ValidationError(_("Weight seems unusually high. Please verify."))
+        return w
+
+    def clean_hot_carcass_weight(self):
+        w = self.cleaned_data.get("hot_carcass_weight")
+        if w and w > 2000:
+            raise ValidationError(_("Weight seems unusually high. Please verify."))
+        return w
+
+    def clean_leather_weight(self):
+        w = self.cleaned_data.get("leather_weight")
+        if w and w > 200:
+            raise ValidationError(_("Leather weight seems unusually high. Please verify."))
+        return w
+
+
 class DisassemblyCutForm(forms.ModelForm):
     """Form for adding a disassembly cut"""
 

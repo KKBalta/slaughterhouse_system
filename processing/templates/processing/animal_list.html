@@ -393,9 +393,13 @@
                                 {{ animal.received_date|date:"M d, H:i" }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{% url 'processing:animal_detail' animal.pk %}" 
+                                <a href="{% url 'processing:animal_detail' animal.pk %}"
                                    class="text-blue-600 hover:text-blue-900 mr-3">
                                     {% trans "View" %}
+                                </a>
+                                <a href="{% url 'processing:quick_process' animal.pk %}"
+                                   class="text-emerald-600 hover:text-emerald-900 mr-3">
+                                    {% trans "Quick" %}
                                 </a>
                                 {% if animal.status == 'received' %}
                                     <form method="post" action="{% url 'processing:mark_slaughtered' animal.pk %}" 

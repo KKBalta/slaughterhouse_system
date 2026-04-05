@@ -12,6 +12,7 @@ urlpatterns = [
     path("animals/search/", views.AnimalSearchView.as_view(), name="animal_search"),
     path("animals/search/debug/", views.AnimalSearchDebugView.as_view(), name="animal_search_debug"),
     path("animals/<uuid:pk>/", views.AnimalDetailView.as_view(), name="animal_detail"),
+    path("animals/<uuid:pk>/quick/", views.QuickProcessView.as_view(), name="quick_process"),
     # Workflow Operations
     path("animals/<uuid:pk>/slaughter/", views.MarkAnimalSlaughteredView.as_view(), name="mark_slaughtered"),
     path("animals/<uuid:pk>/weights/", views.AnimalWeightLogView.as_view(), name="animal_weights"),

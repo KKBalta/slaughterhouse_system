@@ -776,6 +776,11 @@
                     </form>
                     {% endif %}
 
+                    <a href="{% url 'processing:quick_process' animal.pk %}"
+                        class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition-colors text-center block font-semibold">
+                        {% trans "Quick Process" %}
+                    </a>
+
                     <a href="{% url 'reception:edit_animal_in_order' animal.slaughter_order.pk animal.pk %}"
                         class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-center block">
                         {% trans "Edit Animal" %}

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -26,6 +27,7 @@ from .forms import (
     BatchWeightLogForm,
     DisassemblyCutForm,
     LeatherWeightForm,
+    QuickProcessForm,
     ScaleReceiptUploadForm,
     WeightLogForm,
 )
@@ -492,6 +494,178 @@ class AnimalDetailView(LoginRequiredMixin, DetailView):
         context["scale_sessions_with_allocation"] = scale_sessions_with_allocation
 
         return context
+
+
+class QuickProcessView(LoginRequiredMixin, View):
+    """Single-page form to fill animal details + weights in one save."""
+
+    template_name = "processing/quick_process.html"
+
+    def _get_animal(self, pk):
+        return get_object_or_404(
+            Animal.objects.select_related("slaughter_order", "slaughter_order__service_package"),
+            pk=pk,
+        )
+
+    def _build_initial(self, animal):
+        """Pre-fill form with existing data."""
+        initial = {}
+
+        # Existing detail values
+        detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
+        if detail_model:
+            try:
+                details = detail_model.objects.get(animal=animal)
+                for f in ("breed", "sakatat_status", "bowels_status"):
+                    if hasattr(details, f):
+                        initial[f] = getattr(details, f)
+            except detail_model.DoesNotExist:
+                pass
+
+        # Existing weight values
+        for log in animal.individual_weight_logs.filter(
+            weight_type__in=["live_weight", "hot_carcass_weight"],
+            is_group_weight=False,
+        ):
+            initial[log.weight_type] = log.weight
+
+        if animal.leather_weight_kg:
+            initial["leather_weight"] = animal.leather_weight_kg
+
+        return initial
+
+    def _get_progress(self, animal):
+        """Return dict of field_name -> bool indicating which fields are filled."""
+        progress = {}
+
+        detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
+        if detail_model:
+            try:
+                details = detail_model.objects.get(animal=animal)
+                progress["sakatat_status"] = True
+                progress["bowels_status"] = True
+                if hasattr(details, "breed"):
+                    progress["breed"] = bool(details.breed)
+            except detail_model.DoesNotExist:
+                progress["sakatat_status"] = False
+                progress["bowels_status"] = False
+                if animal.animal_type in ("cattle", "sheep", "goat", "calf", "heifer", "beef"):
+                    progress["breed"] = False
+
+        progress["live_weight"] = animal.individual_weight_logs.filter(
+            weight_type="live_weight", is_group_weight=False
+        ).exists()
+        if animal.status in ("slaughtered", "carcass_ready"):
+            progress["hot_carcass_weight"] = animal.individual_weight_logs.filter(
+                weight_type="hot_carcass_weight", is_group_weight=False
+            ).exists()
+        if animal.animal_type in ("cattle", "calf", "heifer", "beef") and animal.status != "received":
+            progress["leather_weight"] = bool(animal.leather_weight_kg)
+
+        return progress
+
+    def _get_next_animal(self, animal):
+        """Find the next animal in the same order that still needs processing."""
+        return (
+            Animal.objects.filter(
+                slaughter_order=animal.slaughter_order,
+                status__in=["slaughtered", "carcass_ready"],
+            )
+            .exclude(pk=animal.pk)
+            .order_by("received_date")
+            .first()
+        )
+
+    def _progress_rows(self, progress):
+        """Human-readable, translated labels for completion pills (match QuickProcessForm labels)."""
+        labels = {
+            "breed": _("Breed"),
+            "sakatat_status": _("Sakatat Status"),
+            "bowels_status": _("Bowels Status"),
+            "live_weight": _("Live Weight (kg)"),
+            "hot_carcass_weight": _("Hot Carcass Weight (kg)"),
+            "leather_weight": _("Leather Weight (kg)"),
+        }
+        return [{"key": k, "filled": v, "label": labels.get(k, k)} for k, v in progress.items()]
+
+    def _build_context(self, animal, form):
+        progress = self._get_progress(animal)
+        filled = sum(1 for v in progress.values() if v)
+        total = len(progress)
+        return {
+            "animal": animal,
+            "form": form,
+            "progress": progress,
+            "progress_rows": self._progress_rows(progress),
+            "progress_filled": filled,
+            "progress_total": total,
+            "progress_pct": int(filled / total * 100) if total else 100,
+            "next_animal": self._get_next_animal(animal),
+        }
+
+    def get(self, request, pk):
+        animal = self._get_animal(pk)
+        initial = self._build_initial(animal)
+        form = QuickProcessForm(initial=initial, animal=animal)
+        return render(request, self.template_name, self._build_context(animal, form))
+
+    @transaction.atomic
+    def post(self, request, pk):
+        animal = self._get_animal(pk)
+        form = QuickProcessForm(request.POST, animal=animal)
+
+        if not form.is_valid():
+            return render(request, self.template_name, self._build_context(animal, form))
+
+        saved = []
+
+        # --- Save animal details ---
+        detail_fields = {}
+        for f in ("breed", "sakatat_status", "bowels_status"):
+            if f in form.cleaned_data and form.cleaned_data[f] not in (None, ""):
+                detail_fields[f] = form.cleaned_data[f]
+
+        if detail_fields:
+            detail_model = ANIMAL_DETAIL_MODELS.get(animal.animal_type)
+            if detail_model:
+                detail_obj, _created = detail_model.objects.get_or_create(animal=animal)
+                for k, v in detail_fields.items():
+                    setattr(detail_obj, k, v)
+                detail_obj.save()
+                saved.append(_("details"))
+
+        # --- Save weights ---
+        if form.cleaned_data.get("live_weight"):
+            log_individual_weight(animal, "live_weight", form.cleaned_data["live_weight"])
+            saved.append(_("live weight"))
+
+        if form.cleaned_data.get("hot_carcass_weight"):
+            log_individual_weight(animal, "hot_carcass_weight", form.cleaned_data["hot_carcass_weight"])
+            saved.append(_("hot carcass weight"))
+
+        if form.cleaned_data.get("leather_weight"):
+            log_leather_weight(animal, form.cleaned_data["leather_weight"])
+            saved.append(_("leather weight"))
+
+        if saved:
+            messages.success(
+                request,
+                _("Saved %(items)s for %(tag)s.") % {
+                    "items": ", ".join(str(s) for s in saved),
+                    "tag": animal.identification_tag,
+                },
+            )
+        else:
+            messages.info(request, _("No changes to save."))
+
+        # If user clicked "Save & Next", redirect to next animal
+        if "save_next" in request.POST:
+            next_animal = self._get_next_animal(animal)
+            if next_animal:
+                return redirect("processing:quick_process", pk=next_animal.pk)
+
+        # Refresh page with updated data
+        return redirect("processing:quick_process", pk=animal.pk)
 
 
 class MarkAnimalSlaughteredView(LoginRequiredMixin, View):
