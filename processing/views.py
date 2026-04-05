@@ -661,7 +661,8 @@ class QuickProcessView(LoginRequiredMixin, View):
         if saved:
             messages.success(
                 request,
-                _("Saved %(items)s for %(tag)s.") % {
+                _("Saved %(items)s for %(tag)s.")
+                % {
                     "items": ", ".join(str(s) for s in saved),
                     "tag": animal.identification_tag,
                 },
@@ -676,9 +677,9 @@ class QuickProcessView(LoginRequiredMixin, View):
 
                 # Re-fetch animal so the label picks up the just-saved weight
                 # (refresh_from_db is incompatible with django-fsm protected fields)
-                animal = Animal.objects.select_related(
-                    "slaughter_order", "slaughter_order__service_package"
-                ).get(pk=animal.pk)
+                animal = Animal.objects.select_related("slaughter_order", "slaughter_order__service_package").get(
+                    pk=animal.pk
+                )
                 label = create_animal_label(animal=animal, label_type="hot_carcass", user=request.user)
                 return redirect("labeling:animal_label_detail", pk=label.pk)
             except Exception as e:

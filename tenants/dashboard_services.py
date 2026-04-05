@@ -230,13 +230,17 @@ def _build_impersonation_targets(users: list) -> tuple[TenantImpersonationTarget
     )
 
 
-def _collect_tenant_snapshot(tenant: Client) -> tuple[TenantOperationalSnapshot, tuple[TenantImpersonationTarget | None, ...]]:
+def _collect_tenant_snapshot(
+    tenant: Client,
+) -> tuple[TenantOperationalSnapshot, tuple[TenantImpersonationTarget | None, ...]]:
     User = get_user_model()
     since = timezone.now() - timedelta(days=7)
 
     with tenant_context(tenant):
         users = list(
-            User.objects.only("id", "username", "email", "role", "is_active", "is_superuser", "last_login", "date_joined")
+            User.objects.only(
+                "id", "username", "email", "role", "is_active", "is_superuser", "last_login", "date_joined"
+            )
         )
         user_agg = User.objects.aggregate(
             total_users=Count("id"),
@@ -301,7 +305,9 @@ def _collect_tenant_snapshot(tenant: Client) -> tuple[TenantOperationalSnapshot,
     return snapshot, _build_impersonation_targets(users)
 
 
-def _build_health(tenant: Client, primary_domain: str, stats: TenantOperationalSnapshot, query_error: str = "") -> tuple[TenantHealthSnapshot, tuple[str, ...]]:
+def _build_health(
+    tenant: Client, primary_domain: str, stats: TenantOperationalSnapshot, query_error: str = ""
+) -> tuple[TenantHealthSnapshot, tuple[str, ...]]:
     now = timezone.now()
     stale_cutoff = now - timedelta(days=30)
     flags: list[str] = []
@@ -327,7 +333,11 @@ def _build_health(tenant: Client, primary_domain: str, stats: TenantOperationalS
         return TenantHealthSnapshot(tone="error", label=_("Data issue"), reasons=tuple(flags)), tuple(flags)
     if not tenant.is_active:
         return TenantHealthSnapshot(tone="inactive", label=_("Inactive"), reasons=tuple(flags)), tuple(flags)
-    if not primary_domain or stats.service_package_count == 0 or (stats.owner_count + stats.admin_count + stats.django_superuser_count) == 0:
+    if (
+        not primary_domain
+        or stats.service_package_count == 0
+        or (stats.owner_count + stats.admin_count + stats.django_superuser_count) == 0
+    ):
         return TenantHealthSnapshot(tone="setup", label=_("Needs setup"), reasons=tuple(flags)), tuple(flags)
     if stats.latest_activity_at is None or stats.latest_activity_at < stale_cutoff:
         return TenantHealthSnapshot(tone="attention", label=_("Attention"), reasons=tuple(flags)), tuple(flags)
@@ -369,7 +379,9 @@ def build_tenant_dashboard_row(tenant: Client) -> TenantDashboardRow:
     )
 
 
-def build_platform_dashboard_summary(*, tenant_rows: list[TenantDashboardRow], pending_registrations: int) -> PlatformDashboardSummary:
+def build_platform_dashboard_summary(
+    *, tenant_rows: list[TenantDashboardRow], pending_registrations: int
+) -> PlatformDashboardSummary:
     recent_cutoff = timezone.now() - timedelta(days=7)
     attention_queue = tuple(row for row in tenant_rows if row.health.tone != "healthy")
     return PlatformDashboardSummary(
@@ -378,7 +390,9 @@ def build_platform_dashboard_summary(*, tenant_rows: list[TenantDashboardRow], p
         inactive_tenants=sum(1 for row in tenant_rows if not row.tenant.is_active),
         pending_registrations=pending_registrations,
         recent_activity_tenants=sum(
-            1 for row in tenant_rows if row.stats.latest_activity_at is not None and row.stats.latest_activity_at >= recent_cutoff
+            1
+            for row in tenant_rows
+            if row.stats.latest_activity_at is not None and row.stats.latest_activity_at >= recent_cutoff
         ),
         attention_tenants=len(attention_queue),
         total_active_users=sum(row.stats.active_users for row in tenant_rows),

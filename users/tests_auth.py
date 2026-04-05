@@ -22,8 +22,7 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import Client, RequestFactory, override_settings
 from django.urls import NoReverseMatch, reverse
 
-from tenants.models import Client as TenantClient
-from tenants.models import PlatformAdmin, PlatformImpersonationEvent
+from tenants.models import Client as TenantClient, PlatformAdmin, PlatformImpersonationEvent
 from users.models import ClientProfile
 
 # View tests: skip when SKIP_VIEW_TESTS env is set (e.g. in CI when templates missing).

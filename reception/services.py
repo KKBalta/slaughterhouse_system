@@ -252,9 +252,7 @@ def assign_client_to_order(
     destination_client_id: str | None = None,
 ) -> SlaughterOrder:
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError(
-            _("Cannot update an order that is already in progress, completed, or cancelled.")
-        )
+        raise ValidationError(_("Cannot update an order that is already in progress, completed, or cancelled."))
 
     client_profile, raw_client_name, raw_client_phone = _resolve_order_client_reference(
         client_id=client_id,
@@ -283,9 +281,7 @@ def update_slaughter_order(order: SlaughterOrder, **data) -> SlaughterOrder:
     Prevents updates if the order is no longer pending.
     """
     if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError(
-            _("Cannot update an order that is already in progress, completed, or cancelled.")
-        )
+        raise ValidationError(_("Cannot update an order that is already in progress, completed, or cancelled."))
 
     allowed_fields = ["service_package", "destination", "order_datetime"]
     for field, value in data.items():

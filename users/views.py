@@ -542,9 +542,7 @@ def session_bootstrap_api(request):
             _mark_platform_impersonation_event(platform_impersonation.get("event_id"), consumed_at=timezone.now())
             messages.warning(
                 request,
-                _(
-                    "Platform admin impersonation active for %(username)s (%(role)s). Use Exit impersonation to return."
-                )
+                _("Platform admin impersonation active for %(username)s (%(role)s). Use Exit impersonation to return.")
                 % {
                     "username": platform_impersonation.get("target_username") or user.get_username(),
                     "role": platform_impersonation.get("target_role") or getattr(user, "role", ""),

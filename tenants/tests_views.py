@@ -12,7 +12,6 @@ from tenants.models import Client, Domain, PlatformAdmin, TenantRegistrationRequ
 from tenants.views import (
     PlatformAdminLoginView,
     platform_admin_dashboard,
-    platform_admin_setup,
     tenant_company_settings_view,
     tenant_create_superuser,
     tenant_hard_delete,
@@ -121,7 +120,11 @@ def test_platform_admin_dashboard_renders_tenants_and_pending_registrations(plat
         {
             "tenant": tenant,
             "app_url": "http://acme.localhost:8000",
-            "stats": type("Stats", (), {"active_users": 2, "recent_orders_7d": 1, "recent_animals_7d": 3, "latest_activity_at": None})(),
+            "stats": type(
+                "Stats",
+                (),
+                {"active_users": 2, "recent_orders_7d": 1, "recent_animals_7d": 3, "latest_activity_at": None},
+            )(),
             "health": type("Health", (), {"tone": "healthy"})(),
         },
     )()

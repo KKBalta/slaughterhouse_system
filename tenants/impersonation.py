@@ -11,7 +11,6 @@ from django.utils import timezone
 
 from tenants.email_index import build_post_login_redirect_url, build_tenant_api_base_url
 from tenants.models import PlatformImpersonationSession
-from users.models import User
 
 IMPERSONATION_DESTINATION_DASHBOARD = "dashboard"
 IMPERSONATION_DESTINATION_DJANGO_ADMIN = "django_admin"
@@ -107,7 +106,9 @@ def consume_platform_impersonation_session(*, raw_token: str, tenant, consumed_h
 def stop_platform_impersonation_session(session_id) -> None:
     if not session_id:
         return
-    PlatformImpersonationSession.objects.filter(pk=session_id, stopped_at__isnull=True).update(stopped_at=timezone.now())
+    PlatformImpersonationSession.objects.filter(pk=session_id, stopped_at__isnull=True).update(
+        stopped_at=timezone.now()
+    )
 
 
 def get_impersonation_redirect_url(session) -> str:

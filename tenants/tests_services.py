@@ -349,7 +349,9 @@ def test_build_platform_dashboard_summary_aggregates_metrics():
         admin_url="http://acme.localhost:8000/admin/",
         primary_domain="acme.localhost",
         domain_count=1,
-        stats=TenantOperationalSnapshot(active_users=3, recent_orders_7d=2, recent_animals_7d=5, latest_activity_at=recent),
+        stats=TenantOperationalSnapshot(
+            active_users=3, recent_orders_7d=2, recent_animals_7d=5, latest_activity_at=recent
+        ),
         health=TenantHealthSnapshot(tone="healthy", label="Healthy"),
         owner_target=None,
         admin_target=None,
@@ -363,7 +365,9 @@ def test_build_platform_dashboard_summary_aggregates_metrics():
         admin_url="http://bravo.localhost:8000/admin/",
         primary_domain="",
         domain_count=0,
-        stats=TenantOperationalSnapshot(active_users=1, recent_orders_7d=1, recent_animals_7d=2, latest_activity_at=None),
+        stats=TenantOperationalSnapshot(
+            active_users=1, recent_orders_7d=1, recent_animals_7d=2, latest_activity_at=None
+        ),
         health=TenantHealthSnapshot(tone="inactive", label="Inactive"),
         owner_target=None,
         admin_target=None,

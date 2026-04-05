@@ -253,7 +253,9 @@ def test_batch_generate_labels_handles_empty_success_and_errors(
     first = animal_factory(slaughter_order=order, animal_type="cattle", status="slaughtered")
     second = animal_factory(slaughter_order=order, animal_type="cattle", status="slaughtered")
     wrong_order_animal = animal_factory(animal_type="sheep", status="slaughtered")
-    existing = AnimalLabel.objects.create(animal=first, label_type="hot_carcass", prn_content="EXIST", bat_content="EXIST")
+    existing = AnimalLabel.objects.create(
+        animal=first, label_type="hot_carcass", prn_content="EXIST", bat_content="EXIST"
+    )
     mock_new_label = AnimalLabel.objects.create(
         animal=second,
         label_type="cold_carcass",
@@ -298,7 +300,9 @@ def test_delete_animal_label_handles_success_and_error(auth_client, animal_label
     assert delete_mock.call_args.args[0] == "animal_labels/pdf/delete-me.pdf"
     assert not AnimalLabel.objects.filter(pk=animal_label.pk).exists()
 
-    error_label = AnimalLabel.objects.create(animal=animal_label.animal, label_type="cold_carcass", prn_content="X", bat_content="Y")
+    error_label = AnimalLabel.objects.create(
+        animal=animal_label.animal, label_type="cold_carcass", prn_content="X", bat_content="Y"
+    )
     mocker.patch.object(AnimalLabel, "delete", side_effect=Exception("delete failed"))
     response = auth_client.post(reverse("labeling:delete_animal_label", kwargs={"label_id": error_label.pk}))
     assert response.status_code == 302

@@ -1182,14 +1182,17 @@ class TestQuickProcessView:
         animal.perform_slaughter()
         animal.save()
 
-        request = _auth_post_request(admin_user, {
-            "save": "",
-            "breed": "Holstein",
-            "sakatat_status": "1.0",
-            "bowels_status": "0.5",
-            "live_weight": "450.00",
-            "hot_carcass_weight": "220.00",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save": "",
+                "breed": "Holstein",
+                "sakatat_status": "1.0",
+                "bowels_status": "0.5",
+                "live_weight": "450.00",
+                "hot_carcass_weight": "220.00",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1208,12 +1211,15 @@ class TestQuickProcessView:
         animal.perform_slaughter()
         animal.save()
 
-        request = _auth_post_request(admin_user, {
-            "save": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-            "leather_weight": "12.50",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+                "leather_weight": "12.50",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1228,11 +1234,14 @@ class TestQuickProcessView:
         animal.perform_slaughter()
         animal.save()
 
-        request = _auth_post_request(admin_user, {
-            "save": "",
-            "sakatat_status": "",
-            "bowels_status": "",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save": "",
+                "sakatat_status": "",
+                "bowels_status": "",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1244,10 +1253,13 @@ class TestQuickProcessView:
         animal.perform_slaughter()
         animal.save()
 
-        request = _auth_post_request(admin_user, {
-            "save": "",
-            "live_weight": "99999",  # exceeds 2000 limit
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save": "",
+                "live_weight": "99999",  # exceeds 2000 limit
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         # Re-renders the form (not a redirect)
@@ -1266,11 +1278,14 @@ class TestQuickProcessView:
         a1.save()
         a2 = animal_factory(slaughter_order=order, animal_type="sheep", status="received")
 
-        request = _auth_post_request(admin_user, {
-            "save_next": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_next": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=a1.pk)
 
         assert response.status_code == 302
@@ -1287,11 +1302,14 @@ class TestQuickProcessView:
         a2.perform_slaughter()
         a2.save()
 
-        request = _auth_post_request(admin_user, {
-            "save_next": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_next": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=a2.pk)
 
         assert response.status_code == 302
@@ -1306,11 +1324,14 @@ class TestQuickProcessView:
         animal.perform_slaughter()
         animal.save()
 
-        request = _auth_post_request(admin_user, {
-            "save_next": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_next": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1335,12 +1356,15 @@ class TestQuickProcessView:
             return_value=mock_label,
         )
 
-        request = _auth_post_request(admin_user, {
-            "save_print": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-            "hot_carcass_weight": "200.00",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_print": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+                "hot_carcass_weight": "200.00",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1360,12 +1384,15 @@ class TestQuickProcessView:
 
         mock_create = mocker.patch("labeling.utils.create_animal_label")
 
-        request = _auth_post_request(admin_user, {
-            "save_print": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-            # No hot_carcass_weight
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_print": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+                # No hot_carcass_weight
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         assert response.status_code == 302
@@ -1387,12 +1414,15 @@ class TestQuickProcessView:
             side_effect=Exception("Printer on fire"),
         )
 
-        request = _auth_post_request(admin_user, {
-            "save_print": "",
-            "sakatat_status": "1.0",
-            "bowels_status": "1.0",
-            "hot_carcass_weight": "200.00",
-        })
+        request = _auth_post_request(
+            admin_user,
+            {
+                "save_print": "",
+                "sakatat_status": "1.0",
+                "bowels_status": "1.0",
+                "hot_carcass_weight": "200.00",
+            },
+        )
         response = QuickProcessView.as_view()(request, pk=animal.pk)
 
         # Falls through to default redirect with error message

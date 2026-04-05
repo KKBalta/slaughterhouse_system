@@ -251,7 +251,9 @@ def platform_admin_impersonation_consume(request):
     request.session["platform_impersonation_admin_name"] = session.platform_admin.name
     request.session["platform_impersonation_target_username"] = target_user.get_username()
     request.session["platform_impersonation_target_role"] = getattr(target_user, "role", "") or ""
-    request.session["platform_impersonation_started_at"] = session.consumed_at.isoformat() if session.consumed_at else ""
+    request.session["platform_impersonation_started_at"] = (
+        session.consumed_at.isoformat() if session.consumed_at else ""
+    )
     return redirect(get_impersonation_redirect_url(session))
 
 
