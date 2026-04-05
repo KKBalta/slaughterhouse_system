@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
+from core.views import set_language as set_language_view
 from tenants.views import platform_admin_impersonation_consume, platform_admin_impersonation_stop
 
 # Non-translatable URLs (admin, API endpoints, etc.)
@@ -19,7 +20,7 @@ urlpatterns = [
         RedirectView.as_view(url=settings.STATIC_URL + "theme/img/favicon.png", permanent=False),
     ),
     path("admin/", admin.site.urls),
-    path("i18n/", include("django.conf.urls.i18n")),  # Include the i18n URLs for set_language
+    path("i18n/setlang/", set_language_view, name="set_language"),
     path("reporting/", include("reporting.urls")),  # Add reporting URLs here temporarily
     path("api/v1/edge/", include("scales.api_urls")),  # CarniTrack Edge API
     path("api/v1/auth/", include("users.api_urls")),  # Session auth endpoints for external frontend

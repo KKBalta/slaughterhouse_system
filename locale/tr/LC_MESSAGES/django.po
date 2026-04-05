@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 07:35+0300\n"
+"POT-Creation-Date: 2026-04-05 23:00+0300\n"
 "PO-Revision-Date: 2025-08-20 05:18+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
@@ -303,7 +303,6 @@ msgstr "Hayvan Türü"
 #: scales/templates/scales/edge_management.html:103
 #: scales/templates/scales/session_detail.html:34
 #: scales/templates/scales/session_list.html:58
-#: templates/tenants/platform_admin/dashboard.html:198
 #: users/templates/users/client_profile_list.html:134
 #: users/templates/users/user_management_list.html:96
 #: users/templates/users/user_management_list.html:182
@@ -385,8 +384,8 @@ msgstr "PDF mevcut değil"
 #: scales/templates/scales/orphaned_batch_list.html:20
 #: scales/templates/scales/session_detail.html:102
 #: scales/templates/scales/session_list.html:60
-#: templates/tenants/platform_admin/dashboard.html:109
-#: templates/tenants/platform_admin/dashboard.html:200
+#: templates/tenants/platform_admin/dashboard.html:172
+#: templates/tenants/platform_admin/dashboard.html:263
 #: users/templates/users/client_profile_list.html:139
 #: users/templates/users/user_management_list.html:97
 #: users/templates/users/user_management_list.html:183
@@ -535,6 +534,7 @@ msgstr "QR kodu için isteğe bağlı URL veya veri"
 #: scales/templates/scales/session_create.html:46
 #: scales/templates/scales/session_create.html:79
 #: scales/templates/scales/session_event_edit.html:69
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:84
 #: templates/tenants/tenant_company_settings.html:142
 #: users/templates/users/client_profile_confirm_delete.html:14
 msgid "Cancel"
@@ -1627,7 +1627,7 @@ msgstr "Sipariş Numarası"
 #: processing/templates/processing/animal_detail.html:475
 #: processing/templates/processing/disassembly_dashboard.html:263
 #: processing/templates/processing/disassembly_dashboard.html:321
-#: reception/templates/reception/order_list.html:41 tenants/views.py:237
+#: reception/templates/reception/order_list.html:41 tenants/views.py:337
 #: users/forms.py:302 users/templates/users/client_profile_detail.html:4
 #: users/templates/users/client_profile_list.html:133
 #: users/templates/users/dashboard.html:53
@@ -1974,7 +1974,7 @@ msgid "No order"
 msgstr "Sipariş yok"
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1172 processing/views.py:1249
+#: processing/views.py:1173 processing/views.py:1250
 msgid "Walk-in Client"
 msgstr "Parakende Müşteri"
 
@@ -2146,6 +2146,7 @@ msgstr "Tarih ve Saat"
 #: reception/templates/reception/order_detail.html:91
 #: scales/templates/scales/session_create.html:65
 #: scales/templates/scales/session_detail.html:32
+#: templates/tenants/platform_admin/dashboard.html:283
 msgid "Animals"
 msgstr "Hayvanlar"
 
@@ -2183,6 +2184,7 @@ msgstr ""
 "ağırlık geçmişini izleyin"
 
 #: processing/templates/processing/batch_weights.html:48
+#: templates/tenants/platform_admin/dashboard.html:298
 #: theme/templates/base.html:40 users/templates/users/dashboard.html:4
 msgid "Dashboard"
 msgstr "Anasayfa"
@@ -2415,6 +2417,7 @@ msgid "Weighing"
 msgstr "Tartım"
 
 #: processing/templates/processing/dashboard.html:237
+#: templates/tenants/platform_admin/dashboard.html:261
 msgid "Activity"
 msgstr "Aktivite"
 
@@ -2618,7 +2621,7 @@ msgstr "Cihaz"
 #: processing/templates/processing/disassembly_detail.html:60
 #: processing/templates/processing/disassembly_detail.html:418
 #: scales/templates/scales/session_detail.html:33
-#: scales/templates/scales/session_list.html:57 tenants/views.py:236
+#: scales/templates/scales/session_list.html:57 tenants/views.py:336
 #: users/forms.py:303 users/templates/users/dashboard.html:45
 msgid "Operator"
 msgstr "Operatör"
@@ -2922,66 +2925,66 @@ msgstr "deri ağırlığı"
 msgid "Saved %(items)s for %(tag)s."
 msgstr "%(tag)s için %(items)s kaydedildi."
 
-#: processing/views.py:670
+#: processing/views.py:671
 msgid "No changes to save."
 msgstr "Kaydedilecek değişiklik yok."
 
-#: processing/views.py:685
+#: processing/views.py:686
 #, fuzzy, python-format
 #| msgid "Error generating label: %(error)s"
 msgid "Label generation failed: %(error)s"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
-#: processing/views.py:703
+#: processing/views.py:704
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr "Hayvan %(tag)s kesildi olarak işaretlendi."
 
-#: processing/views.py:705
+#: processing/views.py:706
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr "Hayvan kesildi olarak işaretlenirken hata oluştu: %(error)s"
 
-#: processing/views.py:725 processing/views.py:1203
+#: processing/views.py:726 processing/views.py:1204
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için deri ağırlığı (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:738
+#: processing/views.py:739
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s %(weight)s kg olarak güncellendi."
 
-#: processing/views.py:748
+#: processing/views.py:749
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:756
+#: processing/views.py:757
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr "Ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:822
+#: processing/views.py:823
 msgid "Please select an order."
 msgstr "Lütfen bir sipariş seçin."
 
-#: processing/views.py:839
+#: processing/views.py:840
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr "%(count)s hayvan başarıyla kesildi."
 
-#: processing/views.py:841
+#: processing/views.py:842
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr "%(count)s hayvan işlenemedi."
 
-#: processing/views.py:881
+#: processing/views.py:882
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr "%(field)s: %(error)s"
 
-#: processing/views.py:1012
+#: processing/views.py:1013
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2992,7 +2995,7 @@ msgstr ""
 "%(available_count)s hayvan tartıldı; bireysel ağırlık kayıtları hayvan "
 "başına %(average_weight).2f kg ortalama ile oluşturuldu."
 
-#: processing/views.py:1024
+#: processing/views.py:1025
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -3003,12 +3006,12 @@ msgstr ""
 "(%(total_weight)skg toplam, %(average_weight).2fkg ortalama). "
 "%(weight_type)s için %(remaining)s hayvan kaldı."
 
-#: processing/views.py:1036
+#: processing/views.py:1037
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr "Toplu ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1067
+#: processing/views.py:1068
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -3019,7 +3022,7 @@ msgstr ""
 "%(available_count)s hayvanda %(average_weight).2f kg ortalamaya yeniden "
 "senkronize edildi."
 
-#: processing/views.py:1079
+#: processing/views.py:1080
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
@@ -3028,22 +3031,22 @@ msgstr ""
 "%(weight_type)s için toplam güncellendi. %(remaining)s hayvan hâlâ "
 "beklemede; bu tür için bireysel kayıtlar kaldırıldı."
 
-#: processing/views.py:1088
+#: processing/views.py:1089
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr "Toplu ağırlık güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1139
+#: processing/views.py:1140
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr "Sipariş %(order_no)s durumu güncellendi."
 
-#: processing/views.py:1207
+#: processing/views.py:1208
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr "Deri ağırlığı kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1293
+#: processing/views.py:1294
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
@@ -3052,29 +3055,29 @@ msgstr ""
 "Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. Mevcut "
 "durum: %(status)s. Lütfen önce hayvanı kesin."
 
-#: processing/views.py:1306
+#: processing/views.py:1307
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr "%(animal_type)s için detay formu mevcut değil."
 
-#: processing/views.py:1314
+#: processing/views.py:1315
 msgid "updated"
 msgstr "güncellendi"
 
-#: processing/views.py:1318
+#: processing/views.py:1319
 msgid "created"
 msgstr "oluşturuldu"
 
-#: processing/views.py:1327
+#: processing/views.py:1328
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr "%(tag)s için %(animal_type)s detayları başarıyla %(action)s."
 
-#: processing/views.py:1471 processing/views.py:1484
+#: processing/views.py:1472 processing/views.py:1485
 msgid "No animal found matching the query"
 msgstr "Sorguya uyan hayvan bulunamadı"
 
-#: processing/views.py:1481
+#: processing/views.py:1482
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
@@ -3082,38 +3085,38 @@ msgstr ""
 "Bu hayvan parçalamaya uygun değil. Sipariş parçalama hizmeti içermeyebilir "
 "veya sıcak karkas ağırlığı henüz kaydedilmemiş olabilir."
 
-#: processing/views.py:1727
+#: processing/views.py:1728
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr "Kemiksiz et ağırlığı (%(weight)s kg) başarıyla kaydedildi."
 
-#: processing/views.py:1732
+#: processing/views.py:1733
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr "\"%(cut)s\" parçası (%(weight)s kg) başarıyla eklendi."
 
-#: processing/views.py:1736
+#: processing/views.py:1737
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr "Parça kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1768 processing/views.py:1778
+#: processing/views.py:1769 processing/views.py:1779
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 "Kantar kaynaklı parçalar salt okunurdur. Kantar Oturumunda kaynak olayı "
 "düzenleyin."
 
-#: processing/views.py:1785
+#: processing/views.py:1786
 msgid "Cut updated successfully."
 msgstr "Parça başarıyla güncellendi."
 
-#: processing/views.py:1788
+#: processing/views.py:1789
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr "Parça güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1806
+#: processing/views.py:1807
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
@@ -3121,7 +3124,7 @@ msgstr ""
 "Kantar kaynaklı parçalar doğrudan silinemez. Kaynak kantar olayını silin "
 "veya yeniden atayın."
 
-#: processing/views.py:1813
+#: processing/views.py:1814
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr "\"%(cut)s\" parçası başarıyla silindi."
@@ -3148,8 +3151,8 @@ msgstr "Parakende müşteriler için müşteri adını girin"
 msgid "Area Code"
 msgstr "Alan Kodu"
 
-#: reception/forms.py:54 reception/forms.py:207 tenants/forms.py:35
-#: users/forms.py:48 users/forms.py:181 users/forms.py:336
+#: reception/forms.py:54 reception/forms.py:207 ⁨tenants/forms 2.py⁩:35
+#: tenants/forms.py:35 users/forms.py:48 users/forms.py:181 users/forms.py:336
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr "Ülke kodunu seçin: Türkiye için +90, ABD/Kanada için +1"
 
@@ -3167,8 +3170,8 @@ msgstr ""
 "Bu müşterinin tekrar kullanılabilir bir aday müşteri olarak kaydedilebilmesi "
 "için parakende müşterilerde telefon zorunludur."
 
-#: reception/forms.py:66 reception/forms.py:219 tenants/forms.py:64
-#: users/forms.py:366
+#: reception/forms.py:66 reception/forms.py:219 ⁨tenants/forms 2.py⁩:63
+#: tenants/forms.py:64 users/forms.py:366
 msgid "Enter phone number"
 msgstr "Telefon numarası girin"
 
@@ -3302,7 +3305,7 @@ msgstr ""
 "Fotoğrafsız hayvan oluşturmak için bunu işaretleyin (fotoğraflar daha sonra "
 "eklenebilir)"
 
-#: reception/forms.py:466 reception/services.py:403
+#: reception/forms.py:466 reception/services.py:399
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr "Tek bir toplu işlemde en fazla 100 hayvan oluşturulabilir."
 
@@ -3314,30 +3317,28 @@ msgstr ""
 "Yüksek eşzamanlılık nedeniyle sipariş birden fazla denemeden sonra "
 "oluşturulamadı. Lütfen tekrar deneyin."
 
-#: reception/services.py:256 reception/services.py:287
+#: reception/services.py:255 reception/services.py:284
 msgid ""
 "Cannot update an order that is already in progress, completed, or cancelled."
-msgstr ""
-"Devam eden, tamamlanmış veya iptal edilmiş bir sipariş güncellenemez."
+msgstr "Devam eden, tamamlanmış veya iptal edilmiş bir sipariş güncellenemez."
 
-#: reception/services.py:306
+#: reception/services.py:302
 msgid "Cannot cancel an order that is already in progress or completed."
-msgstr ""
-"Devam eden veya tamamlanmış bir sipariş iptal edilemez."
+msgstr "Devam eden veya tamamlanmış bir sipariş iptal edilemez."
 
-#: reception/services.py:343
+#: reception/services.py:339
 msgid "Cannot bill an order that is not yet completed."
 msgstr "Henüz tamamlanmamış bir sipariş faturalandırılamaz."
 
-#: reception/services.py:356 reception/services.py:400
+#: reception/services.py:352 reception/services.py:396
 msgid "Can only add animals to a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişe eklenebilir."
 
-#: reception/services.py:368
+#: reception/services.py:364
 msgid "Can only remove animals from a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişten kaldırılabilir."
 
-#: reception/services.py:371
+#: reception/services.py:367
 msgid "Animal does not belong to the specified order."
 msgstr "Hayvan belirtilen siparişe ait değil."
 
@@ -3571,8 +3572,7 @@ msgstr "Yeni Kesim"
 
 #: reception/templates/reception/order_list.html:20
 msgid "Search by order number, client name, or destination client..."
-msgstr ""
-"Sipariş numarası, müşteri adı veya teslimat müşterisine göre arayın..."
+msgstr "Sipariş numarası, müşteri adı veya teslimat müşterisine göre arayın..."
 
 #: reception/templates/reception/order_list.html:29
 #: users/templates/users/client_profile_list.html:66
@@ -3636,7 +3636,7 @@ msgstr "Siparişi Güncelle"
 msgid "No contact person"
 msgstr "İletişim kişisi yok"
 
-#: reception/views.py:90 reception/views.py:93 users/views.py:780
+#: reception/views.py:90 reception/views.py:93 users/views.py:842
 msgid "Individual"
 msgstr "Bireysel"
 
@@ -4082,7 +4082,6 @@ msgstr "Canlı"
 
 #: scales/templates/scales/edge_management.html:57
 #: scales/templates/scales/plu_list.html:26
-#: templates/tenants/platform_admin/dashboard.html:196
 msgid "Name"
 msgstr "Ad"
 
@@ -4334,7 +4333,7 @@ msgid "Back to list"
 msgstr "Listeye dön"
 
 #: scales/templates/scales/session_detail.html:47
-#: templates/tenants/platform_admin/dashboard.html:132
+#: templates/tenants/platform_admin/dashboard.html:195
 msgid "Reason (optional)"
 msgstr "Neden (isteğe bağlı)"
 
@@ -4420,6 +4419,7 @@ msgstr ""
 "seçin."
 
 #: scales/templates/scales/session_event_edit.html:68
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:81
 #: templates/tenants/tenant_company_settings.html:139
 msgid "Save"
 msgstr "Kaydet"
@@ -4457,7 +4457,7 @@ msgstr "Etkilenen Hayvanlar"
 msgid "Scale device"
 msgstr "Kantar cihazı"
 
-#: scales/views.py:294 users/views.py:791
+#: scales/views.py:294 users/views.py:853
 msgid "Walk-in"
 msgstr "Parakende"
 
@@ -4734,13 +4734,13 @@ msgstr ""
 msgid "Company name"
 msgstr "Şirket adı"
 
-#: templates/public/setup.html:60
-#: templates/tenants/platform_admin/dashboard.html:107 tenants/forms.py:224
+#: templates/public/setup.html:60 tenants/forms.py:224
 msgid "Owner email"
 msgstr "Sahip e-postası"
 
 #: templates/public/setup.html:69 templates/public/signin.html:89
 #: tenants/forms.py:153 tenants/forms.py:185 tenants/forms.py:225
+#: users/templates/users/client_register_done.html:20
 #: users/templates/users/login.html:40
 msgid "Password"
 msgstr "Şifre"
@@ -4794,6 +4794,7 @@ msgstr "Onaylı bir tenantınız var mı?"
 #: templates/tenants/platform_admin/login.html:8
 #: templates/tenants/platform_admin/login.html:170
 #: templates/tenants/platform_admin/setup.html:62
+#: users/templates/users/client_register_done.html:26
 #: users/templates/users/login.html:49
 msgid "Sign in"
 msgstr "Giriş Yap"
@@ -5019,121 +5020,53 @@ msgstr "Giriş başarısız."
 msgid "Tenant host unavailable"
 msgstr "Tenant ana bilgisayarı kullanılamıyor"
 
-#: templates/tenants/platform_admin/dashboard.html:8
-#: templates/tenants/platform_admin/dashboard.html:79
-msgid "Tenants"
-msgstr "Tenantlar"
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:4
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:8
+msgid "Company & label settings"
+msgstr "Şirket ve etiket ayarları"
 
-#: templates/tenants/platform_admin/dashboard.html:80
-#, python-format
-msgid "Signed in as %(email)s"
-msgstr "%(email)s olarak giriş yapıldı"
-
-#: templates/tenants/platform_admin/dashboard.html:82
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:10
+#: templates/tenants/tenant_company_settings.html:28
 msgid ""
-"Each row links to that tenant app on its hostname. The app URL opens the "
-"tenant-scoped CarniTrack interface directly."
+"These values appear on printed labels (company block, İşletme onay no, VD "
+"number) and on PDF reports. İşletme onay no must match your official "
+"registration."
 msgstr ""
-"Her satır, kendi alan adındaki tenant uygulamasına bağlanır. Uygulama URL'si "
-"tenant kapsamlı CarniTrack arayüzünü doğrudan açar."
+"Bu değerler basılı etiketlerde (şirket bloğu, işletme onay no, VD numarası) "
+"ve PDF raporlarında görünür. İşletme onay no resmi kayıtla eşleşmelidir."
 
-#: templates/tenants/platform_admin/dashboard.html:87
-msgid "Sign out"
-msgstr "Çıkış yap"
-
-#: templates/tenants/platform_admin/dashboard.html:101
-msgid "Pending tenant registrations"
-msgstr "Bekleyen tenant kayıtları"
-
-#: templates/tenants/platform_admin/dashboard.html:105
-#: templates/tenants/platform_admin/dashboard.html:197
-#: users/templates/users/client_profile_detail.html:52
-msgid "Company"
-msgstr "Şirket"
-
-#: templates/tenants/platform_admin/dashboard.html:106
-msgid "Schema (preview)"
-msgstr "Şema (önizleme)"
-
-#: templates/tenants/platform_admin/dashboard.html:108
-msgid "Submitted"
-msgstr "Gönderildi"
+#: templates/tenants/platform_admin/dashboard.html:8
+#, fuzzy
+#| msgid "Operation dashboard"
+msgid "Tenant dashboard"
+msgstr "Operasyon paneli"
 
 #: templates/tenants/platform_admin/dashboard.html:114
 #, fuzzy
 #| msgid "Tenant registration"
-msgid "Reject this registration?"
+msgid "Tenant Operations"
 msgstr "Tenant kaydı"
 
-#: templates/tenants/platform_admin/dashboard.html:128
-msgid "Approve"
-msgstr "Onayla"
+#: templates/tenants/platform_admin/dashboard.html:115
+#, python-format
+msgid "Signed in as %(email)s"
+msgstr "%(email)s olarak giriş yapıldı"
+
+#: templates/tenants/platform_admin/dashboard.html:116
+msgid ""
+"Provision tenants, review health, and launch god-mode sessions into each "
+"tenant app without leaving the platform console."
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:120
+msgid "Sign out"
+msgstr "Çıkış yap"
 
 #: templates/tenants/platform_admin/dashboard.html:133
-msgid "Reject"
-msgstr "Reddet"
+msgid "Tenants"
+msgstr "Tenantlar"
 
-#: templates/tenants/platform_admin/dashboard.html:141
-msgid ""
-"Approving creates the tenant schema, domain, and an OWNER user without "
-"Django admin access."
-msgstr ""
-"Onay verildiğinde tenant şeması, alan adı ve Django admin erişimi olmayan "
-"bir OWNER kullanıcısı oluşturulur."
-
-#: templates/tenants/platform_admin/dashboard.html:146
-msgid "Provision new tenant"
-msgstr "Yeni tenant oluştur"
-
-#: templates/tenants/platform_admin/dashboard.html:182
-msgid "Provision tenant"
-msgstr "Tenant oluştur"
-
-#: templates/tenants/platform_admin/dashboard.html:183
-msgid "Creates the PostgreSQL schema and runs migrations automatically."
-msgstr ""
-"PostgreSQL şemasını oluşturur ve migrasyonları otomatik olarak çalıştırır."
-
-#: templates/tenants/platform_admin/dashboard.html:193
-msgid "Tenant URL"
-msgstr "Tenant URL'si"
-
-#: templates/tenants/platform_admin/dashboard.html:194
-#, fuzzy
-#| msgid "Schema name"
-msgid "Schema"
-msgstr "Şema adı"
-
-#: templates/tenants/platform_admin/dashboard.html:195
-msgid "Slug"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:199
-#, fuzzy
-#| msgid "Create admin user"
-msgid "Admin user"
-msgstr "Yönetici kullanıcı oluştur"
-
-#: templates/tenants/platform_admin/dashboard.html:206
-#, python-format
-msgid "Deactivate %(schema)s?"
-msgstr "%(schema)s devre dışı bırakılsın mı?"
-
-#: templates/tenants/platform_admin/dashboard.html:207
-#, python-format
-msgid ""
-"Permanently delete tenant \"%(schema)s\"? This runs DROP SCHEMA ... CASCADE "
-"and cannot be undone."
-msgstr ""
-"\"%(schema)s\" tenantı kalıcı olarak silinsin mi? Bu işlem DROP SCHEMA ... "
-"CASCADE çalıştırır ve geri alınamaz."
-
-#: templates/tenants/platform_admin/dashboard.html:208
-#, python-format
-msgid "Type schema name %(schema)s to confirm deletion"
-msgstr "Silmeyi onaylamak için %(schema)s şema adını yazın"
-
-#: templates/tenants/platform_admin/dashboard.html:217
+#: templates/tenants/platform_admin/dashboard.html:134
 #: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:156
 #: users/templates/users/client_profile_detail.html:13
 #: users/templates/users/client_profile_list.html:36
@@ -5146,39 +5079,253 @@ msgstr "Silmeyi onaylamak için %(schema)s şema adını yazın"
 msgid "Active"
 msgstr "Aktif"
 
-#: templates/tenants/platform_admin/dashboard.html:219
-#: users/templates/users/user_management_list.html:52
-#: users/templates/users/user_management_list.html:72
-#: users/templates/users/user_management_list.html:137
-#, fuzzy
-#| msgid "active"
-msgid "Inactive"
-msgstr "aktif"
+#: templates/tenants/platform_admin/dashboard.html:135
+#: tenants/dashboard_services.py:344
+msgid "Healthy"
+msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:223
+#: templates/tenants/platform_admin/dashboard.html:136
+msgid "Need Attention"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:137
+#, fuzzy
+#| msgid "Active Sessions"
+msgid "Active in 7d"
+msgstr "Aktif Oturumlar"
+
+#: templates/tenants/platform_admin/dashboard.html:138
+#, fuzzy
+#| msgid "pending"
+msgid "Pending"
+msgstr "beklemede"
+
+#: templates/tenants/platform_admin/dashboard.html:143
+msgid "Attention Queue"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:164
+#, fuzzy
+#| msgid "Pending tenant registrations"
+msgid "Pending Tenant Registrations"
+msgstr "Bekleyen tenant kayıtları"
+
+#: templates/tenants/platform_admin/dashboard.html:168
+#: users/templates/users/client_profile_detail.html:52
+msgid "Company"
+msgstr "Şirket"
+
+#: templates/tenants/platform_admin/dashboard.html:169
+#, fuzzy
+#| msgid "Schema name"
+msgid "Schema"
+msgstr "Şema adı"
+
+#: templates/tenants/platform_admin/dashboard.html:170
+#: tenants/dashboard_services.py:227 tenants/views.py:333
+#: users/templates/users/dashboard.html:16
+msgid "Owner"
+msgstr "Sahip"
+
+#: templates/tenants/platform_admin/dashboard.html:171
+msgid "Submitted"
+msgstr "Gönderildi"
+
+#: templates/tenants/platform_admin/dashboard.html:177
+#, fuzzy
+#| msgid "Tenant registration"
+msgid "Reject this registration?"
+msgstr "Tenant kaydı"
+
+#: templates/tenants/platform_admin/dashboard.html:191
+msgid "Approve"
+msgstr "Onayla"
+
+#: templates/tenants/platform_admin/dashboard.html:196
+msgid "Reject"
+msgstr "Reddet"
+
+#: templates/tenants/platform_admin/dashboard.html:209
+#, fuzzy
+#| msgid "Provision new tenant"
+msgid "Provision New Tenant"
+msgstr "Yeni tenant oluştur"
+
+#: templates/tenants/platform_admin/dashboard.html:245
+msgid "Provision tenant"
+msgstr "Tenant oluştur"
+
+#: templates/tenants/platform_admin/dashboard.html:246
+#, fuzzy
+#| msgid "Creates the PostgreSQL schema and runs migrations automatically."
+msgid "Creates the tenant schema and runs migrations automatically."
+msgstr ""
+"PostgreSQL şemasını oluşturur ve migrasyonları otomatik olarak çalıştırır."
+
+#: templates/tenants/platform_admin/dashboard.html:254
+#, fuzzy
+#| msgid "Tenant URL"
+msgid "Tenant Fleet"
+msgstr "Tenant URL'si"
+
+#: templates/tenants/platform_admin/dashboard.html:259
+#, fuzzy
+#| msgid "Tenants"
+msgid "Tenant"
+msgstr "Tenantlar"
+
+#: templates/tenants/platform_admin/dashboard.html:260
+#, fuzzy
+#| msgid "Message"
+msgid "Usage"
+msgstr "Mesaj"
+
+#: templates/tenants/platform_admin/dashboard.html:262
+msgid "Health"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:269
+#, python-format
+msgid "Deactivate %(schema)s?"
+msgstr "%(schema)s devre dışı bırakılsın mı?"
+
+#: templates/tenants/platform_admin/dashboard.html:270
+#, fuzzy, python-format
+#| msgid ""
+#| "Permanently delete tenant \"%(schema)s\"? This runs DROP SCHEMA ... "
+#| "CASCADE and cannot be undone."
+msgid "Permanently delete tenant \"%(schema)s\"? This cannot be undone."
+msgstr ""
+"\"%(schema)s\" tenantı kalıcı olarak silinsin mi? Bu işlem DROP SCHEMA ... "
+"CASCADE çalıştırır ve geri alınamaz."
+
+#: templates/tenants/platform_admin/dashboard.html:280
+#: users/templates/users/user_management_list.html:4
+#: users/templates/users/user_management_list.html:10
+msgid "Users"
+msgstr "Kullanıcılar"
+
+#: templates/tenants/platform_admin/dashboard.html:281
+msgid "Staff"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:282
+#, fuzzy
+#| msgid "Order"
+msgid "Orders"
+msgstr "Sipariş"
+
+#: templates/tenants/platform_admin/dashboard.html:284
+#: users/templates/users/client_profile_list.html:10
+msgid "Clients"
+msgstr "Müşteriler"
+
+#: templates/tenants/platform_admin/dashboard.html:285
+#, fuzzy
+#| msgid "Service:"
+msgid "Services"
+msgstr "Hizmet:"
+
+#: templates/tenants/platform_admin/dashboard.html:288
+#, fuzzy
+#| msgid "Owner"
+msgid "Owners"
+msgstr "Sahip"
+
+#: templates/tenants/platform_admin/dashboard.html:289
+#, fuzzy
+#| msgid "Admin"
+msgid "Admins"
+msgstr "Yönetici"
+
+#: templates/tenants/platform_admin/dashboard.html:290
+#, fuzzy
+#| msgid "Manager"
+msgid "Managers"
+msgstr "Yönetici"
+
+#: templates/tenants/platform_admin/dashboard.html:295
+#, fuzzy
+#| msgid "Activity"
+msgid "Last activity"
+msgstr "Aktivite"
+
+#: templates/tenants/platform_admin/dashboard.html:297
+msgid "Recent logins (7d)"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:313
+#, fuzzy
+#| msgid "Open"
+msgid "Open app"
+msgstr "Aç"
+
+#: templates/tenants/platform_admin/dashboard.html:314
+#, fuzzy
+#| msgid "Django Admin"
+msgid "Django admin URL"
+msgstr "Django Yönetici"
+
+#: templates/tenants/platform_admin/dashboard.html:318
+#: tenants/dashboard_services.py:229
+msgid "God mode"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:324
+#, fuzzy
+#| msgid "Owner"
+msgid "As owner"
+msgstr "Sahip"
+
+#: templates/tenants/platform_admin/dashboard.html:330
+#, fuzzy
+#| msgid "Admin"
+msgid "As admin"
+msgstr "Yönetici"
+
+#: templates/tenants/platform_admin/dashboard.html:333
 msgid "Create admin user"
 msgstr "Yönetici kullanıcı oluştur"
 
-#: templates/tenants/platform_admin/dashboard.html:229
+#: templates/tenants/platform_admin/dashboard.html:339
 msgid "Deactivate"
 msgstr "Devre dışı bırak"
 
-#: templates/tenants/platform_admin/dashboard.html:231
+#: templates/tenants/platform_admin/dashboard.html:341
 #: users/templates/users/client_profile_detail.html:29
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
 msgid "Activate"
 msgstr "Etkinleştir"
 
-#: templates/tenants/platform_admin/dashboard.html:237
+#: templates/tenants/platform_admin/dashboard.html:347
 msgid "Delete forever"
 msgstr "Kalıcı sil"
 
-#: templates/tenants/platform_admin/dashboard.html:246
-msgid "No tenants yet. Use 'Provision new tenant' above to get started."
+#: templates/tenants/platform_admin/dashboard.html:357
+#, fuzzy
+#| msgid "No tenants yet. Use 'Provision new tenant' above to get started."
+msgid "No tenants yet. Provision one above to get started."
 msgstr ""
 "Henüz tenant yok. Başlamak için yukarıdaki 'Yeni tenant oluştur' seçeneğini "
 "kullanın."
+
+#: templates/tenants/platform_admin/impersonation_error.html:7
+#, fuzzy
+#| msgid "Operation number"
+msgid "Impersonation error"
+msgstr "İşletme numarası"
+
+#: templates/tenants/platform_admin/impersonation_error.html:18
+msgid "Impersonation could not be started"
+msgstr ""
+
+#: templates/tenants/platform_admin/impersonation_error.html:20
+#: theme/templates/base.html:70
+#, fuzzy
+#| msgid "Platform admin"
+msgid "Return to platform admin"
+msgstr "Platform yöneticisi"
 
 #: templates/tenants/platform_admin/login.html:148
 msgid "Sign in to manage tenants and open each tenant app from the dashboard."
@@ -5227,6 +5374,7 @@ msgid "Create account"
 msgstr "Hesap oluştur"
 
 #: templates/tenants/platform_admin/setup.html:62
+#: users/templates/users/register.html:46
 msgid "Already have an account?"
 msgstr "Zaten bir hesabınız var mı?"
 
@@ -5265,6 +5413,7 @@ msgstr "Bu tenanttaki kullanıcılar"
 #: users/templates/users/account_profile.html:37
 #: users/templates/users/client_profile_detail.html:76
 #: users/templates/users/client_profile_list.html:137
+#: users/templates/users/client_register_done.html:16
 msgid "Username"
 msgstr "Kullanıcı Adı"
 
@@ -5332,15 +5481,6 @@ msgstr ""
 msgid "Company settings"
 msgstr "Şirket ayarları"
 
-#: templates/tenants/tenant_company_settings.html:28
-msgid ""
-"These values appear on printed labels (company block, İşletme onay no, VD "
-"number) and on PDF reports. İşletme onay no must match your official "
-"registration."
-msgstr ""
-"Bu değerler basılı etiketlerde (şirket bloğu, işletme onay no, VD numarası) "
-"ve PDF raporlarında görünür. İşletme onay no resmi kayıtla eşleşmelidir."
-
 #: templates/tenants/tenant_company_settings.html:96
 msgid "Current logo"
 msgstr "Mevcut logo"
@@ -5357,15 +5497,15 @@ msgstr ""
 "Uygulama üst çubuğunda sabit boyutta gösterilir (önerilen: yatay logo veya "
 "işaret)."
 
-#: tenants/admin.py:24
+#: ⁨tenants/admin 2.py⁩:24 tenants/admin.py:24
 msgid "Identity"
 msgstr "Kimlik"
 
-#: tenants/admin.py:28
+#: ⁨tenants/admin 2.py⁩:28 tenants/admin.py:28
 msgid "Labels and reports — company block"
 msgstr "Etiketler ve raporlar — şirket bloğu"
 
-#: tenants/admin.py:38
+#: ⁨tenants/admin 2.py⁩:38 tenants/admin.py:38
 msgid ""
 "İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
 "with official registrations."
@@ -5373,29 +5513,98 @@ msgstr ""
 "İşletme onay no ve VD numaraları et ürünü etiketlerinde basılır; resmi "
 "kayıtlarla uyumlu tutun."
 
-#: tenants/admin.py:43
+#: ⁨tenants/admin 2.py⁩:43 tenants/admin.py:43
 msgid "Branding and contact"
 msgstr "Marka ve iletişim"
 
-#: tenants/admin.py:47
+#: ⁨tenants/admin 2.py⁩:47 tenants/admin.py:47
 msgid "Locale and printing"
 msgstr "Yerel ayar ve yazdırma"
 
-#: tenants/forms.py:19
+#: tenants/dashboard_services.py:228 tenants/views.py:334
+msgid "Admin"
+msgstr "Yönetici"
+
+#: tenants/dashboard_services.py:318
+#, fuzzy
+#| msgid "Event reactivated."
+msgid "Tenant is deactivated."
+msgstr "Olay yeniden etkinleştirildi."
+
+#: tenants/dashboard_services.py:320
+msgid "Primary domain is missing."
+msgstr ""
+
+#: tenants/dashboard_services.py:322
+#, fuzzy
+#| msgid "No active sessions."
+msgid "No active tenant users."
+msgstr "Aktif oturum yok."
+
+#: tenants/dashboard_services.py:324
+msgid "No owner/admin access user exists."
+msgstr ""
+
+#: tenants/dashboard_services.py:326
+#, fuzzy
+#| msgid "No yearly reports configured"
+msgid "No service packages configured."
+msgstr "Yıllık rapor yapılandırması yok"
+
+#: tenants/dashboard_services.py:328
+msgid "No tenant activity yet."
+msgstr ""
+
+#: tenants/dashboard_services.py:330
+#, fuzzy
+#| msgid "%(count)s batch weight logged in the last 7 days."
+#| msgid_plural "%(count)s batch weights logged in the last 7 days."
+msgid "No activity in the last 30 days."
+msgstr "Son 7 günde %(count)s toplu ağırlık kaydedildi."
+
+#: tenants/dashboard_services.py:333
+msgid "Data issue"
+msgstr ""
+
+#: tenants/dashboard_services.py:335
+#: users/templates/users/user_management_list.html:52
+#: users/templates/users/user_management_list.html:72
+#: users/templates/users/user_management_list.html:137
+#, fuzzy
+#| msgid "active"
+msgid "Inactive"
+msgstr "aktif"
+
+#: tenants/dashboard_services.py:341
+msgid "Needs setup"
+msgstr ""
+
+#: tenants/dashboard_services.py:343
+#, fuzzy
+#| msgid "Action"
+msgid "Attention"
+msgstr "İşlem"
+
+#: ⁨tenants/forms 2.py⁩:19 tenants/forms.py:19
 msgid "Remove current logo"
 msgstr "Mevcut logoyu kaldır"
 
-#: tenants/forms.py:20
+#: ⁨tenants/forms 2.py⁩:20 tenants/forms.py:20
 msgid "Current file"
 msgstr "Mevcut dosya"
 
-#: tenants/forms.py:21
+#: ⁨tenants/forms 2.py⁩:21 tenants/forms.py:21
 msgid "Replace with"
 msgstr "Şununla değiştir"
 
-#: tenants/forms.py:31 users/forms.py:46 users/forms.py:179 users/forms.py:334
+#: ⁨tenants/forms 2.py⁩:31 tenants/forms.py:31 users/forms.py:46
+#: users/forms.py:179 users/forms.py:334
 msgid "Area code"
 msgstr "Alan kodu"
+
+#: ⁨tenants/forms 2.py⁩:96 tenants/forms.py:97
+msgid "Please upload a PNG, JPEG, WebP, or GIF image."
+msgstr "Lütfen PNG, JPEG, WebP veya GIF formatında bir görsel yükleyin."
 
 #: tenants/forms.py:60 tenants/forms.py:121
 msgid "Display name"
@@ -5412,10 +5621,6 @@ msgstr "ASCII (Türkçe karakterleri değiştir)"
 #: tenants/forms.py:76
 msgid "Windows-1254"
 msgstr "Windows-1254"
-
-#: tenants/forms.py:97
-msgid "Please upload a PNG, JPEG, WebP, or GIF image."
-msgstr "Lütfen PNG, JPEG, WebP veya GIF formatında bir görsel yükleyin."
 
 #: tenants/forms.py:118
 msgid "Schema name"
@@ -5438,7 +5643,7 @@ msgstr "Özel alan adı"
 msgid "Leave blank to auto-generate {schema}.{base_domain}."
 msgstr "{schema}.{base_domain} otomatik oluşturulsun diye boş bırakın."
 
-#: tenants/forms.py:129 tenants/models.py:91
+#: tenants/forms.py:129 ⁨tenants/models 2.py⁩:78 tenants/models.py:91
 msgid "Contact email"
 msgstr "İletişim e-postası"
 
@@ -5501,7 +5706,7 @@ msgstr ""
 "Django süper kullanıcısı (ADMIN rolü ve bu tenant alan adında Django /admin/ "
 "erişimi)"
 
-#: tenants/forms.py:242 tenants/models.py:74
+#: tenants/forms.py:242 ⁨tenants/models 2.py⁩:62 tenants/models.py:74
 msgid "İşletme onay no"
 msgstr "İşletme onay no"
 
@@ -5514,132 +5719,133 @@ msgid "Government approval number on labels (ISLETME ONAY NO)."
 msgstr ""
 "Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
 
-#: tenants/forms.py:248 tenants/models.py:80
+#: tenants/forms.py:248 ⁨tenants/models 2.py⁩:68 tenants/models.py:80
 msgid "Vergi dairesi / işletme no (VD)"
 msgstr "Vergi dairesi / işletme no (VD)"
 
-#: tenants/models.py:56
+#: ⁨tenants/models 2.py⁩:44 tenants/models.py:56
 msgid "Company name (label header)"
 msgstr "Şirket adı (etiket üst bilgisi)"
 
-#: tenants/models.py:57
+#: ⁨tenants/models 2.py⁩:45 tenants/models.py:57
 msgid "Short trading name printed on labels."
 msgstr "Etiketlerde basılan kısa ticari unvan."
 
-#: tenants/models.py:62
+#: ⁨tenants/models 2.py⁩:50 tenants/models.py:62
 msgid "Legal company name"
 msgstr "Yasal şirket unvanı"
 
-#: tenants/models.py:63
+#: ⁨tenants/models 2.py⁩:51 tenants/models.py:63
 msgid "Full legal title on labels."
 msgstr "Etiketlerde tam yasal unvan."
 
-#: tenants/models.py:68
+#: ⁨tenants/models 2.py⁩:56 tenants/models.py:68
 msgid "Company address"
 msgstr "Şirket adresi"
 
-#: tenants/models.py:69
+#: ⁨tenants/models 2.py⁩:57 tenants/models.py:69
 msgid "Address block on labels and reports."
 msgstr "Etiket ve raporlardaki adres bloğu."
 
-#: tenants/models.py:75
+#: ⁨tenants/models 2.py⁩:63 tenants/models.py:75
 msgid ""
 "Government approval number; same value as ISLETME ONAY NO on printed labels."
 msgstr ""
 "Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
 
-#: tenants/models.py:81
+#: ⁨tenants/models 2.py⁩:69 tenants/models.py:81
 msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr "Vergi dairesi / işletme numarası (ör. etiketlerdeki ÇKALE VD satırı)."
 
-#: tenants/models.py:88
+#: ⁨tenants/models 2.py⁩:75 tenants/models.py:88
 msgid "Logo"
 msgstr "Logo"
 
-#: tenants/models.py:89
+#: ⁨tenants/models 2.py⁩:76 tenants/models.py:89
 msgid "Optional branding image in the app header."
 msgstr "Uygulama üst çubuğunda isteğe bağlı marka görseli."
 
-#: tenants/models.py:92
+#: ⁨tenants/models 2.py⁩:79 tenants/models.py:92
 msgid "Contact phone"
 msgstr "İletişim telefonu"
 
-#: tenants/models.py:98
+#: ⁨tenants/models 2.py⁩:85 tenants/models.py:98
 msgid "Printer Turkish mode"
 msgstr "Yazıcı Türkçe modu"
 
-#: tenants/models.py:99
+#: ⁨tenants/models 2.py⁩:86 tenants/models.py:99
 msgid "unicode, ascii, or codepage1254 for label printers."
 msgstr "Etiket yazıcıları için unicode, ascii veya codepage1254."
 
-#: tenants/models.py:101
+#: ⁨tenants/models 2.py⁩:88 tenants/models.py:101
 msgid "Timezone"
 msgstr "Saat dilimi"
 
-#: tenants/models.py:102
+#: ⁨tenants/models 2.py⁩:89 tenants/models.py:102
 msgid "Language code"
 msgstr "Dil kodu"
 
-#: tenants/views.py:55 tenants/views.py:75
+#: ⁨tenants/views 2.py⁩:353 tenants/views.py:478
+msgid "Company and label settings saved. They apply to new labels and reports."
+msgstr ""
+"Şirket ve etiket ayarları kaydedildi. Yeni etiket ve raporlara uygulanır."
+
+#: tenants/views.py:66 tenants/views.py:86
 msgid "Tenant registration is only available in multi-tenant mode."
 msgstr "Tenant kaydı yalnızca çok kiracılı modda kullanılabilir."
 
-#: tenants/views.py:77
+#: tenants/views.py:88
 msgid "Missing status token."
 msgstr "Durum belirteci eksik."
 
-#: tenants/views.py:148
+#: tenants/views.py:159
 #, python-format
 msgid "Tenant \"%(schema)s\" provisioned at %(domain)s."
 msgstr "\"%(schema)s\" tenantı %(domain)s adresinde oluşturuldu."
 
-#: tenants/views.py:187
+#: tenants/views.py:241
+msgid "Target user no longer exists or is inactive."
+msgstr ""
+
+#: tenants/views.py:286
 #, python-format
 msgid ""
 "Approved registration \"%(company)s\"; tenant \"%(schema)s\" was provisioned."
 msgstr "\"%(company)s\" kaydı onaylandı; \"%(schema)s\" tenantı oluşturuldu."
 
-#: tenants/views.py:209
+#: tenants/views.py:309
 #, python-format
 msgid "Rejected registration for \"%(company)s\"."
 msgstr "\"%(company)s\" kaydı reddedildi."
 
-#: tenants/views.py:233 users/templates/users/dashboard.html:16
-msgid "Owner"
-msgstr "Sahip"
-
-#: tenants/views.py:234
-msgid "Admin"
-msgstr "Yönetici"
-
-#: tenants/views.py:235 users/templates/users/dashboard.html:36
+#: tenants/views.py:335 users/templates/users/dashboard.html:36
 msgid "Manager"
 msgstr "Yönetici"
 
-#: tenants/views.py:263
+#: tenants/views.py:363
 msgid "A user with this username already exists in this tenant."
 msgstr "Bu tenantta bu kullanıcı adına sahip bir kullanıcı zaten var."
 
-#: tenants/views.py:265
+#: tenants/views.py:365
 msgid "A user with this email already exists in this tenant."
 msgstr "Bu tenantta bu e-posta ile bir kullanıcı zaten var."
 
-#: tenants/views.py:276
+#: tenants/views.py:376
 msgid ""
 "Could not create user (unique constraint). Try a different username or email."
 msgstr ""
 "Kullanıcı oluşturulamadı (benzersizlik kısıtı). Farklı bir kullanıcı adı "
 "veya e-posta deneyin."
 
-#: tenants/views.py:279
+#: tenants/views.py:379
 msgid "Django superuser plus app admin"
 msgstr "Django süper kullanıcısı ve uygulama yöneticisi"
 
-#: tenants/views.py:279
+#: tenants/views.py:379
 msgid "Tenant app admin (ADMIN)"
 msgstr "Tenant uygulama yöneticisi (ADMIN)"
 
-#: tenants/views.py:283
+#: tenants/views.py:383
 #, python-format
 msgid ""
 "User \"%(username)s\" created for tenant \"%(schema)s\" (%(kind)s). Sign in "
@@ -5649,7 +5855,7 @@ msgstr ""
 "oluşturuldu. Tenant uygulama giriş sayfasından giriş yapın (platform-admin "
 "değil): %(url)s"
 
-#: tenants/views.py:319
+#: tenants/views.py:419
 #, python-format
 msgid ""
 "Confirmation failed: type the schema name exactly (\"%(schema)s\") to delete "
@@ -5658,42 +5864,42 @@ msgstr ""
 "Onay başarısız: bu tenantı silmek için şema adını tam olarak "
 "(\"%(schema)s\") yazın."
 
-#: tenants/views.py:330
+#: tenants/views.py:430
 #, python-format
 msgid ""
 "Tenant \"%(schema)s\" was permanently deleted (PostgreSQL schema dropped)."
 msgstr ""
 "\"%(schema)s\" tenantı kalıcı olarak silindi (PostgreSQL şeması düşürüldü)."
 
-#: tenants/views.py:344
+#: tenants/views.py:444
 msgid "activated"
 msgstr "etkinleştirildi"
 
-#: tenants/views.py:344
+#: tenants/views.py:444
 msgid "deactivated"
 msgstr "devre dışı bırakıldı"
 
-#: tenants/views.py:345
+#: tenants/views.py:445
 #, python-format
 msgid "Tenant \"%(schema)s\" %(state)s."
 msgstr "\"%(schema)s\" tenantı %(state)s."
 
-#: tenants/views.py:378
-msgid "Company and label settings saved. They apply to new labels and reports."
-msgstr ""
-"Şirket ve etiket ayarları kaydedildi. Yeni etiket ve raporlara uygulanır."
-
-#: tenants/views.py:397
+#: tenants/views.py:497
 msgid "Setup already complete. Please sign in."
 msgstr "Kurulum zaten tamamlandı. Lütfen giriş yapın."
 
-#: tenants/views.py:409
+#: tenants/views.py:509
 msgid "Account created. Please sign in."
 msgstr "Hesap oluşturuldu. Lütfen giriş yapın."
 
 #: theme/templates/base.html:24
 msgid "Company logo"
 msgstr "Şirket logosu"
+
+#: theme/templates/base.html:41 users/templates/users/account_profile.html:4
+#: users/templates/users/account_profile.html:28
+msgid "My Account"
+msgstr "Hesabım"
 
 #: theme/templates/base.html:44
 msgid "Logout"
@@ -5705,8 +5911,28 @@ msgstr "Çıkış"
 msgid "Login"
 msgstr "Giriş"
 
+#: theme/templates/base.html:61
+#, fuzzy
+#| msgid "Session Active"
+msgid "Impersonation Active"
+msgstr "Oturum Aktif"
+
+#: theme/templates/base.html:63
+#, python-format
+msgid ""
+"\n"
+"                                    Signed in as %(username)s (%(role)s) via "
+"platform admin %(actor)s.\n"
+"                                "
+msgstr ""
+
+#: theme/templates/base.html:75
+msgid "Exit impersonation"
+msgstr ""
+
 #: users/forms.py:54 users/forms.py:187 users/forms.py:370
 #: users/templates/users/client_profile_form.html:95
+#: users/templates/users/client_profile_register.html:84
 msgid "Phone number"
 msgstr "Telefon numarası"
 
@@ -5779,7 +6005,7 @@ msgstr "Bu QR koddan hayvan bulunamadı."
 msgid "Current password"
 msgstr "Mevcut ürün"
 
-#: users/forms.py:262 users/views.py:185
+#: users/forms.py:262 users/views.py:211
 msgid "Your current password was entered incorrectly."
 msgstr ""
 
@@ -5816,12 +6042,6 @@ msgstr ""
 #: users/forms.py:474
 msgid "Name is required for walk-in accounts."
 msgstr ""
-
-#: theme/templates/base.html:41
-#: users/templates/users/account_profile.html:4
-#: users/templates/users/account_profile.html:28
-msgid "My Account"
-msgstr "Hesabım"
 
 #: users/templates/users/account_profile.html:29
 msgid "Update your contact details and change your password."
@@ -5980,10 +6200,6 @@ msgstr "Değişiklikleri kaydet"
 msgid "Registered clients"
 msgstr "Kayıtlı müşteriler"
 
-#: users/templates/users/client_profile_list.html:10
-msgid "Clients"
-msgstr "Müşteriler"
-
 #: users/templates/users/client_profile_list.html:12
 msgid ""
 "Manage registered customer accounts and quickly open profiles for updates."
@@ -6035,6 +6251,32 @@ msgstr "İlk müşteri profilinizi oluşturarak başlayın."
 #: users/templates/users/client_profile_list.html:213
 msgid "Clear search"
 msgstr "Aramayı temizle"
+
+#: users/templates/users/client_profile_register.html:5
+msgid "Client Registration"
+msgstr "Müşteri kaydı"
+
+#: users/templates/users/client_profile_register.html:39
+msgid "Register as a Client"
+msgstr "Müşteri olarak kaydolun"
+
+#: users/templates/users/client_profile_register.html:105
+msgid "Register as Client"
+msgstr "Müşteri kaydı"
+
+#: users/templates/users/client_register_done.html:4
+msgid "Registration complete"
+msgstr "Kayıt tamamlandı"
+
+#: users/templates/users/client_register_done.html:9
+#, fuzzy
+#| msgid "Create an account"
+msgid "Your client account is ready"
+msgstr "Hesap oluştur"
+
+#: users/templates/users/client_register_done.html:12
+msgid "Save these credentials now. They will not be shown again."
+msgstr "Bu kimlik bilgilerini şimdi kaydedin; bir daha gösterilmeyecek."
 
 #: users/templates/users/dashboard.html:9
 #, python-format
@@ -6188,21 +6430,18 @@ msgid "Company name, İşletme onay no, label printer mode"
 msgstr "Şirket adı, işletme onay no, etiket yazıcı modu"
 
 #: users/templates/users/dashboard.html:512
-#: users/templates/users/user_management_list.html:4
-#: users/templates/users/user_management_list.html:10
-msgid "Users"
-msgstr "Kullanıcılar"
+msgid "User management"
+msgstr "Kullanıcı yönetimi"
 
 #: users/templates/users/dashboard.html:514
 #: users/templates/users/user_management_list.html:11
 msgid "Manage staff roles, client accounts, and contact identifiers."
 msgstr ""
+"Personel rolleri, müşteri hesapları ve iletişim tanımlayıcılarını yönetin."
 
 #: users/templates/users/dashboard.html:517
-#, fuzzy
-#| msgid "Manage Cuts"
 msgid "Manage users"
-msgstr "Parçaları Yönet"
+msgstr "Kullanıcıları yönet"
 
 #: users/templates/users/dashboard.html:534
 #: users/templates/users/dashboard.html:540
@@ -6312,6 +6551,18 @@ msgstr "Hesap oluştur"
 msgid "Contact your administrator."
 msgstr ""
 
+#: users/templates/users/register.html:5 users/templates/users/register.html:41
+msgid "Register"
+msgstr "Kayıt Ol"
+
+#: users/templates/users/register.html:10
+msgid "Create a new account"
+msgstr "Yeni bir hesap oluştur"
+
+#: users/templates/users/register.html:46
+msgid "Sign in."
+msgstr "Giriş yapın."
+
 #: users/templates/users/staff_user_form.html:5
 #: users/templates/users/staff_user_form.html:30
 #, fuzzy
@@ -6407,101 +6658,117 @@ msgstr "Müşteri"
 msgid "Contact"
 msgstr "İletişim e-postası"
 
-#: users/views.py:174
+#: users/views.py:200
 #, fuzzy
 #| msgid "Your client account is ready"
 msgid "Your contact details were updated."
 msgstr "Müşteri hesabınız hazır"
 
-#: users/views.py:188
+#: users/views.py:214
 msgid "Your password was changed."
 msgstr ""
 
-#: users/views.py:191
+#: users/views.py:217
 msgid "Unknown account action."
 msgstr ""
 
-#: users/views.py:782
+#: users/views.py:545
+#, python-format
+msgid ""
+"Platform admin impersonation active for %(username)s (%(role)s). Use Exit "
+"impersonation to return."
+msgstr ""
+
+#: users/views.py:844
 msgid "Enterprise"
 msgstr ""
 
-#: users/views.py:784
+#: users/views.py:846
 msgid "Unclassified"
 msgstr ""
 
-#: users/views.py:792
+#: users/views.py:854
 msgid "Profile (no login)"
 msgstr ""
 
-#: users/views.py:888
+#: users/views.py:950
 msgid "Client profile created and linked to the existing registered account."
 msgstr ""
 
-#: users/views.py:893
+#: users/views.py:955
 msgid "Client profile created and linked to the existing walk-in record."
 msgstr ""
 
-#: users/views.py:899
+#: users/views.py:961
 msgid ""
 "Client profile created without creating a second login for this registered "
 "phone number."
 msgstr ""
 
-#: users/views.py:903 users/views.py:944 users/views.py:958 users/views.py:980
+#: users/views.py:965 users/views.py:1006 users/views.py:1020
+#: users/views.py:1042
 msgid "Matching walk-in orders were linked by phone number."
 msgstr ""
 
-#: users/views.py:936 users/views.py:950
+#: users/views.py:998 users/views.py:1012
 #, python-format
 msgid ""
 "Client created. Temporary password: %(pwd)s — copy it now; the user can "
 "change it later."
 msgstr ""
 
-#: users/views.py:942 users/views.py:956
+#: users/views.py:1004 users/views.py:1018
 #, fuzzy
 #| msgid "Event reactivated."
 msgid "Client created."
 msgstr "Olay yeniden etkinleştirildi."
 
-#: users/views.py:1040
+#: users/views.py:1102
 #, python-format
 msgid ""
 "User created. Temporary password: %(pwd)s — copy it now; the user can change "
 "it later."
 msgstr ""
 
-#: users/views.py:1044
+#: users/views.py:1106
 #, fuzzy
 #| msgid "created"
 msgid "User created."
 msgstr "oluşturuldu"
 
+#~ msgid ""
+#~ "Each row links to that tenant app on its hostname. The app URL opens the "
+#~ "tenant-scoped CarniTrack interface directly."
+#~ msgstr ""
+#~ "Her satır, kendi alan adındaki tenant uygulamasına bağlanır. Uygulama "
+#~ "URL'si tenant kapsamlı CarniTrack arayüzünü doğrudan açar."
+
+#~ msgid "Schema (preview)"
+#~ msgstr "Şema (önizleme)"
+
+#~ msgid ""
+#~ "Approving creates the tenant schema, domain, and an OWNER user without "
+#~ "Django admin access."
+#~ msgstr ""
+#~ "Onay verildiğinde tenant şeması, alan adı ve Django admin erişimi olmayan "
+#~ "bir OWNER kullanıcısı oluşturulur."
+
+#, fuzzy
+#~| msgid "Create admin user"
+#~ msgid "Admin user"
+#~ msgstr "Yönetici kullanıcı oluştur"
+
+#, python-format
+#~ msgid "Type schema name %(schema)s to confirm deletion"
+#~ msgstr "Silmeyi onaylamak için %(schema)s şema adını yazın"
+
 #~ msgid "Destination for the order."
 #~ msgstr "Siparişin varış yeri."
-
-#~ msgid "Company & label settings"
-#~ msgstr "Şirket ve etiket ayarları"
 
 #~ msgid ""
 #~ "This profile has no login account. Only profile fields can be edited."
 #~ msgstr ""
 #~ "Bu profilde giriş hesabı yok. Yalnızca profil alanları düzenlenebilir."
-
-#~ msgid "Client Registration"
-#~ msgstr "Müşteri kaydı"
-
-#~ msgid "Register as a Client"
-#~ msgstr "Müşteri olarak kaydolun"
-
-#~ msgid "Register as Client"
-#~ msgstr "Müşteri kaydı"
-
-#~ msgid "Registration complete"
-#~ msgstr "Kayıt tamamlandı"
-
-#~ msgid "Save these credentials now. They will not be shown again."
-#~ msgstr "Bu kimlik bilgilerini şimdi kaydedin; bir daha gösterilmeyecek."
 
 #~ msgid "Clients who registered via the public form"
 #~ msgstr "Genel form üzerinden kayıt olan müşteriler"
@@ -6520,18 +6787,6 @@ msgstr "oluşturuldu"
 
 #~ msgid "Register here."
 #~ msgstr "Buradan kayıt olun."
-
-#~ msgid "Register"
-#~ msgstr "Kayıt Ol"
-
-#~ msgid "Create a new account"
-#~ msgstr "Yeni bir hesap oluştur"
-
-#~ msgid "Sign in."
-#~ msgstr "Giriş yapın."
-
-#~ msgid "Operation dashboard"
-#~ msgstr "Operasyon paneli"
 
 #~ msgid "Configure system parameters"
 #~ msgstr "Sistem parametrelerini yapılandırın"

@@ -38,10 +38,14 @@ CLOUD_SQL_PROXY_V2 ?= cloud-sql-proxy
 
 TAILWIND_DIR ?= theme/static_src
 
+# Locales for gettext (override: make makemessages LOCALES="en tr")
+LOCALES ?= en tr
+LOCALE_ARGS := $(foreach loc,$(LOCALES),-l $(loc))
+
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup makemessages compilemessages messages
 
 help:
 	@echo "CarniTrack Makefile"
@@ -49,6 +53,9 @@ help:
 	@echo "  make install-deps       First-time setup: pip install -r requirements.txt + Tailwind build ($(TAILWIND_DIR))"
 	@echo "  make pip-install        pip install -r requirements.txt ($(PYTHON))"
 	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci && npm run build"
+	@echo "  make makemessages       Extract translatable strings → locale/*/LC_MESSAGES/django.po ($(LOCALES))"
+	@echo "  make compilemessages    Compile .po → .mo ($(LOCALES))"
+	@echo "  make messages           makemessages + compilemessages (same LOCALES)"
 	@echo "  make test               Run pytest (pass extra args with TEST_ARGS='...')"
 	@echo "  make test-cov           Run pytest with coverage gate ($(COVERAGE_MIN)%)"
 	@echo ""
@@ -163,6 +170,14 @@ pip-install:
 
 tailwind-build:
 	cd $(TAILWIND_DIR) && npm ci && npm run build
+
+makemessages:
+	$(MANAGE) makemessages $(LOCALE_ARGS)
+
+compilemessages:
+	$(MANAGE) compilemessages $(LOCALE_ARGS)
+
+messages: makemessages compilemessages
 
 install-deps: pip-install tailwind-build
 

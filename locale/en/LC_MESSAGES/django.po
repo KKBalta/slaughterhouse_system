@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 07:35+0300\n"
+"POT-Creation-Date: 2026-04-05 23:00+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -281,7 +281,6 @@ msgstr ""
 #: scales/templates/scales/edge_management.html:103
 #: scales/templates/scales/session_detail.html:34
 #: scales/templates/scales/session_list.html:58
-#: templates/tenants/platform_admin/dashboard.html:198
 #: users/templates/users/client_profile_list.html:134
 #: users/templates/users/user_management_list.html:96
 #: users/templates/users/user_management_list.html:182
@@ -363,8 +362,8 @@ msgstr ""
 #: scales/templates/scales/orphaned_batch_list.html:20
 #: scales/templates/scales/session_detail.html:102
 #: scales/templates/scales/session_list.html:60
-#: templates/tenants/platform_admin/dashboard.html:109
-#: templates/tenants/platform_admin/dashboard.html:200
+#: templates/tenants/platform_admin/dashboard.html:172
+#: templates/tenants/platform_admin/dashboard.html:263
 #: users/templates/users/client_profile_list.html:139
 #: users/templates/users/user_management_list.html:97
 #: users/templates/users/user_management_list.html:183
@@ -513,6 +512,7 @@ msgstr ""
 #: scales/templates/scales/session_create.html:46
 #: scales/templates/scales/session_create.html:79
 #: scales/templates/scales/session_event_edit.html:69
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:84
 #: templates/tenants/tenant_company_settings.html:142
 #: users/templates/users/client_profile_confirm_delete.html:14
 msgid "Cancel"
@@ -1559,7 +1559,7 @@ msgstr ""
 #: processing/templates/processing/animal_detail.html:475
 #: processing/templates/processing/disassembly_dashboard.html:263
 #: processing/templates/processing/disassembly_dashboard.html:321
-#: reception/templates/reception/order_list.html:41 tenants/views.py:237
+#: reception/templates/reception/order_list.html:41 tenants/views.py:337
 #: users/forms.py:302 users/templates/users/client_profile_detail.html:4
 #: users/templates/users/client_profile_list.html:133
 #: users/templates/users/dashboard.html:53
@@ -1891,7 +1891,7 @@ msgid "No order"
 msgstr ""
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1172 processing/views.py:1249
+#: processing/views.py:1173 processing/views.py:1250
 msgid "Walk-in Client"
 msgstr ""
 
@@ -2058,6 +2058,7 @@ msgstr ""
 #: reception/templates/reception/order_detail.html:91
 #: scales/templates/scales/session_create.html:65
 #: scales/templates/scales/session_detail.html:32
+#: templates/tenants/platform_admin/dashboard.html:283
 msgid "Animals"
 msgstr ""
 
@@ -2093,6 +2094,7 @@ msgid ""
 msgstr ""
 
 #: processing/templates/processing/batch_weights.html:48
+#: templates/tenants/platform_admin/dashboard.html:298
 #: theme/templates/base.html:40 users/templates/users/dashboard.html:4
 msgid "Dashboard"
 msgstr ""
@@ -2312,6 +2314,7 @@ msgid "Weighing"
 msgstr ""
 
 #: processing/templates/processing/dashboard.html:237
+#: templates/tenants/platform_admin/dashboard.html:261
 msgid "Activity"
 msgstr ""
 
@@ -2512,7 +2515,7 @@ msgstr ""
 #: processing/templates/processing/disassembly_detail.html:60
 #: processing/templates/processing/disassembly_detail.html:418
 #: scales/templates/scales/session_detail.html:33
-#: scales/templates/scales/session_list.html:57 tenants/views.py:236
+#: scales/templates/scales/session_list.html:57 tenants/views.py:336
 #: users/forms.py:303 users/templates/users/dashboard.html:45
 msgid "Operator"
 msgstr ""
@@ -2816,65 +2819,65 @@ msgstr ""
 msgid "Saved %(items)s for %(tag)s."
 msgstr ""
 
-#: processing/views.py:670
+#: processing/views.py:671
 msgid "No changes to save."
 msgstr ""
 
-#: processing/views.py:685
+#: processing/views.py:686
 #, python-format
 msgid "Label generation failed: %(error)s"
 msgstr ""
 
-#: processing/views.py:703
+#: processing/views.py:704
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr ""
 
-#: processing/views.py:705
+#: processing/views.py:706
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr ""
 
-#: processing/views.py:725 processing/views.py:1203
+#: processing/views.py:726 processing/views.py:1204
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:738
+#: processing/views.py:739
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr ""
 
-#: processing/views.py:748
+#: processing/views.py:749
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:756
+#: processing/views.py:757
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:822
+#: processing/views.py:823
 msgid "Please select an order."
 msgstr ""
 
-#: processing/views.py:839
+#: processing/views.py:840
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr ""
 
-#: processing/views.py:841
+#: processing/views.py:842
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr ""
 
-#: processing/views.py:881
+#: processing/views.py:882
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr ""
 
-#: processing/views.py:1012
+#: processing/views.py:1013
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2882,7 +2885,7 @@ msgid ""
 "%(average_weight).2fkg average."
 msgstr ""
 
-#: processing/views.py:1024
+#: processing/views.py:1025
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -2890,12 +2893,12 @@ msgid ""
 "%(weight_type)s."
 msgstr ""
 
-#: processing/views.py:1036
+#: processing/views.py:1037
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1067
+#: processing/views.py:1068
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -2903,99 +2906,99 @@ msgid ""
 "animals."
 msgstr ""
 
-#: processing/views.py:1079
+#: processing/views.py:1080
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
 "pending, so individual animal logs for this type were removed."
 msgstr ""
 
-#: processing/views.py:1088
+#: processing/views.py:1089
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1139
+#: processing/views.py:1140
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr ""
 
-#: processing/views.py:1207
+#: processing/views.py:1208
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1293
+#: processing/views.py:1294
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
 "Current status: %(status)s. Please slaughter the animal first."
 msgstr ""
 
-#: processing/views.py:1306
+#: processing/views.py:1307
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr ""
 
-#: processing/views.py:1314
+#: processing/views.py:1315
 msgid "updated"
 msgstr ""
 
-#: processing/views.py:1318
+#: processing/views.py:1319
 msgid "created"
 msgstr ""
 
-#: processing/views.py:1327
+#: processing/views.py:1328
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr ""
 
-#: processing/views.py:1471 processing/views.py:1484
+#: processing/views.py:1472 processing/views.py:1485
 msgid "No animal found matching the query"
 msgstr ""
 
-#: processing/views.py:1481
+#: processing/views.py:1482
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
 msgstr ""
 
-#: processing/views.py:1727
+#: processing/views.py:1728
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr ""
 
-#: processing/views.py:1732
+#: processing/views.py:1733
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr ""
 
-#: processing/views.py:1736
+#: processing/views.py:1737
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1768 processing/views.py:1778
+#: processing/views.py:1769 processing/views.py:1779
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 
-#: processing/views.py:1785
+#: processing/views.py:1786
 msgid "Cut updated successfully."
 msgstr ""
 
-#: processing/views.py:1788
+#: processing/views.py:1789
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1806
+#: processing/views.py:1807
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
 msgstr ""
 
-#: processing/views.py:1813
+#: processing/views.py:1814
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr ""
@@ -3022,8 +3025,8 @@ msgstr ""
 msgid "Area Code"
 msgstr ""
 
-#: reception/forms.py:54 reception/forms.py:207 tenants/forms.py:35
-#: users/forms.py:48 users/forms.py:181 users/forms.py:336
+#: reception/forms.py:54 reception/forms.py:207 ⁨tenants/forms 2.py⁩:35
+#: tenants/forms.py:35 users/forms.py:48 users/forms.py:181 users/forms.py:336
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr ""
 
@@ -3039,8 +3042,8 @@ msgid ""
 "prospect."
 msgstr ""
 
-#: reception/forms.py:66 reception/forms.py:219 tenants/forms.py:64
-#: users/forms.py:366
+#: reception/forms.py:66 reception/forms.py:219 ⁨tenants/forms 2.py⁩:63
+#: tenants/forms.py:64 users/forms.py:366
 msgid "Enter phone number"
 msgstr ""
 
@@ -3161,7 +3164,7 @@ msgstr ""
 msgid "Check this to create animals without photos (photos can be added later)"
 msgstr ""
 
-#: reception/forms.py:466 reception/services.py:403
+#: reception/forms.py:466 reception/services.py:399
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr ""
 
@@ -3171,28 +3174,28 @@ msgid ""
 "Please try again."
 msgstr ""
 
-#: reception/services.py:256 reception/services.py:287
+#: reception/services.py:255 reception/services.py:284
 msgid ""
 "Cannot update an order that is already in progress, completed, or cancelled."
 msgstr ""
 
-#: reception/services.py:306
+#: reception/services.py:302
 msgid "Cannot cancel an order that is already in progress or completed."
 msgstr ""
 
-#: reception/services.py:343
+#: reception/services.py:339
 msgid "Cannot bill an order that is not yet completed."
 msgstr ""
 
-#: reception/services.py:356 reception/services.py:400
+#: reception/services.py:352 reception/services.py:396
 msgid "Can only add animals to a PENDING order."
 msgstr ""
 
-#: reception/services.py:368
+#: reception/services.py:364
 msgid "Can only remove animals from a PENDING order."
 msgstr ""
 
-#: reception/services.py:371
+#: reception/services.py:367
 msgid "Animal does not belong to the specified order."
 msgstr ""
 
@@ -3478,7 +3481,7 @@ msgstr ""
 msgid "No contact person"
 msgstr ""
 
-#: reception/views.py:90 reception/views.py:93 users/views.py:780
+#: reception/views.py:90 reception/views.py:93 users/views.py:842
 msgid "Individual"
 msgstr ""
 
@@ -3509,14 +3512,34 @@ msgstr ""
 msgid "The selected client could not be found. Please choose it again."
 msgstr ""
 
-#: reception/views.py:272
+#: reception/views.py:261
+#, python-format
+msgid "Order %(order_no)s has been cancelled."
+msgstr ""
+
+#: reception/views.py:275
 #, python-format
 msgid "Order %(order_no)s has been marked as billed."
 msgstr ""
 
-#: reception/views.py:330
+#: reception/views.py:294
+msgid "Animal added to the order successfully."
+msgstr ""
+
+#: reception/views.py:317
+msgid "Animal details updated successfully."
+msgstr ""
+
+#: reception/views.py:333
 #, python-format
 msgid "Animal %(tag)s removed from the order."
+msgstr ""
+
+#: reception/views.py:370
+#, python-format
+msgid ""
+"Successfully created %(count)d %(animal_type)s animals for order "
+"%(order_no)s."
 msgstr ""
 
 #: reporting/templates/reporting/dashboard.html:4
@@ -3890,7 +3913,6 @@ msgstr ""
 
 #: scales/templates/scales/edge_management.html:57
 #: scales/templates/scales/plu_list.html:26
-#: templates/tenants/platform_admin/dashboard.html:196
 msgid "Name"
 msgstr ""
 
@@ -4134,7 +4156,7 @@ msgid "Back to list"
 msgstr ""
 
 #: scales/templates/scales/session_detail.html:47
-#: templates/tenants/platform_admin/dashboard.html:132
+#: templates/tenants/platform_admin/dashboard.html:195
 msgid "Reason (optional)"
 msgstr ""
 
@@ -4215,6 +4237,7 @@ msgid "Choose one animal to assign full weight, or Split to share evenly."
 msgstr ""
 
 #: scales/templates/scales/session_event_edit.html:68
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:81
 #: templates/tenants/tenant_company_settings.html:139
 msgid "Save"
 msgstr ""
@@ -4250,7 +4273,7 @@ msgstr ""
 msgid "Scale device"
 msgstr ""
 
-#: scales/views.py:294 users/views.py:791
+#: scales/views.py:294 users/views.py:853
 msgid "Walk-in"
 msgstr ""
 
@@ -4502,13 +4525,13 @@ msgstr ""
 msgid "Company name"
 msgstr ""
 
-#: templates/public/setup.html:60
-#: templates/tenants/platform_admin/dashboard.html:107 tenants/forms.py:224
+#: templates/public/setup.html:60 tenants/forms.py:224
 msgid "Owner email"
 msgstr ""
 
 #: templates/public/setup.html:69 templates/public/signin.html:89
 #: tenants/forms.py:153 tenants/forms.py:185 tenants/forms.py:225
+#: users/templates/users/client_register_done.html:20
 #: users/templates/users/login.html:40
 msgid "Password"
 msgstr ""
@@ -4562,6 +4585,7 @@ msgstr ""
 #: templates/tenants/platform_admin/login.html:8
 #: templates/tenants/platform_admin/login.html:170
 #: templates/tenants/platform_admin/setup.html:62
+#: users/templates/users/client_register_done.html:26
 #: users/templates/users/login.html:49
 msgid "Sign in"
 msgstr ""
@@ -4765,108 +4789,49 @@ msgstr ""
 msgid "Tenant host unavailable"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:8
-#: templates/tenants/platform_admin/dashboard.html:79
-msgid "Tenants"
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:4
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:8
+#, fuzzy
+#| msgid "Company settings"
+msgid "Company & label settings"
+msgstr "Company settings"
+
+#: ⁨templates/tenants 2/tenant_company_settings.html⁩:10
+#: templates/tenants/tenant_company_settings.html:28
+msgid ""
+"These values appear on printed labels (company block, İşletme onay no, VD "
+"number) and on PDF reports. İşletme onay no must match your official "
+"registration."
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:80
+#: templates/tenants/platform_admin/dashboard.html:8
+msgid "Tenant dashboard"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:114
+msgid "Tenant Operations"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:115
 #, python-format
 msgid "Signed in as %(email)s"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:82
+#: templates/tenants/platform_admin/dashboard.html:116
 msgid ""
-"Each row links to that tenant app on its hostname. The app URL opens the "
-"tenant-scoped CarniTrack interface directly."
+"Provision tenants, review health, and launch god-mode sessions into each "
+"tenant app without leaving the platform console."
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:87
+#: templates/tenants/platform_admin/dashboard.html:120
 msgid "Sign out"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:101
-msgid "Pending tenant registrations"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:105
-#: templates/tenants/platform_admin/dashboard.html:197
-#: users/templates/users/client_profile_detail.html:52
-msgid "Company"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:106
-msgid "Schema (preview)"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:108
-msgid "Submitted"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:114
-msgid "Reject this registration?"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:128
-msgid "Approve"
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:133
-msgid "Reject"
+msgid "Tenants"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:141
-msgid ""
-"Approving creates the tenant schema, domain, and an OWNER user without "
-"Django admin access."
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:146
-msgid "Provision new tenant"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:182
-msgid "Provision tenant"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:183
-msgid "Creates the PostgreSQL schema and runs migrations automatically."
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:193
-msgid "Tenant URL"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:194
-msgid "Schema"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:195
-msgid "Slug"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:199
-msgid "Admin user"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:206
-#, python-format
-msgid "Deactivate %(schema)s?"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:207
-#, python-format
-msgid ""
-"Permanently delete tenant \"%(schema)s\"? This runs DROP SCHEMA ... CASCADE "
-"and cannot be undone."
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:208
-#, python-format
-msgid "Type schema name %(schema)s to confirm deletion"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:217
+#: templates/tenants/platform_admin/dashboard.html:134
 #: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:156
 #: users/templates/users/client_profile_detail.html:13
 #: users/templates/users/client_profile_list.html:36
@@ -4879,34 +4844,198 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:219
-#: users/templates/users/user_management_list.html:52
-#: users/templates/users/user_management_list.html:72
-#: users/templates/users/user_management_list.html:137
-msgid "Inactive"
+#: templates/tenants/platform_admin/dashboard.html:135
+#: tenants/dashboard_services.py:344
+msgid "Healthy"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:223
+#: templates/tenants/platform_admin/dashboard.html:136
+msgid "Need Attention"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:137
+msgid "Active in 7d"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:138
+msgid "Pending"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:143
+msgid "Attention Queue"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:164
+msgid "Pending Tenant Registrations"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:168
+#: users/templates/users/client_profile_detail.html:52
+msgid "Company"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:169
+msgid "Schema"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:170
+#: tenants/dashboard_services.py:227 tenants/views.py:333
+#: users/templates/users/dashboard.html:16
+msgid "Owner"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:171
+msgid "Submitted"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:177
+msgid "Reject this registration?"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:191
+msgid "Approve"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:196
+msgid "Reject"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:209
+msgid "Provision New Tenant"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:245
+msgid "Provision tenant"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:246
+msgid "Creates the tenant schema and runs migrations automatically."
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:254
+msgid "Tenant Fleet"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:259
+msgid "Tenant"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:260
+msgid "Usage"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:262
+msgid "Health"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:269
+#, python-format
+msgid "Deactivate %(schema)s?"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:270
+#, python-format
+msgid "Permanently delete tenant \"%(schema)s\"? This cannot be undone."
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:280
+#: users/templates/users/user_management_list.html:4
+#: users/templates/users/user_management_list.html:10
+msgid "Users"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:281
+msgid "Staff"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:282
+msgid "Orders"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:284
+#: users/templates/users/client_profile_list.html:10
+msgid "Clients"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:285
+msgid "Services"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:288
+msgid "Owners"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:289
+msgid "Admins"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:290
+msgid "Managers"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:295
+msgid "Last activity"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:297
+msgid "Recent logins (7d)"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:313
+msgid "Open app"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:314
+msgid "Django admin URL"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:318
+#: tenants/dashboard_services.py:229
+msgid "God mode"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:324
+msgid "As owner"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:330
+msgid "As admin"
+msgstr ""
+
+#: templates/tenants/platform_admin/dashboard.html:333
 msgid "Create admin user"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:229
+#: templates/tenants/platform_admin/dashboard.html:339
 msgid "Deactivate"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:231
+#: templates/tenants/platform_admin/dashboard.html:341
 #: users/templates/users/client_profile_detail.html:29
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
 msgid "Activate"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:237
+#: templates/tenants/platform_admin/dashboard.html:347
 msgid "Delete forever"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:246
-msgid "No tenants yet. Use 'Provision new tenant' above to get started."
+#: templates/tenants/platform_admin/dashboard.html:357
+msgid "No tenants yet. Provision one above to get started."
+msgstr ""
+
+#: templates/tenants/platform_admin/impersonation_error.html:7
+msgid "Impersonation error"
+msgstr ""
+
+#: templates/tenants/platform_admin/impersonation_error.html:18
+msgid "Impersonation could not be started"
+msgstr ""
+
+#: templates/tenants/platform_admin/impersonation_error.html:20
+#: theme/templates/base.html:70
+msgid "Return to platform admin"
 msgstr ""
 
 #: templates/tenants/platform_admin/login.html:148
@@ -4948,6 +5077,7 @@ msgid "Create account"
 msgstr ""
 
 #: templates/tenants/platform_admin/setup.html:62
+#: users/templates/users/register.html:46
 msgid "Already have an account?"
 msgstr ""
 
@@ -4984,6 +5114,7 @@ msgstr ""
 #: users/templates/users/account_profile.html:37
 #: users/templates/users/client_profile_detail.html:76
 #: users/templates/users/client_profile_list.html:137
+#: users/templates/users/client_register_done.html:16
 msgid "Username"
 msgstr ""
 
@@ -5046,13 +5177,6 @@ msgstr ""
 msgid "Company settings"
 msgstr "Company settings"
 
-#: templates/tenants/tenant_company_settings.html:28
-msgid ""
-"These values appear on printed labels (company block, İşletme onay no, VD "
-"number) and on PDF reports. İşletme onay no must match your official "
-"registration."
-msgstr ""
-
 #: templates/tenants/tenant_company_settings.html:96
 msgid "Current logo"
 msgstr "Current logo"
@@ -5069,43 +5193,99 @@ msgstr ""
 "Shown in the app header at a fixed size (recommended: wide logo or "
 "horizontal mark)."
 
-#: tenants/admin.py:24
+#: ⁨tenants/admin 2.py⁩:24 tenants/admin.py:24
 msgid "Identity"
 msgstr ""
 
-#: tenants/admin.py:28
+#: ⁨tenants/admin 2.py⁩:28 tenants/admin.py:28
 msgid "Labels and reports — company block"
 msgstr ""
 
-#: tenants/admin.py:38
+#: ⁨tenants/admin 2.py⁩:38 tenants/admin.py:38
 msgid ""
 "İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
 "with official registrations."
 msgstr ""
 
-#: tenants/admin.py:43
+#: ⁨tenants/admin 2.py⁩:43 tenants/admin.py:43
 msgid "Branding and contact"
 msgstr ""
 
-#: tenants/admin.py:47
+#: ⁨tenants/admin 2.py⁩:47 tenants/admin.py:47
 msgid "Locale and printing"
 msgstr ""
 
-#: tenants/forms.py:19
+#: tenants/dashboard_services.py:228 tenants/views.py:334
+msgid "Admin"
+msgstr ""
+
+#: tenants/dashboard_services.py:318
+msgid "Tenant is deactivated."
+msgstr ""
+
+#: tenants/dashboard_services.py:320
+msgid "Primary domain is missing."
+msgstr ""
+
+#: tenants/dashboard_services.py:322
+msgid "No active tenant users."
+msgstr ""
+
+#: tenants/dashboard_services.py:324
+msgid "No owner/admin access user exists."
+msgstr ""
+
+#: tenants/dashboard_services.py:326
+msgid "No service packages configured."
+msgstr ""
+
+#: tenants/dashboard_services.py:328
+msgid "No tenant activity yet."
+msgstr ""
+
+#: tenants/dashboard_services.py:330
+msgid "No activity in the last 30 days."
+msgstr ""
+
+#: tenants/dashboard_services.py:333
+msgid "Data issue"
+msgstr ""
+
+#: tenants/dashboard_services.py:335
+#: users/templates/users/user_management_list.html:52
+#: users/templates/users/user_management_list.html:72
+#: users/templates/users/user_management_list.html:137
+msgid "Inactive"
+msgstr ""
+
+#: tenants/dashboard_services.py:341
+msgid "Needs setup"
+msgstr ""
+
+#: tenants/dashboard_services.py:343
+msgid "Attention"
+msgstr ""
+
+#: ⁨tenants/forms 2.py⁩:19 tenants/forms.py:19
 msgid "Remove current logo"
 msgstr "Remove current logo"
 
-#: tenants/forms.py:20
+#: ⁨tenants/forms 2.py⁩:20 tenants/forms.py:20
 msgid "Current file"
 msgstr "Current file"
 
-#: tenants/forms.py:21
+#: ⁨tenants/forms 2.py⁩:21 tenants/forms.py:21
 msgid "Replace with"
 msgstr "Replace with"
 
-#: tenants/forms.py:31 users/forms.py:46 users/forms.py:179 users/forms.py:334
+#: ⁨tenants/forms 2.py⁩:31 tenants/forms.py:31 users/forms.py:46
+#: users/forms.py:179 users/forms.py:334
 msgid "Area code"
 msgstr ""
+
+#: ⁨tenants/forms 2.py⁩:96 tenants/forms.py:97
+msgid "Please upload a PNG, JPEG, WebP, or GIF image."
+msgstr "Please upload a PNG, JPEG, WebP, or GIF image."
 
 #: tenants/forms.py:60 tenants/forms.py:121
 msgid "Display name"
@@ -5122,10 +5302,6 @@ msgstr ""
 #: tenants/forms.py:76
 msgid "Windows-1254"
 msgstr ""
-
-#: tenants/forms.py:97
-msgid "Please upload a PNG, JPEG, WebP, or GIF image."
-msgstr "Please upload a PNG, JPEG, WebP, or GIF image."
 
 #: tenants/forms.py:118
 msgid "Schema name"
@@ -5146,7 +5322,7 @@ msgstr ""
 msgid "Leave blank to auto-generate {schema}.{base_domain}."
 msgstr ""
 
-#: tenants/forms.py:129 tenants/models.py:91
+#: tenants/forms.py:129 ⁨tenants/models 2.py⁩:78 tenants/models.py:91
 msgid "Contact email"
 msgstr ""
 
@@ -5202,7 +5378,7 @@ msgstr ""
 msgid "Django superuser (role ADMIN plus Django /admin/ on this tenant host)"
 msgstr ""
 
-#: tenants/forms.py:242 tenants/models.py:74
+#: tenants/forms.py:242 ⁨tenants/models 2.py⁩:62 tenants/models.py:74
 msgid "İşletme onay no"
 msgstr ""
 
@@ -5210,176 +5386,177 @@ msgstr ""
 msgid "Government approval number on labels (ISLETME ONAY NO)."
 msgstr ""
 
-#: tenants/forms.py:248 tenants/models.py:80
+#: tenants/forms.py:248 ⁨tenants/models 2.py⁩:68 tenants/models.py:80
 msgid "Vergi dairesi / işletme no (VD)"
 msgstr ""
 
-#: tenants/models.py:56
+#: ⁨tenants/models 2.py⁩:44 tenants/models.py:56
 msgid "Company name (label header)"
 msgstr ""
 
-#: tenants/models.py:57
+#: ⁨tenants/models 2.py⁩:45 tenants/models.py:57
 msgid "Short trading name printed on labels."
 msgstr ""
 
-#: tenants/models.py:62
+#: ⁨tenants/models 2.py⁩:50 tenants/models.py:62
 msgid "Legal company name"
 msgstr ""
 
-#: tenants/models.py:63
+#: ⁨tenants/models 2.py⁩:51 tenants/models.py:63
 msgid "Full legal title on labels."
 msgstr ""
 
-#: tenants/models.py:68
+#: ⁨tenants/models 2.py⁩:56 tenants/models.py:68
 msgid "Company address"
 msgstr ""
 
-#: tenants/models.py:69
+#: ⁨tenants/models 2.py⁩:57 tenants/models.py:69
 msgid "Address block on labels and reports."
 msgstr ""
 
-#: tenants/models.py:75
+#: ⁨tenants/models 2.py⁩:63 tenants/models.py:75
 msgid ""
 "Government approval number; same value as ISLETME ONAY NO on printed labels."
 msgstr ""
 
-#: tenants/models.py:81
+#: ⁨tenants/models 2.py⁩:69 tenants/models.py:81
 msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr ""
 
-#: tenants/models.py:88
+#: ⁨tenants/models 2.py⁩:75 tenants/models.py:88
 msgid "Logo"
 msgstr ""
 
-#: tenants/models.py:89
+#: ⁨tenants/models 2.py⁩:76 tenants/models.py:89
 msgid "Optional branding image in the app header."
 msgstr ""
 
-#: tenants/models.py:92
+#: ⁨tenants/models 2.py⁩:79 tenants/models.py:92
 msgid "Contact phone"
 msgstr ""
 
-#: tenants/models.py:98
+#: ⁨tenants/models 2.py⁩:85 tenants/models.py:98
 msgid "Printer Turkish mode"
 msgstr ""
 
-#: tenants/models.py:99
+#: ⁨tenants/models 2.py⁩:86 tenants/models.py:99
 msgid "unicode, ascii, or codepage1254 for label printers."
 msgstr ""
 
-#: tenants/models.py:101
+#: ⁨tenants/models 2.py⁩:88 tenants/models.py:101
 msgid "Timezone"
 msgstr ""
 
-#: tenants/models.py:102
+#: ⁨tenants/models 2.py⁩:89 tenants/models.py:102
 msgid "Language code"
 msgstr ""
 
-#: tenants/views.py:55 tenants/views.py:75
+#: ⁨tenants/views 2.py⁩:353 tenants/views.py:478
+msgid "Company and label settings saved. They apply to new labels and reports."
+msgstr ""
+
+#: tenants/views.py:66 tenants/views.py:86
 msgid "Tenant registration is only available in multi-tenant mode."
 msgstr ""
 
-#: tenants/views.py:77
+#: tenants/views.py:88
 msgid "Missing status token."
 msgstr ""
 
-#: tenants/views.py:148
+#: tenants/views.py:159
 #, python-format
 msgid "Tenant \"%(schema)s\" provisioned at %(domain)s."
 msgstr ""
 
-#: tenants/views.py:187
+#: tenants/views.py:241
+msgid "Target user no longer exists or is inactive."
+msgstr ""
+
+#: tenants/views.py:286
 #, python-format
 msgid ""
 "Approved registration \"%(company)s\"; tenant \"%(schema)s\" was provisioned."
 msgstr ""
 
-#: tenants/views.py:209
+#: tenants/views.py:309
 #, python-format
 msgid "Rejected registration for \"%(company)s\"."
 msgstr ""
 
-#: tenants/views.py:233 users/templates/users/dashboard.html:16
-msgid "Owner"
-msgstr ""
-
-#: tenants/views.py:234
-msgid "Admin"
-msgstr ""
-
-#: tenants/views.py:235 users/templates/users/dashboard.html:36
+#: tenants/views.py:335 users/templates/users/dashboard.html:36
 msgid "Manager"
 msgstr ""
 
-#: tenants/views.py:263
+#: tenants/views.py:363
 msgid "A user with this username already exists in this tenant."
 msgstr ""
 
-#: tenants/views.py:265
+#: tenants/views.py:365
 msgid "A user with this email already exists in this tenant."
 msgstr ""
 
-#: tenants/views.py:276
+#: tenants/views.py:376
 msgid ""
 "Could not create user (unique constraint). Try a different username or email."
 msgstr ""
 
-#: tenants/views.py:279
+#: tenants/views.py:379
 msgid "Django superuser plus app admin"
 msgstr ""
 
-#: tenants/views.py:279
+#: tenants/views.py:379
 msgid "Tenant app admin (ADMIN)"
 msgstr ""
 
-#: tenants/views.py:283
+#: tenants/views.py:383
 #, python-format
 msgid ""
 "User \"%(username)s\" created for tenant \"%(schema)s\" (%(kind)s). Sign in "
 "at the tenant app login page (not platform-admin): %(url)s"
 msgstr ""
 
-#: tenants/views.py:319
+#: tenants/views.py:419
 #, python-format
 msgid ""
 "Confirmation failed: type the schema name exactly (\"%(schema)s\") to delete "
 "this tenant."
 msgstr ""
 
-#: tenants/views.py:330
+#: tenants/views.py:430
 #, python-format
 msgid ""
 "Tenant \"%(schema)s\" was permanently deleted (PostgreSQL schema dropped)."
 msgstr ""
 
-#: tenants/views.py:344
+#: tenants/views.py:444
 msgid "activated"
 msgstr ""
 
-#: tenants/views.py:344
+#: tenants/views.py:444
 msgid "deactivated"
 msgstr ""
 
-#: tenants/views.py:345
+#: tenants/views.py:445
 #, python-format
 msgid "Tenant \"%(schema)s\" %(state)s."
 msgstr ""
 
-#: tenants/views.py:378
-msgid "Company and label settings saved. They apply to new labels and reports."
-msgstr ""
-
-#: tenants/views.py:397
+#: tenants/views.py:497
 msgid "Setup already complete. Please sign in."
 msgstr ""
 
-#: tenants/views.py:409
+#: tenants/views.py:509
 msgid "Account created. Please sign in."
 msgstr ""
 
 #: theme/templates/base.html:24
 msgid "Company logo"
 msgstr "Company logo"
+
+#: theme/templates/base.html:41 users/templates/users/account_profile.html:4
+#: users/templates/users/account_profile.html:28
+msgid "My Account"
+msgstr ""
 
 #: theme/templates/base.html:44
 msgid "Logout"
@@ -5391,8 +5568,26 @@ msgstr ""
 msgid "Login"
 msgstr ""
 
+#: theme/templates/base.html:61
+msgid "Impersonation Active"
+msgstr ""
+
+#: theme/templates/base.html:63
+#, python-format
+msgid ""
+"\n"
+"                                    Signed in as %(username)s (%(role)s) via "
+"platform admin %(actor)s.\n"
+"                                "
+msgstr ""
+
+#: theme/templates/base.html:75
+msgid "Exit impersonation"
+msgstr ""
+
 #: users/forms.py:54 users/forms.py:187 users/forms.py:370
 #: users/templates/users/client_profile_form.html:95
+#: users/templates/users/client_profile_register.html:84
 msgid "Phone number"
 msgstr ""
 
@@ -5451,7 +5646,7 @@ msgstr ""
 msgid "Current password"
 msgstr "Current logo"
 
-#: users/forms.py:262 users/views.py:185
+#: users/forms.py:262 users/views.py:211
 msgid "Your current password was entered incorrectly."
 msgstr ""
 
@@ -5485,12 +5680,6 @@ msgstr ""
 
 #: users/forms.py:474
 msgid "Name is required for walk-in accounts."
-msgstr ""
-
-#: theme/templates/base.html:41
-#: users/templates/users/account_profile.html:4
-#: users/templates/users/account_profile.html:28
-msgid "My Account"
 msgstr ""
 
 #: users/templates/users/account_profile.html:29
@@ -5638,10 +5827,6 @@ msgstr ""
 msgid "Registered clients"
 msgstr ""
 
-#: users/templates/users/client_profile_list.html:10
-msgid "Clients"
-msgstr ""
-
 #: users/templates/users/client_profile_list.html:12
 msgid ""
 "Manage registered customer accounts and quickly open profiles for updates."
@@ -5690,6 +5875,30 @@ msgstr ""
 
 #: users/templates/users/client_profile_list.html:213
 msgid "Clear search"
+msgstr ""
+
+#: users/templates/users/client_profile_register.html:5
+msgid "Client Registration"
+msgstr ""
+
+#: users/templates/users/client_profile_register.html:39
+msgid "Register as a Client"
+msgstr ""
+
+#: users/templates/users/client_profile_register.html:105
+msgid "Register as Client"
+msgstr ""
+
+#: users/templates/users/client_register_done.html:4
+msgid "Registration complete"
+msgstr ""
+
+#: users/templates/users/client_register_done.html:9
+msgid "Your client account is ready"
+msgstr ""
+
+#: users/templates/users/client_register_done.html:12
+msgid "Save these credentials now. They will not be shown again."
 msgstr ""
 
 #: users/templates/users/dashboard.html:9
@@ -5844,9 +6053,7 @@ msgid "Company name, İşletme onay no, label printer mode"
 msgstr ""
 
 #: users/templates/users/dashboard.html:512
-#: users/templates/users/user_management_list.html:4
-#: users/templates/users/user_management_list.html:10
-msgid "Users"
+msgid "User management"
 msgstr ""
 
 #: users/templates/users/dashboard.html:514
@@ -5957,6 +6164,18 @@ msgstr ""
 msgid "Contact your administrator."
 msgstr ""
 
+#: users/templates/users/register.html:5 users/templates/users/register.html:41
+msgid "Register"
+msgstr ""
+
+#: users/templates/users/register.html:10
+msgid "Create a new account"
+msgstr ""
+
+#: users/templates/users/register.html:46
+msgid "Sign in."
+msgstr ""
+
 #: users/templates/users/staff_user_form.html:5
 #: users/templates/users/staff_user_form.html:30
 msgid "Edit user"
@@ -6026,66 +6245,74 @@ msgstr ""
 msgid "Contact"
 msgstr ""
 
-#: users/views.py:174
+#: users/views.py:200
 msgid "Your contact details were updated."
 msgstr ""
 
-#: users/views.py:188
+#: users/views.py:214
 msgid "Your password was changed."
 msgstr ""
 
-#: users/views.py:191
+#: users/views.py:217
 msgid "Unknown account action."
 msgstr ""
 
-#: users/views.py:782
+#: users/views.py:545
+#, python-format
+msgid ""
+"Platform admin impersonation active for %(username)s (%(role)s). Use Exit "
+"impersonation to return."
+msgstr ""
+
+#: users/views.py:844
 msgid "Enterprise"
 msgstr ""
 
-#: users/views.py:784
+#: users/views.py:846
 msgid "Unclassified"
 msgstr ""
 
-#: users/views.py:792
+#: users/views.py:854
 msgid "Profile (no login)"
 msgstr ""
 
-#: users/views.py:888
+#: users/views.py:950
 msgid "Client profile created and linked to the existing registered account."
 msgstr ""
 
-#: users/views.py:893
+#: users/views.py:955
 msgid "Client profile created and linked to the existing walk-in record."
 msgstr ""
 
-#: users/views.py:899
+#: users/views.py:961
 msgid ""
 "Client profile created without creating a second login for this registered "
 "phone number."
 msgstr ""
 
-#: users/views.py:903 users/views.py:944 users/views.py:958 users/views.py:980
+#: users/views.py:965 users/views.py:1006 users/views.py:1020
+#: users/views.py:1042
 msgid "Matching walk-in orders were linked by phone number."
 msgstr ""
 
-#: users/views.py:936 users/views.py:950
+#: users/views.py:998 users/views.py:1012
 #, python-format
 msgid ""
 "Client created. Temporary password: %(pwd)s — copy it now; the user can "
 "change it later."
 msgstr ""
 
-#: users/views.py:942 users/views.py:956
+#: users/views.py:1004 users/views.py:1018
 msgid "Client created."
 msgstr ""
 
-#: users/views.py:1040
+#: users/views.py:1102
 #, python-format
 msgid ""
 "User created. Temporary password: %(pwd)s — copy it now; the user can change "
 "it later."
 msgstr ""
 
-#: users/views.py:1044
+#: users/views.py:1106
 msgid "User created."
 msgstr ""

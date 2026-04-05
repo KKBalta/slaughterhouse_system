@@ -35,14 +35,13 @@
             <div class="py-1" role="none">
                 {% get_available_languages as LANGUAGES %}
                 {% for lang_code, lang_name in LANGUAGES %}
-                    <form action="{% url 'set_language' %}" method="post" class="inline-block w-full" onsubmit="console.log('Language form submitted:', this.language.value);">
+                    <form action="{% url 'set_language' %}" method="post" class="inline-block w-full">
                         {% csrf_token %}
                         <input name="next" type="hidden" value="{{ request.get_full_path }}" />
                         <input name="language" type="hidden" value="{{ lang_code }}" />
                         <button type="submit" 
                                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center transition-colors duration-150" 
-                                role="menuitem"
-                                onclick="console.log('Switching to language:', '{{ lang_code }}');">
+                                role="menuitem">
                             {% if lang_code == 'tr' %}
                                 🇹🇷 Türkçe
                             {% elif lang_code == 'en' %}
