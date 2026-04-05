@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model, logout
+from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -12,6 +12,11 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from django_tenants.utils import tenant_context
 
+from tenants.dashboard_services import (
+    build_platform_dashboard_summary,
+    build_tenant_dashboard_row,
+    start_platform_impersonation,
+)
 from tenants.email_index import build_tenant_api_base_url
 from tenants.forms import (
     CreateTenantForm,
@@ -20,6 +25,12 @@ from tenants.forms import (
     PlatformAdminSetupForm,
     PublicTenantRegistrationForm,
     TenantCompanyProfileForm,
+)
+from tenants.impersonation import (
+    consume_platform_impersonation_session,
+    get_impersonation_redirect_url,
+    get_platform_admin_dashboard_url,
+    stop_platform_impersonation_session,
 )
 from tenants.models import Client, PlatformAdmin, TenantRegistrationRequest
 from tenants.registration_views import TenantRegistrationStatusLookupError, get_tenant_registration_status_payload
@@ -156,7 +167,11 @@ def platform_admin_dashboard(request):
     )
 
     tenants_qs = Client.objects.all().prefetch_related("domains").order_by("schema_name")
-    tenant_rows = [{"tenant": t, "app_url": build_tenant_api_base_url(t)} for t in tenants_qs]
+    tenant_rows = [build_tenant_dashboard_row(tenant) for tenant in tenants_qs]
+    dashboard_summary = build_platform_dashboard_summary(
+        tenant_rows=tenant_rows,
+        pending_registrations=pending_regs.count(),
+    )
     return render(
         request,
         "tenants/platform_admin/dashboard.html",
@@ -165,8 +180,90 @@ def platform_admin_dashboard(request):
             "platform_admin": request.user,
             "create_form": create_form,
             "pending_registrations": pending_regs,
+            "dashboard_summary": dashboard_summary,
         },
     )
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_impersonate(request, schema_name, mode):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    tenant = get_object_or_404(Client, schema_name=schema_name)
+    try:
+        return start_platform_impersonation(
+            request,
+            tenant=tenant,
+            platform_admin=request.user,
+            mode=mode,
+        )
+    except (ValidationError, ValueError) as exc:
+        messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+        return redirect("platform_admin_dashboard")
+    return redirect("platform_admin_dashboard")
+
+
+def platform_admin_impersonation_consume(request):
+    if not getattr(settings, "USE_MULTITENANT", False):
+        raise Http404()
+    tenant = getattr(request, "tenant", None)
+    if tenant is None or getattr(tenant, "schema_name", "") == "public":
+        raise Http404()
+
+    raw_token = (request.GET.get("token") or "").strip()
+    try:
+        session = consume_platform_impersonation_session(
+            raw_token=raw_token,
+            tenant=tenant,
+            consumed_host=request.get_host(),
+        )
+    except ValidationError as exc:
+        return render(
+            request,
+            "tenants/platform_admin/impersonation_error.html",
+            {
+                "error_detail": " ".join(exc.messages) if hasattr(exc, "messages") else str(exc),
+                "return_url": get_platform_admin_dashboard_url(),
+            },
+            status=400,
+        )
+
+    User = get_user_model()
+    try:
+        target_user = User.objects.get(pk=session.target_user_id, is_active=True)
+    except User.DoesNotExist:
+        return render(
+            request,
+            "tenants/platform_admin/impersonation_error.html",
+            {
+                "error_detail": _("Target user no longer exists or is inactive."),
+                "return_url": get_platform_admin_dashboard_url(),
+            },
+            status=400,
+        )
+
+    login(request, target_user, backend="tenants.auth_backends.PublicSchemaSafeModelBackend")
+    request.session["platform_impersonation_active"] = True
+    request.session["platform_impersonation_session_id"] = session.pk
+    request.session["platform_impersonation_admin_email"] = session.platform_admin.email
+    request.session["platform_impersonation_admin_name"] = session.platform_admin.name
+    request.session["platform_impersonation_target_username"] = target_user.get_username()
+    request.session["platform_impersonation_target_role"] = getattr(target_user, "role", "") or ""
+    request.session["platform_impersonation_started_at"] = session.consumed_at.isoformat() if session.consumed_at else ""
+    return redirect(get_impersonation_redirect_url(session))
+
+
+@require_POST
+@login_required(login_url="/login/")
+def platform_admin_impersonation_stop(request):
+    stop_platform_impersonation_session(request.session.get("platform_impersonation_session_id"))
+    for key in list(request.session.keys()):
+        if key.startswith("platform_impersonation_"):
+            del request.session[key]
+    logout(request)
+    return redirect(get_platform_admin_dashboard_url())
 
 
 @require_POST
@@ -187,8 +284,9 @@ def tenant_registration_approve(request, registration_id):
             _('Approved registration "%(company)s"; tenant "%(schema)s" was provisioned.')
             % {"company": reg.company_name, "schema": reg.derived_schema_name},
         )
-    except ValidationError as exc:
+    except (ValidationError, ValueError) as exc:
         messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+        return redirect("platform_admin_dashboard")
     return redirect("platform_admin_dashboard")
 
 
@@ -322,7 +420,7 @@ def tenant_hard_delete(request, schema_name):
         return redirect("platform_admin_dashboard")
     try:
         hard_delete_tenant(schema_name=schema_name)
-    except ValidationError as exc:
+    except (ValidationError, ValueError) as exc:
         messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
         return redirect("platform_admin_dashboard")
     messages.success(

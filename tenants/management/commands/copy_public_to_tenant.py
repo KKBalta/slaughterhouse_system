@@ -24,6 +24,8 @@ SHARED_ONLY_TABLES = {
     "tenants_domain",
     "tenants_email_tenant_membership",
     "tenants_platform_admin",
+    "tenants_platform_impersonation_session",
+    "tenants_platform_impersonation_event",
     "tenants_tenant_registration_request",
 }
 

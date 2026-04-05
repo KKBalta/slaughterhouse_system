@@ -12,6 +12,7 @@ _CSRF_CACHE_TTL = 300  # seconds — matches typical form-fill window
 # navigation to the tenant host (first-party Set-Cookie); cross-site fetch cannot.
 _SESSION_BOOTSTRAP_PREFIX = "session_bootstrap:"
 _SESSION_BOOTSTRAP_TTL = 120
+_PLATFORM_IMPERSONATION_SESSION_KEY = "platform_impersonation"
 
 
 def _bootstrap_token_cache_set(*, token: str, payload: dict) -> None:
@@ -85,6 +86,30 @@ def _allowed_redirect_hosts(*urls: str) -> set[str]:
     return hosts
 
 
+def _mark_platform_impersonation_event(event_id: str | None, **fields) -> None:
+    if not event_id:
+        return
+    from django_tenants.utils import get_public_schema_name, schema_context
+
+    from tenants.models import PlatformImpersonationEvent
+
+    with schema_context(get_public_schema_name()):
+        PlatformImpersonationEvent.objects.filter(pk=event_id).update(**fields)
+
+
+def _finalize_platform_impersonation(request, *, reason: str) -> dict | None:
+    state = request.session.pop(_PLATFORM_IMPERSONATION_SESSION_KEY, None)
+    if not isinstance(state, dict):
+        return None
+    _mark_platform_impersonation_event(
+        (state.get("event_id") or "").strip(),
+        ended_at=timezone.now(),
+        ended_reason=reason,
+    )
+    request.session.modified = True
+    return state
+
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -97,6 +122,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token, rotate_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
@@ -499,6 +525,31 @@ def session_bootstrap_api(request):
         )
 
         tenant_client = get_client_tenant_from_connection()
+        platform_impersonation = payload.get("platform_impersonation")
+        if isinstance(platform_impersonation, dict):
+            request.session[_PLATFORM_IMPERSONATION_SESSION_KEY] = {
+                "event_id": platform_impersonation.get("event_id", ""),
+                "mode": platform_impersonation.get("mode", ""),
+                "platform_admin_email": platform_impersonation.get("platform_admin_email", ""),
+                "platform_admin_name": platform_impersonation.get("platform_admin_name", ""),
+                "target_username": platform_impersonation.get("target_username", ""),
+                "target_role": platform_impersonation.get("target_role", ""),
+                "target_email": platform_impersonation.get("target_email", ""),
+                "return_url": platform_impersonation.get("return_url", ""),
+                "started_at": timezone.now().isoformat(),
+            }
+            request.session.modified = True
+            _mark_platform_impersonation_event(platform_impersonation.get("event_id"), consumed_at=timezone.now())
+            messages.warning(
+                request,
+                _(
+                    "Platform admin impersonation active for %(username)s (%(role)s). Use Exit impersonation to return."
+                )
+                % {
+                    "username": platform_impersonation.get("target_username") or user.get_username(),
+                    "role": platform_impersonation.get("target_role") or getattr(user, "role", ""),
+                },
+            )
         if next_url:
             allowed_hosts = {
                 request.get_host().lower(),
@@ -715,6 +766,19 @@ def discover_tenants_api(request):
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")  # Redirect to logged_out page after logout
+
+    def dispatch(self, request, *args, **kwargs):
+        _finalize_platform_impersonation(request, reason="logout")
+        return super().dispatch(request, *args, **kwargs)
+
+
+@login_required
+@require_http_methods(["POST"])
+def stop_impersonation_view(request):
+    state = _finalize_platform_impersonation(request, reason="manual") or {}
+    return_url = (state.get("return_url") or "").strip() or getattr(settings, "SITE_URL_FALLBACK", "/")
+    logout(request)
+    return redirect(return_url)
 
 
 @login_required

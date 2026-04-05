@@ -15,6 +15,7 @@ from .views import (
     dashboard_view,
     home_view,
     logged_out_view,
+    stop_impersonation_view,
     tenant_user_create_view,
     tenant_user_edit_view,
     tenant_user_list_view,
@@ -27,6 +28,7 @@ urlpatterns = [
     path("logout/", CustomLogoutView.as_view(), name="logout"),
     path("logged-out/", logged_out_view, name="logged_out"),  # Page shown after logout
     path("dashboard/", dashboard_view, name="dashboard"),
+    path("impersonation/stop/", stop_impersonation_view, name="stop_impersonation"),
     path("account/", account_profile_view, name="account_profile"),
     path(
         "tenant-company-settings/",

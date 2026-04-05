@@ -17,9 +17,13 @@ import django.contrib.auth as django_auth
 import django_tenants.utils as tenant_utils
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import Client, RequestFactory, override_settings
 from django.urls import NoReverseMatch, reverse
 
+from tenants.models import Client as TenantClient
+from tenants.models import PlatformAdmin, PlatformImpersonationEvent
 from users.models import ClientProfile
 
 # View tests: skip when SKIP_VIEW_TESTS env is set (e.g. in CI when templates missing).
@@ -288,6 +292,7 @@ def _dummy_login_user():
         email = "client@example.com"
         role = User.Role.CLIENT
         is_active = True
+        is_authenticated = True
 
         def get_username(self):
             return "client-user"
@@ -376,6 +381,11 @@ def test_session_bootstrap_api_allows_same_tenant_spa_redirect(monkeypatch):
     monkeypatch.setattr(user_views, "login", lambda request, user, backend=None: None)
     monkeypatch.setattr(user_views, "get_token", lambda request: "csrf-token")
     monkeypatch.setattr(
+        user_views,
+        "_mark_platform_impersonation_event",
+        lambda event_id, **fields: PlatformImpersonationEvent.objects.filter(pk=event_id).update(**fields),
+    )
+    monkeypatch.setattr(
         email_index,
         "get_client_tenant_from_connection",
         lambda: SimpleNamespace(schema_name="pomet", language_code="en"),
@@ -396,6 +406,97 @@ def test_session_bootstrap_api_allows_same_tenant_spa_redirect(monkeypatch):
     assert response["Location"] == next_url
 
 
+@override_settings(
+    USE_MULTITENANT=True,
+    DEBUG=False,
+    ALLOWED_HOSTS=["pomet.localhost", ".localhost", "localhost", "testserver"],
+)
+def test_session_bootstrap_api_marks_platform_impersonation_session(monkeypatch):
+    from django.db import connection
+
+    import users.views as user_views
+    from tenants import email_index
+
+    tenant = TenantClient.objects.create(schema_name="pomet", slug="pomet", name="Pomet", language_code="en")
+    platform_admin = PlatformAdmin.objects.create(email="platform@example.com", name="Platform Admin")
+    event = PlatformImpersonationEvent.objects.create(
+        platform_admin=platform_admin,
+        tenant=tenant,
+        mode=PlatformImpersonationEvent.Mode.GOD_MODE,
+        target_user_id=7,
+        target_username="client-user",
+        target_email="client@example.com",
+        target_role="CLIENT",
+    )
+    next_url = "http://pomet.localhost:3000/dashboard"
+    request = RequestFactory().get(
+        "/api/v1/auth/session-bootstrap/",
+        data={"token": "bootstrap-token", "next": next_url},
+        HTTP_HOST="pomet.localhost:8000",
+    )
+    SessionMiddleware(lambda req: None).process_request(request)
+    request.session.save()
+    request._messages = FallbackStorage(request)
+
+    class DummyUserModel:
+        class DoesNotExist(Exception):
+            pass
+
+        objects = SimpleNamespace(get=lambda pk: _dummy_login_user())
+
+    monkeypatch.setattr(
+        user_views,
+        "_bootstrap_token_cache_pop",
+        lambda token: {
+            "user_id": 7,
+            "schema": "pomet",
+            "platform_impersonation": {
+                "event_id": str(event.id),
+                "mode": "god_mode",
+                "platform_admin_email": "platform@example.com",
+                "platform_admin_name": "Platform Admin",
+                "target_username": "client-user",
+                "target_role": "CLIENT",
+                "target_email": "client@example.com",
+                "return_url": "http://public.localhost:8000/platform-admin/",
+            },
+        },
+    )
+    monkeypatch.setattr(connection, "schema_name", "pomet", raising=False)
+    monkeypatch.setattr(django_auth, "get_user_model", lambda: DummyUserModel)
+    monkeypatch.setattr(tenant_utils, "get_public_schema_name", lambda: "public")
+    monkeypatch.setattr(user_views, "login", lambda request, user, backend=None: None)
+    monkeypatch.setattr(user_views, "get_token", lambda request: "csrf-token")
+    monkeypatch.setattr(
+        user_views,
+        "_mark_platform_impersonation_event",
+        lambda event_id, **fields: PlatformImpersonationEvent.objects.filter(pk=event_id).update(**fields),
+    )
+    monkeypatch.setattr(
+        email_index,
+        "get_client_tenant_from_connection",
+        lambda: SimpleNamespace(schema_name="pomet", language_code="en"),
+    )
+    monkeypatch.setattr(email_index, "build_tenant_api_base_url", lambda tenant: "http://pomet.localhost:8000")
+    monkeypatch.setattr(email_index, "build_tenant_web_app_base_url", lambda tenant: "http://pomet.localhost:3000")
+    monkeypatch.setattr(
+        email_index,
+        "build_post_login_redirect_url",
+        lambda tenant, use_api_host=None: (
+            "http://pomet.localhost:8000/en/dashboard/" if use_api_host else "http://pomet.localhost:3000/dashboard"
+        ),
+    )
+
+    response = user_views.session_bootstrap_api(request)
+
+    event.refresh_from_db()
+    assert response.status_code == 302
+    assert response["Location"] == next_url
+    assert request.session["platform_impersonation"]["event_id"] == str(event.id)
+    assert request.session["platform_impersonation"]["platform_admin_email"] == "platform@example.com"
+    assert event.consumed_at is not None
+
+
 def test_session_me_api_returns_role():
     import users.views as user_views
 
@@ -413,6 +514,40 @@ def test_session_me_api_returns_role():
     assert response.status_code == 200
     payload = json.loads(response.content)
     assert payload["user"]["role"] == User.Role.CLIENT
+
+
+def test_stop_impersonation_view_clears_session_and_redirects(monkeypatch):
+    import users.views as user_views
+
+    request = RequestFactory().post("/en/impersonation/stop/")
+    SessionMiddleware(lambda req: None).process_request(request)
+    request.session.save()
+    request.user = _dummy_login_user()
+    request._messages = FallbackStorage(request)
+    request.session["platform_impersonation"] = {
+        "event_id": "77",
+        "mode": "god_mode",
+        "platform_admin_email": "platform@example.com",
+        "target_username": "god-user",
+        "target_role": "ADMIN",
+        "return_url": "http://localhost:8000/platform-admin/",
+    }
+
+    marked = {}
+    monkeypatch.setattr(
+        user_views,
+        "_mark_platform_impersonation_event",
+        lambda event_id, **fields: marked.update({"event_id": event_id, **fields}),
+    )
+    monkeypatch.setattr(user_views, "logout", lambda request: None)
+
+    response = user_views.stop_impersonation_view(request)
+
+    assert response.status_code == 302
+    assert response["Location"] == "http://localhost:8000/platform-admin/"
+    assert "platform_impersonation" not in request.session
+    assert marked["event_id"] == "77"
+    assert marked["ended_reason"] == "manual"
 
 
 @override_settings(LANGUAGE_CODE="tr", PUBLIC_TENANT_HTTP_PORT="8000", TENANT_LOGIN_SUCCESS_REDIRECT_PATH="/dashboard")

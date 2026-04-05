@@ -5,247 +5,360 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% trans "Platform admin" %} - {% trans "Tenants" %}</title>
+    <title>{% trans "Platform admin" %} - {% trans "Tenant dashboard" %}</title>
     <style>
         :root {
-            --fg: #1a1a1a; --muted: #5c5c5c; --border: #e0e0e0;
-            --accent: #0d47a1; --danger: #b71c1c; --success: #1b5e20;
-            --success-bg: #e8f5e9; --danger-bg: #ffebee;
-            --warn-bg: #fff8e1; --warn-fg: #e65100;
+            --fg: #172033;
+            --muted: #5f6b84;
+            --border: #dbe1ea;
+            --surface: #ffffff;
+            --bg: #eef3f8;
+            --accent: #1249b7;
+            --accent-2: #0f172a;
+            --danger: #b42318;
+            --danger-bg: #fef3f2;
+            --success: #027a48;
+            --success-bg: #ecfdf3;
+            --warn: #b54708;
+            --warn-bg: #fffaeb;
+            --critical: #912018;
+            --critical-bg: #fef3f2;
         }
         * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; background: #f5f5f5; color: var(--fg); }
-        .wrap { max-width: 60rem; margin: 0 auto; }
-
-        header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
-        h1 { font-size: 1.5rem; margin: 0; }
-        .meta { font-size: 0.875rem; color: var(--muted); }
-
-        .messages { list-style: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-        .msg { padding: 0.65rem 1rem; border-radius: 6px; font-size: 0.9rem; }
-        .msg.success { background: var(--success-bg); color: var(--success); }
-        .msg.error { background: var(--danger-bg); color: var(--danger); }
-
-        details { margin-bottom: 1.5rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        details summary { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9375rem; user-select: none; }
-        details summary:hover { background: #fafafa; }
-        .create-body { padding: 1rem; border-top: 1px solid var(--border); }
-        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
-        @media (max-width: 540px) { .fields { grid-template-columns: 1fr; } }
+        body { margin: 0; font-family: system-ui, sans-serif; background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%); color: var(--fg); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+        .wrap { max-width: 92rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+        header { display: flex; gap: 1rem; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+        h1 { margin: 0; font-size: 2rem; }
+        .meta { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; max-width: 46rem; }
+        .messages { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.6rem; }
+        .msg { padding: 0.8rem 1rem; border-radius: 0.8rem; border: 1px solid var(--border); background: var(--surface); }
+        .msg.success { background: var(--success-bg); color: var(--success); border-color: #b7ebcb; }
+        .msg.error { background: var(--danger-bg); color: var(--danger); border-color: #f7c2bf; }
+        .summary-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.9rem; margin-bottom: 1.5rem; }
+        .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1rem; box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04); }
+        .summary-card strong { display: block; font-size: 1.8rem; line-height: 1.1; margin-top: 0.2rem; }
+        .summary-card span { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+        .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1rem 1.1rem; margin-bottom: 1.5rem; box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04); }
+        .panel h2 { margin: 0 0 0.85rem; font-size: 1.1rem; }
+        .attention-list { display: grid; gap: 0.75rem; }
+        .attention-item { border: 1px solid #fed7aa; background: #fff7ed; border-radius: 0.85rem; padding: 0.9rem 1rem; }
+        .attention-item p { margin: 0.25rem 0 0; color: var(--muted); }
+        .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem 1rem; }
         .field { display: flex; flex-direction: column; gap: 0.3rem; }
         .field.full { grid-column: 1 / -1; }
-        label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+        label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
         input[type="text"], input[type="email"], textarea {
-            padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: 4px;
-            font-size: 0.9375rem; width: 100%;
+            width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 0.7rem; font-size: 0.95rem;
         }
         textarea { min-height: 4rem; resize: vertical; }
-        .btn-danger { padding: 0.45rem 0.9rem; background: var(--danger); color: #fff; border: none; border-radius: 4px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
-        .btn-danger:hover { filter: brightness(1.05); }
-        .pending-panel { margin-bottom: 1.5rem; background: var(--warn-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
-        .pending-panel h2 { font-size: 1rem; margin: 0 0 0.75rem; color: var(--warn-fg); }
-        .reg-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-        input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
-        .help { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
-        .errorlist { list-style: none; padding: 0; margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--danger); }
-        .form-actions { margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; }
-        .btn-primary {
-            padding: 0.55rem 1.25rem; background: var(--accent); color: #fff;
-            border: none; border-radius: 4px; font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+        input:focus, textarea:focus { outline: 2px solid rgba(18, 73, 183, 0.16); border-color: var(--accent); }
+        .help { color: var(--muted); font-size: 0.8rem; }
+        .errorlist { list-style: none; padding: 0; margin: 0; color: var(--danger); font-size: 0.82rem; }
+        .btn, .btn-secondary, .btn-danger, .btn-link {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+            border-radius: 999px; padding: 0.55rem 0.95rem; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            border: 1px solid transparent; text-decoration: none;
         }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .non-field-errors { background: var(--danger-bg); color: var(--danger); padding: 0.6rem 0.9rem; border-radius: 4px; font-size: 0.875rem; margin-bottom: 0.75rem; }
-
-        table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        th, td { text-align: left; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9375rem; }
-        th { background: #fafafa; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+        .btn { background: var(--accent); color: #fff; }
+        .btn:hover { filter: brightness(1.05); text-decoration: none; }
+        .btn-secondary { background: #fff; color: var(--accent-2); border-color: var(--border); }
+        .btn-secondary:hover { background: #f8fafc; text-decoration: none; }
+        .btn-danger { background: #fff; color: var(--danger); border-color: #f1b2ac; }
+        .btn-danger:hover { background: var(--danger-bg); text-decoration: none; }
+        .btn-link { padding: 0; border: none; background: none; color: var(--accent); }
+        .btn-link:hover { text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { vertical-align: top; text-align: left; padding: 0.9rem 0.8rem; border-bottom: 1px solid var(--border); }
+        th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: #f8fafc; }
         tr:last-child td { border-bottom: none; }
-        .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .badge.active { background: var(--success-bg); color: var(--success); }
-        .badge.inactive { background: var(--danger-bg); color: var(--danger); }
-        .empty { padding: 2rem; text-align: center; color: var(--muted); background: #fff; border: 1px solid var(--border); border-radius: 8px; }
-
-        form.inline { display: inline; margin: 0; }
-        button.link { background: none; border: none; cursor: pointer; font-size: 0.875rem; text-decoration: underline; padding: 0; }
-        button.link.deactivate { color: var(--danger); }
-        button.link.activate { color: var(--success); }
-        button.link.signout { color: var(--accent); }
+        .tenant-name { font-size: 1rem; font-weight: 700; }
+        .tenant-sub { color: var(--muted); font-size: 0.86rem; margin-top: 0.25rem; }
+        .stack { display: grid; gap: 0.35rem; }
+        .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.22rem 0.6rem; font-size: 0.76rem; font-weight: 700; }
+        .badge.healthy { background: var(--success-bg); color: var(--success); }
+        .badge.warning, .badge.attention { background: var(--warn-bg); color: var(--warn); }
+        .badge.critical, .badge.error { background: var(--critical-bg); color: var(--critical); }
+        .badge.setup { background: #eef2ff; color: #3730a3; }
+        .badge.inactive { background: #f3f4f6; color: #475467; }
+        .issue-list { margin: 0.45rem 0 0; padding-left: 1rem; color: var(--muted); font-size: 0.84rem; }
+        .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem 1rem; }
+        .metric-grid strong { display: block; font-size: 1rem; }
+        .metric-grid span { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .inline { display: inline; margin: 0; }
+        .delete-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+        .delete-row input { min-width: 7rem; padding: 0.5rem 0.65rem; border-radius: 999px; }
+        details { overflow: hidden; }
+        details summary { cursor: pointer; font-weight: 700; }
+        @media (max-width: 1100px) { .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 760px) {
+            .wrap { padding-inline: 0.9rem; }
+            header { flex-direction: column; }
+            .summary-grid, .fields { grid-template-columns: 1fr; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tbody { display: grid; gap: 1rem; }
+            tr { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); overflow: hidden; }
+            td { border-bottom: 1px solid var(--border); }
+            td:last-child { border-bottom: none; }
+        }
     </style>
 </head>
 <body>
     <div class="wrap">
         <header>
             <div>
-                <h1>{% trans "Tenants" %}</h1>
+                <h1>{% trans "Tenant Operations" %}</h1>
                 <p class="meta">{% blocktrans with email=platform_admin.email %}Signed in as {{ email }}{% endblocktrans %}</p>
-                <p class="meta" style="margin-top:0.5rem;max-width:42rem">
-                    {% trans "Each row links to that tenant app on its hostname. The app URL opens the tenant-scoped CarniTrack interface directly." %}
-                </p>
+                <p class="meta">{% trans "Provision tenants, review health, and launch god-mode sessions into each tenant app without leaving the platform console." %}</p>
             </div>
             <form class="inline" method="post" action="{% url 'platform_admin_logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="link signout">{% trans "Sign out" %}</button>
+                <button type="submit" class="btn-secondary">{% trans "Sign out" %}</button>
             </form>
         </header>
 
         {% if messages %}
             <ul id="django-messages-container" class="messages">
                 {% for message in messages %}
-                    <li class="msg {{ message.tags }} js-message-alert transition-opacity" style="transition: opacity 0.3s ease">{{ message }}</li>
+                    <li class="msg {{ message.tags }} js-message-alert">{{ message }}</li>
                 {% endfor %}
             </ul>
         {% endif %}
 
+        <section class="summary-grid">
+            <article class="summary-card"><span>{% trans "Tenants" %}</span><strong>{{ dashboard_summary.total_tenants }}</strong></article>
+            <article class="summary-card"><span>{% trans "Active" %}</span><strong>{{ dashboard_summary.active_tenants }}</strong></article>
+            <article class="summary-card"><span>{% trans "Healthy" %}</span><strong>{{ dashboard_summary.healthy_tenants }}</strong></article>
+            <article class="summary-card"><span>{% trans "Need Attention" %}</span><strong>{{ dashboard_summary.need_attention }}</strong></article>
+            <article class="summary-card"><span>{% trans "Active in 7d" %}</span><strong>{{ dashboard_summary.active_recently }}</strong></article>
+            <article class="summary-card"><span>{% trans "Pending" %}</span><strong>{{ dashboard_summary.pending_registrations }}</strong></article>
+        </section>
+
+        {% if dashboard_summary.attention_rows %}
+            <section class="panel">
+                <h2>{% trans "Attention Queue" %}</h2>
+                <div class="attention-list">
+                    {% for row in dashboard_summary.attention_rows %}
+                        <article class="attention-item">
+                            <strong>{{ row.tenant.name }}</strong>
+                            <p><code>{{ row.tenant.schema_name }}</code> · {% if row.primary_domain %}{{ row.primary_domain }}{% else %}{{ row.host }}{% endif %}</p>
+                            {% if row.health_issues %}
+                                <ul class="issue-list">
+                                    {% for issue in row.health_issues %}
+                                        <li>{{ issue }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
         {% if pending_registrations %}
-        <div class="pending-panel">
-            <h2>{% trans "Pending tenant registrations" %}</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>{% trans "Company" %}</th>
-                        <th>{% trans "Schema (preview)" %}</th>
-                        <th>{% trans "Owner email" %}</th>
-                        <th>{% trans "Submitted" %}</th>
-                        <th>{% trans "Actions" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in pending_registrations %}
-                    {% trans "Reject this registration?" as reject_confirm %}
-                    <tr>
-                        <td>
-                            <strong>{{ r.company_name }}</strong>
-                            {% if r.company_full_name %}<br><span class="meta">{{ r.company_full_name }}</span>{% endif %}
-                            {% if r.company_address %}<br><span class="meta">{{ r.company_address|truncatechars:80 }}</span>{% endif %}
-                        </td>
-                        <td><code>{{ r.derived_schema_name }}</code></td>
-                        <td>{{ r.owner_email }}</td>
-                        <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            <div class="reg-actions">
-                                <form class="inline" method="post" action="{% url 'tenant_registration_approve' r.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-primary">{% trans "Approve" %}</button>
-                                </form>
-                                <form class="inline" method="post" action="{% url 'tenant_registration_reject' r.id %}" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;" onsubmit="return confirm('{{ reject_confirm|escapejs }}');">
-                                    {% csrf_token %}
-                                    <input type="text" name="rejection_reason" placeholder="{% trans 'Reason (optional)' %}" style="max-width:14rem;font-size:0.85rem;">
-                                    <button type="submit" class="btn-danger">{% trans "Reject" %}</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <p class="meta" style="margin:0.75rem 0 0;">{% trans "Approving creates the tenant schema, domain, and an OWNER user without Django admin access." %}</p>
-        </div>
-        {% endif %}
-
-        <details {% if create_form.errors %}open{% endif %}>
-            <summary>+ {% trans "Provision new tenant" %}</summary>
-            <div class="create-body">
-                {% if create_form.non_field_errors %}
-                    <div class="non-field-errors">{{ create_form.non_field_errors }}</div>
-                {% endif %}
-                <form method="post" action="{% url 'platform_admin_dashboard' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="_action" value="create_tenant">
-                    <div class="fields">
-                        <div class="field">
-                            <label for="{{ create_form.schema_name.id_for_label }}">{{ create_form.schema_name.label }}</label>
-                            {{ create_form.schema_name }}
-                            <span class="help">{{ create_form.schema_name.help_text }}</span>
-                            {% if create_form.schema_name.errors %}<ul class="errorlist">{% for e in create_form.schema_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-                        </div>
-                        <div class="field">
-                            <label for="{{ create_form.name.id_for_label }}">{{ create_form.name.label }}</label>
-                            {{ create_form.name }}
-                            {% if create_form.name.errors %}<ul class="errorlist">{% for e in create_form.name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-                        </div>
-                        <div class="field">
-                            <label for="{{ create_form.company_name.id_for_label }}">{{ create_form.company_name.label }}</label>
-                            {{ create_form.company_name }}
-                        </div>
-                        <div class="field">
-                            <label for="{{ create_form.contact_email.id_for_label }}">{{ create_form.contact_email.label }}</label>
-                            {{ create_form.contact_email }}
-                        </div>
-                        <div class="field full">
-                            <label for="{{ create_form.domain.id_for_label }}">{{ create_form.domain.label }}</label>
-                            {{ create_form.domain }}
-                            <span class="help">{{ create_form.domain.help_text }}</span>
-                            {% if create_form.domain.errors %}<ul class="errorlist">{% for e in create_form.domain.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">{% trans "Provision tenant" %}</button>
-                        <span style="font-size:0.8rem;color:var(--muted)">{% trans "Creates the PostgreSQL schema and runs migrations automatically." %}</span>
-                    </div>
-                </form>
-            </div>
-        </details>
-
-        {% if tenant_rows %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>{% trans "Tenant URL" %}</th>
-                        <th>{% trans "Schema" %}</th>
-                        <th>{% trans "Slug" %}</th>
-                        <th>{% trans "Name" %}</th>
-                        <th>{% trans "Company" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        <th>{% trans "Admin user" %}</th>
-                        <th>{% trans "Actions" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in tenant_rows %}
-                        {% with t=row.tenant %}
-                        {% blocktrans with schema=t.schema_name asvar deactivate_confirm %}Deactivate {{ schema }}?{% endblocktrans %}
-                        {% blocktrans with schema=t.schema_name asvar delete_confirm %}Permanently delete tenant "{{ schema }}"? This runs DROP SCHEMA ... CASCADE and cannot be undone.{% endblocktrans %}
-                        {% blocktrans with schema=t.schema_name asvar delete_aria %}Type schema name {{ schema }} to confirm deletion{% endblocktrans %}
+            <section class="panel">
+                <h2>{% trans "Pending Tenant Registrations" %}</h2>
+                <table>
+                    <thead>
                         <tr>
-                            <td><a href="{{ row.app_url }}/" target="_blank" rel="noopener noreferrer">{{ row.app_url }}</a></td>
-                            <td><code>{{ t.schema_name }}</code></td>
-                            <td>{{ t.slug }}</td>
-                            <td>{{ t.name }}</td>
-                            <td>{{ t.company_name|default:"—" }}</td>
-                            <td>
-                                {% if t.is_active %}
-                                    <span class="badge active">{% trans "Active" %}</span>
-                                {% else %}
-                                    <span class="badge inactive">{% trans "Inactive" %}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'tenant_create_superuser' t.schema_name %}">{% trans "Create admin user" %}</a>
-                            </td>
-                            <td>
-                                <form class="inline" method="post" action="{% url 'toggle_tenant_active' t.schema_name %}">
-                                    {% csrf_token %}
-                                    {% if t.is_active %}
-                                        <button type="submit" class="link deactivate" onclick="return confirm('{{ deactivate_confirm|escapejs }}')">{% trans "Deactivate" %}</button>
-                                    {% else %}
-                                        <button type="submit" class="link activate">{% trans "Activate" %}</button>
-                                    {% endif %}
-                                </form>
-                                <form class="inline" method="post" action="{% url 'tenant_hard_delete' t.schema_name %}" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;max-width:18rem" onsubmit="return confirm('{{ delete_confirm|escapejs }}');">
-                                    {% csrf_token %}
-                                    <input type="text" name="confirm_schema" placeholder="{{ t.schema_name }}" autocomplete="off" aria-label="{{ delete_aria }}" style="flex:1;min-width:6rem;font-size:0.8rem;padding:0.3rem 0.45rem;border:1px solid var(--border);border-radius:4px">
-                                    <button type="submit" class="btn-danger" style="padding:0.3rem 0.55rem;font-size:0.8rem;white-space:nowrap">{% trans "Delete forever" %}</button>
-                                </form>
-                            </td>
+                            <th>{% trans "Company" %}</th>
+                            <th>{% trans "Schema" %}</th>
+                            <th>{% trans "Owner" %}</th>
+                            <th>{% trans "Submitted" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
-                        {% endwith %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="empty">{% trans "No tenants yet. Use 'Provision new tenant' above to get started." %}</p>
+                    </thead>
+                    <tbody>
+                        {% for r in pending_registrations %}
+                            {% trans "Reject this registration?" as reject_confirm %}
+                            <tr>
+                                <td>
+                                    <div class="tenant-name">{{ r.company_name }}</div>
+                                    {% if r.company_full_name %}<div class="tenant-sub">{{ r.company_full_name }}</div>{% endif %}
+                                    {% if r.company_address %}<div class="tenant-sub">{{ r.company_address|truncatechars:90 }}</div>{% endif %}
+                                </td>
+                                <td><code>{{ r.derived_schema_name }}</code></td>
+                                <td>{{ r.owner_email }}</td>
+                                <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <form class="inline" method="post" action="{% url 'tenant_registration_approve' r.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn">{% trans "Approve" %}</button>
+                                        </form>
+                                        <form class="inline" method="post" action="{% url 'tenant_registration_reject' r.id %}" onsubmit="return confirm('{{ reject_confirm|escapejs }}');">
+                                            {% csrf_token %}
+                                            <input type="text" name="rejection_reason" placeholder="{% trans 'Reason (optional)' %}">
+                                            <button type="submit" class="btn-danger">{% trans "Reject" %}</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
         {% endif %}
+
+        <section class="panel">
+            <details {% if create_form.errors %}open{% endif %}>
+                <summary>{% trans "Provision New Tenant" %}</summary>
+                <div style="margin-top:1rem">
+                    {% if create_form.non_field_errors %}
+                        <div class="msg error">{{ create_form.non_field_errors }}</div>
+                    {% endif %}
+                    <form method="post" action="{% url 'platform_admin_dashboard' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="_action" value="create_tenant">
+                        <div class="fields">
+                            <div class="field">
+                                <label for="{{ create_form.schema_name.id_for_label }}">{{ create_form.schema_name.label }}</label>
+                                {{ create_form.schema_name }}
+                                {% if create_form.schema_name.help_text %}<span class="help">{{ create_form.schema_name.help_text }}</span>{% endif %}
+                                {% if create_form.schema_name.errors %}<ul class="errorlist">{% for e in create_form.schema_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                            </div>
+                            <div class="field">
+                                <label for="{{ create_form.name.id_for_label }}">{{ create_form.name.label }}</label>
+                                {{ create_form.name }}
+                                {% if create_form.name.errors %}<ul class="errorlist">{% for e in create_form.name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                            </div>
+                            <div class="field">
+                                <label for="{{ create_form.company_name.id_for_label }}">{{ create_form.company_name.label }}</label>
+                                {{ create_form.company_name }}
+                            </div>
+                            <div class="field">
+                                <label for="{{ create_form.contact_email.id_for_label }}">{{ create_form.contact_email.label }}</label>
+                                {{ create_form.contact_email }}
+                            </div>
+                            <div class="field full">
+                                <label for="{{ create_form.domain.id_for_label }}">{{ create_form.domain.label }}</label>
+                                {{ create_form.domain }}
+                                {% if create_form.domain.help_text %}<span class="help">{{ create_form.domain.help_text }}</span>{% endif %}
+                                {% if create_form.domain.errors %}<ul class="errorlist">{% for e in create_form.domain.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                            </div>
+                        </div>
+                        <div class="actions" style="margin-top:1rem">
+                            <button type="submit" class="btn">{% trans "Provision tenant" %}</button>
+                            <span class="help">{% trans "Creates the tenant schema and runs migrations automatically." %}</span>
+                        </div>
+                    </form>
+                </div>
+            </details>
+        </section>
+
+        <section class="panel">
+            <h2>{% trans "Tenant Fleet" %}</h2>
+            {% if tenant_rows %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{% trans "Tenant" %}</th>
+                            <th>{% trans "Usage" %}</th>
+                            <th>{% trans "Activity" %}</th>
+                            <th>{% trans "Health" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in tenant_rows %}
+                            {% with tenant=row.tenant %}
+                                {% blocktrans with schema=tenant.schema_name asvar deactivate_confirm %}Deactivate {{ schema }}?{% endblocktrans %}
+                                {% blocktrans with schema=tenant.schema_name asvar delete_confirm %}Permanently delete tenant "{{ schema }}"? This cannot be undone.{% endblocktrans %}
+                                <tr>
+                                    <td>
+                                        <div class="tenant-name">{{ tenant.name }}</div>
+                                        <div class="tenant-sub"><code>{{ tenant.schema_name }}</code> · {{ tenant.company_name|default:tenant.name }}</div>
+                                        <div class="tenant-sub">{% if row.primary_domain %}{{ row.primary_domain }}{% else %}{{ row.host }}{% endif %}</div>
+                                        <div class="tenant-sub">{{ tenant.contact_email|default:"—" }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="metric-grid">
+                                            <div><span>{% trans "Users" %}</span><strong>{{ row.stats.active_users }}/{{ row.stats.total_users }}</strong></div>
+                                            <div><span>{% trans "Staff" %}</span><strong>{{ row.stats.staff_users }}</strong></div>
+                                            <div><span>{% trans "Orders" %}</span><strong>{{ row.stats.total_orders }}</strong></div>
+                                            <div><span>{% trans "Animals" %}</span><strong>{{ row.stats.total_animals }}</strong></div>
+                                            <div><span>{% trans "Clients" %}</span><strong>{{ row.stats.client_profiles }}</strong></div>
+                                            <div><span>{% trans "Services" %}</span><strong>{{ row.stats.service_package_count }}</strong></div>
+                                        </div>
+                                        <div class="tenant-sub" style="margin-top:0.5rem">
+                                            {% trans "Owners" %}: {{ row.stats.owner_count }} ·
+                                            {% trans "Admins" %}: {{ row.stats.admin_count }} ·
+                                            {% trans "Managers" %}: {{ row.stats.manager_count }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="stack">
+                                            <div><strong>{% trans "Last activity" %}</strong></div>
+                                            <div>{{ row.latest_activity_at|date:"Y-m-d H:i"|default:"—" }}</div>
+                                            <div class="tenant-sub">{% trans "Recent logins (7d)" %}: {{ row.stats.recent_logins_7d }}</div>
+                                            <div class="tenant-sub">{% trans "Dashboard" %}: <a href="{{ row.dashboard_url }}" target="_blank" rel="noopener noreferrer">{{ row.dashboard_url }}</a></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ row.health_state }}">{{ row.health_label }}</span>
+                                        {% if row.health_issues %}
+                                            <ul class="issue-list">
+                                                {% for issue in row.health_issues %}
+                                                    <li>{{ issue }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="actions">
+                                            <a class="btn-secondary" href="{{ row.app_url }}/" target="_blank" rel="noopener noreferrer">{% trans "Open app" %}</a>
+                                            <a class="btn-secondary" href="{{ row.admin_url }}" target="_blank" rel="noopener noreferrer">{% trans "Django admin URL" %}</a>
+                                            {% if row.god_mode_available %}
+                                                <form class="inline" method="post" action="{% url 'tenant_impersonate' tenant.schema_name 'god_mode' %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn">{% trans "God mode" %}</button>
+                                                </form>
+                                            {% endif %}
+                                            {% if row.owner_target %}
+                                                <form class="inline" method="post" action="{% url 'tenant_impersonate' tenant.schema_name 'owner' %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn-secondary">{% trans "As owner" %}</button>
+                                                </form>
+                                            {% endif %}
+                                            {% if row.admin_target %}
+                                                <form class="inline" method="post" action="{% url 'tenant_impersonate' tenant.schema_name 'admin' %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn-secondary">{% trans "As admin" %}</button>
+                                                </form>
+                                            {% endif %}
+                                            <a class="btn-secondary" href="{% url 'tenant_create_superuser' tenant.schema_name %}">{% trans "Create admin user" %}</a>
+                                        </div>
+                                        <div class="delete-row">
+                                            <form class="inline" method="post" action="{% url 'toggle_tenant_active' tenant.schema_name %}">
+                                                {% csrf_token %}
+                                                {% if tenant.is_active %}
+                                                    <button type="submit" class="btn-link" onclick="return confirm('{{ deactivate_confirm|escapejs }}')">{% trans "Deactivate" %}</button>
+                                                {% else %}
+                                                    <button type="submit" class="btn-link">{% trans "Activate" %}</button>
+                                                {% endif %}
+                                            </form>
+                                            <form class="inline" method="post" action="{% url 'tenant_hard_delete' tenant.schema_name %}" onsubmit="return confirm('{{ delete_confirm|escapejs }}');">
+                                                {% csrf_token %}
+                                                <input type="text" name="confirm_schema" placeholder="{{ tenant.schema_name }}" autocomplete="off">
+                                                <button type="submit" class="btn-danger">{% trans "Delete forever" %}</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="meta">{% trans "No tenants yet. Provision one above to get started." %}</p>
+            {% endif %}
+        </section>
     </div>
+
     <script>
     (function () {
         var DISMISS_MS = 4000;

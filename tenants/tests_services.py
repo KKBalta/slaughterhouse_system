@@ -1,12 +1,27 @@
 from contextlib import nullcontext
 from types import SimpleNamespace
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
+from django.test import RequestFactory, override_settings
+from django.utils import timezone
 
-from tenants.models import Client, PlatformAdmin, TenantRegistrationRequest
+from core.models import ServicePackage
+from processing.models import Animal
+from reception.models import SlaughterOrder
+from tenants.dashboard_services import (
+    TenantDashboardRow,
+    TenantHealthSnapshot,
+    TenantImpersonationTarget,
+    TenantOperationalSnapshot,
+    build_platform_dashboard_summary,
+    build_tenant_dashboard_row,
+    start_platform_impersonation,
+)
+from tenants.models import Client, Domain, PlatformAdmin, PlatformImpersonationEvent, TenantRegistrationRequest
 from tenants.services import (
     allocate_unique_schema_name,
     approve_registration,
@@ -226,3 +241,144 @@ def test_reject_registration_rejects_non_pending_request():
 
     with pytest.raises(ValidationError, match="not pending"):
         reject_registration(registration, reviewer, reason="Too late")
+
+
+@override_settings(USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost", PUBLIC_TENANT_HTTP_PORT="8000")
+def test_build_tenant_dashboard_row_collects_metrics_and_targets(mocker):
+    tenant = Client.objects.create(schema_name="acme", slug="acme", name="Acme", language_code="en")
+    Domain.objects.create(domain="acme.localhost", tenant=tenant, is_primary=True)
+    service_package = ServicePackage.objects.create(name="Full service", includes_disassembly=True)
+    user_model = get_user_model()
+    owner = user_model.objects.create_user(
+        username="owner-user",
+        email="owner@example.com",
+        password="testpass123",
+        role=user_model.Role.OWNER,
+    )
+    admin = user_model.objects.create_user(
+        username="admin-user",
+        email="admin@example.com",
+        password="testpass123",
+        role=user_model.Role.ADMIN,
+        is_staff=True,
+        is_superuser=True,
+    )
+    user_model.objects.create_user(
+        username="client-user",
+        email="client@example.com",
+        password="testpass123",
+        role=user_model.Role.CLIENT,
+    )
+    order = SlaughterOrder.objects.create(client_name="Walk In", service_package=service_package)
+    Animal.objects.create(slaughter_order=order, animal_type="cattle", identification_tag="ACME-001")
+    mocker.patch("tenants.dashboard_services.tenant_context", return_value=nullcontext())
+
+    row = build_tenant_dashboard_row(tenant)
+
+    assert row.primary_domain == "acme.localhost"
+    assert row.dashboard_url == "http://acme.localhost:8000/en/dashboard/"
+    assert row.stats.active_users == 3
+    assert row.stats.total_orders == 1
+    assert row.stats.total_animals == 1
+    assert row.stats.service_package_count == 1
+    assert row.health.tone == "healthy"
+    assert row.owner_target.username == owner.username
+    assert row.admin_target.username == admin.username
+    assert row.god_mode_target.username == admin.username
+
+
+@override_settings(
+    USE_MULTITENANT=True,
+    TENANT_BASE_DOMAIN="localhost",
+    PUBLIC_TENANT_HTTP_PORT="8000",
+    ALLOWED_HOSTS=["public.localhost", ".localhost", "localhost", "testserver"],
+)
+def test_start_platform_impersonation_creates_public_event_and_redirects(mocker):
+    tenant = Client.objects.create(schema_name="acme", slug="acme", name="Acme", language_code="en")
+    platform_admin = PlatformAdmin.objects.create(email="platform@example.com", name="Platform Admin")
+    request = RequestFactory().post(
+        "/platform-admin/tenants/acme/impersonate/god_mode/",
+        HTTP_HOST="public.localhost:8000",
+    )
+    target = TenantImpersonationTarget(
+        mode="god_mode",
+        label="God mode",
+        user_id=77,
+        username="god-user",
+        email="god@example.com",
+        role="ADMIN",
+        is_superuser=True,
+    )
+    cache_set = mocker.patch("users.views._bootstrap_token_cache_set")
+    mocker.patch("tenants.dashboard_services.get_impersonation_target_for_mode", return_value=target)
+    mocker.patch("secrets.token_urlsafe", return_value="bootstrap-token")
+    mocker.patch("tenants.dashboard_services.schema_context", return_value=nullcontext())
+
+    response = start_platform_impersonation(
+        request,
+        tenant=tenant,
+        platform_admin=platform_admin,
+        mode="god_mode",
+    )
+
+    event = PlatformImpersonationEvent.objects.get()
+    parsed = urlsplit(response["Location"])
+    params = parse_qs(parsed.query)
+
+    assert response.status_code == 302
+    assert parsed.netloc == "acme.localhost:8000"
+    assert parsed.path == "/api/v1/auth/session-bootstrap/"
+    assert params["token"] == ["bootstrap-token"]
+    assert params["next"] == ["http://acme.localhost:8000/en/dashboard/"]
+    assert event.platform_admin == platform_admin
+    assert event.tenant == tenant
+    assert event.target_user_id == 77
+    assert event.mode == PlatformImpersonationEvent.Mode.GOD_MODE
+    cache_set.assert_called_once()
+
+
+def test_build_platform_dashboard_summary_aggregates_metrics():
+    tenant_active = SimpleNamespace(is_active=True)
+    tenant_inactive = SimpleNamespace(is_active=False)
+    recent = timezone.now()
+    healthy_row = TenantDashboardRow(
+        tenant=tenant_active,
+        app_url="http://acme.localhost:8000",
+        dashboard_url="http://acme.localhost:8000/en/dashboard/",
+        web_url="http://acme.localhost:3000",
+        admin_url="http://acme.localhost:8000/admin/",
+        primary_domain="acme.localhost",
+        domain_count=1,
+        stats=TenantOperationalSnapshot(active_users=3, recent_orders_7d=2, recent_animals_7d=5, latest_activity_at=recent),
+        health=TenantHealthSnapshot(tone="healthy", label="Healthy"),
+        owner_target=None,
+        admin_target=None,
+        god_mode_target=None,
+    )
+    attention_row = TenantDashboardRow(
+        tenant=tenant_inactive,
+        app_url="http://bravo.localhost:8000",
+        dashboard_url="http://bravo.localhost:8000/en/dashboard/",
+        web_url="http://bravo.localhost:3000",
+        admin_url="http://bravo.localhost:8000/admin/",
+        primary_domain="",
+        domain_count=0,
+        stats=TenantOperationalSnapshot(active_users=1, recent_orders_7d=1, recent_animals_7d=2, latest_activity_at=None),
+        health=TenantHealthSnapshot(tone="inactive", label="Inactive"),
+        owner_target=None,
+        admin_target=None,
+        god_mode_target=None,
+        attention_flags=("Tenant is deactivated.",),
+    )
+
+    summary = build_platform_dashboard_summary(tenant_rows=[healthy_row, attention_row], pending_registrations=4)
+
+    assert summary.total_tenants == 2
+    assert summary.active_tenants == 1
+    assert summary.inactive_tenants == 1
+    assert summary.pending_registrations == 4
+    assert summary.recent_activity_tenants == 1
+    assert summary.total_active_users == 4
+    assert summary.total_orders_7d == 3
+    assert summary.total_animals_7d == 7
+    assert len(summary.attention_queue) == 1

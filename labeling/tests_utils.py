@@ -2,6 +2,8 @@
 Tests for labeling.utils: pure helpers and label data/PRN generation.
 """
 
+from types import SimpleNamespace
+
 import pytest
 from django.test import override_settings
 from django.utils import timezone
@@ -94,6 +96,13 @@ class TestGetPrinterCompatibilityMode:
         # When PRINTER_TURKISH_MODE is not set, getattr returns "unicode"
         mode = get_printer_compatibility_mode()
         assert mode in ("unicode", "ascii", "codepage1254")
+
+    def test_multitenant_prefers_current_tenant_mode(self, monkeypatch):
+        tenant = SimpleNamespace(printer_turkish_mode="ascii")
+        monkeypatch.setattr("labeling.utils._get_label_tenant", lambda: tenant)
+
+        with override_settings(USE_MULTITENANT=True, PRINTER_TURKISH_MODE="unicode"):
+            assert get_printer_compatibility_mode() == "ascii"
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +202,26 @@ class TestGetCompanyInfo:
             info = get_company_info()
             assert info["company_name"] == "Acme"
             assert info["license_no"] == "99-9999"
+
+    def test_multitenant_uses_current_tenant(self, monkeypatch):
+        tenant = SimpleNamespace(
+            company_name="Tenant Co",
+            company_full_name="Tenant Company Ltd",
+            company_address="Tenant Street",
+            license_no="55-5555",
+            operation_no="445566",
+            printer_turkish_mode="unicode",
+        )
+        monkeypatch.setattr("labeling.utils._get_label_tenant", lambda: tenant)
+
+        with override_settings(USE_MULTITENANT=True):
+            info = get_company_info()
+
+        assert info["company_name"] == "Tenant Co"
+        assert info["company_full_name"] == "Tenant Company Ltd"
+        assert info["company_address"] == "Tenant Street"
+        assert info["license_no"] == "55-5555"
+        assert info["operation_no"] == "445566"
 
 
 # ---------------------------------------------------------------------------

@@ -49,8 +49,25 @@ class _FakeDomains:
 
 
 def test_tenant_context_returns_tenant_or_none():
-    assert tenant_context(SimpleNamespace(tenant="tenant-a")) == {"tenant": "tenant-a"}
-    assert tenant_context(SimpleNamespace()) == {"tenant": None}
+    assert tenant_context(SimpleNamespace(tenant="tenant-a", session={})) == {
+        "tenant": "tenant-a",
+        "platform_impersonation": None,
+    }
+    state = tenant_context(
+        SimpleNamespace(
+            tenant=None,
+            session={
+                "platform_impersonation": {
+                    "event_id": "evt-1",
+                    "platform_admin_email": "platform@example.com",
+                    "return_url": "http://localhost:8000/platform-admin/",
+                }
+            },
+        )
+    )
+    assert state["tenant"] is None
+    assert state["platform_impersonation"]["event_id"] == "evt-1"
+    assert state["platform_impersonation"]["stop_url"].endswith("/impersonation/stop/")
 
 
 def test_get_tenant_site_url_returns_fallback_when_multitenant_disabled(settings):

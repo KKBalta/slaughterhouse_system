@@ -1,0 +1,23 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% trans "Impersonation error" %}</title>
+    <style>
+        body { margin: 0; padding: 2rem; font-family: system-ui, sans-serif; background: #f7f7f7; color: #172126; }
+        .card { max-width: 36rem; margin: 8vh auto 0; background: #fff; border: 1px solid #d5dde3; border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 24px rgba(23, 33, 38, 0.06); }
+        h1 { margin: 0 0 0.75rem; font-size: 1.4rem; }
+        p { margin: 0 0 1rem; line-height: 1.5; }
+        a { display: inline-flex; align-items: center; justify-content: center; padding: 0.65rem 1rem; border-radius: 999px; background: #004e64; color: #fff; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{% trans "Impersonation could not be started" %}</h1>
+        <p>{{ error_detail }}</p>
+        <a href="{{ return_url }}">{% trans "Return to platform admin" %}</a>
+    </div>
+</body>
+</html>

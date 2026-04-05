@@ -280,16 +280,25 @@ def format_turkish_text_for_printer(text: str, compatibility_mode: str = "unicod
     return text
 
 
+def _get_label_tenant():
+    """
+    Resolve the current tenant row used for labels.
+    """
+    if not getattr(settings, "USE_MULTITENANT", False):
+        return None
+
+    from tenants.email_index import get_client_tenant_from_connection
+
+    return get_client_tenant_from_connection()
+
+
 def get_printer_compatibility_mode() -> str:
     """
     Prefer tenant printer mode when in a tenant schema; otherwise global settings.
     """
-    if getattr(settings, "USE_MULTITENANT", False):
-        from django.db import connection
-
-        tenant = getattr(connection, "tenant", None)
-        if tenant is not None and getattr(tenant, "printer_turkish_mode", None):
-            return tenant.printer_turkish_mode
+    tenant = _get_label_tenant()
+    if tenant is not None and getattr(tenant, "printer_turkish_mode", None):
+        return tenant.printer_turkish_mode
     return getattr(settings, "PRINTER_TURKISH_MODE", "unicode")
 
 
@@ -1148,7 +1157,8 @@ def generate_pdf_label_from_data(label_data: dict) -> BytesIO:
     y_position -= line_height
 
     c.drawString(50, y_position, f"TUCCAR ADI: {label_data.get('tuccar', '')}")
-    y_position -= line_height * 2
+    c.drawString(50, y_position, f"ISLETME ONAY NO: {company_info['license_no']}")
+    y_position -= line_height * 3
 
     # Slaughter information
     c.drawString(50, y_position, f"KESIM TARIHI: {label_data.get('kesim_tarihi', '')}")
@@ -1170,8 +1180,7 @@ def generate_pdf_label_from_data(label_data: dict) -> BytesIO:
     c.drawString(50, y_position, f"SAKATAT: {label_data.get('sakatat_status', '0.51')}")
     y_position -= line_height
 
-    c.drawString(50, y_position, f"ISLETME ONAY NO: {company_info['license_no']}")
-    y_position -= line_height * 3
+    y_position -= line_height * 2
 
     # Generate QR code if qr_data is provided
     qr_data = label_data.get("qr_data", "")
@@ -1853,19 +1862,19 @@ def get_company_info() -> dict:
     settings overrides (no legacy hardcoded client defaults).
     """
     compat_mode = get_printer_compatibility_mode()
-    if getattr(settings, "USE_MULTITENANT", False):
-        from django.db import connection
-        from django_tenants.utils import get_public_schema_name
-
-        tenant = getattr(connection, "tenant", None)
-        if tenant is not None and tenant.schema_name != get_public_schema_name():
-            return {
-                "company_name": format_turkish_text_for_printer(tenant.company_name or "", compat_mode),
-                "company_full_name": format_turkish_text_for_printer(tenant.company_full_name or "", compat_mode),
-                "company_address": format_turkish_text_for_printer(tenant.company_address or "", compat_mode),
-                "license_no": tenant.license_no or "",
-                "operation_no": tenant.operation_no or "",
-            }
+    tenant = _get_label_tenant()
+    if tenant is not None:
+        return {
+            "company_name": format_turkish_text_for_printer(getattr(tenant, "company_name", "") or "", compat_mode),
+            "company_full_name": format_turkish_text_for_printer(
+                getattr(tenant, "company_full_name", "") or "", compat_mode
+            ),
+            "company_address": format_turkish_text_for_printer(
+                getattr(tenant, "company_address", "") or "", compat_mode
+            ),
+            "license_no": getattr(tenant, "license_no", "") or "",
+            "operation_no": getattr(tenant, "operation_no", "") or "",
+        }
     return {
         "company_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_NAME", ""), compat_mode),
         "company_full_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_FULL_NAME", ""), compat_mode),

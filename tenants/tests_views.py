@@ -16,6 +16,7 @@ from tenants.views import (
     tenant_company_settings_view,
     tenant_create_superuser,
     tenant_hard_delete,
+    tenant_impersonate,
     tenant_registration_approve,
     tenant_registration_reject,
     toggle_tenant_active,
@@ -106,6 +107,7 @@ def test_platform_admin_login_redirects_authenticated_platform_admin(platform_ad
 )
 def test_platform_admin_dashboard_renders_tenants_and_pending_registrations(platform_admin, mocker):
     tenant = Client.objects.create(schema_name="acme", name="Acme")
+    Domain.objects.create(domain="acme.localhost", tenant=tenant, is_primary=True)
     pending = TenantRegistrationRequest.objects.create(
         company_name="Pending Co",
         derived_schema_name="pending-co",
@@ -113,6 +115,19 @@ def test_platform_admin_dashboard_renders_tenants_and_pending_registrations(plat
         owner_password_hash="hashed-password",
     )
     captured = _capture_render(mocker)
+    row = type(
+        "TenantRow",
+        (),
+        {
+            "tenant": tenant,
+            "app_url": "http://acme.localhost:8000",
+            "stats": type("Stats", (), {"active_users": 2, "recent_orders_7d": 1, "recent_animals_7d": 3, "latest_activity_at": None})(),
+            "health": type("Health", (), {"tone": "healthy"})(),
+        },
+    )()
+    summary = type("Summary", (), {"total_tenants": 1, "pending_registrations": 1})()
+    mocker.patch("tenants.views.build_tenant_dashboard_row", return_value=row)
+    mocker.patch("tenants.views.build_platform_dashboard_summary", return_value=summary)
     request = _request("get", "/platform-admin/", platform_admin)
 
     response = platform_admin_dashboard(request)
@@ -122,8 +137,9 @@ def test_platform_admin_dashboard_renders_tenants_and_pending_registrations(plat
     assert list(captured["context"]["pending_registrations"]) == [pending]
     tenant_rows = captured["context"]["tenant_rows"]
     assert len(tenant_rows) == 1
-    assert tenant_rows[0]["tenant"] == tenant
-    assert tenant_rows[0]["app_url"] == "http://acme.localhost:8000"
+    assert tenant_rows[0].tenant == tenant
+    assert tenant_rows[0].app_url == "http://acme.localhost:8000"
+    assert captured["context"]["dashboard_summary"] == summary
 
 
 @override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
@@ -369,6 +385,26 @@ def test_toggle_tenant_active_flips_state(platform_admin, mocker):
     assert response.status_code == 302
     assert response.url == reverse("platform_admin_dashboard")
     assert tenant.is_active is False
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_redirects_to_bootstrap(platform_admin, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    redirect_response = HttpResponse(status=302)
+    redirect_response["Location"] = "http://acme.localhost:8000/api/v1/auth/session-bootstrap/?token=test"
+    mock_start = mocker.patch("tenants.views.start_platform_impersonation", return_value=redirect_response)
+    request = _request("post", "/platform-admin/tenants/acme/impersonate/god_mode/", platform_admin)
+
+    response = tenant_impersonate(request, tenant.schema_name, "god_mode")
+
+    assert response.status_code == 302
+    assert response["Location"].startswith("http://acme.localhost:8000/api/v1/auth/session-bootstrap/")
+    mock_start.assert_called_once_with(
+        request,
+        tenant=tenant,
+        platform_admin=platform_admin,
+        mode="god_mode",
+    )
 
 
 @override_settings(USE_MULTITENANT=False)

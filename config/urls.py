@@ -5,6 +5,8 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
+from tenants.views import platform_admin_impersonation_consume, platform_admin_impersonation_stop
+
 # Non-translatable URLs (admin, API endpoints, etc.)
 urlpatterns = [
     # Redirect root favicon requests to static favicon (browsers request these automatically)
@@ -25,6 +27,16 @@ urlpatterns = [
     path(
         "api/v1/tenant-registration/", include("tenants.api_urls")
     ),  # Public tenant signup (same routes as urls_public)
+    path(
+        "platform-admin/impersonate/consume/",
+        platform_admin_impersonation_consume,
+        name="platform_admin_impersonation_consume",
+    ),
+    path(
+        "platform-admin/impersonate/stop/",
+        platform_admin_impersonation_stop,
+        name="platform_admin_impersonation_stop",
+    ),
 ]
 
 # Translatable URLs

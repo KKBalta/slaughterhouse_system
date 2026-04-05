@@ -250,3 +250,90 @@ class PlatformAdmin(AbstractBaseUser):
 
     def __str__(self) -> str:
         return f"{self.name} <{self.email}>"
+
+
+class PlatformImpersonationSession(models.Model):
+    class Destination(models.TextChoices):
+        DASHBOARD = "dashboard", "Dashboard"
+        DJANGO_ADMIN = "django_admin", "Django admin"
+
+    platform_admin = models.ForeignKey(
+        "tenants.PlatformAdmin",
+        on_delete=models.CASCADE,
+        related_name="impersonation_sessions",
+    )
+    tenant = models.ForeignKey(
+        "tenants.Client",
+        on_delete=models.CASCADE,
+        related_name="platform_impersonation_sessions",
+    )
+    target_user_id = models.PositiveIntegerField()
+    target_username = models.CharField(max_length=150)
+    target_email = models.EmailField(blank=True)
+    target_role = models.CharField(max_length=50, blank=True)
+    token_hash = models.CharField(max_length=64, unique=True)
+    destination = models.CharField(
+        max_length=32,
+        choices=Destination.choices,
+        default=Destination.DASHBOARD,
+    )
+    created_from_ip = models.CharField(max_length=64, blank=True)
+    consumed_host = models.CharField(max_length=255, blank=True)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    stopped_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tenants_platform_impersonation_session"
+        indexes = [
+            models.Index(fields=["tenant", "created_at"]),
+            models.Index(fields=["platform_admin", "created_at"]),
+            models.Index(fields=["expires_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.tenant.schema_name}:{self.target_username} by {self.platform_admin.email}"
+
+
+class PlatformImpersonationEvent(models.Model):
+    class Mode(models.TextChoices):
+        OWNER = "owner", "Owner"
+        ADMIN = "admin", "Admin"
+        GOD_MODE = "god_mode", "God mode"
+
+    class EndReason(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        EXPIRED = "expired", "Expired"
+        LOGOUT = "logout", "Logout"
+
+    platform_admin = models.ForeignKey(
+        PlatformAdmin,
+        on_delete=models.CASCADE,
+        related_name="impersonation_events",
+    )
+    tenant = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name="impersonation_events",
+    )
+    mode = models.CharField(max_length=32, choices=Mode.choices, default=Mode.GOD_MODE)
+    target_user_id = models.PositiveIntegerField()
+    target_username = models.CharField(max_length=150)
+    target_email = models.EmailField(blank=True)
+    target_role = models.CharField(max_length=50, blank=True)
+    target_is_superuser = models.BooleanField(default=False)
+    issued_at = models.DateTimeField(auto_now_add=True)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    ended_reason = models.CharField(max_length=32, blank=True, default="")
+
+    class Meta:
+        db_table = "tenants_platform_impersonation_event"
+        indexes = [
+            models.Index(fields=["tenant", "issued_at"]),
+            models.Index(fields=["platform_admin", "issued_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.platform_admin.email} -> {self.tenant.schema_name}:{self.target_username}"
