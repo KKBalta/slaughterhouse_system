@@ -100,8 +100,8 @@ celerybeat.pid
 .env.production
 .env.local
 .env.*.local
-env.yaml
-env.staging.yaml
+# Tracked config uses .yml (e.g. docker-compose.yml, CI); local/env YAML stays untracked
+*.yaml
 .venv
 # Virtualenv named "env" at repo root only — do not use plain "env/" (would hide env/examples/)
 /env/
@@ -143,8 +143,6 @@ Thumbs.db
 # Local DB exports (see db_exports/README.md)
 db_exports/*
 !db_exports/README.md
-/prod.dump
-/prod.sql
 staticfiles/
 staticfiles_test/
 media/
@@ -174,5 +172,10 @@ docs/plu_clean.txt
 docs/mermaid.txt
 docs/logo.txt
 
-# Local SQL backups
+# Local SQL backups & dumps
 sql_backup/
+backups/
+/*.sql
+*.sql.gz
+*.sql.gz.part
+*.dump
