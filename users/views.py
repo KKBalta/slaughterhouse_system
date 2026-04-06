@@ -14,6 +14,22 @@ _SESSION_BOOTSTRAP_PREFIX = "session_bootstrap:"
 _SESSION_BOOTSTRAP_TTL = 120
 _PLATFORM_IMPERSONATION_SESSION_KEY = "platform_impersonation"
 
+# Rate-limit constants for tenant discovery endpoint.
+_DISCOVERY_RATE_IP_PREFIX = "disc_ip:"
+_DISCOVERY_RATE_IP_LIMIT = 20  # max requests per window
+_DISCOVERY_RATE_IP_WINDOW = 60  # seconds
+_DISCOVERY_RATE_ID_PREFIX = "disc_id:"
+_DISCOVERY_RATE_ID_LIMIT = 5  # max requests per identifier per window
+_DISCOVERY_RATE_ID_WINDOW = 300  # seconds — matches cache TTL
+
+# Rate-limit constants for tenant discovery endpoint.
+_DISCOVERY_RATE_IP_PREFIX = "disc_ip:"
+_DISCOVERY_RATE_IP_LIMIT = 20  # max requests per window
+_DISCOVERY_RATE_IP_WINDOW = 60  # seconds
+_DISCOVERY_RATE_ID_PREFIX = "disc_id:"
+_DISCOVERY_RATE_ID_LIMIT = 5  # max requests per identifier per window
+_DISCOVERY_RATE_ID_WINDOW = 300  # seconds — matches cache TTL
+
 
 def _bootstrap_token_cache_set(*, token: str, payload: dict) -> None:
     """
@@ -147,6 +163,7 @@ from .policies import (
     can_manage_company_settings,
     can_manage_tenant_users,
     creatable_roles_for,
+    visible_user_management_roles_for,
 )
 from .services import (
     activate_client_profile,
@@ -649,6 +666,41 @@ def session_me_api(request):
     )
 
 
+def _discovery_client_ip(request) -> str:
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+def _discovery_rate_limited(request, identifier: str) -> bool:
+    """Two-tier rate limiting: per-IP and per-identifier.
+
+    Returns True if either limit is exceeded. Fail-open when Redis is down.
+    """
+    from tenants.redis_support import atomic_rate_incr
+
+    ip = _discovery_client_ip(request)
+
+    # Tier 1: per-IP — stops brute-force enumeration from a single source
+    ip_count = atomic_rate_incr(
+        f"{_DISCOVERY_RATE_IP_PREFIX}{ip}",
+        _DISCOVERY_RATE_IP_WINDOW,
+    )
+    if ip_count and ip_count > _DISCOVERY_RATE_IP_LIMIT:
+        return True
+
+    # Tier 2: per-identifier — stops targeted abuse even from rotating IPs
+    id_count = atomic_rate_incr(
+        f"{_DISCOVERY_RATE_ID_PREFIX}{identifier}",
+        _DISCOVERY_RATE_ID_WINDOW,
+    )
+    if id_count and id_count > _DISCOVERY_RATE_ID_LIMIT:
+        return True
+
+    return False
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def discover_tenants_api(request):
@@ -659,7 +711,8 @@ def discover_tenants_api(request):
 
     CSRF is exempt here so cross-origin SPAs can POST without a prior csrftoken
     cookie (browser + CORS often block that bootstrap). Risk is limited (no
-    session); add rate limiting in production. Login/logout remain CSRF-protected.
+    session); rate-limited per-IP and per-identifier. Login/logout remain
+    CSRF-protected.
     """
     if not getattr(settings, "USE_MULTITENANT", False):
         return JsonResponse({"detail": "Tenant discovery is only available in multi-tenant mode."}, status=400)
@@ -686,6 +739,10 @@ def discover_tenants_api(request):
     phone = normalize_login_phone(payload.get("phone") or payload.get("phone_number"))
     if not email and not phone:
         return JsonResponse({"tenants": []})
+
+    identifier = email or phone
+    if _discovery_rate_limited(request, identifier):
+        return JsonResponse({"detail": "Too many requests. Please try again later."}, status=429)
 
     from django.core.cache import cache
     from django_tenants.utils import get_public_schema_name, schema_context
@@ -831,10 +888,8 @@ def _redirect_next_or(request, default_name: str, **kwargs):
 
 
 def _user_management_queryset_for(actor):
-    qs = User.objects.select_related("client_profile").order_by("username")
-    if not can_manage_tenant_users(actor):
-        qs = qs.filter(role__in=CLIENT_MANAGEMENT_ROLES)
-    return qs
+    visible_roles = visible_user_management_roles_for(actor)
+    return User.objects.select_related("client_profile").filter(role__in=visible_roles).order_by("username")
 
 
 def _account_type_label(account_type: str) -> str:
@@ -1145,18 +1200,7 @@ def tenant_user_list_view(request):
     role_filter = (request.GET.get("role") or "all").strip().upper()
 
     base_qs = _user_management_queryset_for(request.user)
-    allowed_roles = (
-        [User.Role.CLIENT, User.Role.WALKIN]
-        if not can_manage_tenant_users(request.user)
-        else [
-            User.Role.OWNER,
-            User.Role.ADMIN,
-            User.Role.MANAGER,
-            User.Role.OPERATOR,
-            User.Role.CLIENT,
-            User.Role.WALKIN,
-        ]
-    )
+    allowed_roles = list(visible_user_management_roles_for(request.user))
     if role_filter != "ALL" and role_filter not in allowed_roles:
         role_filter = "ALL"
     if status not in {"all", "active", "inactive"}:

@@ -1,5 +1,4 @@
-const CLOUD_RUN_HOST = "carnitrack-app-staging-1000671720976.europe-west1.run.app";
-
+const CLOUD_RUN_HOST = "carnitrack-app-1000671720976.europe-west1.run.app";
 export default {
   async fetch(request) {
     const url = new URL(request.url);

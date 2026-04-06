@@ -3,6 +3,7 @@
 import json
 from contextlib import nullcontext
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import django_tenants.utils as tenant_utils
 import pytest
@@ -251,3 +252,246 @@ def test_discover_tenants_without_identifier_returns_empty_list(monkeypatch):
 
     assert response.status_code == 200
     assert _json_body(response) == {"tenants": []}
+
+
+# ---------------------------------------------------------------------------
+# Rate-limiting tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_returns_429_when_ip_rate_limit_exceeded(monkeypatch):
+    """Tier 1: per-IP rate limit returns 429."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    manager = _FakeMembershipManager([])
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    call_count = 0
+
+    def fake_rate_incr(key, window):
+        nonlocal call_count
+        call_count += 1
+        # First call is IP check — return over limit
+        if call_count == 1:
+            return user_views._DISCOVERY_RATE_IP_LIMIT + 1
+        return 1
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "user@example.com"}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 429
+    body = _json_body(response)
+    assert "Too many requests" in body["detail"]
+    # DB should never be hit
+    assert len(manager.calls) == 0
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_returns_429_when_identifier_rate_limit_exceeded(monkeypatch):
+    """Tier 2: per-identifier rate limit returns 429."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    manager = _FakeMembershipManager([])
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    call_count = 0
+
+    def fake_rate_incr(key, window):
+        nonlocal call_count
+        call_count += 1
+        # First call is IP check — under limit
+        if call_count == 1:
+            return 1
+        # Second call is identifier check — over limit
+        return user_views._DISCOVERY_RATE_ID_LIMIT + 1
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"phone": "+905551234567"}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 429
+    assert len(manager.calls) == 0
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_passes_when_under_rate_limits(monkeypatch):
+    """Requests under both limits proceed normally."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    fake_tenant = _fake_tenant()
+    memberships = [SimpleNamespace(tenant=fake_tenant, role=User.Role.CLIENT)]
+    manager = _FakeMembershipManager(memberships)
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    def fake_rate_incr(key, window):
+        return 1  # always under limit
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "user@example.com"}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 200
+    body = _json_body(response)
+    assert len(body["tenants"]) == 1
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_rate_limit_fail_open_when_redis_down(monkeypatch):
+    """When atomic_rate_incr returns 0 (Redis down), requests pass through."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    fake_tenant = _fake_tenant()
+    memberships = [SimpleNamespace(tenant=fake_tenant, role=User.Role.CLIENT)]
+    manager = _FakeMembershipManager(memberships)
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    def fake_rate_incr(key, window):
+        return 0  # Redis unreachable
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "user@example.com"}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 200
+    body = _json_body(response)
+    assert len(body["tenants"]) == 1
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_no_rate_limit_without_identifier(monkeypatch):
+    """Requests without email/phone skip rate limiting entirely."""
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    rate_calls = []
+
+    def fake_rate_incr(key, window):
+        rate_calls.append(key)
+        return 1
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({}),
+        content_type="application/json",
+    )
+
+    response = user_views.discover_tenants_api(request)
+
+    assert response.status_code == 200
+    assert _json_body(response) == {"tenants": []}
+    assert len(rate_calls) == 0
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_rate_limit_uses_correct_keys(monkeypatch):
+    """Verify the IP and identifier keys passed to atomic_rate_incr."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    manager = _FakeMembershipManager([])
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    rate_calls = []
+
+    def fake_rate_incr(key, window):
+        rate_calls.append((key, window))
+        return 1
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "Test@Example.COM"}),
+        content_type="application/json",
+    )
+    request.META["REMOTE_ADDR"] = "192.168.1.42"
+
+    user_views.discover_tenants_api(request)
+
+    assert len(rate_calls) == 2
+    ip_key, ip_window = rate_calls[0]
+    id_key, id_window = rate_calls[1]
+    assert ip_key == "disc_ip:192.168.1.42"
+    assert ip_window == 60
+    assert id_key == "disc_id:test@example.com"  # normalized
+    assert id_window == 300
+
+
+@pytest.mark.django_db
+@override_settings(USE_MULTITENANT=True, ALLOWED_HOSTS=["testserver"])
+def test_discover_tenants_rate_limit_uses_xff_header(monkeypatch):
+    """X-Forwarded-For header is used for IP extraction."""
+    import tenants.models as tenant_models
+
+    cache.clear()
+    _patch_discovery_context(monkeypatch)
+
+    manager = _FakeMembershipManager([])
+    monkeypatch.setattr(tenant_models, "EmailTenantMembership", SimpleNamespace(objects=manager))
+
+    rate_calls = []
+
+    def fake_rate_incr(key, window):
+        rate_calls.append(key)
+        return 1
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", fake_rate_incr)
+
+    request = RequestFactory().post(
+        "/api/v1/auth/discover-tenants/",
+        data=json.dumps({"email": "a@b.com"}),
+        content_type="application/json",
+        HTTP_X_FORWARDED_FOR="10.0.0.1, 10.0.0.2",
+    )
+
+    user_views.discover_tenants_api(request)
+
+    assert rate_calls[0] == "disc_ip:10.0.0.1"

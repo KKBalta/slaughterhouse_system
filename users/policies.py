@@ -7,6 +7,23 @@ CLIENT_ACCOUNT_MANAGER_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User
 TENANT_SETTINGS_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN})
 OPERATIONAL_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR})
 STAFF_MANAGED_ROLES = frozenset({User.Role.ADMIN, User.Role.OWNER, User.Role.MANAGER, User.Role.OPERATOR})
+FULL_USER_MANAGEMENT_VISIBLE_ROLES = (
+    User.Role.OWNER,
+    User.Role.ADMIN,
+    User.Role.MANAGER,
+    User.Role.OPERATOR,
+    User.Role.CLIENT,
+    User.Role.WALKIN,
+)
+MANAGER_USER_MANAGEMENT_VISIBLE_ROLES = (
+    User.Role.OPERATOR,
+    User.Role.CLIENT,
+    User.Role.WALKIN,
+)
+CLIENT_USER_MANAGEMENT_VISIBLE_ROLES = (
+    User.Role.CLIENT,
+    User.Role.WALKIN,
+)
 OWNER_CREATABLE_TENANT_ROLES = (User.Role.MANAGER, User.Role.OPERATOR, User.Role.CLIENT)
 ADMIN_CREATABLE_TENANT_ROLES = (
     User.Role.OWNER,
@@ -45,6 +62,17 @@ def can_manage_company_settings(user) -> bool:
 
 def can_access_reception(user) -> bool:
     return _role_of(user) in OPERATIONAL_ROLES
+
+
+def visible_user_management_roles_for(user) -> tuple[str, ...]:
+    actor_role = _role_of(user)
+    if actor_role in TENANT_USER_MANAGER_ROLES:
+        return FULL_USER_MANAGEMENT_VISIBLE_ROLES
+    if actor_role == User.Role.MANAGER:
+        return MANAGER_USER_MANAGEMENT_VISIBLE_ROLES
+    if can_manage_client_accounts(user):
+        return CLIENT_USER_MANAGEMENT_VISIBLE_ROLES
+    return ()
 
 
 def can_create_role(actor, role: str) -> bool:

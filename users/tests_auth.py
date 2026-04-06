@@ -1040,12 +1040,50 @@ class TestTenantUserManagement:
             "Walk-in prospects should appear under Client accounts, not the main user table"
         )
 
+    def test_manager_user_list_includes_operator_rows_but_not_admin_rows(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.get(reverse("tenant_user_list"))
+
+        assert response.status_code == 200
+        rows = response.context["user_rows"]
+        roles = {row["user"].role for row in rows}
+        assert User.Role.OPERATOR in roles
+        assert User.Role.CLIENT in roles
+        assert User.Role.ADMIN not in roles
+        assert User.Role.OWNER not in roles
+        operator_row = next(row for row in rows if row["user"].pk == auth_state.operator_user.pk)
+        assert operator_row["edit_url"] == reverse("tenant_user_edit", kwargs={"pk": auth_state.operator_user.pk})
+
     def test_owner_cannot_edit_admin_user(self, client, auth_state):
         client.login(username=auth_state.owner_user.username, password="SecurePass123!")
 
         response = client.get(reverse("tenant_user_edit", kwargs={"pk": auth_state.admin_user.pk}))
 
         assert response.status_code == 403
+
+    def test_manager_can_edit_operator(self, client, auth_state):
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_edit", kwargs={"pk": auth_state.operator_user.pk}),
+            {
+                "role": User.Role.OPERATOR,
+                "username": "edited-operator",
+                "email": "edited-operator@example.com",
+                "phone_area_code": "+1",
+                "phone_number": "5551112233",
+                "new_password1": "",
+                "new_password2": "",
+                "is_active": "on",
+            },
+        )
+
+        assert response.status_code == 302
+        auth_state.operator_user.refresh_from_db()
+        assert auth_state.operator_user.username == "edited-operator"
+        assert auth_state.operator_user.email == "edited-operator@example.com"
+        assert auth_state.operator_user.phone_number == "+15551112233"
 
     def test_manager_can_edit_client_account_and_phone_syncs(self, client, auth_state):
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")

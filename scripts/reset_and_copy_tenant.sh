@@ -14,8 +14,9 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-# Load env to get DB connection details
+# Load env for shell commands AND for manage.py (DOTENV_FILE)
 set -a; . "$ENV_FILE"; set +a
+export DOTENV_FILE="$ENV_FILE"
 
 echo "==> Dropping schema '$SCHEMA' if it exists..."
 PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" \

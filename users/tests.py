@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 
 from .models import ClientProfile
-from .policies import can_create_role, can_edit_user, creatable_roles_for
+from .policies import can_create_role, can_edit_user, creatable_roles_for, visible_user_management_roles_for
 
 User = get_user_model()
 
@@ -105,3 +105,20 @@ def test_owner_cannot_edit_admin_user():
     admin = User.objects.create_user(username="admin-user", password="password123", role=User.Role.ADMIN)
 
     assert can_edit_user(owner, admin) is False
+
+
+def test_manager_user_list_visibility_is_limited_to_operator_and_client_roles():
+    manager = User.objects.create_user(username="manager-user", password="password123", role=User.Role.MANAGER)
+    operator = User.objects.create_user(username="operator-user", password="password123", role=User.Role.OPERATOR)
+    client = User.objects.create_user(username="client-user", password="password123", role=User.Role.CLIENT)
+    walkin = User.objects.create_user(username="walkin-user", password="password123", role=User.Role.WALKIN)
+    owner = User.objects.create_user(username="owner-user-2", password="password123", role=User.Role.OWNER)
+    admin = User.objects.create_user(username="admin-user-2", password="password123", role=User.Role.ADMIN)
+
+    visible_roles = visible_user_management_roles_for(manager)
+
+    assert operator.role in visible_roles
+    assert client.role in visible_roles
+    assert walkin.role in visible_roles
+    assert owner.role not in visible_roles
+    assert admin.role not in visible_roles

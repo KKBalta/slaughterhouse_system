@@ -1,41 +1,46 @@
 #!/usr/bin/env bash
 # ============================================================================
-# CarniTrack — Full Staging Multi-Tenant Migration
+# CarniTrack — Production Multi-Tenant Migration
 # ============================================================================
 #
-# Performs the complete single-tenant → multi-tenant migration on the staging
-# Cloud SQL instance. This is the rehearsal script for production cutover.
+# Performs the complete single-tenant → multi-tenant migration on the
+# PRODUCTION Cloud SQL instance. Run the staging rehearsal first
+# (staging_full_migration.sh with a prod DB copy) before using this.
 #
 # What it does:
-#   1. Backs up the staging database
+#   1. Backs up the production database
 #   2. Runs shared schema migrations (creates tenants_client, tenants_domain, etc.)
 #   3. Creates the tenant + copies all data from public → tenant schema
-#   4. Runs tenant schema migrations (e.g. logo storage changes)
+#   4. Runs tenant schema migrations
 #   5. Creates a platform admin account
-#   6. Verifies the migration
-#   7. Deploys to Cloud Run staging
+#   6. Backfills email-tenant membership index
+#   7. Verifies the migration
+#   8. Deploys to Cloud Run production
 #
 # Prerequisites:
-#   - .env.staging filled in (DB_PASSWORD, SECRET_KEY, REDIS_URL)
-#   - env.staging.yaml filled in (ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, TENANT_BASE_DOMAIN)
+#   - .env.production filled in (DB_PASSWORD, SECRET_KEY, REDIS_URL, TENANT_BASE_DOMAIN)
+#   - env.yaml filled in (ALLOWED_HOSTS with wildcard, CSRF_TRUSTED_ORIGINS)
 #   - gcloud auth + Docker running
 #   - ./cloud_sql_proxy in repo root
+#   - DNS configured: <schema>.TENANT_BASE_DOMAIN → Cloud Run service
+#   - Staging rehearsal completed successfully
+#   - POMET notified — maintenance window active
 #
 # Usage:
-#   bash scripts/staging_full_migration.sh
+#   bash scripts/prod_full_migration.sh
 #
 # To skip the Cloud Run deploy (DB migration only):
-#   SKIP_DEPLOY=1 bash scripts/staging_full_migration.sh
+#   SKIP_DEPLOY=1 bash scripts/prod_full_migration.sh
 #
 # ============================================================================
 set -euo pipefail
 
 # --------------- Configuration ---------------
-ENV_FILE="${ENV_FILE:-.env.staging}"
-ENV_YAML="${ENV_YAML:-env.staging.yaml}"
+ENV_FILE="${ENV_FILE:-.env.production}"
+ENV_YAML="${ENV_YAML:-env.yaml}"
 CLOUD_SQL_PROXY="${CLOUD_SQL_PROXY:-./cloud_sql_proxy}"
-STAGING_INSTANCE="${STAGING_INSTANCE:-carnitrack:europe-west1:carnitrack-db-belgium-staging}"
-PROXY_PORT="${PROXY_PORT:-5433}"
+PROD_INSTANCE="${PROD_INSTANCE:-carnitrack:europe-west1:carnitrack-db-belgium}"
+PROXY_PORT="${PROXY_PORT:-5434}"
 BACKUP_DIR="${BACKUP_DIR:-sql_backup}"
 
 # Tenant config
@@ -60,12 +65,30 @@ step() { echo -e "\n${GREEN}==> $1${NC}"; }
 warn() { echo -e "${YELLOW}    $1${NC}"; }
 fail() { echo -e "${RED}ERROR: $1${NC}"; exit 1; }
 
+# ============================================================================
+# Safety gate — confirm this is intentional
+# ============================================================================
+echo ""
+echo -e "${RED}============================================================================${NC}"
+echo -e "${RED} WARNING: This script modifies the PRODUCTION database.${NC}"
+echo -e "${RED}============================================================================${NC}"
+echo ""
+echo "  Instance:  $PROD_INSTANCE"
+echo "  Env file:  $ENV_FILE"
+echo "  Tenant:    $SCHEMA → $DOMAIN"
+echo ""
+echo -n "Type 'MIGRATE PRODUCTION' to continue: "
+read CONFIRM
+if [ "$CONFIRM" != "MIGRATE PRODUCTION" ]; then
+  fail "Aborted. You must type exactly: MIGRATE PRODUCTION"
+fi
+
 # Validate prerequisites
-[ -f "$ENV_FILE" ] || fail "$ENV_FILE not found. Run: cp env/examples/.env.staging.example .env.staging"
+[ -f "$ENV_FILE" ] || fail "$ENV_FILE not found. Run: cp env/examples/.env.production.example .env.production"
 [ -f "$CLOUD_SQL_PROXY" ] || fail "Cloud SQL Proxy not found at $CLOUD_SQL_PROXY"
 
 if [ "$SKIP_DEPLOY" = "0" ]; then
-  [ -f "$ENV_YAML" ] || fail "$ENV_YAML not found. Run: cp env/examples/env.staging.yaml.example env.staging.yaml"
+  [ -f "$ENV_YAML" ] || fail "$ENV_YAML not found. Run: cp env/examples/env.yaml.example env.yaml"
 fi
 
 if [ -z "$ADMIN_PASS" ]; then
@@ -81,25 +104,28 @@ export DOTENV_FILE="$ENV_FILE"
 
 # Start proxy
 step "Starting Cloud SQL Proxy on port $PROXY_PORT..."
-$CLOUD_SQL_PROXY -instances="$STAGING_INSTANCE"=tcp:"$PROXY_PORT" &
+$CLOUD_SQL_PROXY -instances="$PROD_INSTANCE"=tcp:"$PROXY_PORT" &
 PROXY_PID=$!
 sleep 5
 trap "echo 'Stopping Cloud SQL Proxy...'; kill $PROXY_PID 2>/dev/null" EXIT INT TERM
 
 # Test DB connection
 PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" \
-  -c "SELECT 1" > /dev/null 2>&1 || fail "Cannot connect to staging DB"
+  -c "SELECT 1" > /dev/null 2>&1 || fail "Cannot connect to production DB"
 
 # ============================================================================
 # Step 1: Backup
 # ============================================================================
-step "Step 1/8 — Backing up staging database..."
+step "Step 1/8 — Backing up production database..."
 mkdir -p "$BACKUP_DIR"
-BACKUP_FILE="$BACKUP_DIR/staging_pre_migration_$(date +%Y%m%d_%H%M%S).sql"
+BACKUP_FILE="$BACKUP_DIR/prod_pre_migration_$(date +%Y%m%d_%H%M%S).sql"
 PGPASSWORD="$DB_PASSWORD" pg_dump \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" \
   > "$BACKUP_FILE"
 echo "    Backup saved: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
+
+# Verify backup is not empty
+[ -s "$BACKUP_FILE" ] || fail "Backup file is empty — aborting"
 
 # ============================================================================
 # Step 2: Run shared schema migrations
@@ -146,8 +172,8 @@ python manage.py verify_tenant_copy --schema="$SCHEMA"
 if [ "$SKIP_DEPLOY" = "1" ]; then
   warn "Skipping Cloud Run deploy (SKIP_DEPLOY=1)"
 else
-  step "Step 8/8 — Deploying to Cloud Run staging..."
-  bash deploy_staging.sh "$ENV_YAML"
+  step "Step 8/8 — Deploying to Cloud Run production..."
+  bash scripts/deploy_prod.sh "$ENV_YAML"
 fi
 
 # ============================================================================
@@ -155,16 +181,12 @@ fi
 # ============================================================================
 echo ""
 echo -e "${GREEN}============================================================================${NC}"
-echo -e "${GREEN} Staging migration complete!${NC}"
+echo -e "${GREEN} Production migration complete!${NC}"
 echo -e "${GREEN}============================================================================${NC}"
 echo ""
 echo "  Backup:         $BACKUP_FILE"
 echo "  Tenant:         $SCHEMA → $DOMAIN"
 echo "  Platform admin: $ADMIN_EMAIL"
-echo ""
-echo "  Test URLs:"
-echo "    Public:  https://carnitrack-app-staging-1000671720976.europe-west1.run.app/platform-admin/login/"
-echo "    Tenant:  https://$DOMAIN/"
 echo ""
 echo "  To rollback (restore backup):"
 echo "    PGPASSWORD=\$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER $DB_NAME < $BACKUP_FILE"
