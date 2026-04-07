@@ -182,6 +182,8 @@ class TestGetCompanyInfo:
         assert "company_address" in info
         assert "license_no" in info
         assert "operation_no" in info
+        assert "registered_province_plaka" in info
+        assert "vd_label_prefix" in info
 
     def test_non_multitenant_falls_back_to_company_settings(self):
         # settings_test.py sets COMPANY_* / LICENSE_NO when USE_MULTITENANT is False.
@@ -190,6 +192,19 @@ class TestGetCompanyInfo:
         assert info["license_no"] == "00-0000"
         assert info["operation_no"] == "0000000000"
         assert isinstance(info["license_no"], str)
+        assert info["registered_province_plaka"] == "17"
+        assert info["vd_label_prefix"] == "CKALE"
+
+    def test_non_multitenant_plaka_06_uses_ankara_prefix(self):
+        with override_settings(REGISTERED_PROVINCE_PLAKA="06"):
+            info = get_company_info()
+            assert info["registered_province_plaka"] == "06"
+            assert info["vd_label_prefix"] == "ANKARA"
+
+    def test_non_multitenant_vd_label_prefix_override(self):
+        with override_settings(VD_LABEL_PREFIX="CUSTOM"):
+            info = get_company_info()
+            assert info["vd_label_prefix"] == "CUSTOM"
 
     def test_override_settings_company_info(self):
         with override_settings(
@@ -210,6 +225,7 @@ class TestGetCompanyInfo:
             company_address="Tenant Street",
             license_no="55-5555",
             operation_no="445566",
+            registered_province_plaka="06",
             printer_turkish_mode="unicode",
         )
         monkeypatch.setattr("labeling.utils._get_label_tenant", lambda: tenant)
@@ -222,6 +238,8 @@ class TestGetCompanyInfo:
         assert info["company_address"] == "Tenant Street"
         assert info["license_no"] == "55-5555"
         assert info["operation_no"] == "445566"
+        assert info["registered_province_plaka"] == "06"
+        assert info["vd_label_prefix"] == "ANKARA"
 
 
 # ---------------------------------------------------------------------------
@@ -321,6 +339,24 @@ class TestGenerateTsplPrnLabel:
         assert "SIZE" in prn
         assert "PRINT" in prn
         assert "\r\n" in prn
+
+    def test_vd_line_uses_company_prefix_not_hardcoded_ckale(self, slaughtered_animal, monkeypatch):
+        tenant = SimpleNamespace(
+            company_name="Co",
+            company_full_name="Co Ltd",
+            company_address="Addr",
+            license_no="L1",
+            operation_no="999",
+            registered_province_plaka="06",
+            printer_turkish_mode="unicode",
+        )
+        monkeypatch.setattr("labeling.utils._get_label_tenant", lambda: tenant)
+
+        with override_settings(USE_MULTITENANT=True):
+            prn = generate_tspl_prn_label(slaughtered_animal)
+
+        assert "ANKARA VD: 999" in prn
+        assert "CKALE VD:" not in prn
 
 
 @pytest.mark.django_db

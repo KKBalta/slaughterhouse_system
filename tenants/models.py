@@ -8,6 +8,8 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_tenants.models import DomainMixin, TenantMixin
 
+from tenants.turkey_provinces import PROVINCE_CHOICES
+
 
 def _get_public_storage():
     from django.conf import settings
@@ -79,6 +81,13 @@ class Client(TenantMixin):
         blank=True,
         verbose_name=_("Vergi dairesi / işletme no (VD)"),
         help_text=_("Tax office / operation number (e.g. ÇKALE VD line on labels)."),
+    )
+    registered_province_plaka = models.CharField(
+        max_length=2,
+        choices=PROVINCE_CHOICES,
+        default="17",
+        verbose_name=_("Company registration province"),
+        help_text=_("Turkish province (plaka) where the company is registered; drives the VD prefix on printed labels."),
     )
     logo = models.ImageField(
         upload_to=tenant_logo_upload_to,

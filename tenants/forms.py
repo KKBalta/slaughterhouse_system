@@ -44,6 +44,7 @@ class TenantCompanyProfileForm(forms.ModelForm):
             "company_name",
             "company_full_name",
             "company_address",
+            "registered_province_plaka",
             "license_no",
             "operation_no",
             "contact_email",
@@ -53,6 +54,11 @@ class TenantCompanyProfileForm(forms.ModelForm):
         ]
         widgets = {
             "company_address": forms.Textarea(attrs={"rows": 3}),
+            "registered_province_plaka": forms.Select(
+                attrs={
+                    "class": "w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
