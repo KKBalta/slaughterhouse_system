@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 
 class ReportDataAggregator:
@@ -11,21 +12,39 @@ class ReportDataAggregator:
 
     def get_daily_slaughter_data(self):
         """Get daily slaughter data matching Excel format"""
+        from django.conf import settings
+        from django.db import connection
         from django.db.models import Prefetch
+        from django.utils import timezone
 
         from processing.models import Animal, WeightLog
+
+        tenant = getattr(connection, "tenant", None)
+        tz_name = getattr(tenant, "timezone", "") or getattr(settings, "TIME_ZONE", "UTC")
+        try:
+            tenant_tz = ZoneInfo(tz_name)
+        except Exception:
+            tenant_tz = timezone.get_current_timezone()
+
+        start_dt = timezone.make_aware(datetime.combine(self.start_date, time.min), tenant_tz)
+        end_dt = timezone.make_aware(datetime.combine(self.end_date + timedelta(days=1), time.min), tenant_tz)
+        statuses = self.filters.get("statuses") or ["carcass_ready", "disassembled", "packaged", "delivered"]
 
         # Get animals that have reached carcass_ready state or beyond within the date range.
         # prefetch_related for weight logs avoids one DB query per animal (_get_weight).
         # select_related for detail models avoids one DB query per animal in _get_offal_bowels_status.
         animals = (
             Animal.objects.filter(
-                slaughter_date__date__range=[self.start_date, self.end_date],
-                status__in=["carcass_ready", "disassembled", "packaged", "delivered"],
+                is_active=True,
+                slaughter_date__gte=start_dt,
+                slaughter_date__lt=end_dt,
+                status__in=statuses,
+                slaughter_order__is_active=True,
             )
             .select_related(
                 "slaughter_order",
                 "slaughter_order__client",
+                "slaughter_order__destination_client",
                 "cattle_details",
                 "sheep_details",
                 "goat_details",
@@ -45,6 +64,25 @@ class ReportDataAggregator:
                 )
             )
         )
+
+        animal_types = self.filters.get("animal_types") or []
+        if animal_types:
+            animals = animals.filter(animal_type__in=animal_types)
+
+        client_ids = self.filters.get("client_ids") or []
+        if client_ids:
+            animals = animals.filter(slaughter_order__client_id__in=client_ids)
+
+        destination_client_ids = self.filters.get("destination_client_ids") or []
+        if destination_client_ids:
+            animals = animals.filter(slaughter_order__destination_client_id__in=destination_client_ids)
+
+        service_package_ids = self.filters.get("service_package_ids") or []
+        if service_package_ids:
+            animals = animals.filter(slaughter_order__service_package_id__in=service_package_ids)
+
+        if self.filters.get("include_walkins") is False:
+            animals = animals.filter(slaughter_order__client__isnull=False)
 
         daily_data = []
 
@@ -212,16 +250,15 @@ class ReportDataAggregator:
 
     def _get_destination(self, animal):
         """Get destination customer"""
-        # This would need to be implemented based on your business logic
-        # Could be from inventory disposition or order destination
+        if animal.slaughter_order.destination_client:
+            return animal.slaughter_order.destination_client.get_full_name()
         return animal.slaughter_order.destination or ""
 
     def _get_client_name(self, animal):
         """Get client name from slaughter order"""
         if animal.slaughter_order.client:
-            return animal.slaughter_order.client.company_name or animal.slaughter_order.client.contact_person
-        else:
-            return animal.slaughter_order.client_name or "Walk-in Customer"
+            return animal.slaughter_order.client.get_full_name()
+        return animal.slaughter_order.client_name or "Walk-in Customer"
 
     def _get_turkish_animal_type(self, animal_type):
         """Convert English animal type to Turkish - matches labeling system mapping"""

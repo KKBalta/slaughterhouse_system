@@ -1,12 +1,17 @@
 import json
+import os
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from io import StringIO
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import connection
+from django.test import override_settings
 from django.utils import timezone
 
 from processing.models import Animal, CattleDetails, WeightLog
@@ -223,6 +228,14 @@ class TestReportDataAggregator:
         assert "total_hot_carcass_weight" in all_data
         assert "total_leather_weight" in all_data
         assert all_data["total_animals"] == 2
+
+    def test_get_daily_slaughter_data_applies_animal_type_filters(self):
+        """Test report filters narrow the queryset."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date, filters={"animal_types": ["cattle"]})
+        data = aggregator.get_daily_slaughter_data()
+
+        assert len(data) == 1
+        assert data[0]["animal_type"] == "SIGIR"
 
     def test_turkish_animal_type_mapping(self):
         """Test Turkish animal type mapping"""
@@ -698,6 +711,81 @@ class TestManagementCommands:
         assert generated_report.file_path is None
         assert "Files saved to:" not in stdout.getvalue()
 
+    @override_settings(USE_MULTITENANT=True)
+    @patch("reporting.management.commands.generate_daily_reports.schema_context")
+    def test_generate_daily_reports_single_schema_uses_schema_context(self, mock_schema_context):
+        """Test generate daily reports runs inside the requested tenant schema."""
+
+        @contextmanager
+        def _switch_schema(schema_name):
+            previous = getattr(connection, "schema_name", None)
+            connection.schema_name = schema_name
+            try:
+                yield
+            finally:
+                connection.schema_name = previous
+
+        mock_schema_context.side_effect = _switch_schema
+
+        with patch(
+            "reporting.management.commands.generate_daily_reports.Command._run_for_current_schema"
+        ) as mock_runner:
+            call_command("generate_daily_reports", "--date=2024-01-15", "--schema=acme")
+
+        mock_schema_context.assert_called_once_with("acme")
+        mock_runner.assert_called_once()
+
+    @override_settings(USE_MULTITENANT=True)
+    @patch("reporting.management.commands.generate_daily_reports.Command._iter_active_tenant_schemas")
+    @patch("reporting.management.commands.generate_daily_reports.schema_context")
+    @patch("reporting.management.commands.generate_daily_reports.ExcelReportGenerator")
+    @patch("reporting.management.commands.generate_daily_reports.ReportDataAggregator")
+    def test_generate_daily_reports_creates_report_for_each_tenant(
+        self,
+        mock_aggregator,
+        mock_excel_generator,
+        mock_schema_context,
+        mock_iter_schemas,
+        tmp_path,
+    ):
+        """Test multitenant runs create one report record per tenant schema."""
+        mock_iter_schemas.return_value = ["acme", "bravo"]
+        mock_aggregator.return_value.get_all_data.return_value = {
+            "date": "2024-01-15",
+            "daily_data": [],
+            "summary": {
+                "buyukbas": {"kesim": 0, "deri": 0, "bagirsak": 0},
+                "kuzu": {"kesim": 0, "deri": 0, "bagirsak": 0},
+                "oglak": {"kesim": 0, "deri": 0, "bagirsak": 0},
+                "koyun": {"kesim": 0, "deri": 0, "bagirsak": 0},
+                "keci": {"kesim": 0, "deri": 0, "bagirsak": 0},
+            },
+            "total_animals": 0,
+            "total_live_weight": 0,
+            "total_hot_carcass_weight": 0,
+            "total_leather_weight": 0,
+        }
+        mock_excel_generator.return_value.generate_daily_slaughter_excel.return_value = _BinaryWorkbook(b"tenant-xlsx")
+
+        @contextmanager
+        def _switch_schema(schema_name):
+            previous = getattr(connection, "schema_name", None)
+            connection.schema_name = schema_name
+            try:
+                yield
+            finally:
+                connection.schema_name = previous
+
+        mock_schema_context.side_effect = _switch_schema
+
+        with override_settings(MEDIA_ROOT=str(tmp_path), USE_MULTITENANT=True):
+            call_command("generate_daily_reports", "--date=2024-01-15", "--all-tenants")
+
+        assert GeneratedReport.objects.count() == 2
+        file_paths = sorted(GeneratedReport.objects.values_list("file_path", flat=True))
+        assert any(os.path.join("reports", "acme", "daily", "2024", "01") in path for path in file_paths)
+        assert any(os.path.join("reports", "bravo", "daily", "2024", "01") in path for path in file_paths)
+
 
 @pytest.mark.django_db(transaction=True)
 class TestIntegration:
@@ -1029,6 +1117,60 @@ class TestReportingViews:
             output_format="pdf",
             system_user="scheduler",
         )
+
+    @override_settings(USE_MULTITENANT=True)
+    @patch("django_tenants.utils.get_public_schema_name")
+    @patch("reporting.views.call_command")
+    @patch("reporting.views.threading.Thread", side_effect=lambda target: _ImmediateThread(target=target))
+    def test_generate_daily_reports_api_passes_request_tenant_schema(
+        self,
+        _mock_thread,
+        mock_call_command,
+        mock_public_schema_name,
+    ):
+        from reporting.views import generate_daily_reports_api
+
+        mock_public_schema_name.return_value = "public"
+        request = _request(
+            "post",
+            path="/reporting/api/generate-daily/",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        request.tenant = SimpleNamespace(schema_name="acme")
+
+        response = generate_daily_reports_api(request)
+
+        assert response.status_code == 200
+        mock_call_command.assert_called_once_with(
+            "generate_daily_reports",
+            report_types=["daily_slaughter"],
+            output_format="excel",
+            system_user="system",
+            schema="acme",
+        )
+
+    @override_settings(USE_MULTITENANT=True)
+    @patch("django_tenants.utils.get_public_schema_name")
+    def test_generate_daily_reports_api_rejects_public_schema_without_explicit_target(self, mock_public_schema_name):
+        from reporting.views import generate_daily_reports_api
+
+        mock_public_schema_name.return_value = "public"
+        request = _request(
+            "post",
+            path="/reporting/api/generate-daily/",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        request.tenant = SimpleNamespace(schema_name="public")
+
+        response = generate_daily_reports_api(request)
+
+        assert response.status_code == 400
+        assert json.loads(response.content) == {
+            "status": "error",
+            "message": "Tenant schema is required when generating reports from the public host.",
+        }
 
     @patch("reporting.views.call_command", side_effect=CommandError("scheduler failed"))
     @patch("reporting.views.threading.Thread", side_effect=lambda target: _ImmediateThread(target=target))

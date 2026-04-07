@@ -4,11 +4,12 @@ import os
 import threading
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -37,7 +38,6 @@ def generate_report(request):
             start_date = request.POST.get("start_date")
             end_date = request.POST.get("end_date")
             output_format = request.POST.get("output_format", "excel")
-            report_type = "daily_slaughter"  # Default report type since all are the same
 
             # Convert string dates to date objects
             from datetime import datetime
@@ -84,7 +84,7 @@ def generate_report(request):
                         # Clean up
                         os.unlink(tmp_file.name)
                         return response
-                except Exception as excel_error:
+                except Exception:
                     logger.exception("Excel generation failed")
                     return HttpResponse("An error occurred processing your request.", status=500)
             elif output_format == "pdf":
@@ -103,7 +103,7 @@ def generate_report(request):
                     # Clean up
                     os.unlink(pdf_path)
                     return response
-                except Exception as pdf_error:
+                except Exception:
                     logger.exception("PDF generation failed")
                     return HttpResponse("An error occurred processing your request.", status=500)
             else:
@@ -126,16 +126,46 @@ def generate_daily_reports_api(request):
         report_types = data.get("report_types", ["daily_slaughter"])
         output_format = data.get("output_format", "excel")
         system_user = data.get("system_user", "system")
+        schema_name = data.get("schema_name")
+        all_tenants = bool(data.get("all_tenants", False))
+
+        if schema_name and all_tenants:
+            return JsonResponse(
+                {"status": "error", "message": "Use either schema_name or all_tenants, not both."},
+                status=400,
+            )
+
+        if getattr(settings, "USE_MULTITENANT", False):
+            from django.db import connection
+            from django_tenants.utils import get_public_schema_name
+
+            public_schema = get_public_schema_name()
+            if not all_tenants and not schema_name:
+                schema_name = getattr(getattr(request, "tenant", None), "schema_name", None) or getattr(
+                    connection, "schema_name", None
+                )
+            if not all_tenants and (not schema_name or schema_name == public_schema):
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Tenant schema is required when generating reports from the public host.",
+                    },
+                    status=400,
+                )
 
         # Run management command in background
         def run_command():
             try:
-                call_command(
-                    "generate_daily_reports",
-                    report_types=report_types,
-                    output_format=output_format,
-                    system_user=system_user,
-                )
+                kwargs = {
+                    "report_types": report_types,
+                    "output_format": output_format,
+                    "system_user": system_user,
+                }
+                if all_tenants:
+                    kwargs["all_tenants"] = True
+                elif schema_name:
+                    kwargs["schema"] = schema_name
+                call_command("generate_daily_reports", **kwargs)
             except CommandError as e:
                 logger.exception("Daily report generation failed: %s", e)
 
@@ -198,8 +228,23 @@ def test_report_generation(request):
 
 @login_required
 @manager_or_admin_required
+def download_report(request, report_id):
+    """Download a generated report file for the current tenant."""
+    report = get_object_or_404(GeneratedReport, pk=report_id)
+
+    if report.status != "success" or not report.file_path:
+        raise Http404("Report file not available.")
+    if not os.path.exists(report.file_path):
+        raise Http404("Report file not found.")
+
+    filename = os.path.basename(report.file_path)
+    return FileResponse(open(report.file_path, "rb"), as_attachment=True, filename=filename)
+
+
+@login_required
+@manager_or_admin_required
 def report_list(request):
     """List all generated reports"""
-    reports = GeneratedReport.objects.all().order_by("-generated_at")
+    reports = GeneratedReport.objects.select_related("report_definition", "generated_by").order_by("-generated_at")
     context = {"reports": reports}
     return render(request, "reporting/report_list.html", context)

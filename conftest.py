@@ -17,6 +17,7 @@ from decimal import Decimal
 
 import factory
 import pytest
+from django.db import connection
 from django.utils import timezone
 from faker import Faker
 
@@ -464,6 +465,38 @@ def frozen_time():
 def clean_media_files(settings, tmp_path):
     """Clean up media files after each test."""
     settings.MEDIA_ROOT = str(tmp_path / "media")
+    yield
+
+
+@pytest.fixture(autouse=True)
+def default_public_schema(monkeypatch):
+    """
+    SQLite tests do not initialize django-tenants connection state.
+    Default the connection to the public schema unless a test overrides it.
+    """
+    if getattr(connection, "schema_name", None) is None:
+        monkeypatch.setattr(connection, "schema_name", "public", raising=False)
+    yield
+
+
+@pytest.fixture(autouse=True)
+def sqlite_tenant_schema_management_stub(monkeypatch):
+    """
+    SQLite tests cannot create or drop PostgreSQL schemas.
+    Treat tenant rows as public-schema records in that harness.
+    """
+    if connection.vendor == "sqlite":
+        from django_tenants.models import TenantMixin
+        from django_tenants.signals import post_schema_sync, schema_needs_to_be_sync
+
+        from tenants.models import Client
+
+        monkeypatch.setattr(connection, "tenant", None, raising=False)
+        monkeypatch.setattr(Client, "auto_create_schema", False, raising=False)
+        monkeypatch.setattr(TenantMixin, "create_schema", lambda self, *args, **kwargs: False)
+        monkeypatch.setattr(TenantMixin, "_drop_schema", lambda self, *args, **kwargs: None)
+        monkeypatch.setattr(post_schema_sync, "send", lambda *args, **kwargs: [])
+        monkeypatch.setattr(schema_needs_to_be_sync, "send", lambda *args, **kwargs: [])
     yield
 
 

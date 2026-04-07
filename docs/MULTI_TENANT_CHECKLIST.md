@@ -286,6 +286,7 @@ Affected `upload_to` paths:
 
 ### 6.3 Update Management Commands
 
+- [ ] Reporting workstream reference: see `docs/REPORTING_MULTITENANT_FIX_PLAN.md`
 - [ ] `seed_plu` -- run via `tenant_command seed_plu --schema=<tenant>`
 - [ ] `generate_daily_reports` -- iterate over all tenants or accept `--schema`
 - [ ] `setup_system_user` -- create per-tenant (lives in tenant schema now)

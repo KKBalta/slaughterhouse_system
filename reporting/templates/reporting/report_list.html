@@ -47,16 +47,16 @@
                         {% for report in reports %}
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ report.report.name }}</div>
-                                    <div class="text-sm text-gray-500">{{ report.report.description|truncatechars:50 }}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ report.report_definition.name }}</div>
+                                    <div class="text-sm text-gray-500">{{ report.report_definition.description|truncatechars:50 }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {% if report.report.frequency == 'daily' %}bg-blue-100 text-blue-800
-                                        {% elif report.report.frequency == 'monthly' %}bg-green-100 text-green-800
-                                        {% elif report.report.frequency == 'yearly' %}bg-purple-100 text-purple-800
+                                        {% if report.report_definition.frequency == 'daily' %}bg-blue-100 text-blue-800
+                                        {% elif report.report_definition.frequency == 'monthly' %}bg-green-100 text-green-800
+                                        {% elif report.report_definition.frequency == 'yearly' %}bg-purple-100 text-purple-800
                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                        {{ report.report.get_frequency_display }}
+                                        {{ report.report_definition.get_frequency_display }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -67,16 +67,16 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {% if report.status == 'completed' %}bg-green-100 text-green-800
+                                        {% if report.status == 'success' %}bg-green-100 text-green-800
                                         {% elif report.status == 'failed' %}bg-red-100 text-red-800
-                                        {% elif report.status == 'processing' %}bg-yellow-100 text-yellow-800
+                                        {% elif report.status == 'pending' %}bg-yellow-100 text-yellow-800
                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
                                         {{ report.get_status_display }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    {% if report.status == 'completed' and report.file_path %}
-                                        <a href="{{ report.file_path.url }}" 
+                                    {% if report.status == 'success' and report.file_path %}
+                                        <a href="{% url 'download_report' report.id %}" 
                                            class="text-blue-600 hover:text-blue-900 mr-3">
                                             {% trans "Download" %}
                                         </a>

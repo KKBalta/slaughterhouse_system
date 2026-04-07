@@ -3,10 +3,13 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import connection
 from django.utils import timezone
+from django_tenants.utils import get_public_schema_name, schema_context
 
 from reporting.models import GeneratedReport, Report
 from reporting.services import ExcelReportGenerator, ReportDataAggregator
+from tenants.models import Client
 from users.models import User
 
 
@@ -37,6 +40,16 @@ class Command(BaseCommand):
             default="system",
             help="Username for system-generated reports",
         )
+        parser.add_argument(
+            "--schema",
+            type=str,
+            help="Tenant schema name to generate reports for.",
+        )
+        parser.add_argument(
+            "--all-tenants",
+            action="store_true",
+            help="Generate reports for every active tenant schema.",
+        )
 
     def handle(self, *args, **options):
         # Determine report date
@@ -49,19 +62,70 @@ class Command(BaseCommand):
         else:
             report_date = (timezone.now() - timedelta(days=1)).date()
 
-        # Get system user
+        if options["schema"] and options["all_tenants"]:
+            self.stdout.write(self.style.ERROR("Use either --schema or --all-tenants, not both."))
+            return
+
+        if options["all_tenants"]:
+            for schema_name in self._iter_active_tenant_schemas():
+                self._run_for_schema(schema_name, report_date, options)
+            return
+
+        if options["schema"]:
+            self._run_for_schema(options["schema"], report_date, options)
+            return
+
+        self._run_for_current_schema(report_date, options)
+
+    def _schema_label(self, schema_name=None):
+        value = schema_name or getattr(connection, "schema_name", None) or "default"
+        return f"[{value}]"
+
+    def _iter_active_tenant_schemas(self):
+        if not getattr(settings, "USE_MULTITENANT", False):
+            current = getattr(connection, "schema_name", None)
+            return [current] if current else []
+
+        public_schema = get_public_schema_name()
+        with schema_context(public_schema):
+            return list(
+                Client.objects.filter(is_active=True)
+                .exclude(schema_name=public_schema)
+                .order_by("schema_name")
+                .values_list("schema_name", flat=True)
+            )
+
+    def _run_for_schema(self, schema_name, report_date, options):
+        with schema_context(schema_name):
+            self._run_for_current_schema(report_date, options, schema_name=schema_name)
+
+    def _run_for_current_schema(self, report_date, options, schema_name=None):
+        current_schema = schema_name or getattr(connection, "schema_name", None)
+
+        # Get system user inside the active tenant schema.
         try:
             system_user = User.objects.get(username=options["system_user"])
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f'System user "{options["system_user"]}" not found'))
+            self.stdout.write(
+                self.style.ERROR(f'{self._schema_label(current_schema)} System user "{options["system_user"]}" not found')
+            )
             return
 
         # Generate reports
         for report_type in options["report_types"]:
             self.generate_report(report_type, report_date, options["output_format"], system_user)
 
+    def _report_output_dir(self, report_date):
+        parts = [settings.MEDIA_ROOT, "reports"]
+        if getattr(settings, "USE_MULTITENANT", False):
+            schema_name = getattr(connection, "schema_name", None) or "default"
+            parts.append(schema_name)
+        parts.extend(["daily", str(report_date.year), str(report_date.month).zfill(2)])
+        return os.path.join(*parts)
+
     def generate_report(self, report_type, date, output_format, user):
         """Generate a specific report type for a given date"""
+        current_schema = getattr(connection, "schema_name", None)
         try:
             # Get report definition
             report = Report.objects.get(report_type=report_type, frequency="daily", is_active=True)
@@ -87,10 +151,8 @@ class Command(BaseCommand):
                 excel_wb = excel_generator.generate_daily_slaughter_excel()
 
                 # Save Excel file
-                excel_filename = f"daily_slaughter_{date.strftime('%Y-%m-%d')}.xlsx"
-                excel_path = os.path.join(
-                    settings.MEDIA_ROOT, "reports", "daily", str(date.year), str(date.month).zfill(2)
-                )
+                excel_filename = f"{report_type}_{date.strftime('%Y-%m-%d')}.xlsx"
+                excel_path = self._report_output_dir(date)
                 os.makedirs(excel_path, exist_ok=True)
                 excel_full_path = os.path.join(excel_path, excel_filename)
                 excel_wb.save(excel_full_path)
@@ -101,12 +163,22 @@ class Command(BaseCommand):
             generated_report.status = "success"
             generated_report.save()
 
-            self.stdout.write(self.style.SUCCESS(f"Successfully generated {report_type} report for {date}"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"{self._schema_label(current_schema)} Successfully generated {report_type} report for {date}"
+                )
+            )
 
             if file_paths:
-                self.stdout.write(f"Files saved to: {', '.join(file_paths)}")
+                self.stdout.write(f"{self._schema_label(current_schema)} Files saved to: {', '.join(file_paths)}")
 
         except Report.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f"Report definition not found for type: {report_type}"))
+            self.stdout.write(
+                self.style.ERROR(f"{self._schema_label(current_schema)} Report definition not found for type: {report_type}")
+            )
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Failed to generate {report_type} report for {date}: {str(e)}"))
+            self.stdout.write(
+                self.style.ERROR(
+                    f"{self._schema_label(current_schema)} Failed to generate {report_type} report for {date}: {str(e)}"
+                )
+            )
