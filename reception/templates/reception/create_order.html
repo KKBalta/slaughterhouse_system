@@ -392,28 +392,45 @@
                 resultsEl.innerHTML = '';
 
                 if (clients.length === 0) {
-                    resultsEl.innerHTML = `<div class="p-3 text-gray-500 text-sm text-center">${i18n.noClientsFound}</div>`;
+                    const noResult = document.createElement('div');
+                    noResult.className = 'p-3 text-gray-500 text-sm text-center';
+                    noResult.textContent = i18n.noClientsFound;
+                    resultsEl.appendChild(noResult);
                 } else {
                     clients.forEach(client => {
                         const item = document.createElement('div');
                         item.className = 'client-search-item';
-                        const displayName = truncateText(client.display_name, 30);
                         const infoText = destinationInfoText(client);
                         const destinationText = (client.default_destination || '').trim();
-                        const destinationHtml = destinationText
-                            ? `<div class="client-destination" title="${i18n.preferredDestination}: ${client.default_destination}">${i18n.preferredDestination}: ${truncateText(client.default_destination, 28)}</div>`
-                            : '';
                         const source = client.source || 'profile';
-                        const sourceNote = source === 'unlinked_order'
-                            ? '<div class="client-info text-amber-700">{% trans "From order (fill walk-in)" %}</div>'
-                            : '';
 
-                        item.innerHTML = `
-                            <div class="client-name" title="${client.display_name}">${displayName}</div>
-                            <div class="client-info" title="${infoText}">${truncateText(infoText, 42)}</div>
-                            ${sourceNote}
-                            ${destinationHtml}
-                        `;
+                        const nameDiv = document.createElement('div');
+                        nameDiv.className = 'client-name';
+                        nameDiv.title = client.display_name || '';
+                        nameDiv.textContent = truncateText(client.display_name, 30);
+                        item.appendChild(nameDiv);
+
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'client-info';
+                        infoDiv.title = infoText;
+                        infoDiv.textContent = truncateText(infoText, 42);
+                        item.appendChild(infoDiv);
+
+                        if (source === 'unlinked_order') {
+                            const sourceDiv = document.createElement('div');
+                            sourceDiv.className = 'client-info text-amber-700';
+                            sourceDiv.textContent = '{% trans "From order (fill walk-in)" %}';
+                            item.appendChild(sourceDiv);
+                        }
+
+                        if (destinationText) {
+                            const destDiv = document.createElement('div');
+                            destDiv.className = 'client-destination';
+                            destDiv.title = i18n.preferredDestination + ': ' + client.default_destination;
+                            destDiv.textContent = i18n.preferredDestination + ': ' + truncateText(client.default_destination, 28);
+                            item.appendChild(destDiv);
+                        }
+
                         item.addEventListener('click', () => onSelect(client));
                         resultsEl.appendChild(item);
                     });

@@ -122,6 +122,7 @@ class ClientSearchView(LoginRequiredMixin, View):
                     ),
                     "default_destination_client_name": preferred_destination_name,
                     "source": "profile",
+                    "_sort_ts": client.created_at,
                 }
             )
 
@@ -158,12 +159,17 @@ class ClientSearchView(LoginRequiredMixin, View):
                     "source": "unlinked_order",
                     "client_name": name_key,
                     "client_phone": raw_phone,
+                    "_sort_ts": order.order_datetime,
                 }
             )
-            if len(client_list) >= self._MAX_MERGED_RESULTS:
-                break
 
-        return JsonResponse({"clients": client_list[: self._MAX_MERGED_RESULTS]})
+        # Merge: sort the combined list by recency so newer items from either source surface first.
+        client_list.sort(key=lambda x: x["_sort_ts"], reverse=True)
+        result = client_list[: self._MAX_MERGED_RESULTS]
+        for item in result:
+            del item["_sort_ts"]
+
+        return JsonResponse({"clients": result})
 
 
 class CreateSlaughterOrderView(LoginRequiredMixin, View):
