@@ -10,6 +10,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
+from tenants.email_index import normalize_phone
 
 from processing.models import Animal
 from users.models import CLIENT_MANAGEMENT_ROLES, ClientProfile
@@ -38,34 +39,45 @@ def _validation_error_user_message(exc: ValidationError) -> str:
 
 
 class ClientSearchView(LoginRequiredMixin, View):
+    _PROFILE_SEARCH_LIMIT = 25
+    _UNLINKED_ORDER_LIMIT = 15
+    _MAX_MERGED_RESULTS = 30
+
     def get(self, request):
         query = request.GET.get("q", "").strip()
-        if len(query) < 2:
+        if not query:
             return JsonResponse({"clients": []})
+
+        text_filter = (
+            Q(company_name__icontains=query)
+            | Q(contact_person__icontains=query)
+            | Q(phone_number__icontains=query)
+            | Q(default_destination__icontains=query)
+            | Q(default_destination_client__company_name__icontains=query)
+            | Q(default_destination_client__contact_person__icontains=query)
+            | Q(default_destination_client__user__username__icontains=query)
+            | Q(default_destination_client__user__first_name__icontains=query)
+            | Q(default_destination_client__user__last_name__icontains=query)
+            | Q(user__username__icontains=query)
+            | Q(user__first_name__icontains=query)
+            | Q(user__last_name__icontains=query)
+        )
 
         clients = (
             ClientProfile.objects.select_related(
                 "user", "default_destination_client", "default_destination_client__user"
             )
             .filter(Q(user__isnull=True) | Q(user__role__in=CLIENT_MANAGEMENT_ROLES))
-            .filter(
-                Q(company_name__icontains=query)
-                | Q(contact_person__icontains=query)
-                | Q(phone_number__icontains=query)
-                | Q(default_destination__icontains=query)
-                | Q(default_destination_client__company_name__icontains=query)
-                | Q(default_destination_client__contact_person__icontains=query)
-                | Q(default_destination_client__user__username__icontains=query)
-                | Q(default_destination_client__user__first_name__icontains=query)
-                | Q(default_destination_client__user__last_name__icontains=query)
-                | Q(user__username__icontains=query)
-                | Q(user__first_name__icontains=query)
-                | Q(user__last_name__icontains=query)
-            )[:10]
-        )  # Limit to 10 results
+            .filter(text_filter)
+            .order_by("-created_at")[: self._PROFILE_SEARCH_LIMIT]
+        )
 
         client_list = []
+        profile_phones_normalized: set[str] = set()
         for client in clients:
+            pn = normalize_phone(client.phone_number)
+            if pn:
+                profile_phones_normalized.add(pn)
             preferred_destination_client = client.default_destination_client
             preferred_destination_name = (
                 preferred_destination_client.get_full_name()
@@ -109,10 +121,49 @@ class ClientSearchView(LoginRequiredMixin, View):
                         str(preferred_destination_client.id) if preferred_destination_client is not None else ""
                     ),
                     "default_destination_client_name": preferred_destination_name,
+                    "source": "profile",
                 }
             )
 
-        return JsonResponse({"clients": client_list})
+        # Walk-in orders with no linked profile (legacy or blocked prospect creation): searchable by name/phone.
+        unlinked_q = Q(client_name__icontains=query) | Q(client_phone__icontains=query)
+        unlinked_orders = (
+            SlaughterOrder.objects.filter(client__isnull=True)
+            .exclude(client_name__exact="")
+            .exclude(client_phone__exact="")
+            .filter(unlinked_q)
+            .order_by("-order_datetime", "-created_at")[: self._UNLINKED_ORDER_LIMIT]
+        )
+        seen_order_keys: set[str] = set()
+        for order in unlinked_orders:
+            name_key = (order.client_name or "").strip()
+            raw_phone = (order.client_phone or "").strip()
+            norm = normalize_phone(raw_phone)
+            dedupe_key = norm or f"{name_key}|{raw_phone}"
+            if dedupe_key in seen_order_keys:
+                continue
+            seen_order_keys.add(dedupe_key)
+            if norm and norm in profile_phones_normalized:
+                continue
+            phone_display = norm or raw_phone
+            client_list.append(
+                {
+                    "id": "",
+                    "display_name": name_key,
+                    "contact_info": _("Walk-in on order (not linked yet)"),
+                    "phone": phone_display,
+                    "default_destination": "",
+                    "default_destination_client_id": "",
+                    "default_destination_client_name": "",
+                    "source": "unlinked_order",
+                    "client_name": name_key,
+                    "client_phone": raw_phone,
+                }
+            )
+            if len(client_list) >= self._MAX_MERGED_RESULTS:
+                break
+
+        return JsonResponse({"clients": client_list[: self._MAX_MERGED_RESULTS]})
 
 
 class CreateSlaughterOrderView(LoginRequiredMixin, View):
@@ -148,6 +199,8 @@ class CreateSlaughterOrderView(LoginRequiredMixin, View):
                     _("Slaughter order %(order_no)s created successfully.") % {"order_no": order.slaughter_order_no},
                 )
                 return redirect(reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk}))
+            except ValidationError as e:
+                messages.error(request, _validation_error_user_message(e))
             except Exception:
                 logger.exception("Create slaughter order failed")
                 messages.error(
@@ -380,12 +433,3 @@ class BatchAddAnimalsToOrderView(LoginRequiredMixin, View):
                 messages.error(request, _validation_error_user_message(e))
 
         return render(request, "reception/batch_add_animals.html", {"form": form, "order": order})
-
-
-def search_clients(request):
-    if "term" in request.GET:
-        term = request.GET["term"]
-        clients = ClientProfile.objects.filter(Q(user__username__icontains=term) | Q(phone_number__icontains=term))[:10]
-        results = [{"id": client.pk, "text": client.user.username} for client in clients]
-        return JsonResponse(results, safe=False)
-    return JsonResponse([], safe=False)

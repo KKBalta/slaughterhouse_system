@@ -151,10 +151,13 @@
                 <!-- Client Search Section -->
                 <div class="form-group relative">
                     <label for="client-search" class="block text-sm font-medium text-gray-900 mb-1">
-                        {% trans "Search Registered Client" %}
+                        {% trans "Search client" %}
                     </label>
                     {{ form.client_search }}
                     {{ form.client_id }}
+                    <p class="mt-1 text-xs text-gray-500">
+                        {% trans "Includes registered accounts and saved walk-in prospects. Past walk-ins only on an order with no profile also appear here—select to fill walk-in fields." %}
+                    </p>
                     <p class="mt-4 text-center text-sm">
                         <a href="{% url 'tenant_user_create' 'CLIENT' %}?next={{ request.path|urlencode }}" class="font-medium text-blue-600 hover:text-blue-500">
                             {% trans "Create New Client Account" %}
@@ -400,10 +403,15 @@
                         const destinationHtml = destinationText
                             ? `<div class="client-destination" title="${i18n.preferredDestination}: ${client.default_destination}">${i18n.preferredDestination}: ${truncateText(client.default_destination, 28)}</div>`
                             : '';
+                        const source = client.source || 'profile';
+                        const sourceNote = source === 'unlinked_order'
+                            ? '<div class="client-info text-amber-700">{% trans "From order (fill walk-in)" %}</div>'
+                            : '';
 
                         item.innerHTML = `
                             <div class="client-name" title="${client.display_name}">${displayName}</div>
                             <div class="client-info" title="${infoText}">${truncateText(infoText, 42)}</div>
+                            ${sourceNote}
                             ${destinationHtml}
                         `;
                         item.addEventListener('click', () => onSelect(client));
@@ -516,7 +524,7 @@
                 
                 clearTimeout(searchTimeout);
                 
-                if (query.length < 2) {
+                if (query.length < 1) {
                     searchResults.classList.add('hidden');
                     return;
                 }
@@ -534,6 +542,37 @@
             });
 
             function selectClient(client) {
+                const source = client.source || 'profile';
+                if (source === 'unlinked_order') {
+                    clientId.value = '';
+                    clientSearch.value = '';
+                    selectedClient.classList.add('hidden');
+                    setSelectedDestination('');
+                    const rawName = (client.client_name || client.display_name || '').trim();
+                    const rawPhone = (client.client_phone || '').trim();
+                    clientNameField.value = rawName;
+                    const areaSelect = clientPhoneField.form && clientPhoneField.form.elements['client_phone_area_code'];
+                    if (rawPhone.startsWith('+1')) {
+                        if (areaSelect) {
+                            areaSelect.value = '+1';
+                        }
+                        clientPhoneField.value = rawPhone.slice(2);
+                    } else if (rawPhone.startsWith('+90')) {
+                        if (areaSelect) {
+                            areaSelect.value = '+90';
+                        }
+                        clientPhoneField.value = rawPhone.slice(3);
+                    } else {
+                        if (areaSelect) {
+                            areaSelect.value = '+90';
+                        }
+                        clientPhoneField.value = rawPhone.replace(/^\+/, '');
+                    }
+                    searchResults.classList.add('hidden');
+                    syncWalkInPhoneRequirement();
+                    return;
+                }
+
                 clientId.value = client.id;
                 clientSearch.value = client.display_name;
                 
@@ -592,7 +631,8 @@
                         fetch(`{% url 'reception:client_search' %}?q=${encodeURIComponent(query)}`)
                             .then(response => response.json())
                             .then(data => {
-                                renderSearchResults(destinationSearchResults, data.clients, client => {
+                                const forDest = (data.clients || []).filter(c => (c.source || 'profile') !== 'unlinked_order');
+                                renderSearchResults(destinationSearchResults, forDest, client => {
                                     selectDestinationClient(client);
                                 });
                             })

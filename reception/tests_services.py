@@ -156,6 +156,23 @@ class TestReceptionServices:
         assert order.client_name == "Potential Client"
         assert order.client_phone == "+905551234999"
 
+    def test_create_slaughter_order_walk_in_fails_when_phone_belongs_to_staff(self, reception_state):
+        User.objects.create_user(
+            username="staff-phone-holder",
+            password="password123",
+            role=User.Role.OPERATOR,
+            phone_number="+905551234997",
+        )
+        with pytest.raises(ValidationError):
+            create_slaughter_order(
+                client_id=None,
+                service_package_id=reception_state["service_package"].id,
+                order_datetime=timezone.now(),
+                animals_data=[],
+                client_name="Blocked Walk-in",
+                client_phone="+905551234997",
+            )
+
     def test_create_slaughter_order_reuses_existing_walkin_prospect(self, reception_state):
         walkin_user = User.objects.create_user(
             username="known-walkin",

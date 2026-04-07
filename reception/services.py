@@ -78,6 +78,18 @@ def _resolve_order_client_reference(
         )
         if profile is not None:
             return profile, raw_client_name, raw_client_phone
+        logger.warning(
+            "Walk-in profile could not be created or linked for order (phone may be reserved for a staff account). "
+            "name=%s phone=%s",
+            raw_client_name,
+            raw_client_phone,
+        )
+        raise ValidationError(
+            _(
+                "This phone number cannot be used for a walk-in client because it is already assigned to "
+                "another account type. Use a different number, or pick the client from search if they already exist."
+            )
+        )
     return None, raw_client_name, raw_client_phone
 
 

@@ -13,11 +13,11 @@ class SlaughterOrderForm(forms.ModelForm):
     client_search = forms.CharField(
         max_length=255,
         required=False,
-        label=_("Search Registered Client"),
+        label=_("Search client"),
         widget=forms.TextInput(
             attrs={
                 "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
-                "placeholder": _("Type client name to search..."),
+                "placeholder": _("Search by name, phone, or destination..."),
                 "id": "client-search",
                 "autocomplete": "off",
             }
@@ -136,11 +136,11 @@ class SlaughterOrderForm(forms.ModelForm):
 
         if not client_id and not client_name:
             raise forms.ValidationError(
-                _("An order must be linked to either a registered client or a walk-in client name.")
+                _("An order must be linked to either a saved client from search or a walk-in client name.")
             )
 
         if client_id and client_name:
-            raise forms.ValidationError(_("Please provide either a registered client or a walk-in client, not both."))
+            raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
 
         # Combine area code with phone number
         area_code = cleaned_data.get("client_phone_area_code") or "+90"
@@ -166,11 +166,11 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
     client_search = forms.CharField(
         max_length=255,
         required=False,
-        label=_("Search Registered Client"),
+        label=_("Search client"),
         widget=forms.TextInput(
             attrs={
                 "class": "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
-                "placeholder": _("Type client name to search..."),
+                "placeholder": _("Search by name, phone, or destination..."),
                 "id": "client-search",
                 "autocomplete": "off",
             }
@@ -317,11 +317,11 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
 
         if not client_id and not client_name:
             raise forms.ValidationError(
-                _("An order must be linked to either a registered client or a walk-in client name.")
+                _("An order must be linked to either a saved client from search or a walk-in client name.")
             )
 
         if client_id and client_name:
-            raise forms.ValidationError(_("Please provide either a registered client or a walk-in client, not both."))
+            raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
 
         # Combine area code with phone number
         area_code = cleaned_data.get("client_phone_area_code") or "+90"

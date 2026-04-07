@@ -171,6 +171,49 @@ class TestClientSearchAPI:
         assert payload["clients"][0]["default_destination_client_id"] == str(destination_client.id)
         assert payload["clients"][0]["default_destination_client_name"] == "Meta Destination Co"
 
+    def test_search_includes_walk_in_prospect_profile(self, reception_admin_client):
+        walkin_user = User.objects.create_user(
+            username="search-walkin-user",
+            password=None,
+            role=User.Role.WALKIN,
+            phone_number="+905551234001",
+        )
+        walkin_user.set_unusable_password()
+        walkin_user.save(update_fields=["password"])
+        profile = ClientProfile.objects.create(
+            user=walkin_user,
+            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+            contact_person="Walk-in Search Me",
+            phone_number="+905551234001",
+            address="",
+        )
+
+        response = reception_admin_client.get(reverse("reception:client_search"), {"q": "Walk-in"})
+        assert response.status_code == 200
+        payload = response.json()
+        ids = {row["id"] for row in payload["clients"]}
+        assert str(profile.id) in ids
+        walkin_rows = [r for r in payload["clients"] if r.get("id") == str(profile.id)]
+        assert walkin_rows[0].get("source") == "profile"
+
+    def test_search_includes_unlinked_walk_in_order(self, reception_admin_client, reception_service_package):
+        SlaughterOrder.objects.create(
+            client=None,
+            client_name="Legacy Walk-in Name",
+            client_phone="+905551234002",
+            service_package=reception_service_package,
+            order_datetime=timezone.now(),
+        )
+
+        response = reception_admin_client.get(reverse("reception:client_search"), {"q": "Legacy"})
+        assert response.status_code == 200
+        payload = response.json()
+        assert any(row.get("source") == "unlinked_order" for row in payload["clients"])
+        legacy = next(r for r in payload["clients"] if r.get("source") == "unlinked_order")
+        assert legacy.get("id") == ""
+        assert legacy.get("client_name") == "Legacy Walk-in Name"
+        assert legacy.get("client_phone") == "+905551234002"
+
 
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
 class TestSlaughterOrderListView:
