@@ -45,7 +45,7 @@ LOCALE_ARGS := $(foreach loc,$(LOCALES),-l $(loc))
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup makemessages compilemessages messages
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging migrate-prod import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup makemessages compilemessages messages
 
 help:
 	@echo "CarniTrack Makefile"
@@ -76,7 +76,8 @@ help:
 	@echo "  make db-fix-dev-ownership  Reassign imported local DB objects to the $(DEV_ENV) DB_USER"
 	@echo "  make migrate-dev        Run migrations using $(DEV_ENV)"
 	@echo "  make tenant-superuser-dev  createsuperuser in tenant DB (SCHEMA=$(SCHEMA) by default; needs a Client + Domain)"
-	@echo "  make migrate-staging    Run migrations using $(STAGING_ENV)"
+	@echo "  make migrate-staging    Run migrations using $(STAGING_ENV) (starts staging Cloud SQL proxy)"
+	@echo "  make migrate-prod       Run migrations using $(PROD_ENV) (starts prod Cloud SQL proxy on $(PROXY_PORT))"
 	@echo "  make import-prod-dev    Wipe dev DB + load db_exports/prod.sql (destructive)"
 	@echo ""
 	@echo "  make redis-shell        Open redis-cli inside the docker compose redis container"
@@ -88,6 +89,7 @@ help:
 	@echo "First time (dev):     make install-deps && cp env/examples/.env.dev.example .env.dev && make db-setup-dev && make migrate-dev && make dev"
 	@echo "First time (staging): cp env/examples/.env.staging.example .env.staging  # fill in DB_PASSWORD, then:"
 	@echo "                      make migrate-staging && make staging"
+	@echo "Production migrate:   ensure $(PROD_ENV) has DB_HOST=127.0.0.1 and DB_PORT=$(PROXY_PORT), then: make migrate-prod"
 	@echo ""
 	@echo "Override examples:"
 	@echo "  make dev DEV_ENV=.env"
@@ -213,6 +215,18 @@ migrate-staging:
 		sleep 2; \
 		trap "echo Stopping Cloud SQL Proxy...; kill $$PROXY_PID 2>/dev/null" EXIT INT TERM; \
 		set -a; . "$(STAGING_ENV)"; set +a; \
+		$(MANAGE) migrate; \
+	'
+
+migrate-prod:
+	@if [ ! -f "$(PROD_ENV)" ]; then echo "Missing $(PROD_ENV)"; exit 1; fi
+	@bash -c '\
+		echo "Starting Cloud SQL Proxy for production on port $(PROXY_PORT) ($(CLOUDSQL_INSTANCE))..."; \
+		$(CLOUD_SQL_PROXY_V1) -instances=$(CLOUDSQL_INSTANCE)=tcp:$(PROXY_PORT) & \
+		PROXY_PID=$$!; \
+		sleep 2; \
+		trap "echo Stopping Cloud SQL Proxy...; kill $$PROXY_PID 2>/dev/null" EXIT INT TERM; \
+		set -a; . "$(PROD_ENV)"; set +a; \
 		$(MANAGE) migrate; \
 	'
 
