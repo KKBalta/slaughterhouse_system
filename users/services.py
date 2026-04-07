@@ -131,6 +131,16 @@ def backfill_legacy_walk_in_profiles_from_orders() -> dict[str, int]:
         if existing_user is None and profile.user_id:
             stats["created_users"] += 1
 
+        # Walk-in prospects are managed as UNCLASSIFIED in user management (same as live walk-in intake).
+        linked_user = profile.user
+        if (
+            linked_user is not None
+            and linked_user.role == User.Role.WALKIN
+            and profile.account_type != ClientProfile.AccountType.UNCLASSIFIED
+        ):
+            profile.account_type = ClientProfile.AccountType.UNCLASSIFIED
+            profile.save(update_fields=["account_type", "updated_at"])
+
         stats["linked_orders"] += SlaughterOrder.objects.filter(
             client__isnull=True,
             pk__in=grouped_order_ids.get(normalized_phone, set()),

@@ -66,6 +66,39 @@ def test_backfill_walkin_profiles_command_creates_users_profiles_and_links_order
     assert "linked_orders=2" in output
 
 
+def test_backfill_walkin_profiles_normalizes_reused_walkin_profile_to_unclassified():
+    """Reused WALKIN prospect profiles should stay UNCLASSIFIED for user management."""
+    service_package = ServicePackage.objects.create(name="Reuse Package")
+    walkin_user = User.objects.create_user(
+        username="reuse-walkin",
+        password=None,
+        role=User.Role.WALKIN,
+        phone_number="+905551234500",
+    )
+    walkin_user.set_unusable_password()
+    walkin_user.save(update_fields=["password"])
+    profile = ClientProfile.objects.create(
+        user=walkin_user,
+        account_type=ClientProfile.AccountType.INDIVIDUAL,
+        contact_person="Wrong Type",
+        phone_number="+905551234500",
+        address="",
+    )
+    order = SlaughterOrder.objects.create(
+        client_name="Reuse Name",
+        client_phone="+905551234500",
+        order_datetime=timezone.now(),
+        service_package=service_package,
+    )
+
+    call_command("backfill_walkin_profiles", stdout=StringIO())
+
+    profile.refresh_from_db()
+    order.refresh_from_db()
+    assert profile.account_type == ClientProfile.AccountType.UNCLASSIFIED
+    assert order.client == profile
+
+
 def test_backfill_walkin_profiles_command_dry_run_rolls_back_changes():
     service_package = ServicePackage.objects.create(name="Legacy Backfill Package")
     order = SlaughterOrder.objects.create(

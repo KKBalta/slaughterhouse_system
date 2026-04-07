@@ -9,7 +9,11 @@ from users.services import backfill_legacy_walk_in_profiles_from_orders
 
 
 class Command(BaseCommand):
-    help = "Create WALKIN users/profiles for legacy walk-in orders and link matching historical orders by phone number."
+    help = (
+        "Create WALKIN users and UNCLASSIFIED ClientProfile rows for legacy walk-in orders, "
+        "then link matching historical orders by normalized phone. "
+        "Profiles appear under user management as Unclassified walk-in prospects for staff to edit."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
