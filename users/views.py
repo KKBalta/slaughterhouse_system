@@ -156,6 +156,7 @@ from .forms import (
 from .models import CLIENT_MANAGEMENT_ROLES, ClientProfile, User
 from .policies import (
     can_access_reception,
+    can_access_reporting,
     can_access_user_management,
     can_create_role,
     can_edit_user,
@@ -842,7 +843,8 @@ def dashboard_view(request):
 
 
 def is_manager_or_admin(user):
-    return can_manage_company_settings(user)
+    """Reporting views: owner, admin, and manager (tenant) roles."""
+    return can_access_reporting(user)
 
 
 def is_admin(user):

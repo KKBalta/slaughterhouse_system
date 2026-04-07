@@ -915,15 +915,14 @@ class TestReportingViews:
         assert response.status_code == 302
         assert "/login/" in response.url
 
-    def test_report_dashboard_client_force_login_rejects_manager(self, client, manager_user):
+    def test_report_dashboard_client_force_login_allows_manager(self, client, manager_user):
         from django.urls import reverse
 
         client.force_login(manager_user)
 
         response = client.get(reverse("report_dashboard"))
 
-        assert response.status_code == 302
-        assert "/login/" in response.url
+        assert response.status_code == 200
 
     def test_report_dashboard_client_force_login_allows_admin(self, client):
         from django.urls import reverse

@@ -5,6 +5,7 @@ from users.models import CLIENT_MANAGEMENT_ROLES, User
 TENANT_USER_MANAGER_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN})
 CLIENT_ACCOUNT_MANAGER_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR})
 TENANT_SETTINGS_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN})
+REPORTING_ACCESS_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER})
 OPERATIONAL_ROLES = frozenset({User.Role.OWNER, User.Role.ADMIN, User.Role.MANAGER, User.Role.OPERATOR})
 STAFF_MANAGED_ROLES = frozenset({User.Role.ADMIN, User.Role.OWNER, User.Role.MANAGER, User.Role.OPERATOR})
 FULL_USER_MANAGEMENT_VISIBLE_ROLES = (
@@ -58,6 +59,10 @@ def can_access_user_management(user) -> bool:
 
 def can_manage_company_settings(user) -> bool:
     return _role_of(user) in TENANT_SETTINGS_ROLES
+
+
+def can_access_reporting(user) -> bool:
+    return _role_of(user) in REPORTING_ACCESS_ROLES
 
 
 def can_access_reception(user) -> bool:
@@ -142,5 +147,6 @@ def dashboard_capabilities(user) -> dict[str, bool]:
         "can_manage_client_accounts": can_manage_client_accounts(user),
         "can_access_user_management": can_access_user_management(user),
         "can_manage_company_settings": can_manage_company_settings(user),
+        "can_access_reporting": can_access_reporting(user),
         "can_access_django_admin": can_access_django_admin(user),
     }

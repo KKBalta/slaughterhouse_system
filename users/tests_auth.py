@@ -171,10 +171,10 @@ class TestRoleBasedAccess:
         response = client.get(reverse("processing:dashboard"))
         assert response.status_code in [200, 302]
 
-    def test_manager_cannot_access_reporting(self, client, auth_state):
+    def test_manager_can_access_reporting(self, client, auth_state):
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
         response = client.get(reverse("report_dashboard"))
-        assert response.status_code == 302
+        assert response.status_code == 200
 
 
 class TestPasswordManagement:
