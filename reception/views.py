@@ -10,9 +10,9 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
-from tenants.email_index import normalize_phone
 
 from processing.models import Animal
+from tenants.email_index import normalize_phone
 from users.models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 
 from .forms import AnimalForm, BatchAnimalForm, SlaughterOrderForm, SlaughterOrderUpdateForm

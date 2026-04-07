@@ -161,7 +161,6 @@ from .policies import (
     can_create_role,
     can_edit_user,
     can_manage_client_accounts,
-    can_manage_company_settings,
     can_manage_tenant_users,
     creatable_roles_for,
     visible_user_management_roles_for,
