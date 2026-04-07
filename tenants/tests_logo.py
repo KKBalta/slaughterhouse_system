@@ -72,6 +72,7 @@ def test_clean_logo_accepts_png():
             "company_name": "",
             "company_full_name": "",
             "company_address": "",
+            "registered_province_plaka": "17",
             "license_no": "",
             "operation_no": "",
             "contact_email": "",

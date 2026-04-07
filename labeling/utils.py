@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from tenants.tenant_helpers import get_tenant_site_url
+from tenants.turkey_provinces import get_vd_label_prefix_for_plaka
 
 
 def generate_label_content(item_type: str, item_id: str, label_template) -> dict:
@@ -331,7 +332,7 @@ TEXT 768,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 736,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 704,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 672,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 640,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 640,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 773,279,"0",90,10,11,"{label_data["kupe_no"]}"
 TEXT 724,1033,"ROMAN.TTF",180,1,10,"{label_data["cinsi"]}"
 TEXT 732,64,"0",90,9,9,"Uretici Unvani"
@@ -358,7 +359,7 @@ TEXT 568,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 536,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 504,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 472,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 440,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 440,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 573,279,"0",90,10,11,"{label_data["kupe_no"]}"
 TEXT 524,1033,"ROMAN.TTF",180,1,10,"{label_data["cinsi"]}"
 TEXT 532,64,"0",90,9,9,"Uretici Unvani"
@@ -385,7 +386,7 @@ TEXT 368,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 336,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 304,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 272,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 240,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 240,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 373,279,"0",90,10,11,"{label_data["kupe_no"]}"
 TEXT 324,1033,"ROMAN.TTF",180,1,10,"{label_data["cinsi"]}"
 TEXT 332,64,"0",90,9,9,"Uretici Unvani"
@@ -412,7 +413,7 @@ TEXT 169,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 137,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 105,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 73,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 41,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 41,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 174,279,"0",90,10,11,"{label_data["kupe_no"]}"
 TEXT 125,1033,"ROMAN.TTF",180,1,10,"{label_data["cinsi"]}"
 TEXT 133,64,"0",90,9,9,"Uretici Unvani"
@@ -1021,7 +1022,7 @@ TEXT 768,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 736,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 704,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 672,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 640,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 640,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 773,279,"0",90,10,11,"{kupe_no}"
 TEXT 724,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
 TEXT 732,64,"0",90,9,9,"Uretici Unvani"
@@ -1048,7 +1049,7 @@ TEXT 568,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 536,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 504,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 472,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 440,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 440,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 573,279,"0",90,10,11,"{kupe_no}"
 TEXT 524,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
 TEXT 532,64,"0",90,9,9,"Uretici Unvani"
@@ -1075,7 +1076,7 @@ TEXT 368,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 336,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 304,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 272,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 240,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 240,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 373,279,"0",90,10,11,"{kupe_no}"
 TEXT 324,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
 TEXT 332,64,"0",90,9,9,"Uretici Unvani"
@@ -1102,7 +1103,7 @@ TEXT 169,1583,"0",90,14,11,"{company_info["company_name"]}"
 TEXT 137,1602,"ROMAN.TTF",90,1,11,"{company_info["company_full_name"]}"
 TEXT 105,1556,"ROMAN.TTF",90,1,11,"{company_info["company_address"]}"
 TEXT 73,1576,"ROMAN.TTF",90,1,11,"® ISLETME ONAY NO: {company_info["license_no"]}"
-TEXT 41,1622,"ROMAN.TTF",90,1,11,"CKALE VD: {company_info["operation_no"]}"
+TEXT 41,1622,"ROMAN.TTF",90,1,11,"{company_info["vd_label_prefix"]} VD: {company_info["operation_no"]}"
 TEXT 174,279,"0",90,10,11,"{kupe_no}"
 TEXT 125,1033,"ROMAN.TTF",180,1,10,"{cinsi}"
 TEXT 133,64,"0",90,9,9,"Uretici Unvani"
@@ -1864,6 +1865,8 @@ def get_company_info() -> dict:
     compat_mode = get_printer_compatibility_mode()
     tenant = _get_label_tenant()
     if tenant is not None:
+        plaka = getattr(tenant, "registered_province_plaka", None) or "17"
+        vd_label_prefix = get_vd_label_prefix_for_plaka(plaka)
         return {
             "company_name": format_turkish_text_for_printer(getattr(tenant, "company_name", "") or "", compat_mode),
             "company_full_name": format_turkish_text_for_printer(
@@ -1874,11 +1877,21 @@ def get_company_info() -> dict:
             ),
             "license_no": getattr(tenant, "license_no", "") or "",
             "operation_no": getattr(tenant, "operation_no", "") or "",
+            "registered_province_plaka": plaka,
+            "vd_label_prefix": vd_label_prefix,
         }
+    plaka = getattr(settings, "REGISTERED_PROVINCE_PLAKA", "17") or "17"
+    override = getattr(settings, "VD_LABEL_PREFIX", None)
+    if override is not None and str(override).strip():
+        vd_label_prefix = str(override).strip()
+    else:
+        vd_label_prefix = get_vd_label_prefix_for_plaka(plaka)
     return {
         "company_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_NAME", ""), compat_mode),
         "company_full_name": format_turkish_text_for_printer(getattr(settings, "COMPANY_FULL_NAME", ""), compat_mode),
         "company_address": format_turkish_text_for_printer(getattr(settings, "COMPANY_ADDRESS", ""), compat_mode),
         "license_no": getattr(settings, "LICENSE_NO", ""),
         "operation_no": getattr(settings, "OPERATION_NO", ""),
+        "registered_province_plaka": plaka,
+        "vd_label_prefix": vd_label_prefix,
     }

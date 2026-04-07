@@ -458,6 +458,7 @@ def test_tenant_company_settings_view_get_and_post(admin_user, mocker):
             "company_name": "New Co",
             "company_full_name": "New Co Ltd",
             "company_address": "123 New Street",
+            "registered_province_plaka": "06",
             "license_no": "L-1",
             "operation_no": "O-1",
             "contact_email": "info@example.com",
@@ -473,5 +474,6 @@ def test_tenant_company_settings_view_get_and_post(admin_user, mocker):
     assert response.status_code == 302
     assert response.url == reverse("tenant_company_settings")
     assert tenant.company_name == "New Co"
+    assert tenant.registered_province_plaka == "06"
     assert tenant.contact_email == "info@example.com"
     assert tenant.contact_phone == "+905551112233"

@@ -180,6 +180,7 @@ COMPANY_FULL_NAME = "Test Company Ltd"
 COMPANY_ADDRESS = "Test Address"
 LICENSE_NO = "00-0000"
 OPERATION_NO = "0000000000"
+REGISTERED_PROVINCE_PLAKA = "17"
 
 # Printer Settings (per-tenant in multitenant mode; kept here as test fallback for SQLite runs)
 PRINTER_TURKISH_MODE = "unicode"

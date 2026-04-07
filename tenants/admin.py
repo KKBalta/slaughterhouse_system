@@ -31,6 +31,7 @@ class ClientAdmin(admin.ModelAdmin):
                     "company_name",
                     "company_full_name",
                     "company_address",
+                    "registered_province_plaka",
                     "license_no",
                     "operation_no",
                 ),
