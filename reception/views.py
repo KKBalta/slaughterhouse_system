@@ -3,6 +3,7 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,6 +13,7 @@ from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
 from tenants.email_index import normalize_phone
 
+from labeling.services import archive_destination_sensitive_order_labels
 from processing.models import Animal
 from users.models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 
@@ -25,7 +27,9 @@ from .services import (
     create_batch_animals,
     create_slaughter_order,
     remove_animal_from_order,
-    update_slaughter_order,
+    update_order_destination,
+    update_order_datetime,
+    update_order_service_package,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,6 +40,14 @@ def _validation_error_user_message(exc: ValidationError) -> str:
     if hasattr(exc, "messages") and exc.messages:
         return " ".join(str(m) for m in exc.messages)
     return str(exc)
+
+
+def _destination_changed(order: SlaughterOrder, *, destination: str | None, destination_client_id: str | None) -> bool:
+    current_destination = (order.destination or "").strip()
+    new_destination = (destination or "").strip()
+    current_destination_client_id = str(order.destination_client_id or "")
+    new_destination_client_id = str(destination_client_id or "")
+    return current_destination != new_destination or current_destination_client_id != new_destination_client_id
 
 
 class ClientSearchView(LoginRequiredMixin, View):
@@ -278,29 +290,77 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-            assign_client_to_order(
-                self.object,
-                client_id=form.cleaned_data.get("client_id"),
-                client_name=form.cleaned_data.get("client_name", ""),
-                client_phone=form.cleaned_data.get("client_phone", ""),
-                destination=form.cleaned_data["destination"],
+            order = SlaughterOrder.objects.select_related("service_package", "destination_client").get(pk=self.object.pk)
+            destination_changed = form.can_edit_destination and _destination_changed(
+                order,
+                destination=form.cleaned_data.get("destination"),
                 destination_client_id=form.cleaned_data.get("destination_client_id"),
             )
+            archived_label_count = 0
 
-            # Update other fields
-            update_data = {
-                "service_package": form.cleaned_data["service_package"],
-                "destination": form.cleaned_data["destination"],
-                "order_datetime": form.cleaned_data["order_datetime"],
-            }
-            update_slaughter_order(order=self.object, **update_data)
+            with transaction.atomic():
+                if form.can_edit_client:
+                    assign_client_to_order(
+                        order,
+                        client_id=form.cleaned_data.get("client_id"),
+                        client_name=form.cleaned_data.get("client_name", ""),
+                        client_phone=form.cleaned_data.get("client_phone", ""),
+                        destination=form.cleaned_data["destination"],
+                        destination_client_id=form.cleaned_data.get("destination_client_id"),
+                    )
+                elif form.can_edit_destination:
+                    update_order_destination(
+                        order,
+                        destination=form.cleaned_data["destination"],
+                        destination_client_id=form.cleaned_data.get("destination_client_id"),
+                    )
+
+                if form.can_edit_service_package:
+                    update_order_service_package(
+                        order=order,
+                        service_package=form.cleaned_data["service_package"],
+                    )
+
+                if form.can_edit_order_datetime:
+                    update_order_datetime(
+                        order=order,
+                        order_datetime=form.cleaned_data["order_datetime"],
+                    )
+
+                if not (
+                    form.can_edit_client
+                    or form.can_edit_destination
+                    or form.can_edit_service_package
+                    or form.can_edit_order_datetime
+                ):
+                    raise ValidationError(_("This order can no longer be edited."))
+
+                if destination_changed:
+                    archived_label_count = archive_destination_sensitive_order_labels(order)
+
+            order.refresh_from_db()
+            self.object = order
+
             messages.success(self.request, _("Order updated successfully."))
+            if archived_label_count:
+                messages.warning(
+                    self.request,
+                    _("Archived %(count)s previously generated animal labels. Regenerate them before printing.")
+                    % {"count": archived_label_count},
+                )
             return redirect(self.get_success_url())
         except ValidationError as e:
             form.add_error(None, e)
             return self.form_invalid(form)
         except ClientProfile.DoesNotExist:
             form.add_error(None, _("The selected client could not be found. Please choose it again."))
+            return self.form_invalid(form)
+        except Exception:
+            logger.exception("Update slaughter order failed", extra={"order_id": str(self.object.pk)})
+            form.add_error(
+                None,
+                _("We could not update this order right now. Please try again."),
+            )
             return self.form_invalid(form)
 
 

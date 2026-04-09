@@ -14,12 +14,14 @@ SKIP_VIEW_TESTS=true (e.g. in CI without full template setup).
 import os
 
 import pytest
+from django.contrib.messages import get_messages
 from django.contrib.auth import get_user_model
 from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from core.models import ServicePackage
+from labeling.models import AnimalLabel
 from processing.models import Animal
 from reception.models import SlaughterOrder
 from users.models import ClientProfile
@@ -619,6 +621,156 @@ class TestSlaughterOrderUpdateView:
         order.refresh_from_db()
         assert order.client_phone == ""
         assert "client_phone" in response.context["form"].errors
+
+    def test_update_locks_client_but_allows_guarded_service_and_destination_changes_once_animals_exist(
+        self,
+        reception_admin_client,
+        reception_client_profile,
+        reception_service_package,
+    ):
+        replacement_user = User.objects.create_user(
+            username="replacement-owner",
+            password="testpass123",
+            role=User.Role.CLIENT,
+        )
+        replacement_profile = ClientProfile.objects.create(
+            user=replacement_user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="+905551230777",
+            address="Replacement Address",
+        )
+        destination_user = User.objects.create_user(
+            username="destination-update-user",
+            password="testpass123",
+            role=User.Role.CLIENT,
+        )
+        destination_client = ClientProfile.objects.create(
+            user=destination_user,
+            account_type=ClientProfile.AccountType.ENTERPRISE,
+            company_name="Updated Route Co",
+            contact_person="Receiver",
+            phone_number="+905551230778",
+            address="Destination Address",
+            tax_id="DEST-UPDATE-1",
+        )
+        replacement_service = ServicePackage.objects.create(name="Replacement Package")
+
+        order = SlaughterOrder.objects.create(
+            client=reception_client_profile,
+            destination="Original Route",
+            service_package=reception_service_package,
+            order_datetime=timezone.now(),
+        )
+        Animal.objects.create(
+            status="slaughtered",
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="VIEW-LOCK-001",
+        )
+        animal = order.animals.get()
+        stale_label = AnimalLabel.objects.create(
+            animal=animal,
+            label_type="hot_carcass",
+            prn_content="STALE",
+            bat_content="STALE",
+        )
+        stale_label.pdf_file = "animal_labels/pdf/view-stale-label.pdf"
+        stale_label.save(update_fields=["pdf_file"])
+
+        get_response = reception_admin_client.get(
+            reverse("reception:slaughter_order_update", kwargs={"pk": order.pk}),
+        )
+        assert get_response.status_code == 200
+        assert "archived automatically" in _response_text(get_response)
+
+        response = reception_admin_client.post(
+            reverse("reception:slaughter_order_update", kwargs={"pk": order.pk}),
+            {
+                "client_search": replacement_profile.get_full_name(),
+                "client_id": str(replacement_profile.id),
+                "client_name": "",
+                "client_phone_area_code": "+90",
+                "client_phone": "",
+                "destination_search": "Updated Route Co",
+                "destination_client_id": str(destination_client.id),
+                "service_package": str(replacement_service.id),
+                "order_datetime": timezone.now().strftime("%Y-%m-%d %H:%M"),
+            },
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        order.refresh_from_db()
+        assert order.client == reception_client_profile
+        assert order.service_package == replacement_service
+        assert order.destination == "Updated Route Co"
+        assert order.destination_client == destination_client
+        stale_label.refresh_from_db()
+        assert stale_label.is_active is False
+        assert stale_label.pdf_file.name == "animal_labels/pdf/view-stale-label.pdf"
+        flash_messages = [str(message) for message in get_messages(response.wsgi_request)]
+        assert "Order updated successfully." in flash_messages
+        assert "Archived 1 previously generated animal labels. Regenerate them before printing." in flash_messages
+
+        labels_response = reception_admin_client.get(
+            reverse("labeling:animal_label_list", kwargs={"animal_id": animal.pk}),
+        )
+        assert labels_response.status_code == 200
+        assert list(labels_response.context["labels"]) == []
+
+    def test_update_with_unchanged_destination_keeps_active_label_history(
+        self,
+        reception_admin_client,
+        reception_client_profile,
+        reception_service_package,
+    ):
+        order = SlaughterOrder.objects.create(
+            client=reception_client_profile,
+            destination="Original Route",
+            service_package=reception_service_package,
+            order_datetime=timezone.now(),
+        )
+        animal = Animal.objects.create(
+            status="slaughtered",
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="VIEW-UNCHANGED-001",
+        )
+        active_label = AnimalLabel.objects.create(
+            animal=animal,
+            label_type="hot_carcass",
+            prn_content="ACTIVE",
+            bat_content="ACTIVE",
+        )
+
+        response = reception_admin_client.post(
+            reverse("reception:slaughter_order_update", kwargs={"pk": order.pk}),
+            {
+                "client_search": reception_client_profile.get_full_name(),
+                "client_id": str(reception_client_profile.id),
+                "client_name": "",
+                "client_phone_area_code": "+90",
+                "client_phone": "",
+                "destination_search": "Original Route",
+                "destination_client_id": "",
+                "service_package": str(reception_service_package.id),
+                "order_datetime": timezone.now().strftime("%Y-%m-%d %H:%M"),
+            },
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        active_label.refresh_from_db()
+        assert active_label.is_active is True
+        flash_messages = [str(message) for message in get_messages(response.wsgi_request)]
+        assert "Order updated successfully." in flash_messages
+        assert not any("Archived" in message for message in flash_messages)
+
+        labels_response = reception_admin_client.get(
+            reverse("labeling:animal_label_list", kwargs={"animal_id": animal.pk}),
+        )
+        assert labels_response.status_code == 200
+        assert list(labels_response.context["labels"]) == [active_label]
 
 
 class TestOrderStatusTransitions:

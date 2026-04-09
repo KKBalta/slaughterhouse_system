@@ -6,6 +6,12 @@ from django.utils.translation import gettext_lazy as _
 from processing.models import Animal
 
 from .models import ServicePackage, SlaughterOrder
+from .services import (
+    can_edit_order_destination,
+    can_edit_order_datetime,
+    can_edit_order_service_package,
+    can_reassign_order_client,
+)
 
 
 class SlaughterOrderForm(forms.ModelForm):
@@ -269,6 +275,14 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.can_edit_client = True
+        self.can_edit_order_datetime = True
+        self.can_edit_service_package = True
+        self.can_edit_destination = True
+        self.is_destination_only_mode = False
+        self.is_readonly_mode = False
+        self.generated_animal_label_count = 0
+        self.has_generated_animal_labels = False
         sp = self.fields["service_package"]
         qs = ServicePackage.objects.filter(is_active=True)
         if self.instance and getattr(self.instance, "service_package_id", None):
@@ -308,36 +322,100 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
             else:
                 self.fields["destination_search"].initial = self.instance.destination or ""
 
-    def clean(self):
-        cleaned_data = super().clean()
-        client_id = (cleaned_data.get("client_id") or "").strip()
-        client_name = (cleaned_data.get("client_name") or "").strip()
-        cleaned_data["client_id"] = client_id
-        cleaned_data["client_name"] = client_name
-
-        if not client_id and not client_name:
-            raise forms.ValidationError(
-                _("An order must be linked to either a saved client from search or a walk-in client name.")
+            self.can_edit_client = can_reassign_order_client(self.instance)
+            self.can_edit_order_datetime = can_edit_order_datetime(self.instance)
+            self.can_edit_service_package = can_edit_order_service_package(self.instance)
+            self.can_edit_destination = can_edit_order_destination(self.instance)
+            self.is_destination_only_mode = (
+                self.can_edit_destination
+                and not self.can_edit_client
+                and not self.can_edit_order_datetime
+                and not self.can_edit_service_package
+            )
+            self.is_readonly_mode = not (
+                self.can_edit_client
+                or self.can_edit_order_datetime
+                or self.can_edit_service_package
+                or self.can_edit_destination
             )
 
-        if client_id and client_name:
-            raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
+            from labeling.models import AnimalLabel
 
-        # Combine area code with phone number
-        area_code = cleaned_data.get("client_phone_area_code") or "+90"
-        phone = (cleaned_data.get("client_phone") or "").strip()
-        if client_name and not phone:
-            self.add_error("client_phone", _("Walk-in client phone is required."))
-            cleaned_data["client_phone"] = ""
-        elif phone:
-            cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+            self.generated_animal_label_count = AnimalLabel.objects.filter(
+                animal__slaughter_order=self.instance,
+                cut__isnull=True,
+                is_active=True,
+            ).count()
+            self.has_generated_animal_labels = self.generated_animal_label_count > 0
+
+        if not self.can_edit_client:
+            for field_name in ["client_search", "client_id", "client_name", "client_phone_area_code", "client_phone"]:
+                self.fields[field_name].disabled = True
+                self.fields[field_name].required = False
+
+        if not self.can_edit_service_package:
+            self.fields["service_package"].disabled = True
+            self.fields["service_package"].required = False
+
+        if not self.can_edit_order_datetime:
+            self.fields["order_datetime"].disabled = True
+            self.fields["order_datetime"].required = False
+
+        if not self.can_edit_destination:
+            for field_name in ["destination_search", "destination_client_id", "destination"]:
+                self.fields[field_name].disabled = True
+                self.fields[field_name].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.can_edit_client:
+            client_id = (cleaned_data.get("client_id") or "").strip()
+            client_name = (cleaned_data.get("client_name") or "").strip()
+            cleaned_data["client_id"] = client_id
+            cleaned_data["client_name"] = client_name
+
+            if not client_id and not client_name:
+                raise forms.ValidationError(
+                    _("An order must be linked to either a saved client from search or a walk-in client name.")
+                )
+
+            if client_id and client_name:
+                raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
+
+            # Combine area code with phone number
+            area_code = cleaned_data.get("client_phone_area_code") or "+90"
+            phone = (cleaned_data.get("client_phone") or "").strip()
+            if client_name and not phone:
+                self.add_error("client_phone", _("Walk-in client phone is required."))
+                cleaned_data["client_phone"] = ""
+            elif phone:
+                cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+            else:
+                cleaned_data["client_phone"] = ""
         else:
-            cleaned_data["client_phone"] = ""
+            cleaned_data["client_id"] = str(self.instance.client_id) if self.instance.client_id else ""
+            cleaned_data["client_name"] = (self.instance.client_name or "").strip()
+            cleaned_data["client_phone"] = (self.instance.client_phone or "").strip()
 
-        destination_search = (cleaned_data.get("destination_search") or "").strip()
-        cleaned_data["destination_search"] = destination_search
-        cleaned_data["destination_client_id"] = (cleaned_data.get("destination_client_id") or "").strip()
-        cleaned_data["destination"] = destination_search or None
+        if self.can_edit_destination:
+            destination_search = (cleaned_data.get("destination_search") or "").strip()
+            cleaned_data["destination_search"] = destination_search
+            cleaned_data["destination_client_id"] = (cleaned_data.get("destination_client_id") or "").strip()
+            cleaned_data["destination"] = destination_search or None
+        else:
+            if self.instance.destination_client:
+                cleaned_data["destination_search"] = self.instance.destination_client.get_full_name()
+                cleaned_data["destination_client_id"] = str(self.instance.destination_client_id)
+            else:
+                cleaned_data["destination_search"] = (self.instance.destination or "").strip()
+                cleaned_data["destination_client_id"] = ""
+            cleaned_data["destination"] = self.instance.destination or None
+
+        if not self.can_edit_service_package:
+            cleaned_data["service_package"] = self.instance.service_package
+
+        if not self.can_edit_order_datetime:
+            cleaned_data["order_datetime"] = self.instance.order_datetime
 
         return cleaned_data
 
@@ -420,7 +498,9 @@ class BatchAnimalForm(forms.Form):
                 "placeholder": _("e.g., BATCH-001 (leave empty for auto-generation)"),
             }
         ),
-        help_text=_("Custom prefix for identification tags. If empty, auto-generated tags will be used."),
+        help_text=_(
+            "Custom prefix for identification tags. The sequence continues for the same prefix on the same day and resets the next day. If empty, auto-generated tags will be used."
+        ),
     )
 
     received_date = forms.DateTimeField(

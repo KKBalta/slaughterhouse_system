@@ -49,14 +49,29 @@
         {% if next_url %}
         <input type="hidden" name="next" value="{{ next_url }}">
         {% endif %}
-        {% if profile_form.non_field_errors %}
+        {% if profile_form.errors or cred_form.errors %}
             <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
-                {{ profile_form.non_field_errors }}
-            </div>
-        {% endif %}
-        {% if cred_form and cred_form.non_field_errors %}
-            <div class="p-4 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
-                {{ cred_form.non_field_errors }}
+                <p class="font-semibold mb-2">{% trans "Please fix the following before saving:" %}</p>
+                <ul class="list-disc list-inside space-y-1">
+                    {% for error in profile_form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for field in profile_form %}
+                        {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% if cred_form %}
+                        {% for error in cred_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                        {% for field in cred_form %}
+                            {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endif %}
+                </ul>
             </div>
         {% endif %}
 
@@ -195,7 +210,7 @@
         }
         syncEnterpriseVisibility();
 
-        {% if mode == 'add' and cred_form %}
+        {% if cred_form %}
         (function () {
             var nameEl = document.getElementById('{{ profile_form.contact_person.id_for_label }}');
             var userEl = document.getElementById('{{ cred_form.username.id_for_label }}');
@@ -205,9 +220,20 @@
                 return (name || '').replace(/\s+/g, '');
             }
 
+            // Walk-in prospects are auto-created with a placeholder username like
+            // "walkin-905551234567". When staff promote them we want the username to
+            // track the contact person they just typed, unless they manually override it.
+            var initialUsername = userEl.value.trim();
+            var looksLikeWalkinPlaceholder = /^walkin-/i.test(initialUsername);
             var autoUsername = deriveUsername(nameEl.value);
             var userEdited =
-                userEl.value.trim() !== '' && userEl.value.trim() !== autoUsername;
+                initialUsername !== '' &&
+                initialUsername !== autoUsername &&
+                !looksLikeWalkinPlaceholder;
+
+            if (looksLikeWalkinPlaceholder && autoUsername) {
+                userEl.value = autoUsername;
+            }
 
             nameEl.addEventListener('input', function () {
                 if (userEdited) return;

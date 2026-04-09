@@ -5,6 +5,7 @@ Note: Some view tests may be skipped if templates are not available
 in the test environment.
 """
 
+from datetime import timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -460,6 +461,29 @@ class TestAnimalListView:
         assert response.context_data["has_filters"] is True
         assert response.context_data["current_page_size"] == 25
         assert response.context_data["available_page_sizes"] == [25, 50, 100, 200]
+
+    def test_orders_by_newest_order_first_and_tag_within_same_order(
+        self,
+        admin_user,
+        slaughter_order_factory,
+        animal_factory,
+    ):
+        from processing.views import AnimalListView
+
+        older_order = slaughter_order_factory(order_datetime=timezone.now() - timedelta(days=1))
+        newer_order = slaughter_order_factory(order_datetime=timezone.now())
+
+        animal_factory(slaughter_order=older_order, identification_tag="DJI-005", status="slaughtered")
+        animal_factory(slaughter_order=older_order, identification_tag="DJI-004", status="carcass_ready")
+        animal_factory(slaughter_order=newer_order, identification_tag="DJI-001", status="received")
+
+        request = _auth_get_request(admin_user, {"page_size": "50"})
+        response = AnimalListView.as_view()(request)
+
+        animals = list(response.context_data["animals"])
+
+        assert [animal.identification_tag for animal in animals[:3]] == ["DJI-001", "DJI-004", "DJI-005"]
+        assert [animal.slaughter_order_id for animal in animals[:3]] == [newer_order.pk, older_order.pk, older_order.pk]
 
 
 @pytest.mark.django_db

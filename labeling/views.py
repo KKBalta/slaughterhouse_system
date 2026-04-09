@@ -10,6 +10,7 @@ from django.views.generic import DetailView, ListView, View
 from processing.models import Animal
 
 from .models import AnimalLabel, CustomLabel, LabelTemplate
+from .services import delete_animal_label_record, delete_custom_label_record
 from .utils import (
     create_animal_label,
     create_custom_label,
@@ -32,7 +33,7 @@ class AnimalLabelListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         animal_id = self.kwargs.get("animal_id")
-        return AnimalLabel.objects.filter(animal_id=animal_id).order_by("-print_date")
+        return AnimalLabel.objects.filter(animal_id=animal_id, is_active=True).order_by("-print_date")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -119,6 +120,9 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
     template_name = "labeling/animal_label_detail.html"
     context_object_name = "label"
 
+    def get_queryset(self):
+        return AnimalLabel.objects.filter(is_active=True)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["animal"] = self.object.animal
@@ -129,7 +133,7 @@ class DownloadAnimalLabelView(LoginRequiredMixin, View):
     """Download animal label in BAT, PRN, or PDF format with enhanced options."""
 
     def get(self, request, label_id, format_type="bat"):
-        animal_label = get_object_or_404(AnimalLabel, id=label_id)
+        animal_label = get_object_or_404(AnimalLabel, id=label_id, is_active=True)
 
         # Check for enhanced BAT file request
         enhanced = request.GET.get("enhanced", "false").lower() == "true"
@@ -224,7 +228,11 @@ class BatchGenerateLabelsView(LoginRequiredMixin, View):
                 animal = Animal.objects.get(id=animal_id, slaughter_order=order)
 
                 # Check if label already exists
-                existing_label = AnimalLabel.objects.filter(animal=animal, label_type=label_type).first()
+                existing_label = AnimalLabel.objects.filter(
+                    animal=animal,
+                    label_type=label_type,
+                    is_active=True,
+                ).first()
 
                 if existing_label:
                     created_labels.append(existing_label)
@@ -250,16 +258,11 @@ class BatchGenerateLabelsView(LoginRequiredMixin, View):
 @login_required
 def delete_animal_label(request, label_id):
     """Delete an animal label."""
-    animal_label = get_object_or_404(AnimalLabel, id=label_id)
+    animal_label = get_object_or_404(AnimalLabel, id=label_id, is_active=True)
     animal_id = animal_label.animal.id
 
     try:
-        # Delete PDF file if it exists
-        if animal_label.pdf_file:
-            if default_storage.exists(animal_label.pdf_file.name):
-                default_storage.delete(animal_label.pdf_file.name)
-
-        animal_label.delete()
+        delete_animal_label_record(animal_label)
         messages.success(request, _("Label deleted successfully."))
 
     except Exception as e:
@@ -496,11 +499,7 @@ def delete_custom_label(request, pk):
     custom_label = get_object_or_404(CustomLabel, id=pk)
 
     try:
-        if custom_label.pdf_file:
-            if default_storage.exists(custom_label.pdf_file.name):
-                default_storage.delete(custom_label.pdf_file.name)
-
-        custom_label.delete()
+        delete_custom_label_record(custom_label)
         messages.success(request, _("Custom label deleted successfully."))
 
     except Exception as e:

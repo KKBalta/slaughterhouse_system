@@ -77,6 +77,15 @@ def test_animal_label_list_view_filters_by_animal(auth_client, animal_factory, a
     assert labels == [animal_label]
 
 
+def test_animal_label_list_view_hides_archived_labels(auth_client, animal_label):
+    animal_label.soft_delete()
+
+    response = auth_client.get(reverse("labeling:animal_label_list", kwargs={"animal_id": animal_label.animal_id}))
+
+    assert response.status_code == 200
+    assert list(response.context["labels"]) == []
+
+
 def test_generate_animal_label_rejects_received_animals(auth_client, animal_factory):
     animal = animal_factory(animal_type="cattle", status="received")
 
@@ -284,6 +293,37 @@ def test_batch_generate_labels_handles_empty_success_and_errors(
     )
     assert response.status_code == 302
     assert response.url == reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk})
+
+
+def test_batch_generate_labels_ignores_archived_existing_label(
+    auth_client, admin_user, slaughter_order_factory, animal_factory, mocker
+):
+    order = slaughter_order_factory()
+    animal = animal_factory(slaughter_order=order, animal_type="cattle")
+    archived_label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="hot_carcass",
+        prn_content="OLD",
+        bat_content="OLD",
+    )
+    archived_label.soft_delete()
+
+    replacement = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="cold_carcass",
+        prn_content="NEW",
+        bat_content="NEW",
+    )
+    mock_create = mocker.patch("labeling.views.create_animal_label", return_value=replacement)
+
+    response = auth_client.post(
+        reverse("labeling:batch_generate_labels", kwargs={"order_id": order.pk}),
+        {"animal_ids": [str(animal.pk)], "label_type": "hot_carcass"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk})
+    mock_create.assert_called_once_with(animal=animal, label_type="hot_carcass", user=admin_user)
 
 
 def test_delete_animal_label_handles_success_and_error(auth_client, animal_label, mocker):

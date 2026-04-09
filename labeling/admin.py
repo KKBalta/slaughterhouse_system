@@ -37,12 +37,13 @@ class AnimalLabelAdmin(admin.ModelAdmin):
         "label_code",
         "animal_identification",
         "label_type",
+        "is_active",
         "printed_by",
         "print_date",
         "has_pdf",
         "prn_preview",
     )
-    list_filter = ("label_type", "print_date", "created_at")
+    list_filter = ("label_type", "is_active", "print_date", "created_at")
     search_fields = ("label_code", "animal__identification_tag", "printed_by__username")
     readonly_fields = (
         "label_code",

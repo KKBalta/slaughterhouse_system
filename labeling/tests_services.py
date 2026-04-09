@@ -9,8 +9,10 @@ import uuid
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from processing.models import DisassemblyCut
 
-from labeling.models import LabelTemplate, PrintJob
+from labeling.models import AnimalLabel, LabelTemplate, PrintJob
+from labeling.services import archive_destination_sensitive_order_labels
 
 User = get_user_model()
 
@@ -180,3 +182,42 @@ class TestPrintJobWorkflow:
 
         job.refresh_from_db()
         assert job.status == "failed"
+
+
+def test_archive_destination_sensitive_order_labels_hides_active_labels_but_keeps_cut_labels(
+    admin_user,
+    animal_factory,
+    slaughter_order_factory,
+):
+    order = slaughter_order_factory(destination="Old Route")
+    animal = animal_factory(slaughter_order=order, status="slaughtered")
+    hot_label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="hot_carcass",
+        printed_by=admin_user,
+        prn_content="HOT",
+        bat_content="HOT",
+    )
+    hot_label.pdf_file = "animal_labels/pdf/stale-hot-label.pdf"
+    hot_label.save(update_fields=["pdf_file"])
+
+    cut = DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg="5.00")
+    cut_label = AnimalLabel.objects.create(
+        animal=animal,
+        cut=cut,
+        label_type="cut",
+        printed_by=admin_user,
+        prn_content="CUT",
+        bat_content="CUT",
+    )
+    cut_label.pdf_file = "animal_labels/pdf/cut-label.pdf"
+    cut_label.save(update_fields=["pdf_file"])
+
+    archived_count = archive_destination_sensitive_order_labels(order)
+
+    assert archived_count == 1
+    hot_label.refresh_from_db()
+    cut_label.refresh_from_db()
+    assert hot_label.is_active is False
+    assert hot_label.pdf_file.name == "animal_labels/pdf/stale-hot-label.pdf"
+    assert cut_label.is_active is True

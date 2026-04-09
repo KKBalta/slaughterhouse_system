@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.test import override_settings
 from django.utils import timezone
 
+from processing.models import Animal
 from users.models import ClientProfile
 
 from .forms import BatchAnimalForm, SlaughterOrderForm, SlaughterOrderUpdateForm
@@ -192,6 +193,32 @@ class TestSlaughterOrderFormValidation:
         assert form.cleaned_data["destination_search"] == "Receiver Co"
         assert form.cleaned_data["destination"] == "Receiver Co"
         assert form.cleaned_data["destination_client_id"] == str(destination_client.id)
+
+    def test_update_form_locks_client_and_datetime_but_keeps_guarded_service_edit_after_animals_added(
+        self, reception_state
+    ):
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Original Route",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+        )
+        Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="FORM-LOCK-001",
+        )
+
+        form = SlaughterOrderUpdateForm(instance=order)
+
+        assert form.can_edit_client is False
+        assert form.can_edit_order_datetime is False
+        assert form.can_edit_service_package is True
+        assert form.can_edit_destination is True
+        assert form.fields["client_search"].disabled is True
+        assert form.fields["service_package"].disabled is False
+        assert form.fields["order_datetime"].disabled is True
+        assert form.fields["destination_search"].disabled is False
 
 
 class TestBatchAnimalForm:

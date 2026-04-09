@@ -961,7 +961,13 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
     next_url = _get_safe_next_url(request)
     profile_instance = _client_profile_form_instance(user, profile)
     require_password = user is None
-    show_credentials_form = user is None or getattr(user, "role", "") == User.Role.CLIENT
+    # Walk-in prospects are shown the credentials form too so staff can rename
+    # the auto-generated walkin-* username and (optionally) set a password when
+    # promoting them to a real client.
+    show_credentials_form = user is None or getattr(user, "role", "") in (
+        User.Role.CLIENT,
+        User.Role.WALKIN,
+    )
     cred_form = None
 
     if request.method == "POST":
@@ -1074,6 +1080,7 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         messages.success(request, _("Matching walk-in orders were linked by phone number."))
                     return redirect("tenant_user_edit", pk=created_user.pk)
 
+                was_walkin = user is not None and getattr(user, "role", "") == User.Role.WALKIN
                 saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
                 linked_orders = link_walk_in_orders_to_client_profile(
                     profile=saved_profile,
@@ -1088,15 +1095,58 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         phone_number=profile_phone,
                         password=(cd.get("new_password1") or "").strip(),
                     )
-                if user is not None and getattr(user, "role", "") == User.Role.WALKIN:
-                    messages.success(request, _("Walk-in prospect updated."))
+
+                # Promote a walk-in to a full CLIENT once staff classifies the
+                # profile as Individual/Enterprise. Without this step the user
+                # row keeps the WALKIN role (and the "Walk-in" tag in lists)
+                # even though the profile now carries a real account type.
+                promoted_from_walkin = False
+                if was_walkin:
+                    saved_account_type = getattr(saved_profile, "account_type", "")
+                    saved_account_type_val = getattr(saved_account_type, "value", saved_account_type)
+                    if saved_account_type_val in (
+                        ClientProfile.AccountType.INDIVIDUAL.value,
+                        ClientProfile.AccountType.ENTERPRISE.value,
+                    ):
+                        user.role = User.Role.CLIENT
+                        user.save(update_fields=["role"])
+                        promoted_from_walkin = True
+
+                profile_display_name = saved_profile.get_full_name() or (
+                    getattr(user, "username", "") if user is not None else ""
+                )
+                account_type_label = _account_type_label(saved_profile.account_type)
+                if promoted_from_walkin:
+                    messages.success(
+                        request,
+                        _("%(name)s promoted to %(account_type)s client account.")
+                        % {"name": profile_display_name, "account_type": account_type_label},
+                    )
+                elif was_walkin:
+                    messages.success(
+                        request,
+                        _("Walk-in prospect %(name)s updated.") % {"name": profile_display_name},
+                    )
                 else:
-                    messages.success(request, _("Client updated."))
+                    messages.success(
+                        request,
+                        _("%(name)s updated as %(account_type)s client.")
+                        % {"name": profile_display_name, "account_type": account_type_label},
+                    )
                 if linked_orders:
                     messages.success(request, _("Matching walk-in orders were linked by phone number."))
                 if saved_profile.pk and not next_url:
                     return redirect("client_profile_detail", pk=saved_profile.pk)
                 return _redirect_next_or(request, "tenant_user_list")
+        else:
+            # Surface the validation failure at the top of the page instead of
+            # relying on staff noticing inline field errors. Otherwise a silent
+            # "nothing happened" experience is the #1 complaint when promoting
+            # walk-in prospects whose address/contact fields weren't filled in.
+            messages.error(
+                request,
+                _("Please correct the errors below and save again."),
+            )
     else:
         profile_form = ClientProfileRegisterForm(instance=profile_instance)
         if show_credentials_form:

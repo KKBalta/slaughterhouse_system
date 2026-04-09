@@ -1112,3 +1112,242 @@ class TestTenantUserManagement:
         assert auth_state.client_user.email == "edited-client@example.com"
         assert auth_state.client_user.phone_number == "+905550001122"
         assert auth_state.client_profile.phone_number == "+905550001122"
+
+    def _create_walkin_prospect(self, *, username, phone):
+        walkin_user = User.objects.create_user(
+            username=username,
+            password=None,
+            phone_number=phone,
+            role=User.Role.WALKIN,
+        )
+        walkin_user.set_unusable_password()
+        walkin_user.save(update_fields=["password"])
+        walkin_profile = ClientProfile.objects.create(
+            user=walkin_user,
+            account_type=ClientProfile.AccountType.UNCLASSIFIED,
+            contact_person="Walk-in Prospect",
+            phone_number=phone,
+            address="",
+        )
+        return walkin_user, walkin_profile
+
+    def test_manager_promotes_walkin_to_individual_client(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-promote-individual", phone="+905550006611"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("client_profile_edit", kwargs={"pk": walkin_profile.pk}),
+            {
+                "username": "promoted-individual",
+                "email": "promoted@example.com",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.INDIVIDUAL,
+                "contact_person": "Promoted Individual",
+                "phone_area_code": "+90",
+                "phone_number": "5550006611",
+                "address": "Promoted Address 12",
+                "company_name": "",
+                "tax_id": "",
+            },
+        )
+
+        assert response.status_code == 302
+        walkin_user.refresh_from_db()
+        walkin_profile.refresh_from_db()
+        assert walkin_user.role == User.Role.CLIENT
+        assert walkin_profile.account_type == ClientProfile.AccountType.INDIVIDUAL
+        assert walkin_profile.contact_person == "Promoted Individual"
+        assert walkin_profile.address == "Promoted Address 12"
+        assert walkin_user.username == "promoted-individual"
+        assert walkin_user.email == "promoted@example.com"
+        assert walkin_user.phone_number == "+905550006611"
+
+    def test_manager_promotes_walkin_to_enterprise_client(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-promote-enterprise", phone="+905550006622"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("client_profile_edit", kwargs={"pk": walkin_profile.pk}),
+            {
+                "username": "promoted-enterprise",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.ENTERPRISE,
+                "contact_person": "Signatory",
+                "phone_area_code": "+90",
+                "phone_number": "5550006622",
+                "address": "HQ Address",
+                "company_name": "Promoted Co",
+                "tax_id": "1234567890",
+            },
+        )
+
+        assert response.status_code == 302
+        walkin_user.refresh_from_db()
+        walkin_profile.refresh_from_db()
+        assert walkin_user.role == User.Role.CLIENT
+        assert walkin_profile.account_type == ClientProfile.AccountType.ENTERPRISE
+        assert walkin_profile.company_name == "Promoted Co"
+        assert walkin_profile.tax_id == "1234567890"
+
+    def test_editing_walkin_without_classification_keeps_role(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-stay", phone="+905550006633"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("client_profile_edit", kwargs={"pk": walkin_profile.pk}),
+            {
+                "username": walkin_user.username,
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.UNCLASSIFIED,
+                "contact_person": "Still Walk-in",
+                "phone_area_code": "+90",
+                "phone_number": "5550006633",
+                "address": "",
+                "company_name": "",
+                "tax_id": "",
+            },
+        )
+
+        assert response.status_code == 302
+        walkin_user.refresh_from_db()
+        walkin_profile.refresh_from_db()
+        assert walkin_user.role == User.Role.WALKIN
+        assert walkin_profile.account_type == ClientProfile.AccountType.UNCLASSIFIED
+        assert walkin_profile.contact_person == "Still Walk-in"
+
+    def test_walkin_promoted_via_tenant_user_edit_url(self, client, auth_state):
+        # /tr/users/ points staff to tenant_user_edit for walk-in rows, so the
+        # promotion must work through that URL too, not only client_profile_edit.
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-tenant-edit", phone="+905550006655"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_edit", kwargs={"pk": walkin_user.pk}),
+            {
+                "username": "AhmetYilmaz",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.INDIVIDUAL,
+                "contact_person": "Ahmet Yilmaz",
+                "phone_area_code": "+90",
+                "phone_number": "5550006655",
+                "address": "Some Address 1",
+                "company_name": "",
+                "tax_id": "",
+            },
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        walkin_user.refresh_from_db()
+        walkin_profile.refresh_from_db()
+        assert walkin_user.role == User.Role.CLIENT
+        assert walkin_profile.account_type == ClientProfile.AccountType.INDIVIDUAL
+        assert walkin_user.username == "AhmetYilmaz"
+        # Success feedback should mention the new account type classification.
+        flashes = [m.message for m in list(response.context["messages"])]
+        assert any("Individual" in m and "promoted" in m.lower() for m in flashes), flashes
+
+    def test_walkin_promotion_with_missing_required_fields_shows_error_feedback(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-validation", phone="+905550006688"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        response = client.post(
+            reverse("tenant_user_edit", kwargs={"pk": walkin_user.pk}),
+            {
+                "username": "walkin-validation",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                # Individual requires contact_person + address; both are blank so
+                # the form must fail loudly instead of silently promoting.
+                "account_type": ClientProfile.AccountType.INDIVIDUAL,
+                "contact_person": "",
+                "phone_area_code": "+90",
+                "phone_number": "5550006688",
+                "address": "",
+                "company_name": "",
+                "tax_id": "",
+            },
+        )
+
+        assert response.status_code == 200
+        walkin_user.refresh_from_db()
+        walkin_profile.refresh_from_db()
+        # No promotion should have happened.
+        assert walkin_user.role == User.Role.WALKIN
+        assert walkin_profile.account_type == ClientProfile.AccountType.UNCLASSIFIED
+        # A visible error message must be surfaced to the staff user.
+        flashes = [(m.level_tag, m.message) for m in list(response.context["messages"])]
+        assert any(tag == "error" for tag, _ in flashes), flashes
+
+    def test_walkin_edit_form_shows_credentials_section(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-form-render", phone="+905550006677"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+        response = client.get(reverse("tenant_user_edit", kwargs={"pk": walkin_user.pk}))
+
+        assert response.status_code == 200
+        # The credentials form (username/password fields) must be available when
+        # editing a walk-in so staff can rename the auto-generated walkin-* username.
+        assert response.context["cred_form"] is not None
+        assert response.context["cred_form"]["username"].value() == walkin_user.username
+
+    def test_promoted_walkin_appears_in_user_rows_not_client_rows(self, client, auth_state):
+        walkin_user, walkin_profile = self._create_walkin_prospect(
+            username="walkin-listing", phone="+905550006644"
+        )
+
+        client.login(username=auth_state.manager_user.username, password="SecurePass123!")
+
+        promote_response = client.post(
+            reverse("client_profile_edit", kwargs={"pk": walkin_profile.pk}),
+            {
+                "username": "listing-promoted",
+                "email": "",
+                "new_password1": "",
+                "new_password2": "",
+                "account_type": ClientProfile.AccountType.INDIVIDUAL,
+                "contact_person": "Listing Client",
+                "phone_area_code": "+90",
+                "phone_number": "5550006644",
+                "address": "Listing Address",
+                "company_name": "",
+                "tax_id": "",
+            },
+        )
+        assert promote_response.status_code == 302
+
+        list_response = client.get(reverse("tenant_user_list"))
+        assert list_response.status_code == 200
+        user_rows = list_response.context["user_rows"]
+        client_rows = list_response.context["client_rows"]
+        assert any(row["user"].pk == walkin_user.pk for row in user_rows), (
+            "Promoted walk-in should appear in the main users table"
+        )
+        assert not any(
+            cr["profile"].pk == walkin_profile.pk for cr in client_rows
+        ), "Promoted walk-in should no longer appear under Client accounts"

@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.models import ServicePackage
-from processing.models import Animal, WeightLog
+from processing.models import Animal, DisassemblyCut, WeightLog
 from reception.models import SlaughterOrder
 from reception.services import (
     add_animal_to_order,
@@ -20,8 +20,10 @@ from reception.services import (
     create_slaughter_order,
     generate_order_number,
     remove_animal_from_order,
+    update_order_datetime,
+    update_order_destination,
+    update_order_service_package,
     update_order_status_from_animals,
-    update_slaughter_order,
 )
 from users.models import ClientProfile
 
@@ -112,22 +114,167 @@ class TestReceptionServices:
         assert reception_state["client_profile"].default_destination_client == destination_client
         assert reception_state["client_profile"].default_destination == "Central Delivery Hub"
 
-    def test_update_slaughter_order_service(self, reception_state, make_order):
+    def test_update_order_datetime_service(self, reception_state, make_order):
         order = make_order()
         assert order.destination is None
 
-        updated_order = update_slaughter_order(
+        updated_order = update_order_datetime(
             order=order,
-            destination="New Market",
-            service_package=reception_state["service_package_simple"],
+            order_datetime=timezone.now() + timedelta(days=1),
         )
-        assert updated_order.destination == "New Market"
-        assert updated_order.service_package == reception_state["service_package_simple"]
+        assert updated_order.order_datetime.date() == (timezone.now() + timedelta(days=1)).date()
 
         order.status = SlaughterOrder.Status.IN_PROGRESS
         order.save()
         with pytest.raises(ValidationError):
-            update_slaughter_order(order=order, destination="Another Market")
+            update_order_datetime(order=order, order_datetime=timezone.now() + timedelta(days=2))
+
+    def test_update_order_service_package_allows_active_order_upgrade_before_disassembly(self, reception_state):
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Original Market",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package_simple"],
+            status=SlaughterOrder.Status.IN_PROGRESS,
+        )
+        animal = Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="UPGRADE-SERVICE-001",
+            status="slaughtered",
+        )
+
+        updated_order = update_order_service_package(
+            order=order,
+            service_package=reception_state["service_package"],
+        )
+
+        animal = Animal.objects.get(pk=animal.pk)
+        assert updated_order.service_package == reception_state["service_package"]
+        assert animal.slaughter_order.service_package == reception_state["service_package"]
+
+    def test_update_order_service_package_rejects_disassembly_mode_change_after_cuts_exist(self, reception_state):
+        standard_package = ServicePackage.objects.create(
+            name="Standard Disassembly",
+            includes_disassembly=True,
+            includes_delivery=False,
+        )
+        boneless_package = ServicePackage.objects.create(
+            name="Boneless Disassembly",
+            includes_disassembly=True,
+            includes_delivery=False,
+        )
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Original Market",
+            order_datetime=timezone.now(),
+            service_package=standard_package,
+            status=SlaughterOrder.Status.IN_PROGRESS,
+        )
+        animal = Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="LOCK-SERVICE-001",
+            status="disassembled",
+        )
+        DisassemblyCut.objects.create(animal=animal, cut_name="ANTREKOT", weight_kg="5.00")
+
+        with pytest.raises(ValidationError):
+            update_order_service_package(
+                order=order,
+                service_package=boneless_package,
+            )
+
+        order.refresh_from_db()
+        assert order.service_package == standard_package
+
+    def test_update_order_service_package_rejects_after_terminal_animal_state(self, reception_state):
+        delivery_package = ServicePackage.objects.create(
+            name="Delivery Service",
+            includes_disassembly=False,
+            includes_delivery=True,
+        )
+        replacement_package = ServicePackage.objects.create(
+            name="Different Delivery Service",
+            includes_disassembly=False,
+            includes_delivery=True,
+        )
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Original Market",
+            order_datetime=timezone.now(),
+            service_package=delivery_package,
+            status=SlaughterOrder.Status.IN_PROGRESS,
+        )
+        Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="LOCK-SERVICE-TERMINAL-001",
+            status="delivered",
+        )
+
+        with pytest.raises(ValidationError):
+            update_order_service_package(
+                order=order,
+                service_package=replacement_package,
+            )
+
+    def test_assign_client_to_order_rejects_client_changes_once_animals_exist(self, reception_state):
+        order = SlaughterOrder.objects.create(
+            client_name="Walk-in Prospect",
+            client_phone="+905551234777",
+            destination="Old Route",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+        )
+        Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="LOCK-CLIENT-001",
+        )
+
+        with pytest.raises(ValidationError):
+            assign_client_to_order(
+                order,
+                client_id=str(reception_state["client_profile"].id),
+                destination="Updated Delivery Point",
+            )
+
+    def test_update_order_destination_allows_in_progress_destination_correction(self, reception_state):
+        destination_client = self._make_destination_client(
+            phone="+905551230006",
+            company_name="Revised Destination",
+        )
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Old Destination",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+            status=SlaughterOrder.Status.IN_PROGRESS,
+        )
+
+        updated_order = update_order_destination(
+            order=order,
+            destination="Revised Destination",
+            destination_client_id=str(destination_client.id),
+        )
+
+        reception_state["client_profile"].refresh_from_db()
+        assert updated_order.destination == "Revised Destination"
+        assert updated_order.destination_client == destination_client
+        assert reception_state["client_profile"].default_destination != "Revised Destination"
+
+    def test_update_order_destination_rejects_billed_order(self, reception_state):
+        order = SlaughterOrder.objects.create(
+            client=reception_state["client_profile"],
+            destination="Locked Destination",
+            order_datetime=timezone.now(),
+            service_package=reception_state["service_package"],
+            status=SlaughterOrder.Status.BILLED,
+        )
+
+        with pytest.raises(ValidationError):
+            update_order_destination(order=order, destination="Another Destination")
 
     def test_create_slaughter_order_creates_walkin_prospect(self, reception_state):
         destination_client = self._make_destination_client(
@@ -405,6 +552,56 @@ class TestReceptionServices:
             assert animal.animal_type == "cattle"
             assert animal.status == "received"
             assert animal.slaughter_order == order
+
+    def test_create_batch_animals_same_day_prefix_continues_sequence_across_orders(self, reception_state, make_order):
+        same_day = timezone.now()
+        morning_order = make_order()
+        afternoon_order = make_order()
+
+        morning_animals = create_batch_animals(
+            order=morning_order,
+            animal_type="cattle",
+            quantity=3,
+            tag_prefix="yk",
+            received_date=same_day,
+            skip_photos=True,
+        )
+        afternoon_animals = create_batch_animals(
+            order=afternoon_order,
+            animal_type="cattle",
+            quantity=3,
+            tag_prefix="yk",
+            received_date=same_day + timedelta(hours=6),
+            skip_photos=True,
+        )
+
+        assert [animal.identification_tag for animal in morning_animals] == ["yk-001", "yk-002", "yk-003"]
+        assert [animal.identification_tag for animal in afternoon_animals] == ["yk-004", "yk-005", "yk-006"]
+
+    def test_create_batch_animals_prefix_resets_on_next_day(self, reception_state, make_order):
+        first_day = timezone.now()
+        second_day = first_day + timedelta(days=1)
+        first_order = make_order()
+        second_order = make_order()
+
+        create_batch_animals(
+            order=first_order,
+            animal_type="cattle",
+            quantity=3,
+            tag_prefix="yk",
+            received_date=first_day,
+            skip_photos=True,
+        )
+        next_day_animals = create_batch_animals(
+            order=second_order,
+            animal_type="cattle",
+            quantity=2,
+            tag_prefix="yk",
+            received_date=second_day,
+            skip_photos=True,
+        )
+
+        assert [animal.identification_tag for animal in next_day_animals] == ["yk-001", "yk-002"]
 
     def test_create_batch_animals_auto_generated_tags(self, reception_state, make_order):
         order = make_order()

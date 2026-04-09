@@ -131,6 +131,30 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-2 text-center">{% trans "Update Order" %}</h1>
             <p class="text-sm text-gray-600 mb-6 text-center">{{ object.slaughter_order_no }}</p>
 
+            {% if form.is_readonly_mode %}
+                <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {% trans "This order is billed or cancelled and can no longer be edited." %}
+                </div>
+            {% elif form.is_destination_only_mode %}
+                <div class="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    {% trans "Client, service package, and order date are locked once animals have been added or processing has started. You can still update the destination." %}
+                </div>
+            {% elif not form.can_edit_client or not form.can_edit_order_datetime or not form.can_edit_service_package %}
+                <div class="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    {% trans "Client and order date are locked once animals have been added or processing has started. Destination can still be updated. Service package changes are allowed only while the order is still active and only when they do not conflict with existing processing data." %}
+                </div>
+            {% endif %}
+
+            {% if form.has_generated_animal_labels and form.can_edit_destination %}
+                <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {% blocktrans count count=form.generated_animal_label_count %}
+                        This order already has 1 active generated animal label. If you change the destination and save, the old label will be archived automatically and removed from the active label history. Regenerate it afterward so the printed data matches the new destination.
+                    {% plural %}
+                        This order already has {{ count }} active generated animal labels. If you change the destination and save, the old labels will be archived automatically and removed from the active label history. Regenerate them afterward so the printed data matches the new destination.
+                    {% endblocktrans %}
+                </div>
+            {% endif %}
+
             <form method="post" class="space-y-4">
                 {% csrf_token %}
                 {{ form.destination }}
@@ -168,7 +192,7 @@
                                     {% if object.client and object.client.default_destination %}{% trans "Preferred destination" %}: {{ object.client.default_destination }}{% endif %}
                                 </div>
                             </div>
-                            <button type="button" id="clear-client" class="flex-shrink-0 text-red-600 hover:text-red-800 p-1">
+                            <button type="button" id="clear-client" class="flex-shrink-0 p-1 text-red-600 hover:text-red-800 {% if not form.can_edit_client %}hidden{% endif %}"{% if not form.can_edit_client %} disabled aria-hidden="true"{% endif %}>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -256,7 +280,7 @@
                                     {% if object.destination_client %}{{ object.destination_client.contact_person|default:object.destination_client.company_name|default:"" }} • {{ object.destination_client.phone_number|default:"" }}{% endif %}
                                 </div>
                             </div>
-                            <button type="button" id="clear-destination-client" class="flex-shrink-0 text-red-600 hover:text-red-800 p-1">
+                            <button type="button" id="clear-destination-client" class="flex-shrink-0 p-1 text-red-600 hover:text-red-800 {% if not form.can_edit_destination %}hidden{% endif %}"{% if not form.can_edit_destination %} disabled aria-hidden="true"{% endif %}>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -303,12 +327,14 @@
                 <div class="pt-4 flex space-x-3">
                     <a href="{% url 'reception:slaughter_order_detail' object.pk %}" 
                        class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors text-center">
-                        {% trans "Cancel" %}
+                        {% if form.is_readonly_mode %}{% trans "Back" %}{% else %}{% trans "Cancel" %}{% endif %}
                     </a>
+                    {% if not form.is_readonly_mode %}
                     <button type="submit" 
                             class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors">
-                        {% trans "Update Order" %}
+                        {% if form.is_destination_only_mode %}{% trans "Update Destination" %}{% else %}{% trans "Update Order" %}{% endif %}
                     </button>
+                    {% endif %}
                 </div>
             </form>
         </div>

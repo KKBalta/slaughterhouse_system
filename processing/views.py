@@ -258,7 +258,11 @@ class AnimalListView(LoginRequiredMixin, ListView):
                 "heifer_details",
                 "individual_weight_logs",
             )
-            .order_by("-received_date")
+            .order_by(
+                "-slaughter_order__order_datetime",
+                "-slaughter_order__slaughter_order_no",
+                "identification_tag",
+            )
         )
 
         # Filter by status if provided

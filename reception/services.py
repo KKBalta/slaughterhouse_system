@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from datetime import datetime
 
@@ -34,6 +35,90 @@ def _destination_display_name(destination_client: ClientProfile | None, destinat
     if destination_client is not None:
         return destination_client.get_full_name()
     return _clean_text(destination) or None
+
+
+def _sequence_date_for_received_at(received_at: datetime | None):
+    if received_at is None:
+        return timezone.localdate()
+    if timezone.is_naive(received_at):
+        received_at = timezone.make_aware(received_at, timezone.get_current_timezone())
+    return timezone.localdate(received_at)
+
+
+def _next_same_day_tag_number(tag_prefix: str, received_at: datetime | None) -> int:
+    prefix = _clean_text(tag_prefix)
+    if not prefix:
+        return 1
+
+    sequence_date = _sequence_date_for_received_at(received_at)
+    prefix_with_dash = f"{prefix}-"
+    suffix_pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)$", re.IGNORECASE)
+    max_suffix = 0
+
+    existing_tags = Animal.objects.filter(
+        received_date__date=sequence_date,
+        identification_tag__istartswith=prefix_with_dash,
+    ).values_list("identification_tag", flat=True)
+
+    for tag in existing_tags:
+        match = suffix_pattern.match((tag or "").strip())
+        if match:
+            max_suffix = max(max_suffix, int(match.group(1)))
+
+    return max_suffix + 1
+
+
+def _order_has_animals(order: SlaughterOrder) -> bool:
+    if not getattr(order, "pk", None):
+        return False
+    return order.animals.exists()
+
+
+def _order_has_terminal_animals(order: SlaughterOrder) -> bool:
+    if not getattr(order, "pk", None):
+        return False
+    return order.animals.filter(status__in=["delivered", "returned", "disposed"]).exists()
+
+
+def _order_has_disassembly_outputs(order: SlaughterOrder) -> bool:
+    if not getattr(order, "pk", None):
+        return False
+    if order.animals.filter(status__in=["disassembled", "packaged", "delivered"]).exists():
+        return True
+    return order.animals.filter(disassembly_cuts__isnull=False).exists()
+
+
+def _service_package_disassembly_mode(service_package: ServicePackage | None) -> str:
+    if service_package is None or not service_package.includes_disassembly:
+        return "none"
+
+    package_name = (service_package.name or "").lower()
+    if "boneless" in package_name or "kemikli" in package_name or "kemiksiz" in package_name:
+        return "boneless"
+    return "standard"
+
+
+def can_reassign_order_client(order: SlaughterOrder) -> bool:
+    return order.status == SlaughterOrder.Status.PENDING and not _order_has_animals(order)
+
+
+def can_edit_order_datetime(order: SlaughterOrder) -> bool:
+    return order.status == SlaughterOrder.Status.PENDING and not _order_has_animals(order)
+
+
+def can_edit_order_details(order: SlaughterOrder) -> bool:
+    # Legacy alias retained for callers that still treat "details" as order date edits.
+    return can_edit_order_datetime(order)
+
+
+def can_edit_order_service_package(order: SlaughterOrder) -> bool:
+    if order.status not in {SlaughterOrder.Status.PENDING, SlaughterOrder.Status.IN_PROGRESS}:
+        return False
+    return not _order_has_terminal_animals(order)
+
+
+def can_edit_order_destination(order: SlaughterOrder) -> bool:
+    return order.status not in {SlaughterOrder.Status.CANCELLED, SlaughterOrder.Status.BILLED}
 
 
 def _sync_preferred_destination_client(
@@ -263,8 +348,8 @@ def assign_client_to_order(
     destination: str | None = None,
     destination_client_id: str | None = None,
 ) -> SlaughterOrder:
-    if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError(_("Cannot update an order that is already in progress, completed, or cancelled."))
+    if not can_reassign_order_client(order):
+        raise ValidationError(_("Cannot change the client once animals have been added or processing has started."))
 
     client_profile, raw_client_name, raw_client_phone = _resolve_order_client_reference(
         client_id=client_id,
@@ -287,20 +372,91 @@ def assign_client_to_order(
 
 
 @transaction.atomic
+def update_order_datetime(order: SlaughterOrder, *, order_datetime: datetime) -> SlaughterOrder:
+    if not can_edit_order_datetime(order):
+        raise ValidationError(_("Cannot update the order date once animals have been added or processing has started."))
+
+    order.order_datetime = order_datetime
+    order.save(update_fields=["order_datetime"])
+    return order
+
+
+@transaction.atomic
+def update_order_destination(
+    order: SlaughterOrder,
+    *,
+    destination: str | None,
+    destination_client_id: str | None = None,
+) -> SlaughterOrder:
+    """
+    Updates destination fields while keeping the order owner/client unchanged.
+
+    This is intentionally looser than full-order edits so reception staff can
+    correct the destination after animals exist or processing has started,
+    without rewriting ownership or service metadata.
+    """
+    if not can_edit_order_destination(order):
+        raise ValidationError(_("Cannot update destination for an order that is already billed or cancelled."))
+
+    destination_client = _resolve_destination_client(destination_client_id)
+    order.destination_client = destination_client
+    order.destination = _destination_display_name(destination_client, destination)
+    order.save(update_fields=["destination_client", "destination"])
+    return order
+
+
+@transaction.atomic
+def update_order_service_package(order: SlaughterOrder, *, service_package: ServicePackage) -> SlaughterOrder:
+    """
+    Guarded service-package updates.
+
+    The service package may change while the order is still active, but only if
+    the new package does not conflict with processing data that already exists.
+    """
+    if not can_edit_order_service_package(order):
+        raise ValidationError(
+            _("Cannot update the service package for an order that is completed, billed, cancelled, or has terminal animals.")
+        )
+
+    if service_package is None:
+        raise ValidationError(_("A service package is required."))
+
+    if order.service_package_id == service_package.id:
+        return order
+
+    if _order_has_terminal_animals(order):
+        raise ValidationError(
+            _("Cannot change the service package after an animal has already been delivered, returned, or disposed.")
+        )
+
+    current_mode = _service_package_disassembly_mode(order.service_package)
+    new_mode = _service_package_disassembly_mode(service_package)
+    if current_mode != new_mode and _order_has_disassembly_outputs(order):
+        raise ValidationError(
+            _("Cannot change the disassembly service type after disassembly work or cut records already exist.")
+        )
+
+    order.service_package = service_package
+    order.save(update_fields=["service_package"])
+    return order
+
+
+@transaction.atomic
 def update_slaughter_order(order: SlaughterOrder, **data) -> SlaughterOrder:
     """
-    Updates a slaughter order with given data.
-    Prevents updates if the order is no longer pending.
+    Backward-compatible wrapper for older callers.
     """
-    if order.status != SlaughterOrder.Status.PENDING:
-        raise ValidationError(_("Cannot update an order that is already in progress, completed, or cancelled."))
-
-    allowed_fields = ["service_package", "destination", "order_datetime"]
-    for field, value in data.items():
-        if field in allowed_fields:
-            setattr(order, field, value)
-
-    order.save()
+    if "destination" in data or "destination_client_id" in data:
+        update_order_destination(
+            order=order,
+            destination=data.get("destination"),
+            destination_client_id=data.get("destination_client_id"),
+        )
+    if "service_package" in data and data.get("service_package") is not None:
+        update_order_service_package(order=order, service_package=data["service_package"])
+    if "order_datetime" in data and data.get("order_datetime") is not None:
+        update_order_datetime(order=order, order_datetime=data["order_datetime"])
+    order.refresh_from_db()
     return order
 
 
@@ -412,16 +568,17 @@ def create_batch_animals(
 
     created_animals = []
     current_time = received_date or timezone.now()
+    next_tag_number = _next_same_day_tag_number(tag_prefix, current_time) if tag_prefix else 1
 
     # Generate unique tags for the batch
-    for i in range(1, quantity + 1):
+    for i in range(quantity):
         if tag_prefix:
-            # Use custom prefix with sequential numbering
-            identification_tag = f"{tag_prefix}-{i:03d}"
+            # Continue same-day prefix numbering across batches; reset on the next day.
+            identification_tag = f"{tag_prefix}-{next_tag_number + i:03d}"
         else:
             # Use auto-generated tags with batch identifier
             batch_id = uuid.uuid4().hex[:6].upper()
-            identification_tag = f"{animal_type.upper()}-BATCH-{batch_id}-{i:02d}"
+            identification_tag = f"{animal_type.upper()}-BATCH-{batch_id}-{i + 1:02d}"
 
         animal_data = {
             "animal_type": animal_type,
