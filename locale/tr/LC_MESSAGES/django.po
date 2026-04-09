@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 23:00+0300\n"
+"POT-Creation-Date: 2026-04-09 05:07+0300\n"
 "PO-Revision-Date: 2025-08-20 05:18+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
@@ -305,7 +305,7 @@ msgstr "Hayvan Türü"
 #: scales/templates/scales/session_list.html:58
 #: users/templates/users/client_profile_list.html:134
 #: users/templates/users/user_management_list.html:96
-#: users/templates/users/user_management_list.html:182
+#: users/templates/users/user_management_list.html:196
 msgid "Status"
 msgstr "Durum"
 
@@ -388,7 +388,7 @@ msgstr "PDF mevcut değil"
 #: templates/tenants/platform_admin/dashboard.html:263
 #: users/templates/users/client_profile_list.html:139
 #: users/templates/users/user_management_list.html:97
-#: users/templates/users/user_management_list.html:183
+#: users/templates/users/user_management_list.html:197
 msgid "Actions"
 msgstr "İşlemler"
 
@@ -529,13 +529,12 @@ msgstr "QR kodu için isteğe bağlı URL veya veri"
 #: reception/templates/reception/add_animal.html:88
 #: reception/templates/reception/batch_add_animals.html:152
 #: reception/templates/reception/edit_animal.html:91
-#: reception/templates/reception/update_order.html:303
+#: reception/templates/reception/update_order.html:306
 #: scales/templates/scales/orphaned_batch_reconcile.html:24
 #: scales/templates/scales/session_create.html:46
 #: scales/templates/scales/session_create.html:79
 #: scales/templates/scales/session_event_edit.html:69
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:84
-#: templates/tenants/tenant_company_settings.html:142
+#: templates/tenants/tenant_company_settings.html:149
 #: users/templates/users/client_profile_confirm_delete.html:14
 msgid "Cancel"
 msgstr "İptal"
@@ -1628,7 +1627,8 @@ msgstr "Sipariş Numarası"
 #: processing/templates/processing/disassembly_dashboard.html:263
 #: processing/templates/processing/disassembly_dashboard.html:321
 #: reception/templates/reception/order_list.html:41 tenants/views.py:337
-#: users/forms.py:302 users/templates/users/client_profile_detail.html:4
+#: users/forms.py:302 users/models.py:31
+#: users/templates/users/client_profile_detail.html:4
 #: users/templates/users/client_profile_list.html:133
 #: users/templates/users/dashboard.html:53
 msgid "Client"
@@ -2622,7 +2622,8 @@ msgstr "Cihaz"
 #: processing/templates/processing/disassembly_detail.html:418
 #: scales/templates/scales/session_detail.html:33
 #: scales/templates/scales/session_list.html:57 tenants/views.py:336
-#: users/forms.py:303 users/templates/users/dashboard.html:45
+#: users/forms.py:303 users/models.py:30
+#: users/templates/users/dashboard.html:45
 msgid "Operator"
 msgstr "Operatör"
 
@@ -2784,7 +2785,7 @@ msgstr "Etiket"
 #: users/templates/users/client_profile_list.html:108
 #: users/templates/users/client_profile_list.html:175
 #: users/templates/users/user_management_list.html:145
-#: users/templates/users/user_management_list.html:213
+#: users/templates/users/user_management_list.html:231
 msgid "Edit"
 msgstr "Düzenle"
 
@@ -3132,12 +3133,16 @@ msgstr "\"%(cut)s\" parçası başarıyla silindi."
 #: reception/forms.py:16 reception/forms.py:169
 #: reception/templates/reception/create_order.html:154
 #: reception/templates/reception/update_order.html:141
-msgid "Search Registered Client"
-msgstr "Kayıtlı Müşteri Ara"
+#, fuzzy
+#| msgid "Search clients"
+msgid "Search client"
+msgstr "Müşteri ara"
 
 #: reception/forms.py:20 reception/forms.py:173
-msgid "Type client name to search..."
-msgstr "Aramak için müşteri adını yazın..."
+#, fuzzy
+#| msgid "Search by order number, client name, or destination client..."
+msgid "Search by name, phone, or destination..."
+msgstr "Sipariş numarası, müşteri adı veya teslimat müşterisine göre arayın..."
 
 #: reception/forms.py:33 reception/forms.py:186
 msgid "Walk-in Client Name"
@@ -3151,14 +3156,14 @@ msgstr "Parakende müşteriler için müşteri adını girin"
 msgid "Area Code"
 msgstr "Alan Kodu"
 
-#: reception/forms.py:54 reception/forms.py:207 ⁨tenants/forms 2.py⁩:35
-#: tenants/forms.py:35 users/forms.py:48 users/forms.py:181 users/forms.py:336
+#: reception/forms.py:54 reception/forms.py:207 tenants/forms.py:35
+#: users/forms.py:48 users/forms.py:181 users/forms.py:336
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr "Ülke kodunu seçin: Türkiye için +90, ABD/Kanada için +1"
 
 #: reception/forms.py:61 reception/forms.py:214
-#: reception/templates/reception/create_order.html:217
-#: reception/templates/reception/update_order.html:205
+#: reception/templates/reception/create_order.html:220
+#: reception/templates/reception/update_order.html:208
 msgid "Walk-in Client Phone"
 msgstr "Parakende Müşteri Telefonu"
 
@@ -3170,8 +3175,8 @@ msgstr ""
 "Bu müşterinin tekrar kullanılabilir bir aday müşteri olarak kaydedilebilmesi "
 "için parakende müşterilerde telefon zorunludur."
 
-#: reception/forms.py:66 reception/forms.py:219 ⁨tenants/forms 2.py⁩:63
-#: tenants/forms.py:64 users/forms.py:366
+#: reception/forms.py:66 reception/forms.py:219 tenants/forms.py:70
+#: users/forms.py:366
 msgid "Enter phone number"
 msgstr "Telefon numarası girin"
 
@@ -3224,16 +3229,22 @@ msgid "Select a valid service package."
 msgstr "Geçerli bir hizmet paketi seçin."
 
 #: reception/forms.py:139 reception/forms.py:320
+#, fuzzy
+#| msgid ""
+#| "An order must be linked to either a registered client or a walk-in client "
+#| "name."
 msgid ""
-"An order must be linked to either a registered client or a walk-in client "
-"name."
+"An order must be linked to either a saved client from search or a walk-in "
+"client name."
 msgstr ""
 "Bir sipariş, kayıtlı bir müşteriye veya Parakende bir müşteri adına "
 "bağlanmalıdır."
 
 #: reception/forms.py:143 reception/forms.py:324
-msgid ""
-"Please provide either a registered client or a walk-in client, not both."
+#, fuzzy
+#| msgid ""
+#| "Please provide either a registered client or a walk-in client, not both."
+msgid "Please provide either a client from search or walk-in fields, not both."
 msgstr ""
 "Lütfen kayıtlı bir müşteri veya Parakende bir müşteri sağlayın, ikisini "
 "birden değil."
@@ -3305,11 +3316,18 @@ msgstr ""
 "Fotoğrafsız hayvan oluşturmak için bunu işaretleyin (fotoğraflar daha sonra "
 "eklenebilir)"
 
-#: reception/forms.py:466 reception/services.py:399
+#: reception/forms.py:466 reception/services.py:411
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr "Tek bir toplu işlemde en fazla 100 hayvan oluşturulabilir."
 
-#: reception/services.py:240
+#: reception/services.py:89
+msgid ""
+"This phone number cannot be used for a walk-in client because it is already "
+"assigned to another account type. Use a different number, or pick the client "
+"from search if they already exist."
+msgstr ""
+
+#: reception/services.py:252
 msgid ""
 "Failed to create order after multiple attempts due to high concurrency. "
 "Please try again."
@@ -3317,28 +3335,28 @@ msgstr ""
 "Yüksek eşzamanlılık nedeniyle sipariş birden fazla denemeden sonra "
 "oluşturulamadı. Lütfen tekrar deneyin."
 
-#: reception/services.py:255 reception/services.py:284
+#: reception/services.py:267 reception/services.py:296
 msgid ""
 "Cannot update an order that is already in progress, completed, or cancelled."
 msgstr "Devam eden, tamamlanmış veya iptal edilmiş bir sipariş güncellenemez."
 
-#: reception/services.py:302
+#: reception/services.py:314
 msgid "Cannot cancel an order that is already in progress or completed."
 msgstr "Devam eden veya tamamlanmış bir sipariş iptal edilemez."
 
-#: reception/services.py:339
+#: reception/services.py:351
 msgid "Cannot bill an order that is not yet completed."
 msgstr "Henüz tamamlanmamış bir sipariş faturalandırılamaz."
 
-#: reception/services.py:352 reception/services.py:396
+#: reception/services.py:364 reception/services.py:408
 msgid "Can only add animals to a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişe eklenebilir."
 
-#: reception/services.py:364
+#: reception/services.py:376
 msgid "Can only remove animals from a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişten kaldırılabilir."
 
-#: reception/services.py:367
+#: reception/services.py:379
 msgid "Animal does not belong to the specified order."
 msgstr "Hayvan belirtilen siparişe ait değil."
 
@@ -3429,12 +3447,19 @@ msgstr "Kesim Siparişi Oluştur"
 msgid "Create New Order"
 msgstr "Yeni Kesim Oluştur"
 
-#: reception/templates/reception/create_order.html:160
+#: reception/templates/reception/create_order.html:159
+#: reception/templates/reception/update_order.html:146
+msgid ""
+"Includes registered accounts and saved walk-in prospects. Past walk-ins only "
+"on an order with no profile also appear here—select to fill walk-in fields."
+msgstr ""
+
+#: reception/templates/reception/create_order.html:163
 msgid "Create New Client Account"
 msgstr "Yeni Müşteri Hesabı Oluştur"
 
-#: reception/templates/reception/create_order.html:164
-#: reception/templates/reception/update_order.html:146
+#: reception/templates/reception/create_order.html:167
+#: reception/templates/reception/update_order.html:149
 msgid ""
 "Tip: after you link a destination client once, picking the same client can "
 "fill it automatically."
@@ -3442,35 +3467,40 @@ msgstr ""
 "İpucu: Bir teslimat müşterisini bir kez bağladıktan sonra, aynı müşteriyi "
 "seçtiğinizde sistem bunu otomatik doldurabilir."
 
-#: reception/templates/reception/create_order.html:192
-#: reception/templates/reception/update_order.html:180
+#: reception/templates/reception/create_order.html:195
+#: reception/templates/reception/update_order.html:183
 msgid "OR"
 msgstr "VEYA"
 
-#: reception/templates/reception/create_order.html:310
+#: reception/templates/reception/create_order.html:313
 #: users/templates/users/dashboard.html:100
 msgid "Create Order"
 msgstr "Kesim Oluştur"
 
-#: reception/templates/reception/create_order.html:317
-#: reception/templates/reception/update_order.html:165
-#: reception/templates/reception/update_order.html:359
-#: reception/templates/reception/update_order.html:388
+#: reception/templates/reception/create_order.html:320
+#: reception/templates/reception/update_order.html:168
+#: reception/templates/reception/update_order.html:362
+#: reception/templates/reception/update_order.html:391
 #: users/templates/users/dashboard.html:636
 msgid "Preferred destination"
 msgstr "Tercih edilen teslimat"
 
-#: reception/templates/reception/create_order.html:318
-#: reception/templates/reception/update_order.html:379
+#: reception/templates/reception/create_order.html:321
+#: reception/templates/reception/update_order.html:382
 #: users/templates/users/client_profile_list.html:201
 #: users/templates/users/dashboard.html:630
 msgid "No clients found"
 msgstr "Müşteri bulunamadı"
 
-#: reception/templates/reception/create_order.html:319
-#: reception/templates/reception/update_order.html:492
+#: reception/templates/reception/create_order.html:322
+#: reception/templates/reception/update_order.html:500
 msgid "Preferred destination client"
 msgstr "Tercih edilen teslimat müşterisi"
+
+#: reception/templates/reception/create_order.html:408
+#: reception/templates/reception/update_order.html:395
+msgid "From order (fill walk-in)"
+msgstr ""
 
 #: reception/templates/reception/edit_animal.html:4
 msgid "Edit Animal in Order"
@@ -3628,28 +3658,32 @@ msgid "Update Slaughter Order"
 msgstr "Kesim Siparişini Güncelle"
 
 #: reception/templates/reception/update_order.html:131
-#: reception/templates/reception/update_order.html:307
+#: reception/templates/reception/update_order.html:310
 msgid "Update Order"
 msgstr "Siparişi Güncelle"
 
-#: reception/views.py:77
+#: reception/views.py:89
 msgid "No contact person"
 msgstr "İletişim kişisi yok"
 
-#: reception/views.py:90 reception/views.py:93 users/views.py:842
+#: reception/views.py:102 reception/views.py:105 users/models.py:51
 msgid "Individual"
 msgstr "Bireysel"
 
-#: reception/views.py:99
+#: reception/views.py:111
 msgid "Walk-in prospect"
 msgstr "Perakende müşteri adayı"
 
-#: reception/views.py:148
+#: reception/views.py:153
+msgid "Walk-in on order (not linked yet)"
+msgstr ""
+
+#: reception/views.py:199
 #, python-format
 msgid "Slaughter order %(order_no)s created successfully."
 msgstr "%(order_no)s kesim siparişi başarıyla oluşturuldu."
 
-#: reception/views.py:155
+#: reception/views.py:208
 msgid ""
 "We could not save this order. Please try again, or contact support if it "
 "keeps happening."
@@ -3657,44 +3691,44 @@ msgstr ""
 "Bu sipariş kaydedilemedi. Lütfen tekrar deneyin; sorun sürerse destek ile "
 "iletişime geçin."
 
-#: reception/views.py:160
+#: reception/views.py:213
 msgid "Check the highlighted fields below, fix any issues, and submit again."
 msgstr ""
 "Aşağıda vurgulanan alanları kontrol edin, gerekli düzeltmeleri yapıp tekrar "
 "gönderin."
 
-#: reception/views.py:244
+#: reception/views.py:297
 msgid "Order updated successfully."
 msgstr "Sipariş başarıyla güncellendi."
 
-#: reception/views.py:250
+#: reception/views.py:303
 msgid "The selected client could not be found. Please choose it again."
 msgstr "Seçilen müşteri bulunamadı. Lütfen tekrar seçin."
 
-#: reception/views.py:261
+#: reception/views.py:314
 #, python-format
 msgid "Order %(order_no)s has been cancelled."
 msgstr "%(order_no)s numaralı sipariş iptal edildi."
 
-#: reception/views.py:275
+#: reception/views.py:328
 #, python-format
 msgid "Order %(order_no)s has been marked as billed."
 msgstr "%(order_no)s numaralı sipariş faturalandı olarak işaretlendi."
 
-#: reception/views.py:294
+#: reception/views.py:347
 msgid "Animal added to the order successfully."
 msgstr "Hayvan siparişe başarıyla eklendi."
 
-#: reception/views.py:317
+#: reception/views.py:370
 msgid "Animal details updated successfully."
 msgstr "Hayvan bilgileri başarıyla güncellendi."
 
-#: reception/views.py:333
+#: reception/views.py:386
 #, python-format
 msgid "Animal %(tag)s removed from the order."
 msgstr "%(tag)s hayvanı siparişten kaldırıldı."
 
-#: reception/views.py:370
+#: reception/views.py:423
 #, python-format
 msgid ""
 "Successfully created %(count)d %(animal_type)s animals for order "
@@ -3831,6 +3865,8 @@ msgstr "Oluşturulan Raporlar"
 #: users/templates/users/client_profile_detail.html:25
 #: users/templates/users/client_profile_list.html:113
 #: users/templates/users/client_profile_list.html:180
+#: users/templates/users/user_management_list.html:157
+#: users/templates/users/user_management_list.html:241
 msgid "Archive"
 msgstr "Arşiv"
 
@@ -4419,8 +4455,7 @@ msgstr ""
 "seçin."
 
 #: scales/templates/scales/session_event_edit.html:68
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:81
-#: templates/tenants/tenant_company_settings.html:139
+#: templates/tenants/tenant_company_settings.html:146
 msgid "Save"
 msgstr "Kaydet"
 
@@ -4457,7 +4492,7 @@ msgstr "Etkilenen Hayvanlar"
 msgid "Scale device"
 msgstr "Kantar cihazı"
 
-#: scales/views.py:294 users/views.py:853
+#: scales/views.py:294 users/models.py:32 users/views.py:906
 msgid "Walk-in"
 msgstr "Parakende"
 
@@ -4730,23 +4765,23 @@ msgstr ""
 "Zorunlu alanlar genel API ile uyumludur. İsteğe bağlı alanlar platform "
 "yöneticisinin talebinizi daha hızlı incelemesine yardımcı olur."
 
-#: templates/public/setup.html:52 tenants/forms.py:128 tenants/forms.py:223
+#: templates/public/setup.html:52 tenants/forms.py:134 tenants/forms.py:229
 msgid "Company name"
 msgstr "Şirket adı"
 
-#: templates/public/setup.html:60 tenants/forms.py:224
+#: templates/public/setup.html:60 tenants/forms.py:230
 msgid "Owner email"
 msgstr "Sahip e-postası"
 
 #: templates/public/setup.html:69 templates/public/signin.html:89
-#: tenants/forms.py:153 tenants/forms.py:185 tenants/forms.py:225
+#: tenants/forms.py:159 tenants/forms.py:191 tenants/forms.py:231
 #: users/templates/users/client_register_done.html:20
 #: users/templates/users/login.html:40
 msgid "Password"
 msgstr "Şifre"
 
-#: templates/public/setup.html:76 tenants/forms.py:154 tenants/forms.py:186
-#: tenants/forms.py:227
+#: templates/public/setup.html:76 tenants/forms.py:160 tenants/forms.py:192
+#: tenants/forms.py:233
 msgid "Confirm password"
 msgstr "Şifreyi onayla"
 
@@ -4754,21 +4789,21 @@ msgstr "Şifreyi onayla"
 msgid "Optional company details"
 msgstr "İsteğe bağlı şirket bilgileri"
 
-#: templates/public/setup.html:89 tenants/forms.py:231
+#: templates/public/setup.html:89 tenants/forms.py:237
 msgid "Registered company name"
 msgstr "Ticari unvan (kayıtlı)"
 
-#: templates/public/setup.html:96 tenants/forms.py:235
+#: templates/public/setup.html:96 tenants/forms.py:241
 #: users/templates/users/client_profile_detail.html:65
 msgid "Address"
 msgstr "Adres"
 
-#: templates/public/setup.html:104 tenants/forms.py:238
+#: templates/public/setup.html:104 tenants/forms.py:244
 #: users/templates/users/account_profile.html:49
 #: users/templates/users/client_profile_detail.html:47
 #: users/templates/users/client_profile_list.html:136
 #: users/templates/users/user_management_list.html:95
-#: users/templates/users/user_management_list.html:181
+#: users/templates/users/user_management_list.html:195
 msgid "Phone"
 msgstr "Telefon"
 
@@ -5020,21 +5055,6 @@ msgstr "Giriş başarısız."
 msgid "Tenant host unavailable"
 msgstr "Tenant ana bilgisayarı kullanılamıyor"
 
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:4
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:8
-msgid "Company & label settings"
-msgstr "Şirket ve etiket ayarları"
-
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:10
-#: templates/tenants/tenant_company_settings.html:28
-msgid ""
-"These values appear on printed labels (company block, İşletme onay no, VD "
-"number) and on PDF reports. İşletme onay no must match your official "
-"registration."
-msgstr ""
-"Bu değerler basılı etiketlerde (şirket bloğu, işletme onay no, VD numarası) "
-"ve PDF raporlarında görünür. İşletme onay no resmi kayıtla eşleşmelidir."
-
 #: templates/tenants/platform_admin/dashboard.html:8
 #, fuzzy
 #| msgid "Operation dashboard"
@@ -5075,7 +5095,7 @@ msgstr "Tenantlar"
 #: users/templates/users/user_management_list.html:48
 #: users/templates/users/user_management_list.html:71
 #: users/templates/users/user_management_list.html:135
-#: users/templates/users/user_management_list.html:206
+#: users/templates/users/user_management_list.html:221
 msgid "Active"
 msgstr "Aktif"
 
@@ -5122,7 +5142,7 @@ msgid "Schema"
 msgstr "Şema adı"
 
 #: templates/tenants/platform_admin/dashboard.html:170
-#: tenants/dashboard_services.py:227 tenants/views.py:333
+#: tenants/dashboard_services.py:227 tenants/views.py:333 users/models.py:27
 #: users/templates/users/dashboard.html:16
 msgid "Owner"
 msgstr "Sahip"
@@ -5295,6 +5315,8 @@ msgstr "Devre dışı bırak"
 #: users/templates/users/client_profile_detail.html:29
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
+#: users/templates/users/user_management_list.html:164
+#: users/templates/users/user_management_list.html:248
 msgid "Activate"
 msgstr "Etkinleştir"
 
@@ -5409,7 +5431,7 @@ msgid "Users in this tenant"
 msgstr "Bu tenanttaki kullanıcılar"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:76
-#: tenants/forms.py:181 users/forms.py:40
+#: tenants/forms.py:187 users/forms.py:40
 #: users/templates/users/account_profile.html:37
 #: users/templates/users/client_profile_detail.html:76
 #: users/templates/users/client_profile_list.html:137
@@ -5418,7 +5440,7 @@ msgid "Username"
 msgstr "Kullanıcı Adı"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:77
-#: tenants/forms.py:152 tenants/forms.py:184 tenants/forms.py:213
+#: tenants/forms.py:158 tenants/forms.py:190 tenants/forms.py:219
 #: users/forms.py:41 users/forms.py:174 users/forms.py:327
 #: users/templates/users/account_profile.html:45
 #: users/templates/users/client_profile_detail.html:80
@@ -5481,15 +5503,24 @@ msgstr ""
 msgid "Company settings"
 msgstr "Şirket ayarları"
 
-#: templates/tenants/tenant_company_settings.html:96
+#: templates/tenants/tenant_company_settings.html:28
+msgid ""
+"These values appear on printed labels (company block, İşletme onay no, VD "
+"number) and on PDF reports. İşletme onay no must match your official "
+"registration."
+msgstr ""
+"Bu değerler basılı etiketlerde (şirket bloğu, işletme onay no, VD numarası) "
+"ve PDF raporlarında görünür. İşletme onay no resmi kayıtla eşleşmelidir."
+
+#: templates/tenants/tenant_company_settings.html:103
 msgid "Current logo"
 msgstr "Mevcut logo"
 
-#: templates/tenants/tenant_company_settings.html:96
+#: templates/tenants/tenant_company_settings.html:103
 msgid "Preview"
 msgstr "Önizleme"
 
-#: templates/tenants/tenant_company_settings.html:107
+#: templates/tenants/tenant_company_settings.html:114
 msgid ""
 "Shown in the app header at a fixed size (recommended: wide logo or "
 "horizontal mark)."
@@ -5497,15 +5528,15 @@ msgstr ""
 "Uygulama üst çubuğunda sabit boyutta gösterilir (önerilen: yatay logo veya "
 "işaret)."
 
-#: ⁨tenants/admin 2.py⁩:24 tenants/admin.py:24
+#: tenants/admin.py:24
 msgid "Identity"
 msgstr "Kimlik"
 
-#: ⁨tenants/admin 2.py⁩:28 tenants/admin.py:28
+#: tenants/admin.py:28
 msgid "Labels and reports — company block"
 msgstr "Etiketler ve raporlar — şirket bloğu"
 
-#: ⁨tenants/admin 2.py⁩:38 tenants/admin.py:38
+#: tenants/admin.py:39
 msgid ""
 "İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
 "with official registrations."
@@ -5513,15 +5544,15 @@ msgstr ""
 "İşletme onay no ve VD numaraları et ürünü etiketlerinde basılır; resmi "
 "kayıtlarla uyumlu tutun."
 
-#: ⁨tenants/admin 2.py⁩:43 tenants/admin.py:43
+#: tenants/admin.py:44
 msgid "Branding and contact"
 msgstr "Marka ve iletişim"
 
-#: ⁨tenants/admin 2.py⁩:47 tenants/admin.py:47
+#: tenants/admin.py:48
 msgid "Locale and printing"
 msgstr "Yerel ayar ve yazdırma"
 
-#: tenants/dashboard_services.py:228 tenants/views.py:334
+#: tenants/dashboard_services.py:228 tenants/views.py:334 users/models.py:28
 msgid "Admin"
 msgstr "Yönetici"
 
@@ -5570,6 +5601,7 @@ msgstr ""
 #: users/templates/users/user_management_list.html:52
 #: users/templates/users/user_management_list.html:72
 #: users/templates/users/user_management_list.html:137
+#: users/templates/users/user_management_list.html:223
 #, fuzzy
 #| msgid "active"
 msgid "Inactive"
@@ -5585,48 +5617,47 @@ msgstr ""
 msgid "Attention"
 msgstr "İşlem"
 
-#: ⁨tenants/forms 2.py⁩:19 tenants/forms.py:19
+#: tenants/forms.py:19
 msgid "Remove current logo"
 msgstr "Mevcut logoyu kaldır"
 
-#: ⁨tenants/forms 2.py⁩:20 tenants/forms.py:20
+#: tenants/forms.py:20
 msgid "Current file"
 msgstr "Mevcut dosya"
 
-#: ⁨tenants/forms 2.py⁩:21 tenants/forms.py:21
+#: tenants/forms.py:21
 msgid "Replace with"
 msgstr "Şununla değiştir"
 
-#: ⁨tenants/forms 2.py⁩:31 tenants/forms.py:31 users/forms.py:46
-#: users/forms.py:179 users/forms.py:334
+#: tenants/forms.py:31 users/forms.py:46 users/forms.py:179 users/forms.py:334
 msgid "Area code"
 msgstr "Alan kodu"
 
-#: ⁨tenants/forms 2.py⁩:96 tenants/forms.py:97
-msgid "Please upload a PNG, JPEG, WebP, or GIF image."
-msgstr "Lütfen PNG, JPEG, WebP veya GIF formatında bir görsel yükleyin."
-
-#: tenants/forms.py:60 tenants/forms.py:121
+#: tenants/forms.py:66 tenants/forms.py:127
 msgid "Display name"
 msgstr "Görünen ad"
 
-#: tenants/forms.py:74
+#: tenants/forms.py:80
 msgid "Unicode (recommended)"
 msgstr "Unicode (önerilen)"
 
-#: tenants/forms.py:75
+#: tenants/forms.py:81
 msgid "ASCII (replace Turkish characters)"
 msgstr "ASCII (Türkçe karakterleri değiştir)"
 
-#: tenants/forms.py:76
+#: tenants/forms.py:82
 msgid "Windows-1254"
 msgstr "Windows-1254"
 
-#: tenants/forms.py:118
+#: tenants/forms.py:103
+msgid "Please upload a PNG, JPEG, WebP, or GIF image."
+msgstr "Lütfen PNG, JPEG, WebP veya GIF formatında bir görsel yükleyin."
+
+#: tenants/forms.py:124
 msgid "Schema name"
 msgstr "Şema adı"
 
-#: tenants/forms.py:119
+#: tenants/forms.py:125
 msgid ""
 "Lowercase letters, digits and hyphens only. Used as PostgreSQL schema and "
 "subdomain."
@@ -5634,52 +5665,52 @@ msgstr ""
 "Yalnızca küçük harfler, rakamlar ve kısa çizgi kullanın. PostgreSQL şeması "
 "ve alt alan adı olarak kullanılır."
 
-#: tenants/forms.py:125
+#: tenants/forms.py:131
 msgid "Custom domain"
 msgstr "Özel alan adı"
 
-#: tenants/forms.py:126
+#: tenants/forms.py:132
 #, python-brace-format
 msgid "Leave blank to auto-generate {schema}.{base_domain}."
 msgstr "{schema}.{base_domain} otomatik oluşturulsun diye boş bırakın."
 
-#: tenants/forms.py:129 ⁨tenants/models 2.py⁩:78 tenants/models.py:91
+#: tenants/forms.py:135 tenants/models.py:100
 msgid "Contact email"
 msgstr "İletişim e-postası"
 
-#: tenants/forms.py:134
+#: tenants/forms.py:140
 msgid ""
 "Use lowercase letters, digits and hyphens; must start with a letter or digit."
 msgstr ""
 "Küçük harf, rakam ve kısa çizgi kullanın; harf veya rakamla başlamalıdır."
 
-#: tenants/forms.py:136
+#: tenants/forms.py:142
 msgid "\"public\" is reserved."
 msgstr "\"public\" ayrılmıştır."
 
-#: tenants/forms.py:138
+#: tenants/forms.py:144
 #, python-format
 msgid "Schema \"%(value)s\" already exists."
 msgstr "\"%(value)s\" şeması zaten mevcut."
 
-#: tenants/forms.py:144
+#: tenants/forms.py:150
 #, python-format
 msgid "Domain \"%(value)s\" is already in use."
 msgstr "\"%(value)s\" alan adı zaten kullanımda."
 
-#: tenants/forms.py:151
+#: tenants/forms.py:157
 msgid "Your name"
 msgstr "Adınız"
 
-#: tenants/forms.py:161
+#: tenants/forms.py:167
 msgid "An account with that email already exists."
 msgstr "Bu e-posta ile bir hesap zaten mevcut."
 
-#: tenants/forms.py:169 tenants/forms.py:206 tenants/forms.py:259
+#: tenants/forms.py:175 tenants/forms.py:212 tenants/forms.py:265
 msgid "Passwords do not match."
 msgstr "Parolalar eşleşmiyor."
 
-#: tenants/forms.py:182
+#: tenants/forms.py:188
 msgid ""
 "Sign in with this or your email on the tenant site (language-prefixed /tr/"
 "login/ etc.)."
@@ -5687,30 +5718,30 @@ msgstr ""
 "Tenant sitesinde bununla veya e-postanızla giriş yapın (/tr/login/ vb. dil "
 "önekli adreslerde)."
 
-#: tenants/forms.py:188 users/templates/users/client_profile_detail.html:37
+#: tenants/forms.py:194 users/templates/users/client_profile_detail.html:37
 #: users/templates/users/user_management_list.html:93
-#: users/templates/users/user_management_list.html:179
+#: users/templates/users/user_management_list.html:193
 msgid "Account type"
 msgstr "Hesap türü"
 
-#: tenants/forms.py:192
+#: tenants/forms.py:198
 msgid ""
 "Tenant app admin (role ADMIN, full CarniTrack app access; not Django /admin/)"
 msgstr ""
 "Tenant uygulama yöneticisi (ADMIN rolü, tam CarniTrack erişimi; Django /"
 "admin/ değil)"
 
-#: tenants/forms.py:196
+#: tenants/forms.py:202
 msgid "Django superuser (role ADMIN plus Django /admin/ on this tenant host)"
 msgstr ""
 "Django süper kullanıcısı (ADMIN rolü ve bu tenant alan adında Django /admin/ "
 "erişimi)"
 
-#: tenants/forms.py:242 ⁨tenants/models 2.py⁩:62 tenants/models.py:74
+#: tenants/forms.py:248 tenants/models.py:76
 msgid "İşletme onay no"
 msgstr "İşletme onay no"
 
-#: tenants/forms.py:243
+#: tenants/forms.py:249
 #, fuzzy
 #| msgid ""
 #| "Government approval number; same value as ISLETME ONAY NO on printed "
@@ -5719,76 +5750,83 @@ msgid "Government approval number on labels (ISLETME ONAY NO)."
 msgstr ""
 "Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
 
-#: tenants/forms.py:248 ⁨tenants/models 2.py⁩:68 tenants/models.py:80
+#: tenants/forms.py:254 tenants/models.py:82
 msgid "Vergi dairesi / işletme no (VD)"
 msgstr "Vergi dairesi / işletme no (VD)"
 
-#: ⁨tenants/models 2.py⁩:44 tenants/models.py:56
+#: tenants/models.py:58
 msgid "Company name (label header)"
 msgstr "Şirket adı (etiket üst bilgisi)"
 
-#: ⁨tenants/models 2.py⁩:45 tenants/models.py:57
+#: tenants/models.py:59
 msgid "Short trading name printed on labels."
 msgstr "Etiketlerde basılan kısa ticari unvan."
 
-#: ⁨tenants/models 2.py⁩:50 tenants/models.py:62
+#: tenants/models.py:64
 msgid "Legal company name"
 msgstr "Yasal şirket unvanı"
 
-#: ⁨tenants/models 2.py⁩:51 tenants/models.py:63
+#: tenants/models.py:65
 msgid "Full legal title on labels."
 msgstr "Etiketlerde tam yasal unvan."
 
-#: ⁨tenants/models 2.py⁩:56 tenants/models.py:68
+#: tenants/models.py:70
 msgid "Company address"
 msgstr "Şirket adresi"
 
-#: ⁨tenants/models 2.py⁩:57 tenants/models.py:69
+#: tenants/models.py:71
 msgid "Address block on labels and reports."
 msgstr "Etiket ve raporlardaki adres bloğu."
 
-#: ⁨tenants/models 2.py⁩:63 tenants/models.py:75
+#: tenants/models.py:77
 msgid ""
 "Government approval number; same value as ISLETME ONAY NO on printed labels."
 msgstr ""
 "Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
 
-#: ⁨tenants/models 2.py⁩:69 tenants/models.py:81
+#: tenants/models.py:83
 msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr "Vergi dairesi / işletme numarası (ör. etiketlerdeki ÇKALE VD satırı)."
 
-#: ⁨tenants/models 2.py⁩:75 tenants/models.py:88
+#: tenants/models.py:89
+#, fuzzy
+#| msgid "Tenant registration"
+msgid "Company registration province"
+msgstr "Tenant kaydı"
+
+#: tenants/models.py:90
+msgid ""
+"Turkish province (plaka) where the company is registered; drives the VD "
+"prefix on printed labels."
+msgstr ""
+
+#: tenants/models.py:97
 msgid "Logo"
 msgstr "Logo"
 
-#: ⁨tenants/models 2.py⁩:76 tenants/models.py:89
+#: tenants/models.py:98
 msgid "Optional branding image in the app header."
 msgstr "Uygulama üst çubuğunda isteğe bağlı marka görseli."
 
-#: ⁨tenants/models 2.py⁩:79 tenants/models.py:92
+#: tenants/models.py:101
 msgid "Contact phone"
 msgstr "İletişim telefonu"
 
-#: ⁨tenants/models 2.py⁩:85 tenants/models.py:98
+#: tenants/models.py:107
 msgid "Printer Turkish mode"
 msgstr "Yazıcı Türkçe modu"
 
-#: ⁨tenants/models 2.py⁩:86 tenants/models.py:99
+#: tenants/models.py:108
 msgid "unicode, ascii, or codepage1254 for label printers."
 msgstr "Etiket yazıcıları için unicode, ascii veya codepage1254."
 
-#: ⁨tenants/models 2.py⁩:88 tenants/models.py:101
+#: tenants/models.py:110
 msgid "Timezone"
 msgstr "Saat dilimi"
 
-#: ⁨tenants/models 2.py⁩:89 tenants/models.py:102
+#: tenants/models.py:111
 msgid "Language code"
 msgstr "Dil kodu"
-
-#: ⁨tenants/views 2.py⁩:353 tenants/views.py:478
-msgid "Company and label settings saved. They apply to new labels and reports."
-msgstr ""
-"Şirket ve etiket ayarları kaydedildi. Yeni etiket ve raporlara uygulanır."
 
 #: tenants/views.py:66 tenants/views.py:86
 msgid "Tenant registration is only available in multi-tenant mode."
@@ -5818,7 +5856,8 @@ msgstr "\"%(company)s\" kaydı onaylandı; \"%(schema)s\" tenantı oluşturuldu.
 msgid "Rejected registration for \"%(company)s\"."
 msgstr "\"%(company)s\" kaydı reddedildi."
 
-#: tenants/views.py:335 users/templates/users/dashboard.html:36
+#: tenants/views.py:335 users/models.py:29
+#: users/templates/users/dashboard.html:36
 msgid "Manager"
 msgstr "Yönetici"
 
@@ -5883,6 +5922,11 @@ msgstr "devre dışı bırakıldı"
 #, python-format
 msgid "Tenant \"%(schema)s\" %(state)s."
 msgstr "\"%(schema)s\" tenantı %(state)s."
+
+#: tenants/views.py:478
+msgid "Company and label settings saved. They apply to new labels and reports."
+msgstr ""
+"Şirket ve etiket ayarları kaydedildi. Yeni etiket ve raporlara uygulanır."
 
 #: tenants/views.py:497
 msgid "Setup already complete. Please sign in."
@@ -6005,7 +6049,7 @@ msgstr "Bu QR koddan hayvan bulunamadı."
 msgid "Current password"
 msgstr "Mevcut ürün"
 
-#: users/forms.py:262 users/views.py:211
+#: users/forms.py:262 users/views.py:229
 msgid "Your current password was entered incorrectly."
 msgstr ""
 
@@ -6021,71 +6065,88 @@ msgstr ""
 
 #: users/forms.py:462
 msgid "Tax ID is required for enterprise accounts."
-msgstr ""
+msgstr "Kurumsal hesaplar için vergi numarası zorunludur."
 
 #: users/forms.py:464
 msgid "Contact person is required for enterprise accounts."
-msgstr ""
+msgstr "Kurumsal hesaplar için iletişim kişisi zorunludur."
 
 #: users/forms.py:466
 msgid "Address is required for enterprise accounts."
-msgstr ""
+msgstr "Kurumsal hesaplar için adres zorunludur."
 
 #: users/forms.py:469
 msgid "Contact person is required for individual accounts."
-msgstr ""
+msgstr "Bireysel hesaplar için iletişim kişisi zorunludur."
 
 #: users/forms.py:471
 msgid "Address is required for individual accounts."
-msgstr ""
+msgstr "Bireysel hesaplar için adres zorunludur."
 
 #: users/forms.py:474
 msgid "Name is required for walk-in accounts."
+msgstr "Perakende (walk-in) hesaplar için ad zorunludur."
+
+#: users/models.py:50
+msgid "Unclassified"
+msgstr "Sınıflandırılmamış"
+
+#: users/models.py:52
+msgid "Enterprise"
+msgstr "Kurumsal"
+
+#: users/models.py:67
+msgid ""
+"Preferred delivery destination for this client. Used to prefill new orders."
 msgstr ""
+"Bu müşteri için tercih edilen teslimat adresi. Yeni siparişlerde otomatik "
+"doldurulur."
+
+#: users/models.py:75
+msgid ""
+"Preferred destination client for this client. Used to prefill new orders."
+msgstr ""
+"Bu müşteri için tercih edilen varış müşterisi. Yeni siparişlerde otomatik "
+"doldurulur."
 
 #: users/templates/users/account_profile.html:29
 msgid "Update your contact details and change your password."
-msgstr ""
+msgstr "İletişim bilgilerinizi güncelleyin ve şifrenizi değiştirin."
 
 #: users/templates/users/account_profile.html:34
-#, fuzzy
-#| msgid "Profile"
 msgid "Profile summary"
-msgstr "Profil"
+msgstr "Profil özeti"
 
 #: users/templates/users/account_profile.html:54
 msgid ""
 "Because this is a client account, the phone number here stays synced with "
 "the linked client profile."
 msgstr ""
+"Bu bir müşteri hesabı olduğu için buradaki telefon numarası bağlı müşteri "
+"profiliyle senkronize kalır."
 
 #: users/templates/users/account_profile.html:62
-#, fuzzy
-#| msgid "Contact email"
 msgid "Contact details"
-msgstr "İletişim e-postası"
+msgstr "İletişim bilgileri"
 
 #: users/templates/users/account_profile.html:63
 msgid ""
 "Keep at least one login/contact channel on your account: email or phone."
 msgstr ""
+"Hesabınızda en az bir giriş/iletişim kanalı bulunsun: e-posta veya telefon."
 
 #: users/templates/users/account_profile.html:97
-#, fuzzy
-#| msgid "Save Details"
 msgid "Save contact details"
-msgstr "Detayları Kaydet"
+msgstr "İletişim bilgilerini kaydet"
 
 #: users/templates/users/account_profile.html:103
 #: users/templates/users/account_profile.html:142
-#, fuzzy
-#| msgid "Confirm password"
 msgid "Change password"
-msgstr "Şifreyi onayla"
+msgstr "Şifreyi değiştir"
 
 #: users/templates/users/account_profile.html:104
 msgid "Use your current password to confirm this change."
-msgstr ""
+msgstr "Bu değişikliği onaylamak için mevcut şifrenizi girin."
 
 #: users/templates/users/client_profile_confirm_delete.html:4
 msgid "Archive client"
@@ -6133,10 +6194,8 @@ msgid "Contact person"
 msgstr "İletişim kişisi"
 
 #: users/templates/users/client_profile_detail.html:69
-#, fuzzy
-#| msgid "Destination"
 msgid "Default destination"
-msgstr "Varış Yeri"
+msgstr "Varsayılan varış yeri"
 
 #: users/templates/users/client_profile_detail.html:84
 msgid "Login active"
@@ -6166,7 +6225,7 @@ msgstr "Müşteriyi düzenle"
 
 #: users/templates/users/client_profile_form.html:63
 #: users/templates/users/user_management_list.html:151
-#: users/templates/users/user_management_list.html:218
+#: users/templates/users/user_management_list.html:236
 msgid "Profile"
 msgstr "Profil"
 
@@ -6175,17 +6234,23 @@ msgid ""
 "If the phone number already belongs to a registered account, this form will "
 "create only the client profile and link matching walk-in orders by phone."
 msgstr ""
+"Telefon numarası zaten kayıtlı bir hesaba aitse, bu form yalnızca müşteri "
+"profilini oluşturur ve telefonla eşleşen perakende siparişleri bağlar."
 
 #: users/templates/users/client_profile_form.html:140
 msgid ""
 "Use email or phone. Client phone is synced from the profile section above."
 msgstr ""
+"E-posta veya telefon kullanın. Müşteri telefonu yukarıdaki profil bölümünden "
+"senkronize edilir."
 
 #: users/templates/users/client_profile_form.html:174
 msgid ""
 "This profile has no client login yet. Save the walk-in details now and "
 "promote it to a full client account later."
 msgstr ""
+"Bu profilde henüz müşteri girişi yok. Perakende bilgilerini şimdi kaydedin; "
+"daha sonra tam müşteri hesabına yükseltebilirsiniz."
 
 #: users/templates/users/client_profile_form.html:180
 msgid "Create client"
@@ -6212,7 +6277,7 @@ msgid "Status filters"
 msgstr "Durum filtreleri"
 
 #: users/templates/users/client_profile_list.html:31
-#: users/templates/users/user_management_list.html:44
+#: users/templates/users/user_management_list.html:44 users/views.py:1225
 msgid "All"
 msgstr "Tümü"
 
@@ -6269,10 +6334,8 @@ msgid "Registration complete"
 msgstr "Kayıt tamamlandı"
 
 #: users/templates/users/client_register_done.html:9
-#, fuzzy
-#| msgid "Create an account"
 msgid "Your client account is ready"
-msgstr "Hesap oluştur"
+msgstr "Müşteri hesabınız hazır"
 
 #: users/templates/users/client_register_done.html:12
 msgid "Save these credentials now. They will not be shown again."
@@ -6536,20 +6599,16 @@ msgid "Sign in to your account"
 msgstr "Hesabınıza giriş yapın"
 
 #: users/templates/users/login.html:31
-#, fuzzy
-#| msgid "Username or email"
 msgid "Username, email, or phone"
-msgstr "Kullanıcı adı veya e-posta"
+msgstr "Kullanıcı adı, e-posta veya telefon"
 
 #: users/templates/users/login.html:54
-#, fuzzy
-#| msgid "Create an account"
 msgid "Need an account?"
-msgstr "Hesap oluştur"
+msgstr "Hesaba mı ihtiyacınız var?"
 
 #: users/templates/users/login.html:54
 msgid "Contact your administrator."
-msgstr ""
+msgstr "Yöneticinizle iletişime geçin."
 
 #: users/templates/users/register.html:5 users/templates/users/register.html:41
 msgid "Register"
@@ -6565,176 +6624,187 @@ msgstr "Giriş yapın."
 
 #: users/templates/users/staff_user_form.html:5
 #: users/templates/users/staff_user_form.html:30
-#, fuzzy
-#| msgid "Edit Order"
 msgid "Edit user"
-msgstr "Siparişi Düzenle"
+msgstr "Kullanıcıyı düzenle"
 
-#: users/templates/users/staff_user_form.html:32
-#, fuzzy
-#| msgid "Back to session"
+#: users/templates/users/staff_user_form.html:32 users/views.py:1118
 msgid "Back to users"
-msgstr "Oturuma dön"
+msgstr "Kullanıcılara dön"
 
 #: users/templates/users/staff_user_form.html:56
-#, fuzzy
-#| msgid "Your name"
 msgid "Full name"
-msgstr "Adınız"
+msgstr "Ad soyad"
 
 #: users/templates/users/staff_user_form.html:63
 msgid "e.g. Ali Yılmaz"
-msgstr ""
+msgstr "ör. Ali Yılmaz"
 
 #: users/templates/users/staff_user_form.html:65
 msgid ""
 "Username below is filled automatically from this; change it if you need a "
 "different login name."
 msgstr ""
+"Aşağıdaki kullanıcı adı buna göre otomatik doldurulur; farklı bir giriş adı "
+"gerekiyorsa değiştirin."
 
 #: users/templates/users/user_management_list.html:23
-#, fuzzy
-#| msgid "Operator"
 msgid "Add operator"
-msgstr "Operatör"
+msgstr "Operatör ekle"
 
 #: users/templates/users/user_management_list.html:29
-#, fuzzy
-#| msgid "Manager"
 msgid "Add manager"
-msgstr "Yönetici"
+msgstr "Müdür ekle"
 
 #: users/templates/users/user_management_list.html:35
-#, fuzzy
-#| msgid "Admin"
 msgid "Add admin"
-msgstr "Yönetici"
+msgstr "Yönetici ekle"
 
 #: users/templates/users/user_management_list.html:60
-#, fuzzy
-#| msgid "Search name, company, phone, username…"
 msgid "Search username, email, phone, client name…"
-msgstr "Ad, şirket, telefon, kullanıcı adı ara…"
+msgstr "Kullanıcı adı, e-posta, telefon, müşteri adı ara…"
 
 #: users/templates/users/user_management_list.html:77
-#, fuzzy
-#| msgid "Apply filter"
 msgid "Apply filters"
-msgstr "Filtreyi uygula"
-
-#: users/templates/users/user_management_list.html:164
-#, fuzzy
-#| msgid "No clients found"
-msgid "No users found"
-msgstr "Müşteri bulunamadı"
-
-#: users/templates/users/user_management_list.html:165
-#, fuzzy
-#| msgid "Try adjusting your filters or check back later."
-msgid "Adjust your filters or create a new user account."
-msgstr "Filtrelerinizi ayarlamayı deneyin veya daha sonra tekrar kontrol edin."
-
-#: users/templates/users/user_management_list.html:172
-#, fuzzy
-#| msgid "Create an account"
-msgid "Client accounts"
-msgstr "Hesap oluştur"
-
-#: users/templates/users/user_management_list.html:177
-#, fuzzy
-#| msgid "Company name"
-msgid "Company / Name"
-msgstr "Şirket adı"
+msgstr "Filtreleri uygula"
 
 #: users/templates/users/user_management_list.html:178
-#, fuzzy
-#| msgid "Client"
+msgid "No users found"
+msgstr "Kullanıcı bulunamadı"
+
+#: users/templates/users/user_management_list.html:179
+msgid "Adjust your filters or create a new user account."
+msgstr "Filtrelerinizi ayarlayın veya yeni bir kullanıcı hesabı oluşturun."
+
+#: users/templates/users/user_management_list.html:186
+msgid "Client accounts"
+msgstr "Müşteri hesapları"
+
+#: users/templates/users/user_management_list.html:191
+msgid "Company / Name"
+msgstr "Şirket / Ad"
+
+#: users/templates/users/user_management_list.html:192
 msgid "Client type"
-msgstr "Müşteri"
+msgstr "Müşteri tipi"
 
-#: users/templates/users/user_management_list.html:180
-#, fuzzy
-#| msgid "Contact email"
+#: users/templates/users/user_management_list.html:194
 msgid "Contact"
-msgstr "İletişim e-postası"
+msgstr "İletişim"
 
-#: users/views.py:200
-#, fuzzy
-#| msgid "Your client account is ready"
+#: users/views.py:218
 msgid "Your contact details were updated."
-msgstr "Müşteri hesabınız hazır"
+msgstr "İletişim bilgileriniz güncellendi."
 
-#: users/views.py:214
+#: users/views.py:232
 msgid "Your password was changed."
-msgstr ""
+msgstr "Şifreniz değiştirildi."
 
-#: users/views.py:217
+#: users/views.py:235
 msgid "Unknown account action."
-msgstr ""
+msgstr "Bilinmeyen hesap işlemi."
 
-#: users/views.py:545
+#: users/views.py:563
 #, python-format
 msgid ""
 "Platform admin impersonation active for %(username)s (%(role)s). Use Exit "
 "impersonation to return."
 msgstr ""
+"Platform yöneticisi kimliğine geçiş etkin: %(username)s (%(role)s). Geri "
+"dönmek için Kimliğe geçişten çıkın."
 
-#: users/views.py:844
-msgid "Enterprise"
-msgstr ""
-
-#: users/views.py:846
-msgid "Unclassified"
-msgstr ""
-
-#: users/views.py:854
+#: users/views.py:907
 msgid "Profile (no login)"
-msgstr ""
+msgstr "Profil (giriş yok)"
 
-#: users/views.py:950
+#: users/views.py:1003
 msgid "Client profile created and linked to the existing registered account."
 msgstr ""
+"Müşteri profili oluşturuldu ve mevcut kayıtlı hesaba bağlandı."
 
-#: users/views.py:955
+#: users/views.py:1008
 msgid "Client profile created and linked to the existing walk-in record."
 msgstr ""
+"Müşteri profili oluşturuldu ve mevcut perakende kaydına bağlandı."
 
-#: users/views.py:961
+#: users/views.py:1014
 msgid ""
 "Client profile created without creating a second login for this registered "
 "phone number."
 msgstr ""
+"Bu kayıtlı telefon numarası için ikinci bir giriş oluşturulmadan müşteri "
+"profili oluşturuldu."
 
-#: users/views.py:965 users/views.py:1006 users/views.py:1020
-#: users/views.py:1042
+#: users/views.py:1018 users/views.py:1059 users/views.py:1073
+#: users/views.py:1095
 msgid "Matching walk-in orders were linked by phone number."
-msgstr ""
+msgstr "Eşleşen perakende siparişler telefon numarasıyla bağlandı."
 
-#: users/views.py:998 users/views.py:1012
+#: users/views.py:1051 users/views.py:1065
 #, python-format
 msgid ""
 "Client created. Temporary password: %(pwd)s — copy it now; the user can "
 "change it later."
 msgstr ""
+"Müşteri oluşturuldu. Geçici şifre: %(pwd)s — şimdi kopyalayın; kullanıcı "
+"daha sonra değiştirebilir."
 
-#: users/views.py:1004 users/views.py:1018
-#, fuzzy
-#| msgid "Event reactivated."
+#: users/views.py:1057 users/views.py:1071
 msgid "Client created."
-msgstr "Olay yeniden etkinleştirildi."
+msgstr "Müşteri oluşturuldu."
 
-#: users/views.py:1102
+#: users/views.py:1091
+msgid "Walk-in prospect updated."
+msgstr "Perakende müşteri kaydı güncellendi."
+
+#: users/views.py:1093
+msgid "Client updated."
+msgstr "Müşteri güncellendi."
+
+#: users/views.py:1129
+msgid "You cannot create that role from this screen."
+msgstr "Bu rol bu ekrandan oluşturulamaz."
+
+#: users/views.py:1155
 #, python-format
 msgid ""
 "User created. Temporary password: %(pwd)s — copy it now; the user can change "
 "it later."
 msgstr ""
+"Kullanıcı oluşturuldu. Geçici şifre: %(pwd)s — şimdi kopyalayın; kullanıcı "
+"daha sonra değiştirebilir."
 
-#: users/views.py:1106
-#, fuzzy
-#| msgid "created"
+#: users/views.py:1159
 msgid "User created."
-msgstr "oluşturuldu"
+msgstr "Kullanıcı oluşturuldu."
+
+#: users/views.py:1170
+msgid "User updated."
+msgstr "Kullanıcı güncellendi."
+
+#: users/views.py:1430
+msgid "This account cannot be managed from the client list."
+msgstr "Bu hesap müşteri listesinden yönetilemez."
+
+#: users/views.py:1458
+msgid "This client is already active."
+msgstr "Bu müşteri zaten aktif."
+
+#: users/views.py:1461
+msgid "Client activated and login enabled."
+msgstr "Müşteri etkinleştirildi ve giriş açıldı."
+
+#: users/views.py:1475
+msgid "Client archived and login disabled."
+msgstr "Müşteri arşivlendi ve giriş kapatıldı."
+
+#~ msgid "Search Registered Client"
+#~ msgstr "Kayıtlı Müşteri Ara"
+
+#~ msgid "Type client name to search..."
+#~ msgstr "Aramak için müşteri adını yazın..."
+
+#~ msgid "Company & label settings"
+#~ msgstr "Şirket ve etiket ayarları"
 
 #~ msgid ""
 #~ "Each row links to that tenant app on its hostname. The app URL opens the "

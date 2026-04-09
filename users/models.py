@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel
 
@@ -23,12 +24,12 @@ class UserManager(DjangoUserManager):
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        OWNER = "OWNER", "Owner"
-        ADMIN = "ADMIN", "Admin"
-        MANAGER = "MANAGER", "Manager"
-        OPERATOR = "OPERATOR", "Operator"
-        CLIENT = "CLIENT", "Client"
-        WALKIN = "WALKIN", "Walk-in"
+        OWNER = "OWNER", _("Owner")
+        ADMIN = "ADMIN", _("Admin")
+        MANAGER = "MANAGER", _("Manager")
+        OPERATOR = "OPERATOR", _("Operator")
+        CLIENT = "CLIENT", _("Client")
+        WALKIN = "WALKIN", _("Walk-in")
 
     role = models.CharField(max_length=50, choices=Role.choices)
     phone_number = models.CharField(max_length=20, blank=True, default="")
@@ -46,9 +47,9 @@ class User(AbstractUser):
 
 class ClientProfile(BaseModel):
     class AccountType(models.TextChoices):
-        UNCLASSIFIED = "UNCLASSIFIED", "Unclassified"
-        INDIVIDUAL = "INDIVIDUAL", "Individual"
-        ENTERPRISE = "ENTERPRISE", "Enterprise"
+        UNCLASSIFIED = "UNCLASSIFIED", _("Unclassified")
+        INDIVIDUAL = "INDIVIDUAL", _("Individual")
+        ENTERPRISE = "ENTERPRISE", _("Enterprise")
 
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="client_profile", null=True, blank=True
@@ -63,7 +64,7 @@ class ClientProfile(BaseModel):
         max_length=255,
         blank=True,
         null=True,
-        help_text="Preferred delivery destination for this client. Used to prefill new orders.",
+        help_text=_("Preferred delivery destination for this client. Used to prefill new orders."),
     )
     default_destination_client = models.ForeignKey(
         "self",
@@ -71,7 +72,7 @@ class ClientProfile(BaseModel):
         related_name="source_clients",
         null=True,
         blank=True,
-        help_text="Preferred destination client for this client. Used to prefill new orders.",
+        help_text=_("Preferred destination client for this client. Used to prefill new orders."),
     )
 
     # Enterprise-specific fields

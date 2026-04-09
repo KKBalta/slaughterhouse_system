@@ -132,6 +132,7 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, JsonResponse
@@ -895,13 +896,9 @@ def _user_management_queryset_for(actor):
 
 
 def _account_type_label(account_type: str) -> str:
-    if account_type == ClientProfile.AccountType.INDIVIDUAL:
-        return _("Individual")
-    if account_type == ClientProfile.AccountType.ENTERPRISE:
-        return _("Enterprise")
-    if account_type == ClientProfile.AccountType.UNCLASSIFIED:
-        return _("Unclassified")
-    return account_type
+    if not account_type:
+        return ""
+    return str(ClientProfile(account_type=account_type).get_account_type_display())
 
 
 def _client_profile_row_kind(profile: ClientProfile) -> str:
@@ -1092,9 +1089,9 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
                         password=(cd.get("new_password1") or "").strip(),
                     )
                 if user is not None and getattr(user, "role", "") == User.Role.WALKIN:
-                    messages.success(request, "Walk-in prospect updated.")
+                    messages.success(request, _("Walk-in prospect updated."))
                 else:
-                    messages.success(request, "Client updated.")
+                    messages.success(request, _("Client updated."))
                 if linked_orders:
                     messages.success(request, _("Matching walk-in orders were linked by phone number."))
                 if saved_profile.pk and not next_url:
@@ -1119,7 +1116,7 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
             "mode": "edit" if user or profile else "add",
             "profile": profile,
             "back_url": next_url or reverse("tenant_user_list"),
-            "back_label": "Back to users",
+            "back_label": _("Back to users"),
             "show_credential_phone": False,
             "next_url": next_url,
         },
@@ -1130,7 +1127,7 @@ def _render_staff_user_form(request, *, user: User | None = None, initial_role: 
     next_url = _get_safe_next_url(request)
     allowed_roles = _staff_allowed_roles(request.user)
     if initial_role not in allowed_roles:
-        raise PermissionDenied("You cannot create that role from this screen.")
+        raise PermissionDenied(_("You cannot create that role from this screen."))
 
     require_password = user is None
     if request.method == "POST":
@@ -1171,7 +1168,7 @@ def _render_staff_user_form(request, *, user: User | None = None, initial_role: 
                         role=cd["role"],
                         is_active=cd["is_active"],
                     )
-                    messages.success(request, "User updated.")
+                    messages.success(request, _("User updated."))
             if next_url:
                 return redirect(next_url)
             return redirect("tenant_user_list")
@@ -1208,15 +1205,9 @@ def tenant_user_list_view(request):
     if status not in {"all", "active", "inactive"}:
         status = "all"
 
-    qs = base_qs
-    if role_filter != "ALL":
-        qs = qs.filter(role=role_filter)
-    if status == "active":
-        qs = qs.filter(is_active=True)
-    elif status == "inactive":
-        qs = qs.filter(is_active=False)
+    user_search_q = None
     if q:
-        qs = qs.filter(
+        user_search_q = (
             Q(username__icontains=q)
             | Q(email__icontains=q)
             | Q(phone_number__icontains=q)
@@ -1226,14 +1217,20 @@ def tenant_user_list_view(request):
             | Q(client_profile__contact_person__icontains=q)
         )
 
-    role_filters = [{"value": "ALL", "label": "All"}] + [
+    qs = base_qs
+    if role_filter != "ALL":
+        qs = qs.filter(role=role_filter)
+    if user_search_q is not None:
+        qs = qs.filter(user_search_q)
+    status_count_user_qs = qs.exclude(role=User.Role.WALKIN)
+    if status == "active":
+        qs = qs.filter(is_active=True)
+    elif status == "inactive":
+        qs = qs.filter(is_active=False)
+
+    role_filters = [{"value": "ALL", "label": _("All")}] + [
         {"value": role, "label": User.Role(role).label} for role in allowed_roles
     ]
-    counts = {
-        "all": base_qs.count(),
-        "active": base_qs.filter(is_active=True).count(),
-        "inactive": base_qs.filter(is_active=False).count(),
-    }
     user_rows = []
     for managed_user in qs:
         if managed_user.role == User.Role.WALKIN:
@@ -1252,6 +1249,17 @@ def tenant_user_list_view(request):
             secondary_text = managed_user.username
             legacy_detail_url = ""
         account_type_label = _account_type_label(profile.account_type) if profile is not None else ""
+        archive_url = ""
+        activate_url = ""
+        if (
+            profile is not None
+            and managed_user.role in CLIENT_MANAGEMENT_ROLES
+            and can_manage_client_accounts(request.user)
+        ):
+            if profile.is_active:
+                archive_url = reverse("client_profile_delete", kwargs={"pk": profile.pk})
+            else:
+                activate_url = reverse("client_profile_activate", kwargs={"pk": profile.pk})
         user_rows.append(
             {
                 "user": managed_user,
@@ -1265,11 +1273,14 @@ def tenant_user_list_view(request):
                     else ""
                 ),
                 "legacy_detail_url": legacy_detail_url,
+                "archive_url": archive_url,
+                "activate_url": activate_url,
             }
         )
 
     # Profiles without login + walk-in prospects (WALKIN user + profile)
     client_rows = []
+    client_status_count_qs = ClientProfile.objects.none()
     if can_manage_client_accounts(request.user):
         if role_filter in {"CLIENT", "WALKIN", "ALL"}:
             cp_qs = (
@@ -1291,11 +1302,22 @@ def tenant_user_list_view(request):
                     | Q(user__first_name__icontains=q)
                     | Q(user__last_name__icontains=q)
                 )
+            client_status_count_qs = cp_qs
+            if status == "active":
+                cp_qs = cp_qs.filter(is_active=True)
+            elif status == "inactive":
+                cp_qs = cp_qs.filter(is_active=False)
             for profile in cp_qs:
                 linked_user = profile.user
                 edit_url = ""
                 if linked_user is not None and can_edit_user(request.user, linked_user):
                     edit_url = reverse("tenant_user_edit", kwargs={"pk": linked_user.pk})
+                if profile.is_active:
+                    archive_url = reverse("client_profile_delete", kwargs={"pk": profile.pk})
+                    activate_url = ""
+                else:
+                    archive_url = ""
+                    activate_url = reverse("client_profile_activate", kwargs={"pk": profile.pk})
                 client_rows.append(
                     {
                         "profile": profile,
@@ -1306,24 +1328,66 @@ def tenant_user_list_view(request):
                         "account_type_label": _account_type_label(profile.account_type),
                         "row_kind_label": _client_profile_row_kind(profile),
                         "edit_url": edit_url,
+                        "archive_url": archive_url,
+                        "activate_url": activate_url,
                     }
                 )
 
+    total_user_rows = len(user_rows)
     count_all = qs.exclude(role=User.Role.WALKIN).count() + len(client_rows)
+    status_counts = {
+        "all": status_count_user_qs.count() + client_status_count_qs.count(),
+        "active": status_count_user_qs.filter(is_active=True).count() + client_status_count_qs.filter(is_active=True).count(),
+        "inactive": status_count_user_qs.filter(is_active=False).count()
+        + client_status_count_qs.filter(is_active=False).count(),
+    }
+
+    per_page = 25
+    user_paginator = Paginator(user_rows, per_page)
+    try:
+        user_page_number = int(request.GET.get("page") or 1)
+    except (TypeError, ValueError):
+        user_page_number = 1
+    user_page = user_paginator.get_page(user_page_number)
+
+    client_per_page = 25
+    client_paginator = Paginator(client_rows, client_per_page)
+    try:
+        client_page_number = int(request.GET.get("client_page") or 1)
+    except (TypeError, ValueError):
+        client_page_number = 1
+    client_page = client_paginator.get_page(client_page_number)
+
+    querystring_parts = []
+    if q:
+        querystring_parts.append(("q", q))
+    if status and status != "all":
+        querystring_parts.append(("status", status))
+    if role_filter and role_filter != "ALL":
+        querystring_parts.append(("role", role_filter))
+    base_querystring = urlencode(querystring_parts)
 
     return render(
         request,
         "users/user_management_list.html",
         {
-            "user_rows": user_rows,
-            "client_rows": client_rows,
+            "user_rows": list(user_page),
+            "user_page": user_page,
+            "user_paginator": user_paginator,
+            "total_user_rows": total_user_rows,
+            "client_rows": list(client_page),
+            "client_page": client_page,
+            "client_paginator": client_paginator,
+            "total_client_rows": len(client_rows),
+            "base_querystring": base_querystring,
             "q": q,
             "status_filter": status,
             "role_filter": role_filter,
             "role_filters": role_filters,
             "count_all": count_all,
-            "count_active": counts["active"],
-            "count_inactive": counts["inactive"],
+            "status_count_all": status_counts["all"],
+            "status_count_active": status_counts["active"],
+            "status_count_inactive": status_counts["inactive"],
             "creatable_roles": creatable_roles_for(request.user),
         },
     )
@@ -1406,7 +1470,7 @@ def client_profile_list_view(request):
 def _assert_staff_may_manage_client_profile(profile: ClientProfile) -> None:
     u = profile.user
     if u is not None and u.role not in CLIENT_MANAGEMENT_ROLES:
-        raise PermissionDenied("This account cannot be managed from the client list.")
+        raise PermissionDenied(_("This account cannot be managed from the client list."))
 
 
 @client_account_required
@@ -1434,10 +1498,10 @@ def client_profile_activate_view(request, pk):
     profile = get_object_or_404(ClientProfile.objects.select_related("user"), pk=pk)
     _assert_staff_may_manage_client_profile(profile)
     if profile.is_active:
-        messages.info(request, "This client is already active.")
+        messages.info(request, _("This client is already active."))
         return redirect("client_profile_detail", pk=profile.pk)
     activate_client_profile(profile)
-    messages.success(request, "Client activated and login enabled.")
+    messages.success(request, _("Client activated and login enabled."))
     return redirect("client_profile_list")
 
 
@@ -1451,6 +1515,6 @@ def client_profile_delete_view(request, pk):
             archive_client_profile(profile)
             if u:
                 deactivate_user(u)
-        messages.success(request, "Client archived and login disabled.")
+        messages.success(request, _("Client archived and login disabled."))
         return redirect("client_profile_list")
     return render(request, "users/client_profile_confirm_delete.html", {"profile": profile})
