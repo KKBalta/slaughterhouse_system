@@ -8,9 +8,10 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
-from labeling.models import AnimalLabel, CustomLabel
+from labeling.models import AnimalLabel, CustomLabel, PrintJob
 from labeling.views import TestPRNGenerationView as PRNGenerationView
 from processing.models import DisassemblyCut
+from scales.models import EdgeDevice, Printer, Site
 
 pytestmark = pytest.mark.django_db
 
@@ -140,38 +141,74 @@ def test_animal_label_detail_view_exposes_animal(auth_client, animal_label):
     assert response.status_code == 200
     assert response.context["label"] == animal_label
     assert response.context["animal"] == animal_label.animal
+    assert "edge_dispatch_available" in response.context
+    assert "edge_print_job" in response.context
 
 
-def test_download_animal_label_enhanced_bat_returns_file(auth_client, animal_label, mocker):
-    mocker.patch("labeling.views.generate_enhanced_printer_config_bat", return_value="ENHANCED-BAT")
-
-    response = auth_client.get(
-        reverse("labeling:download_animal_label", kwargs={"label_id": animal_label.pk, "format_type": "bat"}),
-        {"enhanced": "true"},
+@pytest.fixture
+def site_with_edge_printer(db):
+    site = Site.objects.create(name="Print Site", address="")
+    edge = EdgeDevice.objects.create(site=site, name="E1", is_active=True)
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="p1",
+        host="192.168.1.10",
+        port=9100,
+        role="carcass",
+        enabled=True,
+        is_active=True,
     )
-
-    assert response.status_code == 200
-    assert response.content == b"ENHANCED-BAT"
-    assert "enhanced_print_label" in response["Content-Disposition"]
+    return site
 
 
-def test_download_animal_label_standard_download_formats(auth_client, animal_label, mocker):
-    mocker.patch(
-        "labeling.views.get_animal_label_download_data",
-        return_value={
-            "content": "PRN-DATA",
-            "content_type": "application/octet-stream",
-            "filename": "label.prn",
-        },
-    )
+def test_print_animal_label_to_edge_queues_job(auth_client, animal_label, site_with_edge_printer, mocker):
+    mocker.patch("labeling.views.get_default_label_site", return_value=site_with_edge_printer)
+    animal_label.prn_content = "TSPL-LINE-1"
+    animal_label.save(update_fields=["prn_content"])
 
+    response = auth_client.post(reverse("labeling:print_animal_label", kwargs={"pk": animal_label.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk})
+    job = PrintJob.objects.get()
+    assert job.site_id == site_with_edge_printer.id
+    assert job.prn_content == "TSPL-LINE-1"
+    assert job.status == "pending"
+
+
+def test_print_animal_label_to_edge_requires_printer(auth_client, animal_label, db):
+    Site.objects.create(name="Lonely", address="")
+    animal_label.prn_content = "X"
+    animal_label.save(update_fields=["prn_content"])
+
+    response = auth_client.post(reverse("labeling:print_animal_label", kwargs={"pk": animal_label.pk}))
+
+    assert response.status_code == 302
+    assert PrintJob.objects.count() == 0
+
+
+def test_print_custom_label_to_edge_queues_job(auth_client, admin_user, site_with_edge_printer, mocker):
+    mocker.patch("labeling.views.get_default_label_site", return_value=site_with_edge_printer)
+    label = _create_custom_label(admin_user)
+    label.prn_content = "CUSTOM-TSPL"
+    label.save(update_fields=["prn_content"])
+
+    response = auth_client.post(reverse("labeling:print_custom_label", kwargs={"pk": label.pk}))
+
+    assert response.status_code == 302
+    job = PrintJob.objects.get()
+    assert job.item_id == label.pk
+    assert job.prn_content == "CUSTOM-TSPL"
+    assert job.target_role == "carcass"
+
+
+def test_download_animal_label_non_pdf_redirects(auth_client, animal_label):
     response = auth_client.get(
         reverse("labeling:download_animal_label", kwargs={"label_id": animal_label.pk, "format_type": "prn"})
     )
-
-    assert response.status_code == 200
-    assert response.content == b"PRN-DATA"
-    assert response["Content-Disposition"] == 'attachment; filename="label.prn"'
+    assert response.status_code == 302
+    assert response.url == reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk})
 
 
 def test_download_animal_label_pdf_returns_file_response(auth_client, animal_label, mocker):
@@ -216,7 +253,7 @@ def test_download_animal_label_pdf_missing_or_error_redirects(auth_client, anima
 
     mocker.patch("labeling.views.get_animal_label_download_data", side_effect=Exception("boom"))
     response = auth_client.get(
-        reverse("labeling:download_animal_label", kwargs={"label_id": animal_label.pk, "format_type": "prn"})
+        reverse("labeling:download_animal_label", kwargs={"label_id": animal_label.pk, "format_type": "pdf"})
     )
     assert response.status_code == 302
     assert response.url == reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk})
@@ -293,6 +330,35 @@ def test_batch_generate_labels_handles_empty_success_and_errors(
     )
     assert response.status_code == 302
     assert response.url == reverse("reception:slaughter_order_detail", kwargs={"pk": order.pk})
+
+
+def test_batch_generate_labels_enqueues_print_when_edge_ready(
+    auth_client, admin_user, slaughter_order_factory, animal_factory, mocker, site_with_edge_printer
+):
+    mocker.patch("labeling.views.get_default_label_site", return_value=site_with_edge_printer)
+    order = slaughter_order_factory()
+    second = animal_factory(slaughter_order=order, animal_type="cattle", status="slaughtered")
+
+    def fake_create(*, animal, label_type, user):
+        return AnimalLabel.objects.create(
+            animal=animal,
+            label_type=label_type,
+            prn_content="BATCH-PRN",
+            bat_content="",
+            printed_by=user,
+        )
+
+    mocker.patch("labeling.views.create_animal_label", side_effect=fake_create)
+    enqueue_mock = mocker.patch("labeling.views.enqueue_print_job")
+
+    response = auth_client.post(
+        reverse("labeling:batch_generate_labels", kwargs={"order_id": order.pk}),
+        {"animal_ids": [str(second.pk)], "label_type": "cold_carcass"},
+    )
+    assert response.status_code == 302
+    enqueue_mock.assert_called_once()
+    assert enqueue_mock.call_args.kwargs["site"] == site_with_edge_printer
+    assert enqueue_mock.call_args.kwargs["prn_content"] == "BATCH-PRN"
 
 
 def test_batch_generate_labels_ignores_archived_existing_label(
@@ -437,21 +503,14 @@ def test_custom_label_list_and_detail_views(auth_client, admin_user):
     response = auth_client.get(reverse("labeling:custom_label_detail", kwargs={"pk": label.pk}))
     assert response.status_code == 200
     assert response.context["label"] == label
+    assert "edge_dispatch_available" in response.context
 
 
 def test_download_custom_label_handles_formats_and_errors(auth_client, admin_user, mocker):
     label = _create_custom_label(admin_user)
-    mocker.patch(
-        "labeling.views.get_custom_label_download_data",
-        return_value={
-            "content": "CUSTOM-PRN",
-            "content_type": "application/octet-stream",
-            "filename": "custom.prn",
-        },
-    )
     response = auth_client.get(reverse("labeling:download_custom_label", kwargs={"pk": label.pk, "format_type": "prn"}))
-    assert response.status_code == 200
-    assert response.content == b"CUSTOM-PRN"
+    assert response.status_code == 302
+    assert response.url == reverse("labeling:custom_label_detail", kwargs={"pk": label.pk})
 
     label.pdf_file = "custom_labels/pdf/test.pdf"
     label.save(update_fields=["pdf_file"])
@@ -474,7 +533,7 @@ def test_download_custom_label_handles_formats_and_errors(auth_client, admin_use
     assert response.url == reverse("labeling:custom_label_detail", kwargs={"pk": label.pk})
 
     mocker.patch("labeling.views.get_custom_label_download_data", side_effect=Exception("custom boom"))
-    response = auth_client.get(reverse("labeling:download_custom_label", kwargs={"pk": label.pk, "format_type": "bat"}))
+    response = auth_client.get(reverse("labeling:download_custom_label", kwargs={"pk": label.pk, "format_type": "pdf"}))
     assert response.status_code == 302
     assert response.url == reverse("labeling:custom_label_detail", kwargs={"pk": label.pk})
 

@@ -24,6 +24,7 @@ STAGING_ENV ?= .env.staging
 PROD_ENV    ?= .env.production
 BACKUP_DIR  ?= sql_backup
 BACKUP_PREFIX ?= staging_backup
+PROD_BACKUP_PREFIX ?= prod_backup
 
 # Production Cloud SQL (used by proxy / proxy-v2 and production-local)
 CLOUDSQL_INSTANCE ?= carnitrack:europe-west1:carnitrack-db-belgium
@@ -45,7 +46,7 @@ LOCALE_ARGS := $(foreach loc,$(LOCALES),-l $(loc))
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging migrate-prod import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump staging-restore-backup makemessages compilemessages messages
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging migrate-prod import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump prod-dump staging-restore-backup makemessages compilemessages messages
 
 help:
 	@echo "CarniTrack Makefile"
@@ -63,6 +64,7 @@ help:
 	@echo "  make staging            Django runserver — GCP Cloud SQL staging via proxy ($(STAGING_ENV))"
 	@echo "                          (proxy starts automatically on port $(STAGING_PROXY_PORT) and stops on exit)"
 	@echo "  make staging-dump       Dump current staging DB to $(BACKUP_DIR)/$(BACKUP_PREFIX)_YYYYMMDD_HHMMSS.sql"
+	@echo "  make prod-dump          Dump production DB via proxy to $(BACKUP_DIR)/$(PROD_BACKUP_PREFIX)_YYYYMMDD_HHMMSS.sql"
 	@echo "  make production-local   Gunicorn on :8080 — needs $(PROD_ENV) + proxy running"
 	@echo "  make prod-deploy        Docker build/push + Cloud Run deploy"
 	@echo "  make staging-deploy     Docker build/push + Cloud Run staging deploy"
@@ -121,6 +123,15 @@ staging-dump:
 	BACKUP_DIR="$(BACKUP_DIR)" \
 	BACKUP_PREFIX="$(BACKUP_PREFIX)" \
 	bash scripts/dump_staging_backup.sh
+
+prod-dump:
+	@if [ ! -f "$(PROD_ENV)" ]; then echo "Missing $(PROD_ENV)"; exit 1; fi
+	@ENV_FILE="$(PROD_ENV)" \
+	PROXY_PORT="$(PROXY_PORT)" \
+	PROD_INSTANCE="$(CLOUDSQL_INSTANCE)" \
+	BACKUP_DIR="$(BACKUP_DIR)" \
+	BACKUP_PREFIX="$(PROD_BACKUP_PREFIX)" \
+	bash scripts/dump_prod_backup.sh
 
 production-local:
 	@if [ ! -f "$(PROD_ENV)" ]; then echo "Missing $(PROD_ENV)"; exit 1; fi

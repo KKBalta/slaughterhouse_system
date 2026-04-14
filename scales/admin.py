@@ -4,6 +4,7 @@ from .models import (
     DisassemblySession,
     EdgeActivityLog,
     EdgeDevice,
+    EdgeSetupCode,
     OfflineBatchAck,
     OrphanedBatch,
     PLUItem,
@@ -37,6 +38,26 @@ class PrinterInline(admin.TabularInline):
         "last_error",
     )
     show_change_link = True
+
+
+@admin.register(EdgeSetupCode)
+class EdgeSetupCodeAdmin(admin.ModelAdmin):
+    list_display = [
+        "code",
+        "site",
+        "edge_name",
+        "expires_at",
+        "used_at",
+        "printers_count",
+        "created_at",
+    ]
+    list_filter = ["site", "used_at"]
+    search_fields = ["code", "edge_name"]
+    readonly_fields = ["code", "used_at", "used_by_edge"]
+
+    @admin.display(description="Printers")
+    def printers_count(self, obj):
+        return len(obj.printers_config or [])
 
 
 @admin.register(EdgeDevice)

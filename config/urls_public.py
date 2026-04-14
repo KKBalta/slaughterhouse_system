@@ -3,6 +3,7 @@
 from django.urls import include, path, re_path
 from django.views.generic import RedirectView
 
+from tenants.api_views_edge import public_edge_activate
 from tenants.views import (
     PlatformAdminLoginView,
     PlatformAdminLogoutView,
@@ -24,6 +25,9 @@ urlpatterns = [
     # Keep auth API reachable on public hosts (e.g. api.carnitrack.localhost in dev).
     path("api/v1/auth/", include("users.api_urls")),
     path("api/v1/tenant-registration/", include("tenants.api_urls")),
+    # Edge activation: single public endpoint so Edge doesn't need to know its tenant subdomain.
+    path("api/v1/activate", public_edge_activate, name="public-edge-activate"),
+    path("api/v1/edge/", include("tenants.public_edge_urls")),
     path("", public_landing, name="public_landing"),
     path("signin/", public_signin, name="public_signin"),
     path("setup/", public_setup, name="public_setup"),

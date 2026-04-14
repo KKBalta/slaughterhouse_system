@@ -19,6 +19,7 @@ urlpatterns = [
     path("cuts/<uuid:cut_id>/generate-label/", views.GenerateCutLabelView.as_view(), name="generate_cut_label"),
     # Label Detail and Download
     path("labels/<uuid:pk>/", views.AnimalLabelDetailView.as_view(), name="animal_label_detail"),
+    path("labels/<uuid:pk>/print/", views.PrintAnimalLabelToEdgeView.as_view(), name="print_animal_label"),
     path(
         "labels/<uuid:label_id>/download/<str:format_type>/",
         views.DownloadAnimalLabelView.as_view(),
@@ -36,6 +37,7 @@ urlpatterns = [
     path("custom/", views.CustomLabelListView.as_view(), name="custom_label_list"),
     path("custom/create/", views.CustomLabelCreateView.as_view(), name="custom_label_create"),
     path("custom/<uuid:pk>/", views.CustomLabelDetailView.as_view(), name="custom_label_detail"),
+    path("custom/<uuid:pk>/print/", views.PrintCustomLabelToEdgeView.as_view(), name="print_custom_label"),
     path(
         "custom/<uuid:pk>/download/<str:format_type>/",
         views.DownloadCustomLabelView.as_view(),

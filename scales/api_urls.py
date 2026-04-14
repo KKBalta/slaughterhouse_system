@@ -6,6 +6,7 @@ from . import api_views
 
 urlpatterns = [
     path("register", api_views.edge_register, name="edge-register"),
+    path("activate", api_views.edge_activate, name="edge-activate"),
     path("sessions", api_views.edge_sessions, name="edge-sessions"),
     path("events", api_views.edge_post_event, name="edge-post-event"),
     path("events/batch", api_views.edge_post_event_batch, name="edge-post-event-batch"),

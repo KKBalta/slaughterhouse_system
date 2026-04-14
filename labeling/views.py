@@ -10,13 +10,18 @@ from django.views.generic import DetailView, ListView, View
 from processing.models import Animal
 
 from .models import AnimalLabel, CustomLabel, LabelTemplate
-from .services import delete_animal_label_record, delete_custom_label_record
+from .services import (
+    delete_animal_label_record,
+    delete_custom_label_record,
+    enqueue_print_job,
+    get_default_label_site,
+    get_latest_edge_print_job_for_animal_label,
+    get_latest_edge_print_job_for_custom_label,
+    site_has_dispatchable_printer,
+)
 from .utils import (
     create_animal_label,
     create_custom_label,
-    create_printer_troubleshooting_guide,
-    generate_bat_file_content,
-    generate_enhanced_printer_config_bat,
     generate_pdf_label,
     generate_tspl_prn_label,
     get_animal_label_download_data,
@@ -65,7 +70,8 @@ class GenerateAnimalLabelView(LoginRequiredMixin, View):
             animal_label = create_animal_label(animal=animal, label_type=label_type, user=request.user)
 
             messages.success(
-                request, _("PRN label and BAT file generated successfully! You can now download and print the label.")
+                request,
+                _("Label created. Use “Print via Edge” on the label page to send it to your site printer."),
             )
             return redirect("labeling:animal_label_detail", pk=animal_label.pk)
 
@@ -126,54 +132,68 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["animal"] = self.object.animal
+        site = get_default_label_site()
+        context["label_site"] = site
+        context["edge_dispatch_available"] = site_has_dispatchable_printer(site)
+        context["edge_print_job"] = get_latest_edge_print_job_for_animal_label(self.object)
         return context
 
 
+class PrintAnimalLabelToEdgeView(LoginRequiredMixin, View):
+    """Queue a PrintJob for the site's Edge device (TSPL payload only; no file download)."""
+
+    def post(self, request, pk):
+        label = get_object_or_404(AnimalLabel, pk=pk, is_active=True)
+        site = get_default_label_site()
+        if not site:
+            messages.error(request, _("No site is configured for this tenant."))
+            return redirect("labeling:animal_label_detail", pk=pk)
+        if not site_has_dispatchable_printer(site):
+            messages.error(
+                request,
+                _(
+                    "No Edge printer is available. Register printers from the Edge device first "
+                    "(printer inventory sync)."
+                ),
+            )
+            return redirect("labeling:animal_label_detail", pk=pk)
+        if not (label.prn_content or "").strip():
+            messages.error(request, _("This label has no printable data."))
+            return redirect("labeling:animal_label_detail", pk=pk)
+        enqueue_print_job(
+            site=site,
+            prn_content=label.prn_content,
+            animal_label=label,
+            printed_by=request.user,
+        )
+        messages.success(request, _("Print job queued. The Edge device will pick it up shortly."))
+        return redirect("labeling:animal_label_detail", pk=pk)
+
+
 class DownloadAnimalLabelView(LoginRequiredMixin, View):
-    """Download animal label in BAT, PRN, or PDF format with enhanced options."""
+    """Download animal label PDF only (printing is via Edge)."""
 
-    def get(self, request, label_id, format_type="bat"):
+    def get(self, request, label_id, format_type="pdf"):
         animal_label = get_object_or_404(AnimalLabel, id=label_id, is_active=True)
-
-        # Check for enhanced BAT file request
-        enhanced = request.GET.get("enhanced", "false").lower() == "true"
-        printer_type = request.GET.get("printer_type", "tsc")
+        fmt = (format_type or "pdf").lower()
+        if fmt != "pdf":
+            messages.error(
+                request,
+                _("Only PDF download is available. Use “Print via Edge” to print at the site."),
+            )
+            return redirect("labeling:animal_label_detail", pk=label_id)
 
         try:
-            if format_type.lower() == "bat" and enhanced:
-                # Generate enhanced BAT file with multiple printer support
-                prn_content = animal_label.prn_content
-                enhanced_bat_content = generate_enhanced_printer_config_bat(prn_content)
-
-                filename = (
-                    f"enhanced_print_label_{animal_label.animal.identification_tag}_{animal_label.label_type}.bat"
+            download_data = get_animal_label_download_data(animal_label, "pdf")
+            if animal_label.pdf_file and default_storage.exists(animal_label.pdf_file.name):
+                response = FileResponse(
+                    default_storage.open(animal_label.pdf_file.name, "rb"),
+                    content_type=download_data["content_type"],
                 )
-                response = HttpResponse(enhanced_bat_content, content_type="application/octet-stream")
-                response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
                 return response
-
-            else:
-                # Use standard download method
-                download_data = get_animal_label_download_data(animal_label, format_type)
-
-                if format_type.lower() in ["bat", "prn"]:
-                    # Return BAT or PRN content as downloadable file
-                    response = HttpResponse(download_data["content"], content_type=download_data["content_type"])
-                    response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
-                    return response
-
-                elif format_type.lower() == "pdf":
-                    # Return PDF file
-                    if animal_label.pdf_file and default_storage.exists(animal_label.pdf_file.name):
-                        response = FileResponse(
-                            default_storage.open(animal_label.pdf_file.name, "rb"),
-                            content_type=download_data["content_type"],
-                        )
-                        response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
-                        return response
-                    else:
-                        messages.error(request, _("PDF file not found."))
-                        return redirect("labeling:animal_label_detail", pk=label_id)
+            messages.error(request, _("PDF file not found."))
+            return redirect("labeling:animal_label_detail", pk=label_id)
 
         except Exception as e:
             messages.error(request, _("Error downloading label: %(error)s") % {"error": str(e)})
@@ -240,6 +260,18 @@ class BatchGenerateLabelsView(LoginRequiredMixin, View):
                     # Create new label
                     animal_label = create_animal_label(animal=animal, label_type=label_type, user=request.user)
                     created_labels.append(animal_label)
+                    site = get_default_label_site()
+                    if (
+                        site
+                        and site_has_dispatchable_printer(site)
+                        and (animal_label.prn_content or "").strip()
+                    ):
+                        enqueue_print_job(
+                            site=site,
+                            prn_content=animal_label.prn_content,
+                            animal_label=animal_label,
+                            printed_by=request.user,
+                        )
 
             except Animal.DoesNotExist:
                 errors.append(f"Animal {animal_id} not found")
@@ -305,12 +337,6 @@ class TestPRNGenerationView(LoginRequiredMixin, View):
             # Generate PRN content
             prn_content = generate_tspl_prn_label(animal)
 
-            # Generate dynamic filename for test
-            test_filename = f"test_animal_label_{animal.identification_tag}.prn"
-
-            # Generate BAT content
-            bat_content = generate_bat_file_content(prn_content, filename=test_filename)
-
             # Create response with debug info
             debug_info = f"""
 === PRN GENERATION TEST ===
@@ -325,7 +351,6 @@ Key Values:
 - kesim_tarihi: {label_data.get("kesim_tarihi", "N/A")}
 
 PRN Content Length: {len(prn_content)} characters
-BAT Content Length: {len(bat_content)} characters
 
 Checks:
 - Contains 'Proses No': {"Proses No" in prn_content}
@@ -336,10 +361,6 @@ Checks:
 === PRN CONTENT (First 1000 chars) ===
 {prn_content[:1000]}
 ...
-
-=== BAT CONTENT (First 500 chars) ===
-{bat_content[:500]}
-...
 """
 
             return HttpResponse(debug_info, content_type="text/plain")
@@ -348,44 +369,6 @@ Checks:
             import traceback
 
             error_info = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            return HttpResponse(error_info, content_type="text/plain")
-
-
-class DownloadTroubleshootingGuideView(LoginRequiredMixin, View):
-    """Download printer troubleshooting guide."""
-
-    def get(self, request):
-        guide_content = create_printer_troubleshooting_guide()
-
-        response = HttpResponse(guide_content, content_type="text/plain")
-        response["Content-Disposition"] = 'attachment; filename="carnitrack_printer_troubleshooting_guide.txt"'
-        return response
-
-
-class TestEnhancedBatView(LoginRequiredMixin, View):
-    """Test the enhanced BAT file generation for debugging."""
-
-    def get(self, request, animal_id):
-        animal = get_object_or_404(Animal, id=animal_id)
-
-        try:
-            # Generate PRN content
-            prn_content = generate_tspl_prn_label(animal)
-
-            # Generate enhanced BAT content
-            enhanced_bat_content = generate_enhanced_printer_config_bat(prn_content)
-
-            # Return as downloadable file for testing
-            response = HttpResponse(enhanced_bat_content, content_type="application/octet-stream")
-            response["Content-Disposition"] = (
-                f'attachment; filename="test_enhanced_printer_{animal.identification_tag}.bat"'
-            )
-            return response
-
-        except Exception as e:
-            import traceback
-
-            error_info = f"Error generating enhanced BAT: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             return HttpResponse(error_info, content_type="text/plain")
 
 
@@ -438,7 +421,8 @@ class CustomLabelCreateView(LoginRequiredMixin, View):
                 custom_label = create_custom_label(label_data=label_data, user=request.user)
 
                 messages.success(
-                    request, _("Custom label created successfully! You can now download and print the label.")
+                    request,
+                    _("Custom label created. Use “Print via Edge” on the label page to print at the site."),
                 )
                 return redirect("labeling:custom_label_detail", pk=custom_label.pk)
 
@@ -461,32 +445,70 @@ class CustomLabelDetailView(LoginRequiredMixin, DetailView):
     template_name = "labeling/custom_label_detail.html"
     context_object_name = "label"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        site = get_default_label_site()
+        context["label_site"] = site
+        context["edge_dispatch_available"] = site_has_dispatchable_printer(site)
+        context["edge_print_job"] = get_latest_edge_print_job_for_custom_label(self.object)
+        return context
+
+
+class PrintCustomLabelToEdgeView(LoginRequiredMixin, View):
+    """Queue a PrintJob for a custom label."""
+
+    def post(self, request, pk):
+        label = get_object_or_404(CustomLabel, pk=pk)
+        site = get_default_label_site()
+        if not site:
+            messages.error(request, _("No site is configured for this tenant."))
+            return redirect("labeling:custom_label_detail", pk=pk)
+        if not site_has_dispatchable_printer(site):
+            messages.error(
+                request,
+                _(
+                    "No Edge printer is available. Register printers from the Edge device first "
+                    "(printer inventory sync)."
+                ),
+            )
+            return redirect("labeling:custom_label_detail", pk=pk)
+        if not (label.prn_content or "").strip():
+            messages.error(request, _("This label has no printable data."))
+            return redirect("labeling:custom_label_detail", pk=pk)
+        enqueue_print_job(
+            site=site,
+            prn_content=label.prn_content,
+            custom_label=label,
+            printed_by=request.user,
+        )
+        messages.success(request, _("Print job queued. The Edge device will pick it up shortly."))
+        return redirect("labeling:custom_label_detail", pk=pk)
+
 
 class DownloadCustomLabelView(LoginRequiredMixin, View):
-    """Download custom label in BAT, PRN, or PDF format."""
+    """Download custom label PDF only (printing is via Edge)."""
 
-    def get(self, request, pk, format_type="bat"):
+    def get(self, request, pk, format_type="pdf"):
         custom_label = get_object_or_404(CustomLabel, id=pk)
+        fmt = (format_type or "pdf").lower()
+        if fmt != "pdf":
+            messages.error(
+                request,
+                _("Only PDF download is available. Use “Print via Edge” to print at the site."),
+            )
+            return redirect("labeling:custom_label_detail", pk=pk)
 
         try:
-            download_data = get_custom_label_download_data(custom_label, format_type)
-
-            if format_type.lower() in ["bat", "prn"]:
-                response = HttpResponse(download_data["content"], content_type=download_data["content_type"])
+            download_data = get_custom_label_download_data(custom_label, "pdf")
+            if custom_label.pdf_file and default_storage.exists(custom_label.pdf_file.name):
+                response = FileResponse(
+                    default_storage.open(custom_label.pdf_file.name, "rb"),
+                    content_type=download_data["content_type"],
+                )
                 response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
                 return response
-
-            elif format_type.lower() == "pdf":
-                if custom_label.pdf_file and default_storage.exists(custom_label.pdf_file.name):
-                    response = FileResponse(
-                        default_storage.open(custom_label.pdf_file.name, "rb"),
-                        content_type=download_data["content_type"],
-                    )
-                    response["Content-Disposition"] = f'attachment; filename="{download_data["filename"]}"'
-                    return response
-                else:
-                    messages.error(request, _("PDF file not found."))
-                    return redirect("labeling:custom_label_detail", pk=pk)
+            messages.error(request, _("PDF file not found."))
+            return redirect("labeling:custom_label_detail", pk=pk)
 
         except Exception as e:
             messages.error(request, _("Error downloading label: %(error)s") % {"error": str(e)})

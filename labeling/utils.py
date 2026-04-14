@@ -869,29 +869,18 @@ def generate_pdf_label(animal, label_type="hot_carcass") -> BytesIO:
 
 def create_animal_label(animal, label_type="hot_carcass", user=None, printer_config=None):
     """
-    Create an AnimalLabel instance with generated TSPL/PRN and .bat content.
+    Create an AnimalLabel instance with generated TSPL/PRN (Edge dispatch) and PDF preview.
 
     Args:
         animal: Animal instance
         label_type: Type of label (default: 'hot_carcass')
         user: User who created the label
-        printer_config: Printer configuration dict for .bat file generation
+        printer_config: Deprecated; ignored (legacy .bat flow removed).
     """
     from .models import AnimalLabel
 
-    # Default printer config if none provided
-    if printer_config is None:
-        printer_config = {"port": "LPT1"}
-
-    # Generate TSPL/PRN content
+    # Generate TSPL/PRN content (sent to printer via Edge PrintJob)
     prn_content = generate_tspl_prn_label(animal, label_type)
-
-    # Generate dynamic filename based on animal data with sanitized identification tag
-    sanitized_tag = validate_and_sanitize_english_name(animal.identification_tag or "UNKNOWN")
-    dynamic_filename = f"animal_label_{sanitized_tag}_{label_type}.prn"
-
-    # Generate .bat file content with dynamic filename
-    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
 
     # Generate PDF content
     pdf_buffer = generate_pdf_label(animal, label_type)
@@ -901,8 +890,8 @@ def create_animal_label(animal, label_type="hot_carcass", user=None, printer_con
         animal=animal,
         label_type=label_type,
         printed_by=user,
-        prn_content=prn_content,  # Store PRN instead of ZPL
-        bat_content=bat_content,  # Store .bat file content
+        prn_content=prn_content,
+        bat_content="",
     )
 
     # Save to get the ID
@@ -920,23 +909,16 @@ def create_animal_label(animal, label_type="hot_carcass", user=None, printer_con
 def create_cut_label(cut, label_type="cut", user=None, printer_config=None):
     """
     Create an AnimalLabel instance for a disassembly cut.
+
+    printer_config is deprecated; ignored (legacy .bat flow removed).
     """
     from .models import AnimalLabel
-
-    # Default printer config if none provided
-    if printer_config is None:
-        printer_config = {"port": "LPT1"}
 
     # Generate TSPL/PRN content
     prn_content = generate_cut_prn_label(cut)
 
-    # Generate dynamic filename
     sanitized_tag = validate_and_sanitize_english_name(cut.animal.identification_tag or "UNKNOWN")
     cut_name_slug = cut.get_cut_name_display().replace(" ", "_").lower()
-    dynamic_filename = f"cut_label_{sanitized_tag}_{cut_name_slug}.prn"
-
-    # Generate .bat file content
-    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
 
     # Generate PDF content (reusing generate_pdf_label for now or we need a new one)
     # For now, let's use generate_pdf_label but we might need to adapt it for cuts.
@@ -955,7 +937,7 @@ def create_cut_label(cut, label_type="cut", user=None, printer_config=None):
         label_type=label_type,
         printed_by=user,
         prn_content=prn_content,
-        bat_content=bat_content,
+        bat_content="",
     )
 
     animal_label.save()
@@ -1204,30 +1186,13 @@ def generate_pdf_label_from_data(label_data: dict) -> BytesIO:
 
 def create_custom_label(label_data: dict, user=None, printer_config=None):
     """
-    Create a CustomLabel instance with generated TSPL/PRN and .bat content.
+    Create a CustomLabel instance with generated TSPL/PRN (Edge) and PDF.
 
-    Args:
-        label_data: Dictionary containing all label fields:
-            - uretici: Producer name
-            - kupe_no: Ear tag number
-            - tuccar: Trader name
-            - kesim_tarihi: Slaughter date (date object or DD.MM.YYYY string)
-            - stt: Expiration date (date object or DD.MM.YYYY string)
-            - siparis_no: Order number
-            - cinsi: Animal type
-            - weight: Weight in kg
-            - sakatat_status: Offal status value
-            - qr_data: QR code data (optional)
-        user: User who created the label
-        printer_config: Printer configuration dict for .bat file generation
+    printer_config is deprecated; ignored (legacy .bat flow removed).
     """
     from django.core.files.base import ContentFile
 
     from .models import CustomLabel
-
-    # Default printer config if none provided
-    if printer_config is None:
-        printer_config = {"port": "LPT1"}
 
     # Format dates if they are date objects
     kesim_tarihi = label_data.get("kesim_tarihi", "")
@@ -1260,12 +1225,7 @@ def create_custom_label(label_data: dict, user=None, printer_config=None):
     # Generate TSPL/PRN content
     prn_content = generate_tspl_prn_label_from_data(prn_label_data)
 
-    # Generate dynamic filename
     sanitized_tag = validate_and_sanitize_english_name(label_data.get("kupe_no", "CUSTOM"))
-    dynamic_filename = f"custom_label_{sanitized_tag}.prn"
-
-    # Generate .bat file content
-    bat_content = generate_bat_file_content(prn_content, printer_config, dynamic_filename)
 
     # Generate PDF content
     pdf_buffer = generate_pdf_label_from_data(prn_label_data)
@@ -1283,7 +1243,7 @@ def create_custom_label(label_data: dict, user=None, printer_config=None):
         sakatat_status=label_data.get("sakatat_status", "0.51"),
         qr_data=label_data.get("qr_data", ""),
         prn_content=prn_content,
-        bat_content=bat_content,
+        bat_content="",
         printed_by=user,
     )
 

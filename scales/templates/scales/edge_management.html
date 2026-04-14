@@ -5,12 +5,27 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-start mb-6">
+    <div class="flex justify-between items-start mb-6 gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">{% trans "Edge Management" %}</h1>
             <p class="text-sm text-gray-600 mt-1">{% trans "Browse infrastructure as site -> edge -> printer and review edge logs." %}</p>
         </div>
-        <a href="{% url 'dashboard' %}" class="text-blue-600 hover:text-blue-800">{% trans "Back to dashboard" %}</a>
+        <div class="flex flex-col items-end gap-2">
+            <div class="flex gap-2 flex-wrap justify-end">
+                <a href="{% url 'scales:edge_setup_code_list' %}"
+                   class="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">
+                    {% trans "Setup Codes" %}
+                </a>
+                <a href="{% url 'scales:edge_setup_code_create' %}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {% trans "Add Edge Device" %}
+                </a>
+            </div>
+            <a href="{% url 'dashboard' %}" class="text-blue-600 hover:text-blue-800 text-sm">{% trans "Back to dashboard" %}</a>
+        </div>
     </div>
 
     <div class="bg-white shadow rounded-lg p-6 mb-6">
@@ -58,6 +73,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Status" %}</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Last seen" %}</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody id="edge-table-body" class="bg-white divide-y divide-gray-200">
@@ -80,9 +96,20 @@
                                 {% endif %}
                                 {% else %}—{% endif %}
                             </td>
+                            <td class="px-4 py-2 text-sm text-right">
+                                <form method="post" action="{% url 'scales:edge_device_remove' pk=edge.pk %}"
+                                      class="inline"
+                                      onsubmit="return confirm('{% filter escapejs %}{% blocktrans with name=edge.name|default:edge.id %}Remove edge "{{ name }}" and all its devices/printers? This cannot be undone.{% endblocktrans %}{% endfilter %}');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="text-red-600 hover:text-red-800 text-xs font-medium">
+                                        {% trans "Remove" %}
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>
+                        <tr><td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -91,44 +118,75 @@
 
         <div class="bg-white shadow rounded-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                {% trans "Available Printers / Scale Devices" %}
+                {% trans "Label printers & scale devices" %}
                 <span id="printers-live-badge" class="hidden text-xs font-normal text-green-600">● {% trans "Live" %}</span>
             </h3>
+            <p class="text-xs text-gray-500 mb-3">{% trans "Label printers come from Edge inventory sync; scales from scale registration / heartbeat." %}</p>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Device ID" %}</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Type" %}</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Kind" %}</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Identifier" %}</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role / type" %}</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Address" %}</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Status" %}</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Last heartbeat" %}</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Last activity" %}</th>
                         </tr>
                     </thead>
                     <tbody id="printer-table-body" class="bg-white divide-y divide-gray-200">
-                        {% for printer in printers %}
+                        {% for p in label_printers %}
                         <tr>
-                            <td class="px-4 py-2 text-sm text-gray-900">{{ printer.device_id }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-700">{{ printer.device_type }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-600">{% trans "Printer" %}</td>
+                            <td class="px-4 py-2 text-sm text-gray-900">{{ p.local_printer_id }}{% if p.display_name %} <span class="text-gray-500">({{ p.display_name }})</span>{% endif %}</td>
+                            <td class="px-4 py-2 text-sm text-gray-700">{{ p.get_role_display }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-700 font-mono">{{ p.host }}:{{ p.port }}</td>
                             <td class="px-4 py-2 text-sm">
-                                {% if printer.is_online_computed %}
+                                {% if p.is_online_computed %}
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>
                                 {% else %}
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>
                                 {% endif %}
-                                <span class="text-gray-500 ml-1">({{ printer.status }})</span>
+                                <span class="text-gray-500 ml-1">({{ p.get_status_display }})</span>
+                                {% if not p.enabled %}<span class="text-amber-600 text-xs ml-1">{% trans "disabled" %}</span>{% endif %}
                             </td>
                             <td class="px-4 py-2 text-sm text-gray-600">
-                                {% if printer.last_heartbeat_age_seconds is not None %}
-                                {% if printer.last_heartbeat_age_seconds < 60 %}{{ printer.last_heartbeat_age_seconds }} s {% trans "ago" %}
-                                {% elif printer.last_heartbeat_age_seconds < 3600 %}{% widthratio printer.last_heartbeat_age_seconds 60 1 %} min {% trans "ago" %}
-                                {% else %}{% widthratio printer.last_heartbeat_age_seconds 3600 1 %} h {% trans "ago" %}
+                                {% if p.last_seen_age_seconds is not None %}
+                                {% if p.last_seen_age_seconds < 60 %}{{ p.last_seen_age_seconds }} s {% trans "ago" %}
+                                {% elif p.last_seen_age_seconds < 3600 %}{% widthratio p.last_seen_age_seconds 60 1 %} min {% trans "ago" %}
+                                {% else %}{% widthratio p.last_seen_age_seconds 3600 1 %} h {% trans "ago" %}
                                 {% endif %}
                                 {% else %}—{% endif %}
                             </td>
                         </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No printers for this filter." %}</td></tr>
                         {% endfor %}
+                        {% for d in scale_devices %}
+                        <tr>
+                            <td class="px-4 py-2 text-sm text-gray-600">{% trans "Scale" %}</td>
+                            <td class="px-4 py-2 text-sm text-gray-900">{{ d.device_id }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-700">{{ d.device_type }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">—</td>
+                            <td class="px-4 py-2 text-sm">
+                                {% if d.is_online_computed %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>
+                                {% else %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>
+                                {% endif %}
+                                <span class="text-gray-500 ml-1">({{ d.status }})</span>
+                            </td>
+                            <td class="px-4 py-2 text-sm text-gray-600">
+                                {% if d.last_heartbeat_age_seconds is not None %}
+                                {% if d.last_heartbeat_age_seconds < 60 %}{{ d.last_heartbeat_age_seconds }} s {% trans "ago" %}
+                                {% elif d.last_heartbeat_age_seconds < 3600 %}{% widthratio d.last_heartbeat_age_seconds 60 1 %} min {% trans "ago" %}
+                                {% else %}{% widthratio d.last_heartbeat_age_seconds 3600 1 %} h {% trans "ago" %}
+                                {% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not label_printers and not scale_devices %}
+                        <tr><td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No label printers or scale devices for this filter. Select a site or edge, or wait for the Edge to sync inventory and heartbeats." %}</td></tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -149,7 +207,7 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    {% for log in recent_logs %}
+                    {% for log in log_page %}
                     <tr>
                         <td class="px-4 py-2 text-sm text-gray-700">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
                         <td class="px-4 py-2 text-sm text-gray-700">{{ log.level }}</td>
@@ -167,6 +225,23 @@
                 </tbody>
             </table>
         </div>
+        {% if log_page.paginator.num_pages > 1 %}
+        <nav class="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm" aria-label="{% trans 'Logs pagination' %}">
+            <span class="text-gray-600">
+                {% blocktrans with page=log_page.number num_pages=log_page.paginator.num_pages total=log_page.paginator.count %}Page {{ page }} of {{ num_pages }} — {{ total }} entries{% endblocktrans %}
+            </span>
+            <div class="flex flex-wrap gap-1">
+                {% if log_page.has_previous %}
+                <a class="px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                   href="?{% if logs_base_query %}{{ logs_base_query }}&{% endif %}page={{ log_page.previous_page_number }}">{% trans "Previous" %}</a>
+                {% endif %}
+                {% if log_page.has_next %}
+                <a class="px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                   href="?{% if logs_base_query %}{{ logs_base_query }}&{% endif %}page={{ log_page.next_page_number }}">{% trans "Next" %}</a>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
     </div>
 </div>
 
@@ -195,9 +270,12 @@
             return Math.floor(seconds / 3600) + " h {% trans "ago" %}";
         }
 
+        const csrfToken = '{{ csrf_token }}';
+        const edgeRemoveUrlTemplate = '{% url "scales:edge_device_remove" pk="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', '__EDGE_ID__');
+
         function renderEdges(edges) {
             if (!edges.length) {
-                edgeTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>';
+                edgeTableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>';
                 return;
             }
             edgeTableBody.innerHTML = edges.map(function (edge) {
@@ -205,32 +283,59 @@
                     ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>'
                     : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>';
                 const lastSeen = formatAge(edge.last_seen_age_seconds);
+                const removeUrl = edgeRemoveUrlTemplate.replace('__EDGE_ID__', edge.id);
+                const removeBtn = '<form method="post" action="' + escapeHtml(removeUrl) + '" class="inline"'
+                    + ' onsubmit="return confirm(\'{% filter escapejs %}{% trans "Remove this edge and all its devices/printers?" %}{% endfilter %}\');">'
+                    + '<input type="hidden" name="csrfmiddlewaretoken" value="' + csrfToken + '">'
+                    + '<button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">{% trans "Remove" %}</button></form>';
                 return '<tr>'
                     + '<td class="px-4 py-2 text-sm text-gray-900">' + escapeHtml(edge.name) + '</td>'
                     + '<td class="px-4 py-2 text-sm text-gray-700">' + escapeHtml(edge.site_name || "-") + '</td>'
                     + '<td class="px-4 py-2 text-sm">' + badge + '</td>'
                     + '<td class="px-4 py-2 text-sm text-gray-600">' + escapeHtml(lastSeen) + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-right">' + removeBtn + '</td>'
                     + '</tr>';
             }).join("");
         }
 
-        function renderPrinters(printers) {
-            if (!printers.length) {
-                printerTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No printers for this filter." %}</td></tr>';
-                return;
-            }
-            printerTableBody.innerHTML = printers.map(function (printer) {
-                const badge = printer.is_online
+        function renderPeripherals(data) {
+            const labels = data.label_printers || [];
+            const scales = data.scale_devices || data.printers || [];
+            const rows = [];
+            labels.forEach(function (p) {
+                const badge = p.is_online
                     ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>'
                     : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>';
-                const lastHeartbeat = formatAge(printer.last_heartbeat_age_seconds);
-                return '<tr>'
-                    + '<td class="px-4 py-2 text-sm text-gray-900">' + escapeHtml(printer.device_id) + '</td>'
-                    + '<td class="px-4 py-2 text-sm text-gray-700">' + escapeHtml(printer.device_type) + '</td>'
-                    + '<td class="px-4 py-2 text-sm">' + badge + ' <span class="text-gray-500 ml-1">(' + escapeHtml(printer.status) + ')</span></td>'
-                    + '<td class="px-4 py-2 text-sm text-gray-600">' + escapeHtml(lastHeartbeat) + '</td>'
-                    + '</tr>';
-            }).join("");
+                const idLine = escapeHtml(p.local_printer_id) + (p.display_name ? ' <span class="text-gray-500">(' + escapeHtml(p.display_name) + ')</span>' : '');
+                const dis = p.enabled === false ? ' <span class="text-amber-600 text-xs">{% trans "disabled" %}</span>' : '';
+                rows.push('<tr>'
+                    + '<td class="px-4 py-2 text-sm text-gray-600">{% trans "Printer" %}</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-900">' + idLine + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-700">' + escapeHtml(p.role) + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-700 font-mono">' + escapeHtml(p.host) + ':' + escapeHtml(String(p.port)) + '</td>'
+                    + '<td class="px-4 py-2 text-sm">' + badge + ' <span class="text-gray-500 ml-1">(' + escapeHtml(p.status) + ')</span>' + dis + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-600">' + escapeHtml(formatAge(p.last_seen_age_seconds)) + '</td>'
+                    + '</tr>');
+            });
+            scales.forEach(function (device) {
+                const badge = device.is_online
+                    ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>'
+                    : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>';
+                const lastHb = formatAge(device.last_heartbeat_age_seconds);
+                rows.push('<tr>'
+                    + '<td class="px-4 py-2 text-sm text-gray-600">{% trans "Scale" %}</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-900">' + escapeHtml(device.device_id) + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-700">' + escapeHtml(device.device_type) + '</td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-500">—</td>'
+                    + '<td class="px-4 py-2 text-sm">' + badge + ' <span class="text-gray-500 ml-1">(' + escapeHtml(device.status) + ')</span></td>'
+                    + '<td class="px-4 py-2 text-sm text-gray-600">' + escapeHtml(lastHb) + '</td>'
+                    + '</tr>');
+            });
+            if (!rows.length) {
+                printerTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "No label printers or scale devices for this filter." %}</td></tr>';
+                return;
+            }
+            printerTableBody.innerHTML = rows.join("");
         }
 
         const POLL_INTERVAL_MS = 5000;
@@ -249,12 +354,19 @@
                 .catch(function () {});
         }
 
-        function fetchPrinters(edgeId) {
-            if (!edgeId) return;
-            fetch(printersUrl + "?edge_id=" + encodeURIComponent(edgeId), { credentials: "same-origin" })
+        function fetchPeripherals(siteId, edgeId) {
+            let url = printersUrl + "?";
+            if (edgeId) {
+                url += "edge_id=" + encodeURIComponent(edgeId);
+            } else if (siteId) {
+                url += "site_id=" + encodeURIComponent(siteId);
+            } else {
+                return;
+            }
+            fetch(url, { credentials: "same-origin" })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    renderPrinters(data.printers || []);
+                    renderPeripherals(data);
                     document.getElementById("printers-live-badge").classList.remove("hidden");
                 })
                 .catch(function () {});
@@ -271,9 +383,9 @@
             } else {
                 document.getElementById("edges-live-badge").classList.add("hidden");
             }
-            if (edgeId) {
-                fetchPrinters(edgeId);
-                printersPollId = setInterval(function () { fetchPrinters(edgeId); }, POLL_INTERVAL_MS);
+            if (edgeId || siteId) {
+                fetchPeripherals(siteId, edgeId);
+                printersPollId = setInterval(function () { fetchPeripherals(siteId, edgeId); }, POLL_INTERVAL_MS);
             } else {
                 document.getElementById("printers-live-badge").classList.add("hidden");
             }
@@ -282,10 +394,11 @@
         siteSelect.addEventListener("change", function () {
             const siteId = siteSelect.value;
             edgeSelect.innerHTML = '<option value="">{% trans "Select edge" %}</option>';
-            printerTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select an edge to list printers." %}</td></tr>';
+            printerTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Loading…" %}</td></tr>';
 
             if (!siteId) {
-                edgeTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select a site to list edges." %}</td></tr>';
+                edgeTableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select a site to list edges." %}</td></tr>';
+                printerTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select a site to list devices." %}</td></tr>';
                 startPolling();
                 return;
             }
@@ -302,14 +415,20 @@
                         option.textContent = edge.name + (edge.is_online ? " ({% trans "online" %})" : " ({% trans "offline" %})");
                         edgeSelect.appendChild(option);
                     });
+                    fetchPeripherals(siteId, "");
                     startPolling();
                 });
         });
 
         edgeSelect.addEventListener("change", function () {
+            const siteId = siteSelect.value;
             const edgeId = edgeSelect.value;
-            if (!edgeId) {
-                printerTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select an edge to list printers." %}</td></tr>';
+            if (edgeId) {
+                fetchPeripherals(siteId, edgeId);
+            } else if (siteId) {
+                fetchPeripherals(siteId, "");
+            } else {
+                printerTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">{% trans "Select a site to list devices." %}</td></tr>';
                 document.getElementById("printers-live-badge").classList.add("hidden");
             }
             startPolling();

@@ -115,6 +115,7 @@ def test_enqueue_print_job_custom_label_sets_animal_item_type(admin_user):
     job = enqueue_print_job(site=site, prn_content="Y", custom_label=custom)
     assert job.item_type == "animal"
     assert job.item_id == custom.id
+    assert job.target_role == "carcass"
 
 
 def test_print_job_status_transitions():

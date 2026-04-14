@@ -423,8 +423,9 @@ class TestEdgeManagementView:
         assert resp.status_code == 200
         assert "sites" in resp.context
         assert "edges" in resp.context
-        assert "printers" in resp.context
-        assert "recent_logs" in resp.context
+        assert "scale_devices" in resp.context
+        assert "label_printers" in resp.context
+        assert "log_page" in resp.context
 
     def test_edge_management_filter_by_site(self, auth_client, site, edge_device):
         resp = auth_client.get(
@@ -478,15 +479,30 @@ class TestPrintersByEdgeJsonView:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert "printers" in data
-        assert len(data["printers"]) == 1
-        assert data["printers"][0]["device_id"] == scale_device.device_id
-        assert "is_online" in data["printers"][0]
+        assert "scale_devices" in data
+        assert "label_printers" in data
+        assert len(data["scale_devices"]) == 1
+        assert data["scale_devices"][0]["device_id"] == scale_device.device_id
+        assert "is_online" in data["scale_devices"][0]
+        assert data["printers"] == data["scale_devices"]
+
+    def test_printers_by_edge_json_site_id_lists_devices(self, auth_client, site, edge_device, scale_device):
+        resp = auth_client.get(
+            reverse("scales:printers_by_edge_json"),
+            {"site_id": str(site.id)},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["scale_devices"]) == 1
+        assert data["scale_devices"][0]["device_id"] == scale_device.device_id
 
     def test_printers_by_edge_json_empty_without_edge_id(self, auth_client):
         resp = auth_client.get(reverse("scales:printers_by_edge_json"))
         assert resp.status_code == 200
-        assert resp.json()["printers"] == []
+        body = resp.json()
+        assert body["printers"] == []
+        assert body["scale_devices"] == []
+        assert body["label_printers"] == []
 
 
 # ---------- OrphanedBatchListView ----------

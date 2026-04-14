@@ -3,6 +3,8 @@ Scale operations models for CarniTrack Edge integration.
 Bridges Edge devices, scale devices, sessions, and weighing events to processing.Animal.
 """
 
+import secrets
+
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
@@ -35,6 +37,66 @@ class EdgeDevice(BaseModel):
 
     def __str__(self):
         return f"{self.name or str(self.id)[:8]} ({self.site.name})"
+
+
+def generate_setup_code():
+    """Generate a human-friendly setup code like CT-8K4M-XNPR."""
+    alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+    part1 = "".join(secrets.choice(alphabet) for _ in range(4))
+    part2 = "".join(secrets.choice(alphabet) for _ in range(4))
+    return f"CT-{part1}-{part2}"
+
+
+class EdgeSetupCode(BaseModel):
+    """
+    Short-lived activation code for Edge device provisioning.
+    Generated from Cloud dashboard, consumed by Edge's first-run wizard via POST /edge/activate.
+    """
+
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="setup_codes")
+    code = models.CharField(max_length=16, unique=True, default=generate_setup_code)
+    edge_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Pre-configured name for the Edge device.",
+    )
+    printers_config = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=(
+            "Pre-configured printer list for the Edge. Each entry: "
+            '{"localPrinterId": "carcass-01", "host": "192.168.1.220", '
+            '"port": 9100, "role": "carcass", "displayName": "Carcass Line"}. '
+            "Returned in the /activate response so the Edge auto-configures printers."
+        ),
+    )
+    expires_at = models.DateTimeField(
+        help_text="Code expires after this time (default 48 hours from creation).",
+    )
+    used_at = models.DateTimeField(null=True, blank=True)
+    used_by_edge = models.ForeignKey(
+        EdgeDevice,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="setup_code",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["site", "-created_at"]),
+        ]
+
+    def is_valid(self):
+        """True if code is not expired and not yet used."""
+        from django.utils import timezone
+
+        return self.used_at is None and self.expires_at > timezone.now()
+
+    def __str__(self):
+        status = "used" if self.used_at else ("expired" if not self.is_valid() else "active")
+        return f"{self.code} ({status}) → {self.site.name}"
 
 
 class ScaleDevice(BaseModel):

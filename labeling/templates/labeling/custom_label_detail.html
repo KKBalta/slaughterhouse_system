@@ -103,46 +103,49 @@
             </div>
         </div>
 
-        <!-- Download Options -->
+        <!-- Print and download -->
         <div class="space-y-6">
-            <!-- Download Card -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Download Options" %}</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Print and download" %}</h2>
                 <div class="space-y-4">
-                    <!-- PRN Download -->
+                    {% if edge_print_job %}
                     <div class="border border-gray-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">{% trans "Latest print job" %}</h3>
+                        <p class="text-sm text-gray-600 mt-1">
+                            {% trans "Status" %}: <span class="font-semibold">{{ edge_print_job.get_status_display }}</span>
+                            {% if edge_print_job.printed_at %}
+                            — {{ edge_print_job.printed_at|date:"Y-m-d H:i" }}
+                            {% endif %}
+                        </p>
+                        {% if edge_print_job.error_text %}
+                        <p class="text-sm text-red-600 mt-2">{{ edge_print_job.error_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900">{% trans "PRN Format" %}</h3>
-                                <p class="text-sm text-gray-600">{% trans "TSC Programming Language for direct printer output" %}</p>
+                                <h3 class="text-lg font-medium text-gray-900">{% trans "Print via Edge" %}</h3>
+                                <p class="text-sm text-gray-600">{% trans "Send this label to the printer connected through your site Edge device." %}</p>
+                                {% if not edge_dispatch_available %}
+                                <p class="text-sm text-amber-700 mt-2">{% trans "No Edge printer is registered yet. Configure the Edge and sync printer inventory first." %}</p>
+                                {% endif %}
                             </div>
-                            <a href="{% url 'labeling:download_custom_label' label.pk 'prn' %}" 
-                               class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                                {% trans "Download PRN" %}
-                            </a>
+                            <form method="post" action="{% url 'labeling:print_custom_label' label.pk %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    {% if not edge_dispatch_available %}disabled{% endif %}
+                                    class="w-full sm:w-auto bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {% trans "Print" %}
+                                </button>
+                            </form>
                         </div>
                     </div>
-
-                    <!-- BAT Download -->
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900">{% trans "BAT Format" %}</h3>
-                                <p class="text-sm text-gray-600">{% trans "Windows batch file for easy label printing" %}</p>
-                            </div>
-                            <a href="{% url 'labeling:download_custom_label' label.pk 'bat' %}" 
-                               class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
-                                {% trans "Download BAT" %}
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- PDF Download -->
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900">{% trans "PDF Format" %}</h3>
-                                <p class="text-sm text-gray-600">{% trans "Portable Document Format for viewing and printing" %}</p>
+                                <h3 class="text-lg font-medium text-gray-900">{% trans "PDF" %}</h3>
+                                <p class="text-sm text-gray-600">{% trans "Download a PDF preview of this label." %}</p>
                             </div>
                             {% if label.pdf_file %}
                                 <a href="{% url 'labeling:download_custom_label' label.pk 'pdf' %}" 

@@ -31,6 +31,9 @@ def enqueue_print_job(
     resolved_role = target_role
     if not resolved_role and animal_label:
         resolved_role = _LABEL_TYPE_TO_ROLE.get(animal_label.label_type, "carcass")
+    elif not resolved_role and custom_label:
+        # Same physical layout as hot/carcass TSPL; edge routes by Printer.role (often "carcass").
+        resolved_role = "carcass"
 
     item_type = ""
     item_id = None
@@ -51,6 +54,45 @@ def enqueue_print_job(
         item_type=item_type,
         item_id=item_id,
         printed_by=printed_by,
+    )
+
+
+def get_default_label_site():
+    """First active Site in the tenant (matches Edge / print job routing)."""
+    from scales.models import Site
+
+    return Site.objects.filter(is_active=True).order_by("name").first()
+
+
+def site_has_dispatchable_printer(site) -> bool:
+    """True if an active Edge has at least one enabled printer at this site."""
+    from scales.models import EdgeDevice, Printer
+
+    if site is None:
+        return False
+    edge_ids = EdgeDevice.objects.filter(site=site, is_active=True).values_list("id", flat=True)
+    return Printer.objects.filter(edge_id__in=edge_ids, is_active=True, enabled=True).exists()
+
+
+def get_latest_edge_print_job_for_animal_label(animal_label: AnimalLabel):
+    """Most recent edge PrintJob whose TSPL payload matches this label (for UI status)."""
+    from labeling.models import PrintJob
+
+    prn = (animal_label.prn_content or "").strip()
+    if not prn:
+        return None
+    return (
+        PrintJob.objects.filter(prn_content=prn, dispatch_mode="edge").order_by("-print_date").first()
+    )
+
+
+def get_latest_edge_print_job_for_custom_label(custom_label: CustomLabel):
+    from labeling.models import PrintJob
+
+    return (
+        PrintJob.objects.filter(item_id=custom_label.pk, item_type="animal", dispatch_mode="edge")
+        .order_by("-print_date")
+        .first()
     )
 
 

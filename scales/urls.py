@@ -7,6 +7,31 @@ app_name = "scales"
 urlpatterns = [
     path("", views.ScalesDashboardView.as_view(), name="dashboard"),
     path("edge-management/", views.EdgeManagementView.as_view(), name="edge_management"),
+    path(
+        "edge-management/setup-codes/",
+        views.EdgeSetupCodeListView.as_view(),
+        name="edge_setup_code_list",
+    ),
+    path(
+        "edge-management/setup-codes/create/",
+        views.EdgeSetupCodeCreateView.as_view(),
+        name="edge_setup_code_create",
+    ),
+    path(
+        "edge-management/setup-codes/<uuid:pk>/",
+        views.EdgeSetupCodeDetailView.as_view(),
+        name="edge_setup_code_detail",
+    ),
+    path(
+        "edge-management/setup-codes/<uuid:pk>/revoke/",
+        views.EdgeSetupCodeRevokeView.as_view(),
+        name="edge_setup_code_revoke",
+    ),
+    path(
+        "edge-management/edges/<uuid:pk>/remove/",
+        views.EdgeDeviceRemoveView.as_view(),
+        name="edge_device_remove",
+    ),
     path("edge-management/edges/", views.EdgeBySiteJsonView.as_view(), name="edge_by_site_json"),
     path("edge-management/printers/", views.PrintersByEdgeJsonView.as_view(), name="printers_by_edge_json"),
     path("sessions/", views.SessionListView.as_view(), name="session_list"),

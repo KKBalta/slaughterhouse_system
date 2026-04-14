@@ -20,6 +20,7 @@ from .models import (
     DisassemblySession,
     EdgeActivityLog,
     EdgeDevice,
+    EdgeSetupCode,
     OfflineBatchAck,
     OrphanedBatch,
     Printer,
@@ -65,6 +66,8 @@ _PRINT_JOB_ACK_RL_WINDOW = 60
 _PRINT_JOB_ACK_RL_LIMIT = 120
 _PRINTER_INVENTORY_RL_WINDOW = 60
 _PRINTER_INVENTORY_RL_LIMIT = 10
+_ACTIVATE_RL_LIMIT = 10
+_ACTIVATE_RL_WINDOW = 60
 
 # Default config returned to Edge (baseUrl/timezone filled per request in multitenant mode)
 DEFAULT_CONFIG = {
@@ -254,6 +257,113 @@ def edge_register(request):
             "siteId": str(site.id),
             "siteName": site.name,
             "config": _edge_runtime_config(request),
+        }
+    )
+
+
+@csrf_exempt
+@parse_json_body
+def edge_activate(request):
+    """
+    Activate an Edge device using a setup code generated from the Cloud dashboard.
+    This is the primary registration path for standalone Edge binaries (.exe).
+
+    The existing /register endpoint remains for backward compatibility (Docker/env-var flow).
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    from tenants.redis_support import atomic_rate_incr
+
+    ip = request.META.get("REMOTE_ADDR", "unknown")
+    if atomic_rate_incr(f"edge_rl:activate:ip:{ip}", _ACTIVATE_RL_WINDOW) > _ACTIVATE_RL_LIMIT:
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
+
+    body = request.json_body
+    code_raw = (body.get("code") or "").strip().upper()
+    version = (body.get("version") or "").strip()
+    capabilities = body.get("capabilities") or []
+
+    if not code_raw:
+        return JsonResponse({"error": "code is required"}, status=400)
+
+    with transaction.atomic():
+        try:
+            setup_code = (
+                EdgeSetupCode.objects.select_for_update()
+                .select_related("site")
+                .get(code=code_raw, is_active=True)
+            )
+        except EdgeSetupCode.DoesNotExist:
+            return JsonResponse(
+                {"error": "Setup code not found. Check the code and try again."},
+                status=404,
+            )
+
+        if setup_code.used_at is not None:
+            return JsonResponse(
+                {"error": "This setup code has already been used by another Edge device."},
+                status=409,
+            )
+
+        if setup_code.expires_at < timezone.now():
+            return JsonResponse(
+                {"error": "This setup code has expired. Please generate a new one from Cloud."},
+                status=410,
+            )
+
+        site = setup_code.site
+        edge_name = setup_code.edge_name or site.name
+
+        edge = EdgeDevice.objects.create(
+            site=site,
+            name=edge_name,
+            is_online=True,
+            last_seen_at=timezone.now(),
+            version=version or "",
+        )
+
+        setup_code.used_at = timezone.now()
+        setup_code.used_by_edge = edge
+        setup_code.save(update_fields=["used_at", "used_by_edge", "updated_at"])
+
+    _log_edge_activity(
+        action="activate",
+        request=request,
+        edge=edge,
+        site=site,
+        message=f"Edge activated via setup code: {code_raw}",
+        payload={
+            "version": version,
+            "code": code_raw,
+            "mode": "setup_code_activation",
+            "capabilities": capabilities,
+        },
+    )
+
+    printers_config = setup_code.printers_config or []
+    printers_out = []
+    for p in printers_config:
+        printers_out.append(
+            {
+                "localPrinterId": p.get("localPrinterId", ""),
+                "displayName": p.get("displayName", ""),
+                "role": p.get("role", "generic"),
+                "transport": p.get("transport", "tcp"),
+                "host": p.get("host", ""),
+                "port": p.get("port", 9100),
+                "model": p.get("model", ""),
+                "priority": p.get("priority", 100),
+            }
+        )
+
+    return JsonResponse(
+        {
+            "edgeId": str(edge.id),
+            "siteId": str(site.id),
+            "siteName": site.name,
+            "config": _edge_runtime_config(request),
+            "printers": printers_out,
         }
     )
 

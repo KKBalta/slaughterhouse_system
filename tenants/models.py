@@ -305,6 +305,65 @@ class PlatformImpersonationSession(models.Model):
         return f"{self.tenant.schema_name}:{self.target_username} by {self.platform_admin.email}"
 
 
+class EdgeSetupCodeIndex(models.Model):
+    """
+    Public-schema lookup table mapping setup codes to tenant schemas.
+    Enables Edge activation via a single public API endpoint (api.carnitrack.com)
+    without requiring the Edge to know its tenant subdomain ahead of time.
+
+    Rows are created/deleted in sync with EdgeSetupCode in each tenant schema.
+    """
+
+    code = models.CharField(max_length=16, unique=True, db_index=True)
+    tenant = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="edge_code_index_entries")
+    tenant_schema = models.CharField(max_length=63, help_text="Cached schema_name for fast lookup without JOIN.")
+    setup_code_id = models.UUIDField(help_text="PK of the EdgeSetupCode row in the tenant schema.")
+    expires_at = models.DateTimeField()
+    is_consumed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tenants_edge_setup_code_index"
+        indexes = [
+            models.Index(fields=["code"]),
+            models.Index(fields=["tenant", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.code} -> {self.tenant_schema}"
+
+
+class EdgeDeviceIndex(models.Model):
+    """
+    Public-schema lookup table mapping registered Edge device UUIDs to tenant schemas.
+
+    Enables Edge API requests on the public domain (api.carnitrack.com) without
+    requiring the Edge to know its tenant subdomain. The decorator
+    public_require_edge_id uses this table to resolve the tenant, then switches
+    to the tenant schema via schema_context() before calling the actual view.
+
+    Rows are created during activation (public_edge_activate) and synced via
+    post_save/post_delete signals on EdgeDevice in each tenant schema.
+    """
+
+    edge_id = models.UUIDField(unique=True, db_index=True, help_text="EdgeDevice.id from the tenant schema.")
+    tenant = models.ForeignKey("tenants.Client", on_delete=models.CASCADE, related_name="edge_device_index_entries")
+    tenant_schema = models.CharField(max_length=63, help_text="Cached schema_name for fast lookup without JOIN.")
+    edge_name = models.CharField(max_length=200, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "tenants_edge_device_index"
+        indexes = [
+            models.Index(fields=["tenant", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Edge {self.edge_id} -> {self.tenant_schema}"
+
+
 class PlatformImpersonationEvent(models.Model):
     class Mode(models.TextChoices):
         OWNER = "owner", "Owner"
