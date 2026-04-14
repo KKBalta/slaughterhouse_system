@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from django.conf import settings
@@ -554,7 +554,9 @@ class TestReceptionServices:
             assert animal.slaughter_order == order
 
     def test_create_batch_animals_same_day_prefix_continues_sequence_across_orders(self, reception_state, make_order):
-        same_day = timezone.now()
+        # Anchor to mid-morning local time so +6h stays on the same calendar date (timezone.now()
+        # near end-of-day would cross midnight and correctly reset the sequence per local day).
+        same_day = timezone.make_aware(datetime(2020, 1, 15, 9, 0, 0), timezone.get_current_timezone())
         morning_order = make_order()
         afternoon_order = make_order()
 

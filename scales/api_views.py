@@ -22,6 +22,7 @@ from .models import (
     EdgeDevice,
     OfflineBatchAck,
     OrphanedBatch,
+    Printer,
     ScaleDevice,
     Site,
     WeighingEvent,
@@ -58,6 +59,12 @@ _HEARTBEAT_RL_LIMIT = 10  # 10 req / 60 s  (normal: 1 req/30 s = 2/min)
 _HEARTBEAT_RL_WINDOW = 60
 _REGISTER_RL_LIMIT = 10  # 10 req / 60 s  per IP (first-time) or edgeId (re-reg)
 _REGISTER_RL_WINDOW = 60
+_PRINT_JOBS_PENDING_RL_WINDOW = 60
+_PRINT_JOBS_PENDING_RL_LIMIT = 60
+_PRINT_JOB_ACK_RL_WINDOW = 60
+_PRINT_JOB_ACK_RL_LIMIT = 120
+_PRINTER_INVENTORY_RL_WINDOW = 60
+_PRINTER_INVENTORY_RL_LIMIT = 10
 
 # Default config returned to Edge (baseUrl/timezone filled per request in multitenant mode)
 DEFAULT_CONFIG = {
@@ -813,6 +820,198 @@ def edge_device_status(request):
     return JsonResponse({"ok": True})
 
 
+# ---------- GET /print-jobs/pending ----------
+@csrf_exempt
+@require_edge_id
+def edge_pending_print_jobs(request):
+    """Edge polls this every ~5s to get pending print jobs for its site."""
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    from tenants.redis_support import atomic_rate_incr
+
+    if (
+        atomic_rate_incr(
+            f"edge_rl:print_jobs_pending:{request.edge_device.id}",
+            _PRINT_JOBS_PENDING_RL_WINDOW,
+        )
+        > _PRINT_JOBS_PENDING_RL_LIMIT
+    ):
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
+
+    request.edge_device.last_seen_at = timezone.now()
+    request.edge_device.save(update_fields=["last_seen_at", "updated_at"])
+
+    from labeling.models import PrintJob
+
+    qs = (
+        PrintJob.objects.filter(
+            site=request.edge_site,
+            status="pending",
+            dispatch_mode="edge",
+        )
+        .order_by("print_date")[:50]
+    )
+
+    jobs = [
+        {
+            "jobId": str(j.id),
+            "targetRole": j.target_role or None,
+            "targetPrinter": str(j.target_printer_id) if j.target_printer_id else None,
+            "prnContent": j.prn_content,
+            "labelCount": 1,
+            "attempts": j.attempts,
+            "createdAt": j.print_date.isoformat(),
+        }
+        for j in qs
+    ]
+
+    return JsonResponse({"jobs": jobs})
+
+
+# ---------- POST /print-jobs/<uuid>/ack ----------
+@csrf_exempt
+@require_edge_id
+@parse_json_body
+def edge_ack_print_job(request, job_id):
+    """Idempotent ACK from the edge after a print attempt."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    from tenants.redis_support import atomic_rate_incr
+
+    if (
+        atomic_rate_incr(
+            f"edge_rl:print_job_ack:{request.edge_device.id}",
+            _PRINT_JOB_ACK_RL_WINDOW,
+        )
+        > _PRINT_JOB_ACK_RL_LIMIT
+    ):
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
+
+    from labeling.models import PrintJob
+
+    try:
+        job = PrintJob.objects.get(id=job_id, site=request.edge_site)
+    except PrintJob.DoesNotExist:
+        return JsonResponse({"error": "Job not found"}, status=404)
+
+    body = request.json_body
+    status = (body.get("status") or "").strip()
+    if status not in ("dispatched", "completed", "failed"):
+        return JsonResponse({"error": "status must be dispatched|completed|failed"}, status=400)
+
+    update_fields = ["status", "attempts", "error_text", "updated_at"]
+    job.status = status
+    attempts_raw = body.get("attempts")
+    if attempts_raw is not None and attempts_raw != "":
+        try:
+            job.attempts = int(attempts_raw)
+        except (TypeError, ValueError):
+            pass
+    job.error_text = (body.get("errorText") or "")[:500]
+
+    resolved_printer_raw = body.get("resolvedPrinter")
+    if resolved_printer_raw:
+        parsed = _parse_uuid(resolved_printer_raw)
+        if parsed:
+            job.target_printer_id = parsed
+            update_fields.append("target_printer")
+
+    if status == "dispatched" and not job.edge_received_at:
+        job.edge_received_at = timezone.now()
+        update_fields.append("edge_received_at")
+
+    if status == "completed":
+        job.printed_at = _parse_iso(body.get("printedAt")) or timezone.now()
+        update_fields.append("printed_at")
+
+    job.save(update_fields=list(dict.fromkeys(update_fields)))
+
+    _log_edge_activity(
+        action="print_job_ack",
+        request=request,
+        edge=request.edge_device,
+        site=request.edge_site,
+        message=f"Print job {job_id} → {status}",
+        payload={"attempts": job.attempts, "error": (job.error_text[:120] or None)},
+    )
+
+    return JsonResponse({"ok": True})
+
+
+# ---------- POST /printers/inventory ----------
+@csrf_exempt
+@require_edge_id
+@parse_json_body
+def edge_printer_inventory(request):
+    """Edge pushes its physical printer list on startup and on config change."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    from tenants.redis_support import atomic_rate_incr
+
+    if (
+        atomic_rate_incr(
+            f"edge_rl:printer_inventory:{request.edge_device.id}",
+            _PRINTER_INVENTORY_RL_WINDOW,
+        )
+        > _PRINTER_INVENTORY_RL_LIMIT
+    ):
+        return JsonResponse({"error": "rate limit exceeded"}, status=429)
+
+    body = request.json_body
+    items = body.get("printers") or []
+    if not isinstance(items, list):
+        return JsonResponse({"error": "printers must be a list"}, status=400)
+
+    results = []
+    with transaction.atomic():
+        for item in items:
+            local_id = (item.get("localPrinterId") or "").strip()
+            host = (item.get("host") or "").strip()
+            if not local_id or not host:
+                continue
+
+            role_raw = (item.get("role") or "generic").strip()
+            if role_raw not in dict(Printer.ROLE_CHOICES):
+                role_raw = "generic"
+
+            printer, _ = Printer.objects.update_or_create(
+                edge=request.edge_device,
+                local_printer_id=local_id,
+                defaults={
+                    "site": request.edge_site,
+                    "display_name": (item.get("displayName") or "")[:200],
+                    "role": role_raw,
+                    "transport": (item.get("transport") or "tcp").strip() or "tcp",
+                    "host": host,
+                    "port": int(item.get("port") or 9100),
+                    "model": (item.get("model") or "")[:64],
+                    "priority": int(item.get("priority") or 100),
+                    "version": (item.get("version") or "")[:64],
+                    "enabled": True,
+                },
+            )
+            results.append(
+                {
+                    "localPrinterId": local_id,
+                    "globalPrinterId": str(printer.id),
+                }
+            )
+
+    _log_edge_activity(
+        action="printer_inventory",
+        request=request,
+        edge=request.edge_device,
+        site=request.edge_site,
+        message=f"Inventory push: {len(results)} printer(s)",
+        payload={"printers": results[:20]},
+    )
+
+    return JsonResponse({"ok": True, "printers": results})
+
+
 # ---------- POST /heartbeat (aggregated edge + devices connectivity) ----------
 @csrf_exempt
 @require_edge_id
@@ -869,6 +1068,25 @@ def edge_heartbeat(request):
                 update_fields=["status", "device_type", "last_heartbeat_at", "last_event_at", "updated_at"]
             )
         device_summary.append({"deviceId": device_id, "status": status})
+
+    printers_payload = body.get("printers") or []
+    for item in printers_payload:
+        local_id = (item.get("localPrinterId") or "").strip()
+        status_val = (item.get("status") or "unknown").strip() or "unknown"
+        last_seen = _parse_iso(item.get("lastSeenAt")) or timezone.now()
+        last_error = (item.get("lastError") or "")[:255]
+
+        if not local_id:
+            continue
+
+        Printer.objects.filter(
+            edge=edge,
+            local_printer_id=local_id,
+        ).update(
+            status=status_val,
+            last_seen_at=last_seen,
+            last_error=last_error,
+        )
 
     _log_edge_activity(
         action="heartbeat",

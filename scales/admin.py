@@ -7,6 +7,7 @@ from .models import (
     OfflineBatchAck,
     OrphanedBatch,
     PLUItem,
+    Printer,
     ScaleDevice,
     Site,
     WeighingEvent,
@@ -19,12 +20,58 @@ class SiteAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+class PrinterInline(admin.TabularInline):
+    model = Printer
+    extra = 0
+    readonly_fields = ("status", "last_seen_at", "last_error", "version")
+    fields = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "priority",
+        "enabled",
+        "status",
+        "last_seen_at",
+        "last_error",
+    )
+    show_change_link = True
+
+
 @admin.register(EdgeDevice)
 class EdgeDeviceAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "site", "is_online", "last_seen_at", "version")
     list_filter = ("is_online", "site")
     search_fields = ("name",)
     raw_id_fields = ("site",)
+    inlines = (PrinterInline,)
+
+
+@admin.register(Printer)
+class PrinterAdmin(admin.ModelAdmin):
+    list_display = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "status",
+        "priority",
+        "enabled",
+        "last_seen_at",
+    )
+    list_filter = ("role", "status", "enabled", "site")
+    search_fields = ("local_printer_id", "display_name", "host")
+    readonly_fields = (
+        "status",
+        "last_seen_at",
+        "last_error",
+        "version",
+        "edge",
+        "site",
+    )
+    ordering = ("site", "role", "priority")
 
 
 @admin.register(ScaleDevice)

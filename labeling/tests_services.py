@@ -5,14 +5,17 @@ Tests cover label template and print job functionality.
 """
 
 import uuid
+from datetime import date
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from processing.models import DisassemblyCut
 
-from labeling.models import AnimalLabel, LabelTemplate, PrintJob
-from labeling.services import archive_destination_sensitive_order_labels
+from scales.models import Site
+
+from labeling.models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
+from labeling.services import archive_destination_sensitive_order_labels, enqueue_print_job
 
 User = get_user_model()
 
@@ -67,6 +70,51 @@ def test_create_print_job():
     assert job.status == "pending"
     assert job.item_type == "carcass"
     assert job.item_id == item_id
+
+
+def test_enqueue_print_job_edge_minimal():
+    site = Site.objects.create(name="Enqueue Site", address="")
+    job = enqueue_print_job(site=site, prn_content="TSPL", target_role="carcass")
+    assert job.status == "pending"
+    assert job.dispatch_mode == "edge"
+    assert job.site_id == site.id
+    assert job.target_role == "carcass"
+    assert job.item_id is None
+    assert job.item_type == ""
+
+
+def test_enqueue_print_job_maps_animal_label_type_to_role(admin_user, animal_factory):
+    site = Site.objects.create(name="S", address="")
+    animal = animal_factory()
+    label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="final",
+        printed_by=admin_user,
+        prn_content="P",
+        bat_content="B",
+    )
+    job = enqueue_print_job(site=site, prn_content="X", animal_label=label)
+    assert job.target_role == "meat_cut"
+    assert job.item_id == animal.id
+    assert job.item_type == "meat_cut"
+
+
+def test_enqueue_print_job_custom_label_sets_animal_item_type(admin_user):
+    site = Site.objects.create(name="S2", address="")
+    custom = CustomLabel.objects.create(
+        uretici="U",
+        kupe_no="K1",
+        kesim_tarihi=date(2026, 1, 1),
+        stt=date(2026, 1, 11),
+        cinsi="SIGIR",
+        weight="12.5",
+        printed_by=admin_user,
+        prn_content="C",
+        bat_content="C",
+    )
+    job = enqueue_print_job(site=site, prn_content="Y", custom_label=custom)
+    assert job.item_type == "animal"
+    assert job.item_id == custom.id
 
 
 def test_print_job_status_transitions():

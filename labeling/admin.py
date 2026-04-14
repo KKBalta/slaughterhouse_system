@@ -15,11 +15,34 @@ class LabelTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(PrintJob)
 class PrintJobAdmin(admin.ModelAdmin):
-    list_display = ("item_type", "item_id", "quantity", "status", "printed_by", "print_date")
-    list_filter = ("item_type", "status", "print_date")
-    search_fields = ("item_id", "printed_by__username")
-    readonly_fields = ("print_date",)
-    raw_id_fields = ("printed_by", "label_template")
+    list_display = (
+        "id",
+        "item_type",
+        "status",
+        "dispatch_mode",
+        "target_role",
+        "site",
+        "attempts",
+        "print_date",
+        "printed_at",
+    )
+    list_filter = ("status", "dispatch_mode", "target_role", "site")
+    search_fields = ("id", "item_type", "error_text")
+    readonly_fields = (
+        "print_date",
+        "edge_received_at",
+        "printed_at",
+        "attempts",
+        "error_text",
+        "prn_content",
+    )
+    raw_id_fields = ("printed_by", "label_template", "site", "target_printer")
+    actions = ["reenqueue_failed_jobs"]
+
+    @admin.action(description="Re-enqueue selected failed jobs")
+    def reenqueue_failed_jobs(self, request, queryset):
+        updated = queryset.filter(status="failed").update(status="pending", attempts=0, error_text="")
+        self.message_user(request, f"{updated} job(s) re-enqueued.")
 
 
 @admin.register(Label)

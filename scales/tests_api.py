@@ -10,7 +10,17 @@ import pytest
 from django.test import Client
 from django.utils import timezone
 
-from scales.models import DisassemblySession, EdgeDevice, OfflineBatchAck, ScaleDevice, Site, WeighingEvent
+from labeling.models import PrintJob
+from labeling.services import enqueue_print_job
+from scales.models import (
+    DisassemblySession,
+    EdgeDevice,
+    OfflineBatchAck,
+    Printer,
+    ScaleDevice,
+    Site,
+    WeighingEvent,
+)
 
 
 # Base path for edge API (no named URL in api_urls; mounted at api/v1/edge/)
@@ -49,6 +59,16 @@ def scale_device(db, edge_device):
 @pytest.fixture
 def api_client():
     return Client()
+
+
+@pytest.fixture
+def no_edge_rate_limit(monkeypatch):
+    """Edge API views use atomic_rate_incr; bypass limits in tests."""
+
+    def _noop_incr(_key, _window):
+        return 0
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", _noop_incr)
 
 
 # ---------- edge_register ----------
@@ -555,3 +575,196 @@ class TestEdgeHeartbeat:
     def test_heartbeat_method_not_allowed(self, api_client, edge_device):
         resp = api_client.get(_edge_url("heartbeat"), HTTP_X_EDGE_ID=str(edge_device.id))
         assert resp.status_code == 405
+
+    def test_post_updates_printer_status_from_printers_payload(
+        self, api_client, edge_device, no_edge_rate_limit
+    ):
+        Printer.objects.create(
+            edge=edge_device,
+            site=edge_device.site,
+            local_printer_id="carcass-01",
+            host="192.168.1.1",
+            role="carcass",
+        )
+        resp = api_client.post(
+            _edge_url("heartbeat"),
+            data=json.dumps(
+                {
+                    "version": "0.4.0",
+                    "devices": [],
+                    "printers": [
+                        {
+                            "localPrinterId": "carcass-01",
+                            "status": "online",
+                            "lastSeenAt": "2026-04-13T10:00:00Z",
+                            "lastError": "",
+                        }
+                    ],
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        p = Printer.objects.get(edge=edge_device, local_printer_id="carcass-01")
+        assert p.status == "online"
+        assert p.last_error == ""
+
+
+# ---------- edge print jobs & printer inventory ----------
+
+
+@pytest.mark.django_db
+class TestEdgePrintJobsAndInventory:
+    def test_pending_get_returns_jobs(self, api_client, edge_device, no_edge_rate_limit):
+        job = enqueue_print_job(
+            site=edge_device.site,
+            prn_content="SIZE 1 mm, 1 mm\r\nPRINT 1,1\r\n",
+            target_role="carcass",
+        )
+        resp = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["jobs"]) == 1
+        assert data["jobs"][0]["jobId"] == str(job.id)
+        assert data["jobs"][0]["targetRole"] == "carcass"
+        assert data["jobs"][0]["labelCount"] == 1
+        assert "prnContent" in data["jobs"][0]
+        edge_device.refresh_from_db()
+        assert edge_device.last_seen_at is not None
+
+    def test_pending_method_not_allowed(self, api_client, edge_device, no_edge_rate_limit):
+        resp = api_client.post(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 405
+
+    def test_ack_completed_sets_printed_at_idempotent(
+        self, api_client, edge_device, no_edge_rate_limit
+    ):
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        body = {
+            "status": "completed",
+            "printedAt": "2026-04-13T10:00:14.789Z",
+            "attempts": 1,
+            "errorText": "",
+        }
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps(body),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        job.refresh_from_db()
+        assert job.status == "completed"
+        assert job.printed_at is not None
+        resp2 = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps(body),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp2.status_code == 200
+        assert resp2.json()["ok"] is True
+
+    def test_ack_dispatched_sets_edge_received_at(self, api_client, edge_device, no_edge_rate_limit):
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "dispatched", "attempts": 1}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        job.refresh_from_db()
+        assert job.status == "dispatched"
+        assert job.edge_received_at is not None
+
+    def test_ack_wrong_site_edge_returns_404(self, api_client, no_edge_rate_limit):
+        site_a = Site.objects.create(name="Site A", address="")
+        site_b = Site.objects.create(name="Site B", address="")
+        edge_b = EdgeDevice.objects.create(site=site_b, name="Edge B", is_active=True)
+        job = PrintJob.objects.create(
+            site=site_a,
+            item_type="carcass",
+            item_id=uuid.uuid4(),
+            prn_content="Z",
+            dispatch_mode="edge",
+            status="pending",
+            target_role="carcass",
+        )
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "completed"}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_b.id),
+        )
+        assert resp.status_code == 404
+
+    def test_printer_inventory_upsert(self, api_client, edge_device, no_edge_rate_limit):
+        resp = api_client.post(
+            _edge_url("printers/inventory"),
+            data=json.dumps(
+                {
+                    "printers": [
+                        {
+                            "localPrinterId": "carcass-01",
+                            "displayName": "Line1",
+                            "role": "carcass",
+                            "transport": "tcp",
+                            "host": "192.168.1.220",
+                            "port": 9100,
+                            "model": "TE210",
+                            "priority": 100,
+                            "version": "V7.02",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert len(data["printers"]) == 1
+        assert data["printers"][0]["localPrinterId"] == "carcass-01"
+        gid = data["printers"][0]["globalPrinterId"]
+        p = Printer.objects.get(id=uuid.UUID(gid))
+        assert p.host == "192.168.1.220"
+        assert p.site_id == edge_device.site_id
+
+    def test_ack_resolved_printer_sets_target_printer(
+        self, api_client, edge_device, no_edge_rate_limit
+    ):
+        inv = api_client.post(
+            _edge_url("printers/inventory"),
+            data=json.dumps(
+                {
+                    "printers": [
+                        {
+                            "localPrinterId": "p1",
+                            "host": "192.168.1.2",
+                            "role": "carcass",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        printer_id = inv.json()["printers"][0]["globalPrinterId"]
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "completed", "resolvedPrinter": printer_id}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        job.refresh_from_db()
+        assert str(job.target_printer_id) == printer_id

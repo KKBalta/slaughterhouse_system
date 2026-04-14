@@ -13,4 +13,7 @@ urlpatterns = [
     path("config", api_views.edge_config, name="edge-config"),
     path("devices/status", api_views.edge_device_status, name="edge-device-status"),
     path("heartbeat", api_views.edge_heartbeat, name="edge-heartbeat"),
+    path("print-jobs/pending", api_views.edge_pending_print_jobs, name="edge-pending-print-jobs"),
+    path("print-jobs/<uuid:job_id>/ack", api_views.edge_ack_print_job, name="edge-ack-print-job"),
+    path("printers/inventory", api_views.edge_printer_inventory, name="edge-printer-inventory"),
 ]

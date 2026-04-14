@@ -45,8 +45,10 @@ class LabelTemplate(BaseModel):
 class PrintJob(BaseModel):
     STATUS_CHOICES = (
         ("pending", "Pending"),
+        ("dispatched", "Dispatched"),
         ("completed", "Completed"),
         ("failed", "Failed"),
+        ("cancelled", "Cancelled"),
     )
     ITEM_TYPE_CHOICES = (
         ("carcass", "Carcass"),
@@ -64,8 +66,17 @@ class PrintJob(BaseModel):
         related_name="print_jobs",
         help_text="The template used for this print job.",
     )
-    item_type = models.CharField(max_length=50, choices=ITEM_TYPE_CHOICES, help_text="The type of item being labeled.")
-    item_id = models.UUIDField(help_text="The ID of the specific inventory item being labeled.")
+    item_type = models.CharField(
+        max_length=50,
+        choices=ITEM_TYPE_CHOICES,
+        blank=True,
+        help_text="The type of item being labeled.",
+    )
+    item_id = models.UUIDField(
+        null=True,
+        blank=True,
+        help_text="The ID of the specific inventory item being labeled.",
+    )
     quantity = models.IntegerField(default=1, help_text="Number of labels printed for this job.")
     print_date = models.DateTimeField(auto_now_add=True, help_text="When the print job was initiated.")
     printed_by = models.ForeignKey(
@@ -75,8 +86,66 @@ class PrintJob(BaseModel):
         max_length=20, choices=STATUS_CHOICES, default="pending", help_text="Status of the print job."
     )
 
+    # --- Edge dispatch fields (nullable/defaulted for backwards compat) ---
+    site = models.ForeignKey(
+        "scales.Site",
+        on_delete=models.CASCADE,
+        related_name="print_jobs",
+        null=True,
+        blank=True,
+        help_text="Which site's edge dispatches this job. Required for edge dispatch.",
+    )
+    target_printer = models.ForeignKey(
+        "scales.Printer",
+        on_delete=models.SET_NULL,
+        related_name="print_jobs",
+        null=True,
+        blank=True,
+        help_text="Optional explicit printer override. If set, wins over target_role.",
+    )
+    target_role = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text="Role-based routing: 'carcass'|'meat_cut'|'offal'|'by_product'|'animal'. "
+        "Edge picks the best available Printer with this role at the job's site.",
+    )
+    prn_content = models.TextField(
+        blank=True,
+        help_text="TSPL bytes copied from AnimalLabel.prn_content at enqueue time. "
+        "Returned inline in the edge poll response as a UTF-8 JSON string. "
+        "Edge re-encodes to Windows-1254 before TCP send.",
+    )
+    dispatch_mode = models.CharField(
+        max_length=16,
+        choices=[
+            ("edge", "Edge dispatch (TCP → printer)"),
+            ("legacy_bat", "Legacy .bat file download"),
+        ],
+        default="edge",
+        help_text="'edge' = edge polls and dispatches. 'legacy_bat' = old .bat download flow.",
+    )
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=8)
+    error_text = models.CharField(max_length=500, blank=True)
+    edge_received_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When edge first picked up this job (set on first 'dispatched' ack).",
+    )
+    printed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When edge confirmed successful print (set on 'completed' ack).",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["site", "status", "dispatch_mode"]),
+        ]
+
     def __str__(self):
-        return f"Print Job for {self.item_type} ID: {self.item_id} - {self.status}"
+        item = f"{self.item_type} ID: {self.item_id}" if self.item_id else (self.item_type or "unlinked")
+        return f"Print Job for {item} - {self.status}"
 
 
 class Label(BaseModel):

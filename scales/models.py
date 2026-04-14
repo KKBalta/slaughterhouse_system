@@ -57,6 +57,92 @@ class ScaleDevice(BaseModel):
         return f"{self.device_id} @ {self.edge.name or self.edge.id}"
 
 
+class Printer(BaseModel):
+    """
+    Physical label printer on the site LAN, managed by an EdgeDevice.
+    Rows are created/updated by the edge via POST /api/v1/edge/printers/inventory.
+    Status fields are updated via heartbeat — Django never writes them directly.
+    """
+
+    ROLE_CHOICES = [
+        ("carcass", "Carcass"),
+        ("meat_cut", "Meat Cut"),
+        ("offal", "Offal"),
+        ("by_product", "By-Product"),
+        ("animal", "Animal"),
+        ("generic", "Generic"),
+    ]
+    STATUS_CHOICES = [
+        ("unknown", "Unknown"),
+        ("online", "Online"),
+        ("offline", "Offline"),
+        ("error", "Error"),
+    ]
+
+    edge = models.ForeignKey(
+        EdgeDevice,
+        on_delete=models.CASCADE,
+        related_name="printers",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        related_name="printers",
+        help_text="Denormalized from edge.site for efficient site-wide queries.",
+    )
+    local_printer_id = models.CharField(
+        max_length=64,
+        help_text="Stable local ID set by the operator (e.g. 'carcass-01'). Unique within one edge.",
+    )
+    display_name = models.CharField(max_length=200, blank=True)
+    role = models.CharField(
+        max_length=32,
+        choices=ROLE_CHOICES,
+        default="generic",
+        help_text="Routing role. PrintJobs with target_role=X go to any online Printer with role=X at the same site.",
+    )
+    transport = models.CharField(max_length=16, default="tcp")
+    host = models.CharField(max_length=64, help_text="IPv4 address on the site LAN.")
+    port = models.PositiveIntegerField(default=9100)
+    model = models.CharField(max_length=64, blank=True, help_text="e.g. 'TE210'")
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="unknown")
+    priority = models.PositiveSmallIntegerField(
+        default=100,
+        help_text="Lower = preferred. Use 100/200 for primary/backup. Edge resolves by this value.",
+    )
+    enabled = models.BooleanField(default=True)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=255, blank=True)
+    version = models.CharField(max_length=64, blank=True, help_text="Firmware version from ~!T query.")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["edge", "local_printer_id"],
+                name="scales_printer_edge_local_id",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["site", "role", "status"]),
+            models.Index(fields=["edge", "-last_seen_at"]),
+        ]
+
+    def clean(self):
+        # Invariant: site must match edge.site
+        if self.edge_id and self.site_id and self.site_id != self.edge.site_id:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError("Printer.site must match Printer.edge.site")
+
+    def save(self, *args, **kwargs):
+        if self.edge_id and not self.site_id:
+            self.site = self.edge.site
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.local_printer_id} @ {self.edge.name or str(self.edge.id)[:8]} [{self.role}]"
+
+
 class PLUItem(BaseModel):
     """Master product catalog for scale PLU codes (seeded from plu_clean.txt)."""
 
