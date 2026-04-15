@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from .models import AnimalLabel, CustomLabel
+from .models import AnimalLabel, CustomLabel, PrintJob
 
 LABEL_TYPE_TO_ROLE = {
     "hot_carcass": "carcass",
@@ -11,9 +11,7 @@ LABEL_TYPE_TO_ROLE = {
 _LABEL_TYPE_TO_ROLE = LABEL_TYPE_TO_ROLE
 
 
-def resolve_target_role(
-    *, animal_label=None, custom_label=None, target_role: str = ""
-) -> str:
+def resolve_target_role(*, animal_label=None, custom_label=None, target_role: str = "") -> str:
     """Match enqueue_print_job role resolution (explicit target_role wins)."""
     if target_role:
         return target_role
@@ -28,9 +26,9 @@ def printers_for_role(site, role: str):
     """Printers assigned to role at site (all statuses; inactive/disabled excluded)."""
     from scales.models import Printer
 
-    return Printer.objects.filter(
-        site=site, role=role, is_active=True, enabled=True
-    ).order_by("priority", "display_name", "local_printer_id")
+    return Printer.objects.filter(site=site, role=role, is_active=True, enabled=True).order_by(
+        "priority", "display_name", "local_printer_id"
+    )
 
 
 def enqueue_print_job(
@@ -42,15 +40,13 @@ def enqueue_print_job(
     animal_label=None,
     custom_label=None,
     printed_by=None,
-) -> "PrintJob":
+) -> PrintJob:
     """
     Create a PrintJob for edge dispatch.
 
     The edge polls GET /api/v1/edge/print-jobs/pending and picks this up
     on its next 5-second cycle. No files are written to disk.
     """
-    from labeling.models import PrintJob
-
     resolved_role = resolve_target_role(
         animal_label=animal_label,
         custom_label=custom_label,
@@ -79,7 +75,7 @@ def enqueue_print_job(
     )
 
 
-def cancel_pending_edge_print_job(job: "PrintJob") -> bool:
+def cancel_pending_edge_print_job(job: PrintJob) -> bool:
     """
     Remove a job from the Edge poll queue (pending → cancelled).
 
@@ -114,19 +110,13 @@ def site_has_dispatchable_printer(site) -> bool:
 
 def get_latest_edge_print_job_for_animal_label(animal_label: AnimalLabel):
     """Most recent edge PrintJob whose TSPL payload matches this label (for UI status)."""
-    from labeling.models import PrintJob
-
     prn = (animal_label.prn_content or "").strip()
     if not prn:
         return None
-    return (
-        PrintJob.objects.filter(prn_content=prn, dispatch_mode="edge").order_by("-print_date").first()
-    )
+    return PrintJob.objects.filter(prn_content=prn, dispatch_mode="edge").order_by("-print_date").first()
 
 
 def get_latest_edge_print_job_for_custom_label(custom_label: CustomLabel):
-    from labeling.models import PrintJob
-
     return (
         PrintJob.objects.filter(item_id=custom_label.pk, item_type="animal", dispatch_mode="edge")
         .order_by("-print_date")

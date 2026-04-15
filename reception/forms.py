@@ -7,8 +7,8 @@ from processing.models import Animal
 
 from .models import ServicePackage, SlaughterOrder
 from .services import (
-    can_edit_order_destination,
     can_edit_order_datetime,
+    can_edit_order_destination,
     can_edit_order_service_package,
     can_reassign_order_client,
 )
@@ -380,7 +380,9 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
                 )
 
             if client_id and client_name:
-                raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
+                raise forms.ValidationError(
+                    _("Please provide either a client from search or walk-in fields, not both.")
+                )
 
             # Combine area code with phone number
             area_code = cleaned_data.get("client_phone_area_code") or "+90"

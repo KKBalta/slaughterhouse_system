@@ -12,15 +12,7 @@ from django.utils import timezone
 
 from labeling.models import PrintJob
 from labeling.services import enqueue_print_job
-from scales.models import (
-    DisassemblySession,
-    EdgeDevice,
-    OfflineBatchAck,
-    Printer,
-    ScaleDevice,
-    Site,
-    WeighingEvent,
-)
+from scales.models import DisassemblySession, EdgeDevice, OfflineBatchAck, Printer, ScaleDevice, Site, WeighingEvent
 
 
 # Base path for edge API (no named URL in api_urls; mounted at api/v1/edge/)
@@ -284,9 +276,7 @@ class TestEdgeSessions:
         session.animals.set([animal])
         return session
 
-    def test_sessions_cache_hit_skips_db_query(
-        self, api_client, edge_device, scale_device, no_edge_rate_limit
-    ):
+    def test_sessions_cache_hit_skips_db_query(self, api_client, edge_device, scale_device, no_edge_rate_limit):
         """
         Second poll within TTL should serve the /sessions payload from cache
         without re-querying DisassemblySession.
@@ -319,9 +309,7 @@ class TestEdgeSessions:
             f"Cache hit should not query disassemblysession, saw: {select_sql}"
         )
 
-    def test_sessions_signal_bumps_version_on_close(
-        self, api_client, edge_device, scale_device, no_edge_rate_limit
-    ):
+    def test_sessions_signal_bumps_version_on_close(self, api_client, edge_device, scale_device, no_edge_rate_limit):
         """
         Regression: session.save() after flipping status to 'completed' (the
         close-session path at scales/views.py:1050) must invalidate the edge
@@ -356,9 +344,7 @@ class TestEdgeSessions:
         assert second["ETag"] != first_etag
         assert second.json()["sessions"] == []
 
-    def test_sessions_signal_bumps_version_on_cancel(
-        self, api_client, edge_device, scale_device, no_edge_rate_limit
-    ):
+    def test_sessions_signal_bumps_version_on_cancel(self, api_client, edge_device, scale_device, no_edge_rate_limit):
         """
         Regression: session.save() after flipping status to 'cancelled' (the
         cancel-session path at scales/views.py:1067) must invalidate the edge
@@ -391,9 +377,7 @@ class TestEdgeSessions:
         assert second["ETag"] != first_etag
         assert second.json()["sessions"] == []
 
-    def test_sessions_signal_ignores_session_without_device(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_sessions_signal_ignores_session_without_device(self, api_client, edge_device, no_edge_rate_limit):
         """
         An unbound DisassemblySession (no device) can't map to any edge's
         cache key, so its save must be a no-op for the signal — no version
@@ -777,9 +761,7 @@ class TestEdgeHeartbeat:
         resp = api_client.get(_edge_url("heartbeat"), HTTP_X_EDGE_ID=str(edge_device.id))
         assert resp.status_code == 405
 
-    def test_post_updates_printer_status_from_printers_payload(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_post_updates_printer_status_from_printers_payload(self, api_client, edge_device, no_edge_rate_limit):
         Printer.objects.create(
             edge=edge_device,
             site=edge_device.site,
@@ -853,9 +835,7 @@ class TestEdgePrintJobsAndInventory:
         assert resp.status_code == 200
         assert resp["ETag"].startswith('"print-jobs-')
 
-    def test_pending_empty_queue_returns_etag_and_304_on_match(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_empty_queue_returns_etag_and_304_on_match(self, api_client, edge_device, no_edge_rate_limit):
         first = api_client.get(
             _edge_url("print-jobs/pending"),
             HTTP_X_EDGE_ID=str(edge_device.id),
@@ -872,9 +852,7 @@ class TestEdgePrintJobsAndInventory:
         assert second["ETag"] == etag
         assert second.content == b""
 
-    def test_pending_etag_changes_when_new_job_enqueued(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_etag_changes_when_new_job_enqueued(self, api_client, edge_device, no_edge_rate_limit):
         first = api_client.get(
             _edge_url("print-jobs/pending"),
             HTTP_X_EDGE_ID=str(edge_device.id),
@@ -890,9 +868,7 @@ class TestEdgePrintJobsAndInventory:
         assert second["ETag"] != empty_etag
         assert len(second.json()["jobs"]) == 1
 
-    def test_pending_etag_stable_across_polls_when_queue_unchanged(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_etag_stable_across_polls_when_queue_unchanged(self, api_client, edge_device, no_edge_rate_limit):
         enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         r1 = api_client.get(
             _edge_url("print-jobs/pending"),
@@ -905,9 +881,7 @@ class TestEdgePrintJobsAndInventory:
         assert r1.status_code == 200 and r2.status_code == 200
         assert r1["ETag"] == r2["ETag"]
 
-    def test_pending_cache_hit_skips_db_query(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_cache_hit_skips_db_query(self, api_client, edge_device, no_edge_rate_limit):
         """
         Second poll within the cache TTL should serve the payload from Redis
         without re-querying PrintJob. Only the edge_device last_seen_at UPDATE
@@ -936,13 +910,9 @@ class TestEdgePrintJobsAndInventory:
         assert second["ETag"] == first_etag
         # The print-job SELECT must not appear on the cache-hit path.
         select_sql = " ".join(q["sql"].lower() for q in ctx.captured_queries)
-        assert "labeling_printjob" not in select_sql, (
-            f"Cache hit should not query labeling_printjob, saw: {select_sql}"
-        )
+        assert "labeling_printjob" not in select_sql, f"Cache hit should not query labeling_printjob, saw: {select_sql}"
 
-    def test_pending_cache_shared_across_edges_on_same_site(
-        self, api_client, site, no_edge_rate_limit
-    ):
+    def test_pending_cache_shared_across_edges_on_same_site(self, api_client, site, no_edge_rate_limit):
         """
         Two edges at the same site should share the per-site payload cache.
         The second edge's poll (after the first primes the cache) should hit
@@ -952,12 +922,8 @@ class TestEdgePrintJobsAndInventory:
         from django.db import connection
         from django.test.utils import CaptureQueriesContext
 
-        edge_a = EdgeDevice.objects.create(
-            site=site, name="Edge A", is_active=True, is_online=False
-        )
-        edge_b = EdgeDevice.objects.create(
-            site=site, name="Edge B", is_active=True, is_online=False
-        )
+        edge_a = EdgeDevice.objects.create(site=site, name="Edge A", is_active=True, is_online=False)
+        edge_b = EdgeDevice.objects.create(site=site, name="Edge B", is_active=True, is_online=False)
         enqueue_print_job(site=site, prn_content="X", target_role="carcass")
         cache.clear()
 
@@ -975,13 +941,9 @@ class TestEdgePrintJobsAndInventory:
             )
         assert resp.status_code == 200
         select_sql = " ".join(q["sql"].lower() for q in ctx.captured_queries)
-        assert "labeling_printjob" not in select_sql, (
-            f"Edge B should reuse site-scoped cache, saw query: {select_sql}"
-        )
+        assert "labeling_printjob" not in select_sql, f"Edge B should reuse site-scoped cache, saw query: {select_sql}"
 
-    def test_pending_signal_bumps_cache_version_on_save(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_signal_bumps_cache_version_on_save(self, api_client, edge_device, no_edge_rate_limit):
         """
         PrintJob.save() (via the post_save signal in labeling/signals.py) must
         bump the per-site cache version, so the next poll at that site
@@ -1012,18 +974,14 @@ class TestEdgePrintJobsAndInventory:
         assert second["ETag"] != first_etag
         assert second.json()["jobs"][0]["targetRole"] == "organ"
 
-    def test_pending_ack_invalidates_cache(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_ack_invalidates_cache(self, api_client, edge_device, no_edge_rate_limit):
         """
         Acking a job (flipping status out of 'pending') must invalidate the
         site cache via post_save so the next poll reflects the smaller queue.
         """
         from django.core.cache import cache
 
-        job = enqueue_print_job(
-            site=edge_device.site, prn_content="X", target_role="carcass"
-        )
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         cache.clear()
 
         first = api_client.get(
@@ -1051,9 +1009,7 @@ class TestEdgePrintJobsAndInventory:
         assert second["ETag"] != first_etag
         assert second.json()["jobs"] == []
 
-    def test_pending_local_dispatch_job_does_not_bump_cache(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_local_dispatch_job_does_not_bump_cache(self, api_client, edge_device, no_edge_rate_limit):
         """
         A PrintJob with dispatch_mode='local' is irrelevant to the edge poll.
         Its save should not invalidate the edge cache for the site (no churn).
@@ -1085,9 +1041,7 @@ class TestEdgePrintJobsAndInventory:
         )
         assert second.status_code == 304
 
-    def test_pending_etag_invalidates_on_pending_job_mutation(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_pending_etag_invalidates_on_pending_job_mutation(self, api_client, edge_device, no_edge_rate_limit):
         """
         Regression: a pending-job mutation (e.g. operator re-targets target_role
         or edits prn_content before dispatch) must invalidate the edge's cached
@@ -1096,9 +1050,8 @@ class TestEdgePrintJobsAndInventory:
         _compute_print_jobs_etag hashes — this test guards that coupling.
         """
         import time
-        job = enqueue_print_job(
-            site=edge_device.site, prn_content="ORIG", target_role="carcass"
-        )
+
+        job = enqueue_print_job(site=edge_device.site, prn_content="ORIG", target_role="carcass")
         first = api_client.get(
             _edge_url("print-jobs/pending"),
             HTTP_X_EDGE_ID=str(edge_device.id),
@@ -1121,9 +1074,7 @@ class TestEdgePrintJobsAndInventory:
         assert second.json()["jobs"][0]["targetRole"] == "organ"
         assert second.json()["jobs"][0]["prnContent"] == "EDITED"
 
-    def test_ack_completed_sets_printed_at_idempotent(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_ack_completed_sets_printed_at_idempotent(self, api_client, edge_device, no_edge_rate_limit):
         job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         body = {
             "status": "completed",
@@ -1218,9 +1169,7 @@ class TestEdgePrintJobsAndInventory:
         assert p.host == "192.168.1.220"
         assert p.site_id == edge_device.site_id
 
-    def test_ack_resolved_printer_sets_target_printer(
-        self, api_client, edge_device, no_edge_rate_limit
-    ):
+    def test_ack_resolved_printer_sets_target_printer(self, api_client, edge_device, no_edge_rate_limit):
         inv = api_client.post(
             _edge_url("printers/inventory"),
             data=json.dumps(

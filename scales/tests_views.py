@@ -11,10 +11,10 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from processing.models import Animal, WeightLog
-from reception.models import ServicePackage, SlaughterOrder
 from labeling.models import PrintJob
 from labeling.services import enqueue_print_job
+from processing.models import Animal, WeightLog
+from reception.models import ServicePackage, SlaughterOrder
 from scales.models import DisassemblySession, EdgeDevice, OrphanedBatch, Printer, ScaleDevice, Site, WeighingEvent
 from scales.views import _age_seconds, is_device_online, is_edge_online
 from users.models import ClientProfile, User

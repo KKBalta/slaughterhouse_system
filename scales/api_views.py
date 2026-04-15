@@ -16,7 +16,6 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from .middleware import parse_json_body, require_edge_id
-from .print_worker_cache import record_edge_print_ack, record_edge_print_poll
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
@@ -29,6 +28,7 @@ from .models import (
     Site,
     WeighingEvent,
 )
+from .print_worker_cache import record_edge_print_ack, record_edge_print_poll
 from .utils import maybe_mark_event_animals_disassembled
 
 logger = logging.getLogger(__name__)
@@ -328,9 +328,7 @@ def edge_activate(request):
     with transaction.atomic():
         try:
             setup_code = (
-                EdgeSetupCode.objects.select_for_update()
-                .select_related("site")
-                .get(code=code_raw, is_active=True)
+                EdgeSetupCode.objects.select_for_update().select_related("site").get(code=code_raw, is_active=True)
             )
         except EdgeSetupCode.DoesNotExist:
             return JsonResponse(
@@ -990,10 +988,7 @@ def _compute_print_jobs_etag(identity_rows):
       computed from a cheap values_list query and a 304 still returns
       without ever reading prn_content.
     """
-    material = ";".join(
-        f"{jid}:{ts.timestamp() if ts is not None else 0}"
-        for jid, ts in identity_rows
-    )
+    material = ";".join(f"{jid}:{ts.timestamp() if ts is not None else 0}" for jid, ts in identity_rows)
     digest = hashlib.md5(material.encode()).hexdigest()[:16]
     return f'"print-jobs-{digest}"'
 
@@ -1043,6 +1038,7 @@ def edge_pending_print_jobs(request):
     site_id = request.edge_site.id
     _ver = cache.get(f"edge_print_jobs_version:{site_id}") or 0
     _cache_key = f"edge_print_jobs:{site_id}:{_ver}"
+
     def _respond_print_jobs(payload, etag):
         record_edge_print_poll(
             request.edge_device.id,
@@ -1064,10 +1060,7 @@ def edge_pending_print_jobs(request):
             status="pending",
             dispatch_mode="edge",
         )
-        .filter(
-            models.Q(claimed_by_edge__isnull=True)
-            | models.Q(claimed_by_edge=request.edge_device)
-        )
+        .filter(models.Q(claimed_by_edge__isnull=True) | models.Q(claimed_by_edge=request.edge_device))
         .order_by("print_date")[:50]
     )
 
@@ -1119,9 +1112,7 @@ def edge_ack_print_job(request, job_id):
         return JsonResponse({"error": "Job not found"}, status=404)
 
     if job.status in ("cancelled", "completed"):
-        return JsonResponse(
-            {"ok": True, "ignored": True, "reason": f"job already {job.status}"}
-        )
+        return JsonResponse({"ok": True, "ignored": True, "reason": f"job already {job.status}"})
 
     body = request.json_body
     status = (body.get("status") or "").strip()

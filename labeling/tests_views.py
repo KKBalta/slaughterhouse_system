@@ -190,9 +190,7 @@ def site_with_carcass_printers_for_hint(db):
 def test_animal_label_detail_target_role_printers_context(
     auth_client, animal_label, site_with_carcass_printers_for_hint, mocker
 ):
-    mocker.patch(
-        "labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint
-    )
+    mocker.patch("labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint)
     response = auth_client.get(reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk}))
     assert response.status_code == 200
     assert response.context["target_role"] == "carcass"
@@ -696,9 +694,7 @@ def test_custom_label_detail_view(auth_client, admin_user):
 def test_custom_label_detail_target_role_printers_context(
     auth_client, admin_user, site_with_carcass_printers_for_hint, mocker
 ):
-    mocker.patch(
-        "labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint
-    )
+    mocker.patch("labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint)
     label = _create_custom_label(admin_user)
     response = auth_client.get(reverse("labeling:custom_label_detail", kwargs={"pk": label.pk}))
     assert response.status_code == 200

@@ -35,8 +35,4 @@ class Command(BaseCommand):
                         updated_count += 1
                         self.stdout.write(f"  Updated index: {edge.id} -> {tenant.schema_name}")
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Done. {created_count} new index entries, {updated_count} updated."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"Done. {created_count} new index entries, {updated_count} updated."))

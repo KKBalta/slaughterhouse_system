@@ -50,12 +50,8 @@ class LabelAppHomeView(LoginRequiredMixin, TemplateView):
         context["animal_label_total"] = animal_active.count()
         context["custom_label_total"] = custom_all.count()
 
-        merged = [
-            ("animal", pk, print_date)
-            for pk, print_date in animal_active.values_list("pk", "print_date")
-        ] + [
-            ("custom", pk, print_date)
-            for pk, print_date in custom_all.values_list("pk", "print_date")
+        merged = [("animal", pk, print_date) for pk, print_date in animal_active.values_list("pk", "print_date")] + [
+            ("custom", pk, print_date) for pk, print_date in custom_all.values_list("pk", "print_date")
         ]
         merged.sort(key=lambda row: row[2], reverse=True)
         context["label_rows_total"] = len(merged)
@@ -66,10 +62,7 @@ class LabelAppHomeView(LoginRequiredMixin, TemplateView):
 
         animal_ids = [pk for kind, pk, _ in page_slice if kind == "animal"]
         custom_ids = [pk for kind, pk, _ in page_slice if kind == "custom"]
-        animal_map = {
-            al.pk: al
-            for al in AnimalLabel.objects.filter(pk__in=animal_ids).select_related("animal", "cut")
-        }
+        animal_map = {al.pk: al for al in AnimalLabel.objects.filter(pk__in=animal_ids).select_related("animal", "cut")}
         custom_map = {cl.pk: cl for cl in CustomLabel.objects.filter(pk__in=custom_ids)}
 
         label_rows = []
@@ -257,9 +250,7 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
         target_role = resolve_target_role(animal_label=self.object)
         context["target_role"] = target_role
         context["target_role_display"] = dict(Printer.ROLE_CHOICES).get(target_role, target_role)
-        context["target_role_printers"] = (
-            list(printers_for_role(site, target_role)) if site else []
-        )
+        context["target_role_printers"] = list(printers_for_role(site, target_role)) if site else []
         return context
 
 
@@ -385,11 +376,7 @@ class BatchGenerateLabelsView(LoginRequiredMixin, View):
                     animal_label = create_animal_label(animal=animal, label_type=label_type, user=request.user)
                     created_labels.append(animal_label)
                     site = get_default_label_site()
-                    if (
-                        site
-                        and site_has_dispatchable_printer(site)
-                        and (animal_label.prn_content or "").strip()
-                    ):
+                    if site and site_has_dispatchable_printer(site) and (animal_label.prn_content or "").strip():
                         enqueue_print_job(
                             site=site,
                             prn_content=animal_label.prn_content,
@@ -566,9 +553,7 @@ class CustomLabelDetailView(LoginRequiredMixin, DetailView):
         target_role = resolve_target_role(custom_label=self.object)
         context["target_role"] = target_role
         context["target_role_display"] = dict(Printer.ROLE_CHOICES).get(target_role, target_role)
-        context["target_role_printers"] = (
-            list(printers_for_role(site, target_role)) if site else []
-        )
+        context["target_role_printers"] = list(printers_for_role(site, target_role)) if site else []
         return context
 
 

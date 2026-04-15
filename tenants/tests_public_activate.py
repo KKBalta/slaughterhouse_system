@@ -6,15 +6,13 @@ import json
 from contextlib import nullcontext
 from datetime import timedelta
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 from django.test import Client as HttpClient
 from django.utils import timezone
 
 from scales.models import EdgeDevice, EdgeSetupCode, Site
-from tenants.models import Client as TenantClient
-from tenants.models import Domain, EdgeDeviceIndex, EdgeSetupCodeIndex
+from tenants.models import Client as TenantClient, Domain, EdgeDeviceIndex, EdgeSetupCodeIndex
 
 
 def _pub_activate_url():
@@ -403,9 +401,9 @@ class TestSetupCodeSignalSync:
     def test_sync_creates_index_entry(self, tenant, site, monkeypatch):
         """When USE_MULTITENANT=True and a tenant context exists, saving an
         EdgeSetupCode should upsert an EdgeSetupCodeIndex row."""
-        import scales.signals as sig_mod
-
         from django.db import connection
+
+        import scales.signals as sig_mod
 
         monkeypatch.setattr("django.conf.settings.USE_MULTITENANT", True)
         monkeypatch.setattr(connection, "tenant", SimpleNamespace(schema_name="test_farm"), raising=False)
@@ -427,9 +425,9 @@ class TestSetupCodeSignalSync:
         assert entry.is_consumed is False
 
     def test_sync_marks_consumed_when_used(self, tenant, site, monkeypatch):
-        import scales.signals as sig_mod
-
         from django.db import connection
+
+        import scales.signals as sig_mod
 
         monkeypatch.setattr("django.conf.settings.USE_MULTITENANT", True)
         monkeypatch.setattr(connection, "tenant", SimpleNamespace(schema_name="test_farm"), raising=False)
@@ -450,9 +448,9 @@ class TestSetupCodeSignalSync:
         assert entry.is_consumed is True
 
     def test_sync_marks_consumed_when_soft_deleted(self, tenant, site, monkeypatch):
-        import scales.signals as sig_mod
-
         from django.db import connection
+
+        import scales.signals as sig_mod
 
         monkeypatch.setattr("django.conf.settings.USE_MULTITENANT", True)
         monkeypatch.setattr(connection, "tenant", SimpleNamespace(schema_name="test_farm"), raising=False)

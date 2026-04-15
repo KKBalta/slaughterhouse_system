@@ -287,9 +287,7 @@ class TestEdgeActivate:
 class TestEdgeSetupCodeModel:
     def test_generate_code_format(self):
         site = Site.objects.create(name="S", address="")
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=1)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=1))
         assert code.code.startswith("CT-")
         parts = code.code.split("-")
         assert len(parts) == 3
@@ -298,16 +296,12 @@ class TestEdgeSetupCodeModel:
 
     def test_is_valid_active(self):
         site = Site.objects.create(name="S", address="")
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=1)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=1))
         assert code.is_valid() is True
 
     def test_is_valid_expired(self):
         site = Site.objects.create(name="S", address="")
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() - timedelta(hours=1)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() - timedelta(hours=1))
         assert code.is_valid() is False
 
     def test_is_valid_used(self):
@@ -321,9 +315,7 @@ class TestEdgeSetupCodeModel:
 
     def test_str_active(self):
         site = Site.objects.create(name="MySite", address="")
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=1)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=1))
         assert "(active)" in str(code)
         assert "MySite" in str(code)
 
@@ -340,9 +332,7 @@ class TestEdgeSetupCodeModel:
         from django.db import IntegrityError
 
         site = Site.objects.create(name="S", address="")
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=1)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=1))
         with pytest.raises(IntegrityError):
             EdgeSetupCode.objects.create(
                 site=site,
@@ -364,9 +354,7 @@ class TestEdgeSetupCodeListView:
         assert "/login" in resp.url or "/accounts/login" in resp.url
 
     def test_list_renders_for_admin(self, auth_client, site):
-        EdgeSetupCode.objects.create(
-            site=site, edge_name="E1", expires_at=timezone.now() + timedelta(hours=24)
-        )
+        EdgeSetupCode.objects.create(site=site, edge_name="E1", expires_at=timezone.now() + timedelta(hours=24))
         resp = auth_client.get(reverse("scales:edge_setup_code_list"))
         assert resp.status_code == 200
         assert b"E1" in resp.content
@@ -479,25 +467,19 @@ class TestEdgeSetupCodeDetailView:
         assert b"10.0.0.1" in resp.content
 
     def test_detail_shows_tenant_url(self, auth_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": code.pk}))
         assert resp.status_code == 200
         assert b"Cloud API URL" in resp.content
 
     def test_detail_404_for_soft_deleted(self, auth_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         code.soft_delete()
         resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": code.pk}))
         assert resp.status_code == 404
 
     def test_detail_requires_login(self, api_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         resp = api_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": code.pk}))
         assert resp.status_code == 302
 
@@ -505,9 +487,7 @@ class TestEdgeSetupCodeDetailView:
 @pytest.mark.django_db
 class TestEdgeSetupCodeRevokeView:
     def test_revoke_soft_deletes(self, auth_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         resp = auth_client.post(reverse("scales:edge_setup_code_revoke", kwargs={"pk": code.pk}))
         assert resp.status_code == 302
         code.refresh_from_db()
@@ -525,16 +505,12 @@ class TestEdgeSetupCodeRevokeView:
         assert code.is_active is True  # should NOT have been revoked
 
     def test_revoke_requires_post(self, auth_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         resp = auth_client.get(reverse("scales:edge_setup_code_revoke", kwargs={"pk": code.pk}))
         assert resp.status_code == 405
 
     def test_revoke_requires_login(self, api_client, site):
-        code = EdgeSetupCode.objects.create(
-            site=site, expires_at=timezone.now() + timedelta(hours=48)
-        )
+        code = EdgeSetupCode.objects.create(site=site, expires_at=timezone.now() + timedelta(hours=48))
         resp = api_client.post(reverse("scales:edge_setup_code_revoke", kwargs={"pk": code.pk}))
         assert resp.status_code == 302
         assert "/login" in resp.url or "/accounts/login" in resp.url

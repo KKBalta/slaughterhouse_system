@@ -4,11 +4,7 @@ import string
 
 import pytest
 
-from tenants.turkey_provinces import (
-    PROVINCE_CHOICES,
-    VD_LABEL_ABBREV_BY_PLAKA,
-    get_vd_label_prefix_for_plaka,
-)
+from tenants.turkey_provinces import PROVINCE_CHOICES, VD_LABEL_ABBREV_BY_PLAKA, get_vd_label_prefix_for_plaka
 
 
 def test_province_choices_count_and_plaka_sequence():

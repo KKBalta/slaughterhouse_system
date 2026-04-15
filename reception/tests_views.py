@@ -14,8 +14,8 @@ SKIP_VIEW_TESTS=true (e.g. in CI without full template setup).
 import os
 
 import pytest
-from django.contrib.messages import get_messages
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
 from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone

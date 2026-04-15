@@ -64,7 +64,6 @@ def public_edge_activate(request):
     body = request.json_body
     code_raw = (body.get("code") or "").strip().upper()
     version = (body.get("version") or "").strip()
-    capabilities = body.get("capabilities") or []
 
     if not code_raw:
         return JsonResponse({"error": "code is required"}, status=400)
@@ -105,9 +104,7 @@ def public_edge_activate(request):
         with transaction.atomic():
             try:
                 setup_code = (
-                    EdgeSetupCode.objects.select_for_update()
-                    .select_related("site")
-                    .get(code=code_raw, is_active=True)
+                    EdgeSetupCode.objects.select_for_update().select_related("site").get(code=code_raw, is_active=True)
                 )
             except EdgeSetupCode.DoesNotExist:
                 return JsonResponse(

@@ -415,7 +415,9 @@ def update_order_service_package(order: SlaughterOrder, *, service_package: Serv
     """
     if not can_edit_order_service_package(order):
         raise ValidationError(
-            _("Cannot update the service package for an order that is completed, billed, cancelled, or has terminal animals.")
+            _(
+                "Cannot update the service package for an order that is completed, billed, cancelled, or has terminal animals."
+            )
         )
 
     if service_package is None:

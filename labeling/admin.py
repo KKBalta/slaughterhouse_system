@@ -43,9 +43,7 @@ class PrintJobAdmin(admin.ModelAdmin):
     def reenqueue_failed_jobs(self, request, queryset):
         to_update = queryset.filter(status="failed")
         edge_site_ids = set(
-            to_update.filter(dispatch_mode="edge", site_id__isnull=False).values_list(
-                "site_id", flat=True
-            )
+            to_update.filter(dispatch_mode="edge", site_id__isnull=False).values_list("site_id", flat=True)
         )
         updated = to_update.update(status="pending", attempts=0, error_text="")
         if edge_site_ids:

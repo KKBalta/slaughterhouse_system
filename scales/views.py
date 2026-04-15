@@ -12,9 +12,9 @@ from django.core.paginator import Paginator
 from django.db import models as db_models
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView, View
 
 # Queryset filter for animals eligible for disassembly (scale session + cuts page)
@@ -36,7 +36,6 @@ from users.policies import can_manage_tenant_users
 
 from .api_views import _bump_edge_print_jobs_version
 from .forms import SiteForm
-from .print_worker_cache import get_edge_print_worker_pulse
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
@@ -49,6 +48,7 @@ from .models import (
     Site,
     WeighingEvent,
 )
+from .print_worker_cache import get_edge_print_worker_pulse
 from .utils import (
     get_product_display_names,
     maybe_mark_event_animals_disassembled,
@@ -143,11 +143,15 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
             edges = edges.filter(site=selected_site)
         selected_edge = edges.filter(id=edge_id).first() if edge_id else None
 
-        scale_devices = ScaleDevice.objects.filter(is_active=True).select_related("edge", "edge__site").order_by(
-            "edge_id", "device_id"
+        scale_devices = (
+            ScaleDevice.objects.filter(is_active=True)
+            .select_related("edge", "edge__site")
+            .order_by("edge_id", "device_id")
         )
-        label_printers = Printer.objects.filter(is_active=True).select_related("edge", "edge__site", "site").order_by(
-            "edge_id", "priority", "local_printer_id"
+        label_printers = (
+            Printer.objects.filter(is_active=True)
+            .select_related("edge", "edge__site", "site")
+            .order_by("edge_id", "priority", "local_printer_id")
         )
         if selected_edge:
             scale_devices = scale_devices.filter(edge=selected_edge)
@@ -305,9 +309,7 @@ class EdgeSetupCodeListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
 
     def get_queryset(self):
         return (
-            EdgeSetupCode.objects.filter(is_active=True)
-            .select_related("site", "used_by_edge")
-            .order_by("-created_at")
+            EdgeSetupCode.objects.filter(is_active=True).select_related("site", "used_by_edge").order_by("-created_at")
         )
 
 
@@ -454,9 +456,7 @@ class EdgeSetupCodeDetailView(LoginRequiredMixin, AdminOnlyMixin, DetailView):
             context["edge_connected"] = True
             context["edge_name"] = edge.name
             context["edge_online"] = (
-                edge.is_online
-                and edge.last_seen_at is not None
-                and (now - edge.last_seen_at).total_seconds() < 120
+                edge.is_online and edge.last_seen_at is not None and (now - edge.last_seen_at).total_seconds() < 120
             )
             context["edge_version"] = edge.version
             context["edge_health"] = edge.health

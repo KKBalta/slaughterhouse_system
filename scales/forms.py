@@ -6,8 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import Site
 
 _TAILWIND_CONTROL = (
-    "mt-1 block w-full rounded-md border-gray-300 shadow-sm "
-    "focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+    "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
 )
 
 

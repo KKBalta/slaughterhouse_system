@@ -11,9 +11,6 @@ from types import SimpleNamespace
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from processing.models import DisassemblyCut
-
-from scales.models import EdgeDevice, Printer, Site
 
 from labeling.models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
 from labeling.services import (
@@ -23,6 +20,8 @@ from labeling.services import (
     printers_for_role,
     resolve_target_role,
 )
+from processing.models import DisassemblyCut
+from scales.models import EdgeDevice, Printer, Site
 
 User = get_user_model()
 
@@ -163,9 +162,7 @@ def test_enqueue_print_job_explicit_target_role_overrides_label_type(admin_user,
         prn_content="P",
         bat_content="B",
     )
-    job = enqueue_print_job(
-        site=site, prn_content="Z", animal_label=label, target_role="offal"
-    )
+    job = enqueue_print_job(site=site, prn_content="Z", animal_label=label, target_role="offal")
     assert job.target_role == "offal"
     assert job.item_type == "offal"
 
@@ -289,9 +286,7 @@ def test_printjob_admin_reenqueue_failed_bumps_edge_cache_per_site(mocker, admin
     request._messages = FallbackStorage(request)
 
     modeladmin = PrintJobAdmin(PrintJob, AdminSite())
-    qs = PrintJob.objects.filter(
-        pk__in=PrintJob.objects.filter(site__in=[site_a, site_b]).values_list("pk", flat=True)
-    )
+    qs = PrintJob.objects.filter(pk__in=PrintJob.objects.filter(site__in=[site_a, site_b]).values_list("pk", flat=True))
     modeladmin.reenqueue_failed_jobs(request, qs)
 
     assert bump.call_count == 2

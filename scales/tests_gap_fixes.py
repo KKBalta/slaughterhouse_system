@@ -93,9 +93,7 @@ class TestGapA_TerminalStateGuard:
 
     def test_ack_on_completed_job_returns_ignored(self, api_client, edge_device):
         """ACK on a completed job returns 200 with ignored=True, does not change status."""
-        job = enqueue_print_job(
-            site=edge_device.site, prn_content="X", target_role="carcass"
-        )
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         job.status = "completed"
         job.printed_at = timezone.now()
         job.save(update_fields=["status", "printed_at", "updated_at"])
@@ -116,9 +114,7 @@ class TestGapA_TerminalStateGuard:
 
     def test_ack_on_pending_job_still_works(self, api_client, edge_device):
         """Normal ACK on a pending job still processes correctly."""
-        job = enqueue_print_job(
-            site=edge_device.site, prn_content="X", target_role="carcass"
-        )
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         resp = api_client.post(
             _edge_url(f"print-jobs/{job.id}/ack"),
             data=json.dumps({"status": "completed", "attempts": 1}),
@@ -142,9 +138,7 @@ class TestGapA_TerminalStateGuard:
 class TestGapE_LabelCount:
     def test_pending_returns_quantity_as_label_count(self, api_client, edge_device):
         """Pending jobs endpoint returns j.quantity as labelCount."""
-        job = enqueue_print_job(
-            site=edge_device.site, prn_content="X", target_role="carcass"
-        )
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         job.quantity = 5
         job.save(update_fields=["quantity", "updated_at"])
 
@@ -159,9 +153,7 @@ class TestGapE_LabelCount:
 
     def test_pending_default_quantity_is_1(self, api_client, edge_device):
         """Default quantity=1 still returns labelCount=1."""
-        enqueue_print_job(
-            site=edge_device.site, prn_content="X", target_role="carcass"
-        )
+        enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
         resp = api_client.get(
             _edge_url("print-jobs/pending"),
             HTTP_X_EDGE_ID=str(edge_device.id),
@@ -179,15 +171,9 @@ class TestGapE_LabelCount:
 class TestGapF_MultiEdgeClaim:
     def test_pending_excludes_jobs_claimed_by_other_edge(self, api_client, site):
         """Jobs claimed by another edge are not visible to this edge."""
-        edge_a = EdgeDevice.objects.create(
-            site=site, name="Edge A", is_active=True, is_online=True
-        )
-        edge_b = EdgeDevice.objects.create(
-            site=site, name="Edge B", is_active=True, is_online=True
-        )
-        job = enqueue_print_job(
-            site=site, prn_content="X", target_role="carcass"
-        )
+        edge_a = EdgeDevice.objects.create(site=site, name="Edge A", is_active=True, is_online=True)
+        edge_b = EdgeDevice.objects.create(site=site, name="Edge B", is_active=True, is_online=True)
+        job = enqueue_print_job(site=site, prn_content="X", target_role="carcass")
         job.claimed_by_edge = edge_a
         job.status = "pending"
         job.save(update_fields=["claimed_by_edge", "status", "updated_at"])
@@ -201,9 +187,7 @@ class TestGapF_MultiEdgeClaim:
 
     def test_pending_includes_unclaimed_jobs(self, api_client, site):
         """Unclaimed jobs (claimed_by_edge=NULL) are visible to any edge."""
-        edge_a = EdgeDevice.objects.create(
-            site=site, name="Edge A", is_active=True, is_online=True
-        )
+        edge_a = EdgeDevice.objects.create(site=site, name="Edge A", is_active=True, is_online=True)
         enqueue_print_job(site=site, prn_content="X", target_role="carcass")
 
         resp = api_client.get(
@@ -215,12 +199,8 @@ class TestGapF_MultiEdgeClaim:
 
     def test_pending_includes_jobs_claimed_by_self(self, api_client, site):
         """Jobs claimed by this edge are still visible to it."""
-        edge_a = EdgeDevice.objects.create(
-            site=site, name="Edge A", is_active=True, is_online=True
-        )
-        job = enqueue_print_job(
-            site=site, prn_content="X", target_role="carcass"
-        )
+        edge_a = EdgeDevice.objects.create(site=site, name="Edge A", is_active=True, is_online=True)
+        job = enqueue_print_job(site=site, prn_content="X", target_role="carcass")
         job.claimed_by_edge = edge_a
         job.status = "pending"
         job.save(update_fields=["claimed_by_edge", "status", "updated_at"])
@@ -251,9 +231,7 @@ class TestGapG_StaleCleanupCommand:
             status="dispatched",
             target_role="carcass",
         )
-        PrintJob.objects.filter(pk=job.pk).update(
-            updated_at=timezone.now() - timedelta(minutes=45)
-        )
+        PrintJob.objects.filter(pk=job.pk).update(updated_at=timezone.now() - timedelta(minutes=45))
 
         out = StringIO()
         call_command("cleanup_stale_print_jobs", "--minutes", "30", stdout=out)
@@ -284,12 +262,8 @@ class TestGapG_StaleCleanupCommand:
 
     def test_does_not_affect_pending_jobs(self, site):
         """Pending jobs are never touched, even if old."""
-        job = enqueue_print_job(
-            site=site, prn_content="X", target_role="carcass"
-        )
-        PrintJob.objects.filter(pk=job.pk).update(
-            updated_at=timezone.now() - timedelta(minutes=60)
-        )
+        job = enqueue_print_job(site=site, prn_content="X", target_role="carcass")
+        PrintJob.objects.filter(pk=job.pk).update(updated_at=timezone.now() - timedelta(minutes=60))
 
         out = StringIO()
         call_command("cleanup_stale_print_jobs", "--minutes", "30", stdout=out)
@@ -308,9 +282,7 @@ class TestGapG_StaleCleanupCommand:
             status="dispatched",
             target_role="carcass",
         )
-        PrintJob.objects.filter(pk=job.pk).update(
-            updated_at=timezone.now() - timedelta(minutes=15)
-        )
+        PrintJob.objects.filter(pk=job.pk).update(updated_at=timezone.now() - timedelta(minutes=15))
 
         out = StringIO()
         call_command("cleanup_stale_print_jobs", "--minutes", "10", stdout=out)
@@ -350,9 +322,7 @@ class TestActivationFeedback:
             edge_name="Test Edge",
             expires_at=timezone.now() + timedelta(hours=48),
         )
-        resp = auth_client.get(
-            reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk})
-        )
+        resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk}))
         assert resp.status_code == 200
         assert resp.context["edge_connected"] is False
 
@@ -363,9 +333,7 @@ class TestActivationFeedback:
             edge_name="Test Edge",
             expires_at=timezone.now() + timedelta(hours=48),
         )
-        resp = auth_client.get(
-            reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk})
-        )
+        resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk}))
         assert resp.status_code == 200
         assert b'http-equiv="refresh"' in resp.content
 
@@ -387,9 +355,7 @@ class TestActivationFeedback:
             used_at=timezone.now(),
             used_by_edge=edge,
         )
-        resp = auth_client.get(
-            reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk})
-        )
+        resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk}))
         assert resp.status_code == 200
         assert resp.context["edge_connected"] is True
         assert resp.context["edge_online"] is True
@@ -415,9 +381,7 @@ class TestActivationFeedback:
             used_at=timezone.now(),
             used_by_edge=edge,
         )
-        resp = auth_client.get(
-            reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk})
-        )
+        resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk}))
         assert resp.status_code == 200
         assert resp.context["edge_connected"] is True
         assert resp.context["edge_online"] is False
@@ -462,8 +426,6 @@ class TestActivationFeedback:
             used_at=timezone.now(),
             used_by_edge=edge,
         )
-        resp = auth_client.get(
-            reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk})
-        )
+        resp = auth_client.get(reverse("scales:edge_setup_code_detail", kwargs={"pk": sc.pk}))
         assert resp.status_code == 200
         assert resp.context["edge_printer_count"] == 2
