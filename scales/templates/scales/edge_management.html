@@ -63,7 +63,7 @@
         </form>
     </div>
 
-    <div class="bg-white shadow rounded-xl border border-gray-200 p-5 sm:p-6 mb-6">
+    <div id="cloud-print-queue" class="bg-white shadow rounded-xl border border-gray-200 p-5 sm:p-6 mb-6 scroll-mt-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Cloud print queue" %}</h2>
         <p class="text-sm text-gray-600 mb-4">
             {% trans "Pending jobs are not assigned to a worker until an Edge ACKs “dispatched”. Redis stores a short-lived pulse per Edge (last poll / last ACK) for quick dashboard checks; in-flight counts come from the database." %}
@@ -84,6 +84,7 @@
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Worker" %}</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Job ID" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Actions" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -94,6 +95,19 @@
                         <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
                         <td class="px-3 py-2 text-gray-400">{% trans "—" %}</td>
                         <td class="px-3 py-2 font-mono text-xs text-gray-500">{{ job.id }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <form method="post"
+                                  action="{% url 'labeling:cancel_pending_print_job' job.pk %}"
+                                  class="inline"
+                                  onsubmit="return confirm('{% trans "Remove this job from the print queue? The Edge will not print it." %}');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}#cloud-print-queue">
+                                <button type="submit"
+                                        class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs font-medium border border-red-200">
+                                    {% trans "Remove" %}
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

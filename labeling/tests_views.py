@@ -647,6 +647,41 @@ def test_cancel_pending_print_job_rejects_non_pending(auth_client, site_with_edg
     assert job.status == "completed"
 
 
+def test_cancel_pending_print_job_respects_safe_next(auth_client, site_with_edge_printer):
+    job = PrintJob.objects.create(
+        site=site_with_edge_printer,
+        status="pending",
+        dispatch_mode="edge",
+        prn_content="q",
+        target_role="carcass",
+    )
+    next_path = f"{reverse('scales:edge_management')}?site_id=1#cloud-print-queue"
+    response = auth_client.post(
+        reverse("labeling:cancel_pending_print_job", kwargs={"pk": job.pk}),
+        {"next": next_path},
+    )
+    assert response.status_code == 302
+    assert response.url == next_path
+
+
+def test_cancel_pending_print_job_ignores_unsafe_next(auth_client, site_with_edge_printer):
+    job = PrintJob.objects.create(
+        site=site_with_edge_printer,
+        status="pending",
+        dispatch_mode="edge",
+        prn_content="q",
+        target_role="carcass",
+    )
+    response = auth_client.post(
+        reverse("labeling:cancel_pending_print_job", kwargs={"pk": job.pk}),
+        {"next": "https://evil.example/phish"},
+    )
+    assert response.status_code == 302
+    assert response.url == f"{reverse('labeling:label_app')}#print-queue"
+    job.refresh_from_db()
+    assert job.status == "cancelled"
+
+
 def test_custom_label_detail_view(auth_client, admin_user):
     label = _create_custom_label(admin_user)
 

@@ -77,6 +77,7 @@
                                           class="inline"
                                           onsubmit="return confirm('{% trans "Remove this job from the print queue? The Edge will not print it." %}');">
                                         {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}#print-queue">
                                         <button type="submit"
                                                 class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs font-medium border border-red-200">
                                             {% trans "Remove" %}
