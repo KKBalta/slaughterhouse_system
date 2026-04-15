@@ -14,7 +14,8 @@ from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.generic import DetailView, ListView, TemplateView, View
+from django.urls import reverse
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView, View
 
 # Queryset filter for animals eligible for disassembly (scale session + cuts page)
 DISASSEMBLY_ELIGIBLE_FILTER = Q(
@@ -32,6 +33,7 @@ from django.http import JsonResponse
 from processing.models import Animal
 from users.policies import can_manage_tenant_users
 
+from .forms import SiteForm
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
@@ -102,6 +104,7 @@ class ScalesDashboardView(LoginRequiredMixin, TemplateView):
             is_active=True,
         ).select_related("device", "animal", "site")[:20]
         context["pending_batches"] = OrphanedBatch.objects.filter(status="pending", is_active=True).count()
+        context["can_manage_tenant_ops"] = can_manage_tenant_users(self.request.user)
         return context
 
 
@@ -183,6 +186,69 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
         return context
 
 
+class SiteListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
+    """List active sites (plants) for Edge and scale operations."""
+
+    model = Site
+    template_name = "scales/site_list.html"
+    context_object_name = "sites"
+
+    def get_queryset(self):
+        return (
+            Site.objects.filter(is_active=True)
+            .annotate(active_edge_count=db_models.Count("edges", filter=Q(edges__is_active=True)))
+            .order_by("name")
+        )
+
+
+class SiteCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
+    model = Site
+    form_class = SiteForm
+    template_name = "scales/site_form.html"
+
+    def get_success_url(self):
+        return reverse("scales:site_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Site “%(name)s” was created.") % {"name": form.instance.name})
+        return super().form_valid(form)
+
+
+class SiteUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
+    model = Site
+    form_class = SiteForm
+    template_name = "scales/site_form.html"
+
+    def get_queryset(self):
+        return Site.objects.filter(is_active=True)
+
+    def get_success_url(self):
+        return reverse("scales:site_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Site “%(name)s” was updated.") % {"name": form.instance.name})
+        return super().form_valid(form)
+
+
+class SiteDeactivateView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a site only when it has no active Edge devices."""
+
+    def post(self, request, pk):
+        site = get_object_or_404(Site, pk=pk, is_active=True)
+        if EdgeDevice.objects.filter(site=site, is_active=True).exists():
+            messages.error(
+                request,
+                _(
+                    "This site still has active Edge devices. Remove them from Edge Management "
+                    "before deactivating the site."
+                ),
+            )
+            return redirect("scales:site_list")
+        site.soft_delete()
+        messages.success(request, _("Site “%(name)s” was deactivated.") % {"name": site.name})
+        return redirect("scales:site_list")
+
+
 class EdgeSetupCodeListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
     """List all setup codes with status indicators."""
 
@@ -213,12 +279,27 @@ class EdgeSetupCodeCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
         for row in printer_rows:
             row["id"] = str(row["id"])
             row["site_id"] = str(row["site_id"])
+
+        prefill_site = (request.GET.get("site_id") or "").strip()
+        prefill_edge_name = (request.GET.get("edge_name") or "").strip()
+        relink_from_edge = request.GET.get("relink") == "1"
+        initial_site_id = ""
+        initial_edge_name = ""
+        relink_hint = False
+        if relink_from_edge and prefill_site and Site.objects.filter(id=prefill_site, is_active=True).exists():
+            initial_site_id = prefill_site
+            initial_edge_name = prefill_edge_name
+            relink_hint = True
+
         return render(
             request,
             "scales/edge_setup_code_create.html",
             {
                 "sites": sites,
                 "printers_json": printer_rows,
+                "initial_site_id": initial_site_id,
+                "initial_edge_name": initial_edge_name,
+                "relink_hint": relink_hint,
             },
         )
 
@@ -337,6 +418,21 @@ class EdgeSetupCodeRevokeView(LoginRequiredMixin, AdminOnlyMixin, View):
         return redirect("scales:edge_setup_code_list")
 
 
+def _redirect_edge_management_preserve_filter(request):
+    """Return redirect to edge management, keeping ?site_id=&edge_id= when posted as `next`."""
+    qs = (request.POST.get("next") or "").strip()
+    if qs:
+        return redirect(f"{reverse('scales:edge_management')}?{qs}")
+    return redirect("scales:edge_management")
+
+
+def _soft_remove_edge_device(edge: EdgeDevice) -> None:
+    """Soft-delete an edge and its active scales/printers (Remove and Re-link flows)."""
+    ScaleDevice.objects.filter(edge=edge, is_active=True).update(is_active=False)
+    Printer.objects.filter(edge=edge, is_active=True).update(is_active=False, enabled=False)
+    edge.soft_delete()
+
+
 class EdgeDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
     """Soft-delete an Edge device and its related scale devices and printers."""
 
@@ -345,7 +441,7 @@ class EdgeDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
             edge = EdgeDevice.objects.get(pk=pk, is_active=True)
         except EdgeDevice.DoesNotExist:
             messages.error(request, _("Edge device not found."))
-            return redirect("scales:edge_management")
+            return _redirect_edge_management_preserve_filter(request)
 
         active_sessions = DisassemblySession.objects.filter(
             device__edge=edge,
@@ -358,19 +454,106 @@ class EdgeDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
                 _("Cannot remove this edge — it has %(count)s active session(s). Close them first.")
                 % {"count": active_sessions},
             )
-            return redirect("scales:edge_management")
+            return _redirect_edge_management_preserve_filter(request)
 
-        from .models import ScaleDevice
-
-        ScaleDevice.objects.filter(edge=edge, is_active=True).update(is_active=False)
-        Printer.objects.filter(edge=edge, is_active=True).update(is_active=False, enabled=False)
-        edge.soft_delete()
+        display = edge.name or str(edge.id)[:8]
+        _soft_remove_edge_device(edge)
 
         messages.success(
             request,
-            _("Edge device '%(name)s' has been removed.") % {"name": edge.name or str(edge.id)[:8]},
+            _("Edge device '%(name)s' has been removed.") % {"name": display},
         )
-        return redirect("scales:edge_management")
+        return _redirect_edge_management_preserve_filter(request)
+
+
+class EdgePrepareRelinkView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """
+    Clear cloud registration for an Edge (e.g. app uninstalled / data wiped) and open
+    Add Edge Device with the same site and device name pre-filled so a new setup code
+    can reconnect the physical PC to the current site.
+    """
+
+    def post(self, request, pk):
+        try:
+            edge = EdgeDevice.objects.select_related("site").get(pk=pk, is_active=True)
+        except EdgeDevice.DoesNotExist:
+            messages.error(request, _("Edge device not found."))
+            return _redirect_edge_management_preserve_filter(request)
+
+        active_sessions = DisassemblySession.objects.filter(
+            device__edge=edge,
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).count()
+        if active_sessions > 0:
+            messages.error(
+                request,
+                _("Cannot re-link this edge — it has %(count)s active session(s). Close them first.")
+                % {"count": active_sessions},
+            )
+            return _redirect_edge_management_preserve_filter(request)
+
+        site = edge.site
+        edge_name = (edge.name or "").strip()
+        _soft_remove_edge_device(edge)
+
+        messages.success(
+            request,
+            _(
+                "Registration cleared for this Edge. Generate a new setup code on the next screen, "
+                "then enter it in a fresh Edge install to reconnect to %(site)s."
+            )
+            % {"site": site.name},
+        )
+        q = urlencode(
+            {
+                "site_id": str(site.id),
+                "edge_name": edge_name,
+                "relink": "1",
+            }
+        )
+        return redirect(f"{reverse('scales:edge_setup_code_create')}?{q}")
+
+
+class ScaleDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a single scale device (e.g. stale registration). Blocked if sessions are open."""
+
+    def post(self, request, pk):
+        device = get_object_or_404(ScaleDevice, pk=pk, is_active=True)
+        active_sessions = DisassemblySession.objects.filter(
+            device=device,
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).count()
+        if active_sessions > 0:
+            messages.error(
+                request,
+                _("Cannot remove this scale — it has %(count)s active session(s). Close them first.")
+                % {"count": active_sessions},
+            )
+            return _redirect_edge_management_preserve_filter(request)
+        tag = device.device_id
+        device.soft_delete()
+        messages.success(
+            request,
+            _("Scale “%(id)s” was removed from the dashboard.") % {"id": tag},
+        )
+        return _redirect_edge_management_preserve_filter(request)
+
+
+class PrinterRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a label printer row (e.g. removed from LAN). Edge inventory may recreate it later."""
+
+    def post(self, request, pk):
+        printer = get_object_or_404(Printer, pk=pk, is_active=True)
+        lid = printer.local_printer_id
+        printer.enabled = False
+        printer.soft_delete()
+        messages.success(
+            request,
+            _("Printer “%(id)s” was removed from the dashboard.") % {"id": lid},
+        )
+        return _redirect_edge_management_preserve_filter(request)
 
 
 class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):

@@ -122,11 +122,17 @@
                                 <p class="text-sm text-amber-700 mt-2">{% trans "No Edge printer is registered yet. Configure the Edge and sync printer inventory first." %}</p>
                                 {% endif %}
                             </div>
-                            <form method="post" action="{% url 'labeling:print_animal_label' label.pk %}">
+                            <form method="post" action="{% url 'labeling:print_animal_label' label.pk %}"
+                                  data-edge-print-form
+                                  data-label-id="{{ label.pk }}">
                                 {% csrf_token %}
                                 <button type="submit"
-                                    {% if not edge_dispatch_available %}disabled{% endif %}
-                                    class="w-full sm:w-auto bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    data-edge-print-btn
+                                    data-i18n-print="{% trans 'Print' %}"
+                                    data-i18n-sending="{% trans 'Sending…' %}"
+                                    data-i18n-wait="{% trans 'Please wait' %}"
+                                    {% if not edge_dispatch_available %}disabled data-edge-unavailable{% endif %}
+                                    class="w-full sm:w-auto min-w-[8.5rem] inline-flex justify-center items-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-gray-400">
                                     {% trans "Print" %}
                                 </button>
                             </form>
@@ -172,4 +178,5 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% include "labeling/includes/edge_print_guard_script.html" %}
+{% endblock %}

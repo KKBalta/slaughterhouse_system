@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+{% if object %}{% trans "Edit site" %}{% else %}{% trans "New site" %}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">
+            {% if object %}{% trans "Edit site" %}{% else %}{% trans "New site" %}{% endif %}
+        </h1>
+        <p class="mt-2 text-sm text-gray-600">
+            {% trans "Sites group your hardware: each site can have one or more Edge computers, scales, and label printers." %}
+        </p>
+    </div>
+
+    <form method="post" class="space-y-6 bg-white shadow rounded-xl border border-gray-200 p-6">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="rounded-md bg-red-50 p-3 text-sm text-red-800">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>{% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.address.label }}</label>
+            {{ form.address }}
+            {% if form.address.errors %}<p class="mt-1 text-sm text-red-600">{{ form.address.errors }}</p>{% endif %}
+            <p class="mt-1 text-xs text-gray-500">{% trans "Optional. Shown for your team’s reference." %}</p>
+        </div>
+
+        <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
+            <a href="{% url 'scales:site_list' %}"
+               class="w-full sm:w-auto inline-flex justify-center px-4 py-3 sm:py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 min-h-[44px] sm:min-h-0 items-center">
+                {% trans "Cancel" %}
+            </a>
+            <button type="submit"
+                    class="w-full sm:w-auto inline-flex justify-center px-4 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 min-h-[44px] sm:min-h-0 items-center">
+                {% if object %}{% trans "Save" %}{% else %}{% trans "Create site" %}{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

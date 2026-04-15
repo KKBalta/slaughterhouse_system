@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # Limits are generous relative to normal polling intervals so legitimate devices
 # are never blocked; they catch runaway loops or compromised edge nodes.
 _SESSIONS_PAYLOAD_TTL = 2  # seconds — short enough to surface session changes between 5 s polls
+_PRINT_JOBS_PAYLOAD_TTL = 2  # seconds — safety-net TTL; version bump is the real invalidation
 
 
 def _bump_edge_sessions_version(edge_pk) -> None:
@@ -52,6 +53,42 @@ def _bump_edge_sessions_version(edge_pk) -> None:
         cache.incr(_ver_key)
     except ValueError:
         cache.set(_ver_key, 1, timeout=None)
+
+
+def _bump_edge_print_jobs_version(site_id) -> None:
+    """Increment the per-site cache version for the pending-print-jobs cache.
+
+    Called from a post_save signal on PrintJob (see labeling/signals.py) so every
+    enqueue/ack/edit of an edge-dispatched job atomically invalidates the cached
+    payload for every edge at the site. Mirrors _bump_edge_sessions_version but
+    keyed by site_id — all edges at the same site share the same payload cache.
+
+    Uses cache.incr (atomic on Redis and LocMemCache). Safe on first-write via
+    the ValueError fallback. The version key itself has no TTL so it survives
+    across payload-cache expiries; the payload cache key inherits the version
+    suffix, so old cache entries become unreachable the moment we bump.
+    """
+    from django.core.cache import cache
+
+    _ver_key = f"edge_print_jobs_version:{site_id}"
+    try:
+        cache.incr(_ver_key)
+    except ValueError:
+        cache.set(_ver_key, 1, timeout=None)
+
+
+def _print_jobs_response_with_etag(request, payload, etag):
+    """Return 304 when client ETag matches, else 200 JSON with ETag headers."""
+    client_etag = request.META.get("HTTP_IF_NONE_MATCH", "").strip()
+    if client_etag and client_etag == etag:
+        response = HttpResponse(status=304)
+        response["ETag"] = etag
+        response["Cache-Control"] = "no-cache"
+        return response
+    response = JsonResponse(payload)
+    response["ETag"] = etag
+    response["Cache-Control"] = "no-cache"
+    return response
 
 
 _SESSIONS_RL_LIMIT = 60  # 60 req / 60 s  (normal: 1 req/5 s = 12/min)
@@ -930,11 +967,59 @@ def edge_device_status(request):
     return JsonResponse({"ok": True})
 
 
+def _compute_print_jobs_etag(identity_rows):
+    """
+    Compute a stable ETag from the pending-jobs (id, updated_at) tuples.
+
+    Mutation safety:
+      PrintJob inherits `updated_at = auto_now=True` from BaseModel, so every
+      .save() on a pending job — enqueue, retry bump, operator edit of
+      target_role/target_printer/prn_content, ack (which moves the job out
+      of pending) — updates this timestamp. The hash therefore invalidates
+      whenever anything the edge could read has changed, without us having
+      to enumerate which fields matter.
+
+      The one path that bypasses auto_now is .filter().update(); audit
+      confirmed no caller uses that on PrintJob today. If anyone adds one,
+      they must bump attempts or updated_at explicitly, or the edge will
+      miss the update.
+
+    Payload cost:
+      updated_at lives in the main table row (not TOAST), so this ETag is
+      computed from a cheap values_list query and a 304 still returns
+      without ever reading prn_content.
+    """
+    material = ";".join(
+        f"{jid}:{ts.timestamp() if ts is not None else 0}"
+        for jid, ts in identity_rows
+    )
+    digest = hashlib.md5(material.encode()).hexdigest()[:16]
+    return f'"print-jobs-{digest}"'
+
+
 # ---------- GET /print-jobs/pending ----------
 @csrf_exempt
 @require_edge_id
 def edge_pending_print_jobs(request):
-    """Edge polls this every ~5s to get pending print jobs for its site."""
+    """Edge polls this every ~5s to get pending print jobs for its site.
+
+    Three-layer optimization, mirroring /sessions:
+      1. Redis payload cache keyed per site with a version suffix.
+         All edges at the same site share one cache entry. A post_save
+         signal on PrintJob (labeling.signals) bumps the version on every
+         mutation, so the next poll across any edge at the site always
+         sees fresh data without waiting for the safety-net TTL.
+      2. ETag / If-None-Match conditional GET. On cache hit, the ETag
+         comes with the cached payload; on miss, it is recomputed from
+         (id, updated_at) tuples. 304 returns with zero body bytes.
+      3. Edge-side exponential backoff on consecutive 304s (configured
+         in sync-service.ts). Idle sites poll as slowly as
+         PRINT_JOB_POLL_MAX_INTERVAL_MS.
+
+    Net effect: a steady-state idle site costs one cache GET (version)
+    + one cache GET (payload) + zero DB queries + zero egress bytes per
+    poll. A busy site costs the same until a PrintJob changes.
+    """
     if request.method != "GET":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -952,15 +1037,24 @@ def edge_pending_print_jobs(request):
     request.edge_device.last_seen_at = timezone.now()
     request.edge_device.save(update_fields=["last_seen_at", "updated_at"])
 
+    from django.core.cache import cache
+
+    site_id = request.edge_site.id
+    _ver = cache.get(f"edge_print_jobs_version:{site_id}") or 0
+    _cache_key = f"edge_print_jobs:{site_id}:{_ver}"
+    _cached = cache.get(_cache_key)
+    if _cached is not None:
+        payload, etag = _cached
+        return _print_jobs_response_with_etag(request, payload, etag)
+
     from labeling.models import PrintJob
 
-    qs = (
+    rows = list(
         PrintJob.objects.filter(
             site=request.edge_site,
             status="pending",
             dispatch_mode="edge",
-        )
-        .order_by("print_date")[:50]
+        ).order_by("print_date")[:50]
     )
 
     jobs = [
@@ -973,10 +1067,14 @@ def edge_pending_print_jobs(request):
             "attempts": j.attempts,
             "createdAt": j.print_date.isoformat(),
         }
-        for j in qs
+        for j in rows
     ]
+    identity_rows = [(j.id, j.updated_at) for j in rows]
+    etag = _compute_print_jobs_etag(identity_rows)
+    payload = {"jobs": jobs}
 
-    return JsonResponse({"jobs": jobs})
+    cache.set(_cache_key, (payload, etag), timeout=_PRINT_JOBS_PAYLOAD_TTL)
+    return _print_jobs_response_with_etag(request, payload, etag)
 
 
 # ---------- POST /print-jobs/<uuid>/ack ----------
