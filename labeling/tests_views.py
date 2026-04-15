@@ -614,6 +614,39 @@ def test_label_app_label_table_pagination(auth_client, admin_user, animal_label,
     assert ctx["page_obj"].paginator.num_pages == 3
 
 
+def test_cancel_pending_print_job_post(auth_client, site_with_edge_printer):
+    job = PrintJob.objects.create(
+        site=site_with_edge_printer,
+        status="pending",
+        dispatch_mode="edge",
+        prn_content="q",
+        target_role="carcass",
+    )
+    response = auth_client.post(
+        reverse("labeling:cancel_pending_print_job", kwargs={"pk": job.pk}),
+    )
+    assert response.status_code == 302
+    assert response.url == f"{reverse('labeling:label_app')}#print-queue"
+    job.refresh_from_db()
+    assert job.status == "cancelled"
+
+
+def test_cancel_pending_print_job_rejects_non_pending(auth_client, site_with_edge_printer):
+    job = PrintJob.objects.create(
+        site=site_with_edge_printer,
+        status="completed",
+        dispatch_mode="edge",
+        prn_content="q",
+    )
+    response = auth_client.post(
+        reverse("labeling:cancel_pending_print_job", kwargs={"pk": job.pk}),
+    )
+    assert response.status_code == 302
+    assert response.url == f"{reverse('labeling:label_app')}#print-queue"
+    job.refresh_from_db()
+    assert job.status == "completed"
+
+
 def test_custom_label_detail_view(auth_client, admin_user):
     label = _create_custom_label(admin_user)
 

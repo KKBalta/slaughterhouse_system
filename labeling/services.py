@@ -79,6 +79,22 @@ def enqueue_print_job(
     )
 
 
+def cancel_pending_edge_print_job(job: "PrintJob") -> bool:
+    """
+    Remove a job from the Edge poll queue (pending → cancelled).
+
+    Uses model save() so post_save bumps the per-site pending-print-jobs cache.
+    """
+    from django.utils.translation import gettext as _
+
+    if job.status != "pending" or job.dispatch_mode != "edge":
+        return False
+    job.status = "cancelled"
+    job.error_text = str(_("Removed from queue by operator."))[:500]
+    job.save()
+    return True
+
+
 def get_default_label_site():
     """First active Site in the tenant (matches Edge / print job routing)."""
     from scales.models import Site

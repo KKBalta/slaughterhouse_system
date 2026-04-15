@@ -6,6 +6,11 @@ app_name = "labeling"
 
 urlpatterns = [
     path("", views.LabelAppHomeView.as_view(), name="label_app"),
+    path(
+        "print-jobs/<uuid:pk>/cancel/",
+        views.CancelPendingPrintJobView.as_view(),
+        name="cancel_pending_print_job",
+    ),
     # Animal Label Management
     path("animals/<uuid:animal_id>/labels/", views.AnimalLabelListView.as_view(), name="animal_label_list"),
     path(

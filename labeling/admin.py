@@ -41,7 +41,18 @@ class PrintJobAdmin(admin.ModelAdmin):
 
     @admin.action(description="Re-enqueue selected failed jobs")
     def reenqueue_failed_jobs(self, request, queryset):
-        updated = queryset.filter(status="failed").update(status="pending", attempts=0, error_text="")
+        to_update = queryset.filter(status="failed")
+        edge_site_ids = set(
+            to_update.filter(dispatch_mode="edge", site_id__isnull=False).values_list(
+                "site_id", flat=True
+            )
+        )
+        updated = to_update.update(status="pending", attempts=0, error_text="")
+        if edge_site_ids:
+            from scales.api_views import _bump_edge_print_jobs_version
+
+            for site_id in edge_site_ids:
+                _bump_edge_print_jobs_version(site_id)
         self.message_user(request, f"{updated} job(s) re-enqueued.")
 
 

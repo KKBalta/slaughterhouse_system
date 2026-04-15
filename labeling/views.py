@@ -14,6 +14,7 @@ from scales.models import Printer
 
 from .models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
 from .services import (
+    cancel_pending_edge_print_job,
     delete_animal_label_record,
     delete_custom_label_record,
     enqueue_print_job,
@@ -109,6 +110,21 @@ class CustomLabelListRedirectView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         return HttpResponseRedirect(reverse("labeling:label_app"))
+
+
+class CancelPendingPrintJobView(LoginRequiredMixin, View):
+    """Drop a pending Edge print job from the queue (operator cancel)."""
+
+    def post(self, request, pk):
+        job = get_object_or_404(PrintJob, pk=pk)
+        if cancel_pending_edge_print_job(job):
+            messages.success(request, _("Print job removed from the queue."))
+        else:
+            messages.error(
+                request,
+                _("Only pending Edge print jobs can be removed from the queue."),
+            )
+        return HttpResponseRedirect(f"{reverse('labeling:label_app')}#print-queue")
 
 
 class AnimalLabelListView(LoginRequiredMixin, ListView):
