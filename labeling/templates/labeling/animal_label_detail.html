@@ -121,6 +121,7 @@
                                 {% if not edge_dispatch_available %}
                                 <p class="text-sm text-amber-700 mt-2">{% trans "No Edge printer is registered yet. Configure the Edge and sync printer inventory first." %}</p>
                                 {% endif %}
+                                {% include "labeling/_edge_printers_hint.html" %}
                             </div>
                             <form method="post" action="{% url 'labeling:print_animal_label' label.pk %}"
                                   data-edge-print-form

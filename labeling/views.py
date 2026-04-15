@@ -2,14 +2,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import default_storage
-from django.http import FileResponse, HttpResponse, JsonResponse
+from django.core.paginator import Paginator
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.translation import gettext as _
-from django.views.generic import DetailView, ListView, View
+from django.views.generic import DetailView, ListView, TemplateView, View
 
 from processing.models import Animal
+from scales.models import Printer
 
-from .models import AnimalLabel, CustomLabel, LabelTemplate
+from .models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
 from .services import (
     delete_animal_label_record,
     delete_custom_label_record,
@@ -17,6 +20,8 @@ from .services import (
     get_default_label_site,
     get_latest_edge_print_job_for_animal_label,
     get_latest_edge_print_job_for_custom_label,
+    printers_for_role,
+    resolve_target_role,
     site_has_dispatchable_printer,
 )
 from .utils import (
@@ -27,6 +32,83 @@ from .utils import (
     get_animal_label_download_data,
     get_custom_label_download_data,
 )
+
+
+class LabelAppHomeView(LoginRequiredMixin, TemplateView):
+    """Unified labels hub: Edge print queue, then all labels (animal + custom) by date."""
+
+    template_name = "labeling/label_app.html"
+    label_table_per_page = 25
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        animal_active = AnimalLabel.objects.filter(is_active=True)
+        custom_all = CustomLabel.objects.all()
+        context["animal_label_total"] = animal_active.count()
+        context["custom_label_total"] = custom_all.count()
+
+        merged = [
+            ("animal", pk, print_date)
+            for pk, print_date in animal_active.values_list("pk", "print_date")
+        ] + [
+            ("custom", pk, print_date)
+            for pk, print_date in custom_all.values_list("pk", "print_date")
+        ]
+        merged.sort(key=lambda row: row[2], reverse=True)
+        context["label_rows_total"] = len(merged)
+
+        paginator = Paginator(merged, self.label_table_per_page)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+        page_slice = list(page_obj.object_list)
+
+        animal_ids = [pk for kind, pk, _ in page_slice if kind == "animal"]
+        custom_ids = [pk for kind, pk, _ in page_slice if kind == "custom"]
+        animal_map = {
+            al.pk: al
+            for al in AnimalLabel.objects.filter(pk__in=animal_ids).select_related("animal", "cut")
+        }
+        custom_map = {cl.pk: cl for cl in CustomLabel.objects.filter(pk__in=custom_ids)}
+
+        label_rows = []
+        for kind, pk, dt in page_slice:
+            if kind == "animal":
+                label_rows.append({"kind": "animal", "label": animal_map[pk], "sort_date": dt})
+            else:
+                label_rows.append({"kind": "custom", "label": custom_map[pk], "sort_date": dt})
+        context["label_rows"] = label_rows
+        context["page_obj"] = page_obj
+
+        pj_pending = (
+            PrintJob.objects.filter(status="pending", dispatch_mode="edge", site__is_active=True)
+            .select_related("site")
+            .order_by("print_date")
+        )
+        pj_dispatched = (
+            PrintJob.objects.filter(status="dispatched", dispatch_mode="edge", site__is_active=True)
+            .select_related("site", "claimed_by_edge")
+            .order_by("-edge_received_at", "print_date")
+        )
+        context["pending_print_jobs"] = list(pj_pending[:25])
+        context["pending_print_job_total"] = pj_pending.count()
+        context["dispatched_print_jobs"] = list(pj_dispatched[:25])
+        context["dispatched_print_job_total"] = pj_dispatched.count()
+
+        site = get_default_label_site()
+        context["label_site"] = site
+        context["edge_dispatch_available"] = site_has_dispatchable_printer(site)
+
+        from users.policies import can_manage_tenant_users
+
+        context["can_manage_edge"] = can_manage_tenant_users(self.request.user)
+        return context
+
+
+class CustomLabelListRedirectView(LoginRequiredMixin, View):
+    """Backward-compatible URL: /labeling/custom/ → labels hub (queue + merged table)."""
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseRedirect(reverse("labeling:label_app"))
 
 
 class AnimalLabelListView(LoginRequiredMixin, ListView):
@@ -136,6 +218,12 @@ class AnimalLabelDetailView(LoginRequiredMixin, DetailView):
         context["label_site"] = site
         context["edge_dispatch_available"] = site_has_dispatchable_printer(site)
         context["edge_print_job"] = get_latest_edge_print_job_for_animal_label(self.object)
+        target_role = resolve_target_role(animal_label=self.object)
+        context["target_role"] = target_role
+        context["target_role_display"] = dict(Printer.ROLE_CHOICES).get(target_role, target_role)
+        context["target_role_printers"] = (
+            list(printers_for_role(site, target_role)) if site else []
+        )
         return context
 
 
@@ -377,18 +465,6 @@ Checks:
 # ============================================
 
 
-class CustomLabelListView(LoginRequiredMixin, ListView):
-    """List all custom labels."""
-
-    model = CustomLabel
-    template_name = "labeling/custom_label_list.html"
-    context_object_name = "labels"
-    paginate_by = 20
-
-    def get_queryset(self):
-        return CustomLabel.objects.all().order_by("-print_date")
-
-
 class CustomLabelCreateView(LoginRequiredMixin, View):
     """Create a new custom label with manual data entry."""
 
@@ -451,6 +527,12 @@ class CustomLabelDetailView(LoginRequiredMixin, DetailView):
         context["label_site"] = site
         context["edge_dispatch_available"] = site_has_dispatchable_printer(site)
         context["edge_print_job"] = get_latest_edge_print_job_for_custom_label(self.object)
+        target_role = resolve_target_role(custom_label=self.object)
+        context["target_role"] = target_role
+        context["target_role_display"] = dict(Printer.ROLE_CHOICES).get(target_role, target_role)
+        context["target_role_printers"] = (
+            list(printers_for_role(site, target_role)) if site else []
+        )
         return context
 
 
@@ -527,4 +609,4 @@ def delete_custom_label(request, pk):
     except Exception as e:
         messages.error(request, _("Error deleting label: %(error)s") % {"error": str(e)})
 
-    return redirect("labeling:custom_label_list")
+    return redirect("labeling:label_app")

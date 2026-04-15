@@ -30,10 +30,13 @@ DISASSEMBLY_ELIGIBLE_FILTER = Q(
 from django import forms
 from django.http import JsonResponse
 
+from labeling.models import PrintJob
 from processing.models import Animal
 from users.policies import can_manage_tenant_users
 
+from .api_views import _bump_edge_print_jobs_version
 from .forms import SiteForm
+from .print_worker_cache import get_edge_print_worker_pulse
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
@@ -125,7 +128,17 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
 
         sites = Site.objects.filter(is_active=True).order_by("name")
         selected_site = sites.filter(id=site_id).first() if site_id else None
-        edges = EdgeDevice.objects.filter(is_active=True).select_related("site").order_by("name", "created_at")
+        edges = (
+            EdgeDevice.objects.filter(is_active=True)
+            .select_related("site")
+            .annotate(
+                in_flight_prints=db_models.Count(
+                    "claimed_print_jobs",
+                    filter=Q(claimed_print_jobs__status="dispatched"),
+                )
+            )
+            .order_by("name", "created_at")
+        )
         if selected_site:
             edges = edges.filter(site=selected_site)
         selected_edge = edges.filter(id=edge_id).first() if edge_id else None
@@ -153,6 +166,7 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
         for edge in edges_list:
             edge.is_online_computed = is_edge_online(edge)
             edge.last_seen_age_seconds = _age_seconds(edge.last_seen_at)
+            edge.print_worker_pulse = get_edge_print_worker_pulse(edge.id)
 
         scale_devices_list = list(scale_devices[:100])
         for device in scale_devices_list:
@@ -171,6 +185,34 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
         logs_params.pop("page", None)
         logs_base_query = logs_params.urlencode()
 
+        pending_jobs_qs = (
+            PrintJob.objects.filter(
+                status="pending",
+                dispatch_mode="edge",
+                site__is_active=True,
+            )
+            .select_related("site")
+            .order_by("print_date")
+        )
+        if selected_site:
+            pending_jobs_qs = pending_jobs_qs.filter(site=selected_site)
+        pending_print_job_total = pending_jobs_qs.count()
+        pending_print_jobs_preview = list(pending_jobs_qs[:20])
+
+        dispatched_jobs_qs = (
+            PrintJob.objects.filter(
+                status="dispatched",
+                dispatch_mode="edge",
+                site__is_active=True,
+            )
+            .select_related("site", "claimed_by_edge")
+            .order_by("edge_received_at", "print_date")
+        )
+        if selected_site:
+            dispatched_jobs_qs = dispatched_jobs_qs.filter(site=selected_site)
+        dispatched_print_job_total = dispatched_jobs_qs.count()
+        dispatched_print_jobs_preview = list(dispatched_jobs_qs[:20])
+
         context.update(
             {
                 "sites": sites,
@@ -181,6 +223,10 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
                 "logs_base_query": logs_base_query,
                 "selected_site_id": str(selected_site.id) if selected_site else "",
                 "selected_edge_id": str(selected_edge.id) if selected_edge else "",
+                "pending_print_job_total": pending_print_job_total,
+                "pending_print_jobs_preview": pending_print_jobs_preview,
+                "dispatched_print_job_total": dispatched_print_job_total,
+                "dispatched_print_jobs_preview": dispatched_print_jobs_preview,
             }
         )
         return context
@@ -426,8 +472,65 @@ def _redirect_edge_management_preserve_filter(request):
     return redirect("scales:edge_management")
 
 
+def _cancel_pending_print_jobs_for_edge_printers(edge: EdgeDevice) -> int:
+    """
+    Cancel pending edge print jobs that targeted a printer on this Edge.
+
+    After soft-removing printers, those UUIDs no longer exist for inventory;
+    leaving jobs pending would make a new Edge (after relink) try to drain a
+    stale queue. Role-only jobs (no target_printer) are left for another Edge
+    at the same site, if any.
+    """
+    printer_pks = list(Printer.objects.filter(edge=edge, is_active=True).values_list("pk", flat=True))
+    if not printer_pks:
+        return 0
+    site_id = edge.site_id
+    n = PrintJob.objects.filter(
+        site_id=site_id,
+        status="pending",
+        dispatch_mode="edge",
+        target_printer_id__in=printer_pks,
+    ).update(
+        status="cancelled",
+        error_text=_("Target printer was removed with Edge; job cancelled."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(site_id)
+    return n
+
+
+def _cancel_all_pending_edge_print_jobs_for_site(site_id) -> int:
+    """Cancel every pending edge-dispatched job for a site (used when re-pairing after reinstall)."""
+    n = PrintJob.objects.filter(
+        site_id=site_id,
+        status="pending",
+        dispatch_mode="edge",
+    ).update(
+        status="cancelled",
+        error_text=_("Edge re-linked; pending queue cleared for this site."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(site_id)
+    return n
+
+
+def _release_dispatched_print_jobs_claimed_by_edge(edge: EdgeDevice) -> int:
+    """Cancel in-flight (dispatched) jobs claimed by this worker before removing the Edge."""
+    n = PrintJob.objects.filter(claimed_by_edge=edge, status="dispatched").update(
+        status="cancelled",
+        error_text=_("Edge removed or re-linked; in-flight print cleared."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(edge.site_id)
+    return n
+
+
 def _soft_remove_edge_device(edge: EdgeDevice) -> None:
     """Soft-delete an edge and its active scales/printers (Remove and Re-link flows)."""
+    _release_dispatched_print_jobs_claimed_by_edge(edge)
     ScaleDevice.objects.filter(edge=edge, is_active=True).update(is_active=False)
     Printer.objects.filter(edge=edge, is_active=True).update(is_active=False, enabled=False)
     edge.soft_delete()
@@ -457,12 +560,18 @@ class EdgeDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
             return _redirect_edge_management_preserve_filter(request)
 
         display = edge.name or str(edge.id)[:8]
+        n_jobs = _cancel_pending_print_jobs_for_edge_printers(edge)
         _soft_remove_edge_device(edge)
 
         messages.success(
             request,
             _("Edge device '%(name)s' has been removed.") % {"name": display},
         )
+        if n_jobs:
+            messages.info(
+                request,
+                _("Cancelled %(n)s print job(s) that targeted this Edge's printers.") % {"n": n_jobs},
+            )
         return _redirect_edge_management_preserve_filter(request)
 
 
@@ -495,15 +604,17 @@ class EdgePrepareRelinkView(LoginRequiredMixin, AdminOnlyMixin, View):
 
         site = edge.site
         edge_name = (edge.name or "").strip()
+        n_cleared = _cancel_all_pending_edge_print_jobs_for_site(site.id)
         _soft_remove_edge_device(edge)
 
         messages.success(
             request,
             _(
-                "Registration cleared for this Edge. Generate a new setup code on the next screen, "
-                "then enter it in a fresh Edge install to reconnect to %(site)s."
+                "Registration cleared for this Edge. %(n)s pending print job(s) for %(site)s were cancelled "
+                "so they will not all run at once after reinstall. Generate a new setup code on the next screen, "
+                "then enter it in a fresh Edge install."
             )
-            % {"site": site.name},
+            % {"site": site.name, "n": n_cleared},
         )
         q = urlencode(
             {
@@ -563,9 +674,19 @@ class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
             return JsonResponse({"edges": []})
         site = Site.objects.filter(id=site_id).first()
         site_name = site.name if site else ""
-        edges = EdgeDevice.objects.filter(site_id=site_id, is_active=True).order_by("name", "created_at")
+        edges = (
+            EdgeDevice.objects.filter(site_id=site_id, is_active=True)
+            .annotate(
+                in_flight_prints=db_models.Count(
+                    "claimed_print_jobs",
+                    filter=Q(claimed_print_jobs__status="dispatched"),
+                )
+            )
+            .order_by("name", "created_at")
+        )
         out = []
         for edge in edges:
+            pulse = get_edge_print_worker_pulse(edge.id)
             out.append(
                 {
                     "id": str(edge.id),
@@ -575,6 +696,8 @@ class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
                     "last_seen_at": edge.last_seen_at.isoformat() if edge.last_seen_at else None,
                     "last_seen_age_seconds": _age_seconds(edge.last_seen_at),
                     "version": edge.version,
+                    "in_flight_prints": edge.in_flight_prints,
+                    "print_worker_pulse": pulse,
                 }
             )
         return JsonResponse({"edges": out})

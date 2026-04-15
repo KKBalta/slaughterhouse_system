@@ -137,6 +137,14 @@ class PrintJob(BaseModel):
         blank=True,
         help_text="When edge confirmed successful print (set on 'completed' ack).",
     )
+    claimed_by_edge = models.ForeignKey(
+        "scales.EdgeDevice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="claimed_print_jobs",
+        help_text="Edge that first ACK'd this job as dispatched (which worker took it).",
+    )
 
     class Meta:
         indexes = [

@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from labeling.models import AnimalLabel, CustomLabel, PrintJob
-from labeling.views import TestPRNGenerationView as PRNGenerationView
+from labeling.views import LabelAppHomeView, TestPRNGenerationView as PRNGenerationView
 from processing.models import DisassemblyCut
 from scales.models import EdgeDevice, Printer, Site
 
@@ -143,6 +143,81 @@ def test_animal_label_detail_view_exposes_animal(auth_client, animal_label):
     assert response.context["animal"] == animal_label.animal
     assert "edge_dispatch_available" in response.context
     assert "edge_print_job" in response.context
+
+
+@pytest.fixture
+def site_with_carcass_printers_for_hint(db):
+    site = Site.objects.create(name="Hint Site", address="")
+    edge = EdgeDevice.objects.create(site=site, name="HintEdge", is_active=True)
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c-low",
+        host="192.168.1.1",
+        port=9100,
+        role="carcass",
+        priority=100,
+        enabled=True,
+        is_active=True,
+        status="online",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c-high",
+        host="192.168.1.2",
+        port=9100,
+        role="carcass",
+        priority=200,
+        enabled=True,
+        is_active=True,
+        status="online",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="meat",
+        host="192.168.1.3",
+        port=9100,
+        role="meat_cut",
+        priority=10,
+        enabled=True,
+        is_active=True,
+    )
+    return site
+
+
+def test_animal_label_detail_target_role_printers_context(
+    auth_client, animal_label, site_with_carcass_printers_for_hint, mocker
+):
+    mocker.patch(
+        "labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint
+    )
+    response = auth_client.get(reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk}))
+    assert response.status_code == 200
+    assert response.context["target_role"] == "carcass"
+    printers = response.context["target_role_printers"]
+    assert len(printers) == 2
+    assert printers[0].priority == 100
+    assert printers[0].local_printer_id == "c-low"
+
+
+def test_animal_label_detail_empty_target_role_printers(auth_client, animal_label, mocker):
+    site = Site.objects.create(name="No Carcass Printers", address="")
+    edge = EdgeDevice.objects.create(site=site, name="E-hint", is_active=True)
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="x",
+        host="1.1.1.1",
+        port=9100,
+        role="meat_cut",
+        enabled=True,
+        is_active=True,
+    )
+    mocker.patch("labeling.views.get_default_label_site", return_value=site)
+    response = auth_client.get(reverse("labeling:animal_label_detail", kwargs={"pk": animal_label.pk}))
+    assert response.context["target_role_printers"] == []
 
 
 @pytest.fixture
@@ -493,17 +568,73 @@ def test_custom_label_create_view_get_and_post_paths(auth_client, mocker):
     assert response.context["form"].errors
 
 
-def test_custom_label_list_and_detail_views(auth_client, admin_user):
-    label = _create_custom_label(admin_user)
-
+def test_custom_label_list_redirects_to_label_app(auth_client):
     response = auth_client.get(reverse("labeling:custom_label_list"))
+    assert response.status_code == 302
+    assert response.url == reverse("labeling:label_app")
+
+
+def test_label_app_requires_login(client):
+    response = client.get(reverse("labeling:label_app"))
+    assert response.status_code == 302
+    assert "login" in response.url
+
+
+def test_label_app_lists_custom_and_animal_labels(auth_client, admin_user, animal_label):
+    custom = _create_custom_label(admin_user)
+
+    response = auth_client.get(reverse("labeling:label_app"))
     assert response.status_code == 200
-    assert label in list(response.context["labels"])
+    ctx = response.context
+    rows = ctx["label_rows"]
+    animal_pks = {r["label"].pk for r in rows if r["kind"] == "animal"}
+    custom_pks = {r["label"].pk for r in rows if r["kind"] == "custom"}
+    assert animal_label.pk in animal_pks
+    assert custom.pk in custom_pks
+    assert ctx["label_rows_total"] >= 2
+    page_obj = ctx["page_obj"]
+    assert page_obj.paginator.count == ctx["label_rows_total"]
+    assert page_obj.paginator.per_page == LabelAppHomeView.label_table_per_page
+    assert "pending_print_jobs" in ctx
+    assert "dispatched_print_jobs" in ctx
+    assert "edge_dispatch_available" in ctx
+    assert "can_manage_edge" in ctx
+
+
+def test_label_app_label_table_pagination(auth_client, admin_user, animal_label, mocker):
+    mocker.patch.object(LabelAppHomeView, "label_table_per_page", 1)
+    _create_custom_label(admin_user)
+    _create_custom_label(admin_user)
+
+    response = auth_client.get(reverse("labeling:label_app"), {"page": 2})
+    assert response.status_code == 200
+    ctx = response.context
+    assert len(ctx["label_rows"]) == 1
+    assert ctx["page_obj"].number == 2
+    assert ctx["page_obj"].paginator.num_pages == 3
+
+
+def test_custom_label_detail_view(auth_client, admin_user):
+    label = _create_custom_label(admin_user)
 
     response = auth_client.get(reverse("labeling:custom_label_detail", kwargs={"pk": label.pk}))
     assert response.status_code == 200
     assert response.context["label"] == label
     assert "edge_dispatch_available" in response.context
+
+
+def test_custom_label_detail_target_role_printers_context(
+    auth_client, admin_user, site_with_carcass_printers_for_hint, mocker
+):
+    mocker.patch(
+        "labeling.views.get_default_label_site", return_value=site_with_carcass_printers_for_hint
+    )
+    label = _create_custom_label(admin_user)
+    response = auth_client.get(reverse("labeling:custom_label_detail", kwargs={"pk": label.pk}))
+    assert response.status_code == 200
+    assert response.context["target_role"] == "carcass"
+    assert len(response.context["target_role_printers"]) == 2
+    assert response.context["target_role_printers"][0].priority == 100
 
 
 def test_download_custom_label_handles_formats_and_errors(auth_client, admin_user, mocker):
@@ -548,7 +679,7 @@ def test_delete_custom_label_handles_success_and_error(auth_client, admin_user, 
     response = auth_client.post(reverse("labeling:delete_custom_label", kwargs={"pk": label.pk}))
 
     assert response.status_code == 302
-    assert response.url == reverse("labeling:custom_label_list")
+    assert response.url == reverse("labeling:label_app")
     delete_mock.assert_called_once()
     assert delete_mock.call_args.args[0] == "custom_labels/pdf/delete-me.pdf"
     assert not CustomLabel.objects.filter(pk=label.pk).exists()
@@ -557,4 +688,4 @@ def test_delete_custom_label_handles_success_and_error(auth_client, admin_user, 
     mocker.patch.object(CustomLabel, "delete", side_effect=Exception("delete failed"))
     response = auth_client.post(reverse("labeling:delete_custom_label", kwargs={"pk": label.pk}))
     assert response.status_code == 302
-    assert response.url == reverse("labeling:custom_label_list")
+    assert response.url == reverse("labeling:label_app")

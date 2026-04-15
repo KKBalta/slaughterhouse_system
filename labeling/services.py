@@ -2,12 +2,35 @@ from django.db import transaction
 
 from .models import AnimalLabel, CustomLabel
 
-_LABEL_TYPE_TO_ROLE = {
+LABEL_TYPE_TO_ROLE = {
     "hot_carcass": "carcass",
     "cold_carcass": "carcass",
     "final": "meat_cut",
     "cut": "meat_cut",
 }
+_LABEL_TYPE_TO_ROLE = LABEL_TYPE_TO_ROLE
+
+
+def resolve_target_role(
+    *, animal_label=None, custom_label=None, target_role: str = ""
+) -> str:
+    """Match enqueue_print_job role resolution (explicit target_role wins)."""
+    if target_role:
+        return target_role
+    if animal_label:
+        return LABEL_TYPE_TO_ROLE.get(animal_label.label_type, "carcass")
+    if custom_label:
+        return "carcass"
+    return ""
+
+
+def printers_for_role(site, role: str):
+    """Printers assigned to role at site (all statuses; inactive/disabled excluded)."""
+    from scales.models import Printer
+
+    return Printer.objects.filter(
+        site=site, role=role, is_active=True, enabled=True
+    ).order_by("priority", "display_name", "local_printer_id")
 
 
 def enqueue_print_job(
@@ -28,12 +51,11 @@ def enqueue_print_job(
     """
     from labeling.models import PrintJob
 
-    resolved_role = target_role
-    if not resolved_role and animal_label:
-        resolved_role = _LABEL_TYPE_TO_ROLE.get(animal_label.label_type, "carcass")
-    elif not resolved_role and custom_label:
-        # Same physical layout as hot/carcass TSPL; edge routes by Printer.role (often "carcass").
-        resolved_role = "carcass"
+    resolved_role = resolve_target_role(
+        animal_label=animal_label,
+        custom_label=custom_label,
+        target_role=target_role,
+    )
 
     item_type = ""
     item_id = None

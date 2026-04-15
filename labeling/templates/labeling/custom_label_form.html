@@ -12,9 +12,9 @@
                 <h1 class="text-3xl font-bold text-gray-900">{% trans "Create Custom Label" %}</h1>
                 <p class="text-gray-600">{% trans "Enter label information manually to create a hot carcass label" %}</p>
             </div>
-            <a href="{% url 'labeling:custom_label_list' %}" 
+            <a href="{% url 'labeling:label_app' %}#all-labels"
                class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
-                {% trans "Back to List" %}
+                {% trans "Back to Labels" %}
             </a>
         </div>
     </div>
@@ -147,7 +147,7 @@
             </div>
 
             <div class="mt-8 flex justify-end space-x-4">
-                <a href="{% url 'labeling:custom_label_list' %}" 
+                <a href="{% url 'labeling:label_app' %}#all-labels"
                    class="bg-gray-200 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-300 transition-colors">
                     {% trans "Cancel" %}
                 </a>

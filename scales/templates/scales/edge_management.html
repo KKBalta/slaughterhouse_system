@@ -63,6 +63,89 @@
         </form>
     </div>
 
+    <div class="bg-white shadow rounded-xl border border-gray-200 p-5 sm:p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Cloud print queue" %}</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            {% trans "Pending jobs are not assigned to a worker until an Edge ACKs “dispatched”. Redis stores a short-lived pulse per Edge (last poll / last ACK) for quick dashboard checks; in-flight counts come from the database." %}
+        </p>
+        {% if pending_print_job_total == 0 %}
+        <p class="text-sm text-gray-500 mb-6">{% trans "No pending edge print jobs." %} {% if selected_site_id %}{% trans "(filtered by site)" %}{% endif %}</p>
+        {% else %}
+        <p class="text-sm font-medium text-amber-800 mb-3">
+            {% blocktrans count counter=pending_print_job_total %}{{ counter }} job waiting for Edge{% plural %}{{ counter }} jobs waiting for Edge{% endblocktrans %}
+            {% if selected_site_id %}<span class="font-normal text-gray-600">{% trans "— site filter applied" %}</span>{% endif %}
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-gray-200 -mx-1 sm:mx-0">
+            <table class="min-w-full w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Queued" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Worker" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Job ID" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for job in pending_print_jobs_preview %}
+                    <tr>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ job.print_date|date:"Y-m-d H:i" }}</td>
+                        <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                        <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                        <td class="px-3 py-2 text-gray-400">{% trans "—" %}</td>
+                        <td class="px-3 py-2 font-mono text-xs text-gray-500">{{ job.id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pending_print_job_total > pending_print_jobs_preview|length %}
+        <p class="text-xs text-gray-500 mt-2">
+            {% blocktrans with shown=pending_print_jobs_preview|length total=pending_print_job_total %}Showing {{ shown }} of {{ total }} jobs. Narrow by site filter if needed.{% endblocktrans %}
+        </p>
+        {% endif %}
+        {% endif %}
+
+        <h3 class="text-base font-semibold text-gray-900 mt-6 mb-2">{% trans "At printer (dispatched)" %}</h3>
+        <p class="text-sm text-gray-600 mb-3">{% trans "These jobs were claimed by an Edge worker (dispatched ACK) and should complete or fail shortly." %}</p>
+        {% if dispatched_print_job_total == 0 %}
+        <p class="text-sm text-gray-500">{% trans "No dispatched jobs." %} {% if selected_site_id %}{% trans "(filtered by site)" %}{% endif %}</p>
+        {% else %}
+        <p class="text-sm font-medium text-amber-800 mb-3">
+            {% blocktrans count counter=dispatched_print_job_total %}{{ counter }} job at printer{% plural %}{{ counter }} jobs at printer{% endblocktrans %}
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-gray-200 -mx-1 sm:mx-0">
+            <table class="min-w-full w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Claimed" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Worker (Edge)" %}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Job ID" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for job in dispatched_print_jobs_preview %}
+                    <tr>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{% if job.edge_received_at %}{{ job.edge_received_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+                        <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                        <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                        <td class="px-3 py-2 text-gray-900">{% if job.claimed_by_edge %}{{ job.claimed_by_edge.name|default:job.claimed_by_edge.id }}{% else %}—{% endif %}</td>
+                        <td class="px-3 py-2 font-mono text-xs text-gray-500">{{ job.id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if dispatched_print_job_total > dispatched_print_jobs_preview|length %}
+        <p class="text-xs text-gray-500 mt-2">
+            {% blocktrans with shown=dispatched_print_jobs_preview|length total=dispatched_print_job_total %}Showing {{ shown }} of {{ total }} dispatched jobs.{% endblocktrans %}
+        </p>
+        {% endif %}
+        {% endif %}
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="bg-white shadow rounded-xl border border-gray-200 p-5 sm:p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -77,6 +160,7 @@
                             <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{% trans "Site" %}</th>
                             <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{% trans "Status" %}</th>
                             <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{% trans "Last seen" %}</th>
+                            <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{% trans "Print worker" %}</th>
                             <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{% trans "Actions" %}</th>
                         </tr>
                     </thead>
@@ -99,6 +183,19 @@
                                 {% else %}{% widthratio edge.last_seen_age_seconds 3600 1 %} h {% trans "ago" %}
                                 {% endif %}
                                 {% else %}—{% endif %}
+                            </td>
+                            <td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 max-w-[14rem]">
+                                <span class="font-medium text-amber-800">{{ edge.in_flight_prints }}</span>
+                                <span class="text-gray-500">{% trans "at printer" %}</span>
+                                {% if edge.print_worker_pulse %}
+                                <span class="block text-xs text-gray-500 mt-1">
+                                    {% trans "Last poll batch" %}:
+                                    {{ edge.print_worker_pulse.pending_jobs_in_response|default:"—" }}
+                                    {% if edge.print_worker_pulse.last_ack_status %}
+                                    · {% trans "ACK" %} {{ edge.print_worker_pulse.last_ack_status }}
+                                    {% endif %}
+                                </span>
+                                {% endif %}
                             </td>
                             <td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-right">
                                 <form method="post" action="{% url 'scales:edge_prepare_relink' pk=edge.pk %}"
@@ -123,7 +220,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>
+                        <tr><td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -319,9 +416,22 @@
         const confirmRemovePrinter = '{% filter escapejs %}{% trans "Remove this label printer from the dashboard? It may reappear after the next Edge inventory sync." %}{% endfilter %}';
         const confirmRemoveScale = '{% filter escapejs %}{% trans "Remove this scale from the dashboard?" %}{% endfilter %}';
 
+        function formatPrintWorkerCell(edge) {
+            const inflight = edge.in_flight_prints != null ? edge.in_flight_prints : 0;
+            const pulse = edge.print_worker_pulse || null;
+            let sub = "";
+            if (pulse) {
+                const batch = pulse.pending_jobs_in_response != null ? pulse.pending_jobs_in_response : "—";
+                const ack = pulse.last_ack_status ? " · {% trans "ACK" %} " + escapeHtml(pulse.last_ack_status) : "";
+                sub = '<span class="block text-xs text-gray-500 mt-1">{% trans "Last poll batch" %}: ' + escapeHtml(String(batch)) + ack + "</span>";
+            }
+            return '<span class="font-medium text-amber-800">' + escapeHtml(String(inflight)) + '</span>'
+                + ' <span class="text-gray-500">{% trans "at printer" %}</span>' + sub;
+        }
+
         function renderEdges(edges) {
             if (!edges.length) {
-                edgeTableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>';
+                edgeTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "No edges for this filter." %}</td></tr>';
                 return;
             }
             edgeTableBody.innerHTML = edges.map(function (edge) {
@@ -345,6 +455,7 @@
                     + '<td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700">' + escapeHtml(edge.site_name || "-") + '</td>'
                     + '<td class="px-3 sm:px-4 py-3 text-xs sm:text-sm">' + badge + '</td>'
                     + '<td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 whitespace-nowrap">' + escapeHtml(lastSeen) + '</td>'
+                    + '<td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 max-w-[14rem]">' + formatPrintWorkerCell(edge) + '</td>'
                     + '<td class="px-3 sm:px-4 py-3 text-xs sm:text-sm text-right">' + relinkBtn + removeBtn + '</td>'
                     + '</tr>';
             }).join("");
@@ -463,7 +574,7 @@
             printerTableBody.innerHTML = '<tr><td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "Loading…" %}</td></tr>';
 
             if (!siteId) {
-                edgeTableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "Select a site to list edges." %}</td></tr>';
+                edgeTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "Select a site to list edges." %}</td></tr>';
                 printerTableBody.innerHTML = '<tr><td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500">{% trans "Select a site to list devices." %}</td></tr>';
                 startPolling();
                 return;

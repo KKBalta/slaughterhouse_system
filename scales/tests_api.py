@@ -1162,6 +1162,7 @@ class TestEdgePrintJobsAndInventory:
         job.refresh_from_db()
         assert job.status == "dispatched"
         assert job.edge_received_at is not None
+        assert job.claimed_by_edge_id == edge_device.id
 
     def test_ack_wrong_site_edge_returns_404(self, api_client, no_edge_rate_limit):
         site_a = Site.objects.create(name="Site A", address="")

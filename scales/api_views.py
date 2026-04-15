@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from .middleware import parse_json_body, require_edge_id
+from .print_worker_cache import record_edge_print_ack, record_edge_print_poll
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
@@ -1042,10 +1043,18 @@ def edge_pending_print_jobs(request):
     site_id = request.edge_site.id
     _ver = cache.get(f"edge_print_jobs_version:{site_id}") or 0
     _cache_key = f"edge_print_jobs:{site_id}:{_ver}"
+    def _respond_print_jobs(payload, etag):
+        record_edge_print_poll(
+            request.edge_device.id,
+            site_id=site_id,
+            pending_jobs_in_response=len(payload.get("jobs") or []),
+        )
+        return _print_jobs_response_with_etag(request, payload, etag)
+
     _cached = cache.get(_cache_key)
     if _cached is not None:
         payload, etag = _cached
-        return _print_jobs_response_with_etag(request, payload, etag)
+        return _respond_print_jobs(payload, etag)
 
     from labeling.models import PrintJob
 
@@ -1074,7 +1083,7 @@ def edge_pending_print_jobs(request):
     payload = {"jobs": jobs}
 
     cache.set(_cache_key, (payload, etag), timeout=_PRINT_JOBS_PAYLOAD_TTL)
-    return _print_jobs_response_with_etag(request, payload, etag)
+    return _respond_print_jobs(payload, etag)
 
 
 # ---------- POST /print-jobs/<uuid>/ack ----------
@@ -1130,11 +1139,17 @@ def edge_ack_print_job(request, job_id):
         job.edge_received_at = timezone.now()
         update_fields.append("edge_received_at")
 
+    if job.claimed_by_edge_id is None and status in ("dispatched", "completed", "failed"):
+        job.claimed_by_edge = request.edge_device
+        update_fields.append("claimed_by_edge")
+
     if status == "completed":
         job.printed_at = _parse_iso(body.get("printedAt")) or timezone.now()
         update_fields.append("printed_at")
 
     job.save(update_fields=list(dict.fromkeys(update_fields)))
+
+    record_edge_print_ack(request.edge_device.id, job_id=job_id, ack_status=status)
 
     _log_edge_activity(
         action="print_job_ack",

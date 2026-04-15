@@ -6,16 +6,22 @@ Tests cover label template and print job functionality.
 
 import uuid
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from processing.models import DisassemblyCut
 
-from scales.models import Site
+from scales.models import EdgeDevice, Printer, Site
 
 from labeling.models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
-from labeling.services import archive_destination_sensitive_order_labels, enqueue_print_job
+from labeling.services import (
+    archive_destination_sensitive_order_labels,
+    enqueue_print_job,
+    printers_for_role,
+    resolve_target_role,
+)
 
 User = get_user_model()
 
@@ -116,6 +122,104 @@ def test_enqueue_print_job_custom_label_sets_animal_item_type(admin_user):
     assert job.item_type == "animal"
     assert job.item_id == custom.id
     assert job.target_role == "carcass"
+
+
+def test_enqueue_print_job_explicit_target_role_overrides_label_type(admin_user, animal_factory):
+    site = Site.objects.create(name="S-override", address="")
+    animal = animal_factory()
+    label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="final",
+        printed_by=admin_user,
+        prn_content="P",
+        bat_content="B",
+    )
+    job = enqueue_print_job(
+        site=site, prn_content="Z", animal_label=label, target_role="offal"
+    )
+    assert job.target_role == "offal"
+    assert job.item_type == "offal"
+
+
+def test_resolve_target_role_hot_and_cold_carcass():
+    for lt in ("hot_carcass", "cold_carcass"):
+        assert resolve_target_role(animal_label=SimpleNamespace(label_type=lt)) == "carcass"
+
+
+def test_resolve_target_role_final_and_cut():
+    for lt in ("final", "cut"):
+        assert resolve_target_role(animal_label=SimpleNamespace(label_type=lt)) == "meat_cut"
+
+
+def test_resolve_target_role_unknown_label_type_defaults_carcass():
+    assert resolve_target_role(animal_label=SimpleNamespace(label_type="unknown_x")) == "carcass"
+
+
+def test_resolve_target_role_custom_label():
+    assert resolve_target_role(custom_label=SimpleNamespace()) == "carcass"
+
+
+def test_resolve_target_role_explicit_beats_auto():
+    assert (
+        resolve_target_role(
+            animal_label=SimpleNamespace(label_type="final"),
+            target_role="offal",
+        )
+        == "offal"
+    )
+
+
+def test_printers_for_role_filters_site_role_active_enabled_orders_by_priority():
+    site = Site.objects.create(name="PF Role Site", address="")
+    edge = EdgeDevice.objects.create(site=site, name="E-pf", is_active=True)
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="m1",
+        host="10.0.0.1",
+        port=9100,
+        role="meat_cut",
+        priority=50,
+        enabled=True,
+        is_active=True,
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c2",
+        host="10.0.0.2",
+        port=9100,
+        role="carcass",
+        priority=200,
+        enabled=True,
+        is_active=True,
+        display_name="B",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c1",
+        host="10.0.0.3",
+        port=9100,
+        role="carcass",
+        priority=100,
+        enabled=True,
+        is_active=True,
+        display_name="A",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c3",
+        host="10.0.0.4",
+        port=9100,
+        role="carcass",
+        priority=10,
+        enabled=False,
+        is_active=True,
+    )
+    qs = printers_for_role(site, "carcass")
+    assert list(qs.values_list("local_printer_id", flat=True)) == ["c1", "c2"]
 
 
 def test_print_job_status_transitions():

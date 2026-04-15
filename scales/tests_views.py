@@ -13,6 +13,8 @@ from django.utils import timezone
 
 from processing.models import Animal, WeightLog
 from reception.models import ServicePackage, SlaughterOrder
+from labeling.models import PrintJob
+from labeling.services import enqueue_print_job
 from scales.models import DisassemblySession, EdgeDevice, OrphanedBatch, Printer, ScaleDevice, Site, WeighingEvent
 from scales.views import _age_seconds, is_device_online, is_edge_online
 from users.models import ClientProfile, User
@@ -446,6 +448,17 @@ class TestEdgeManagementView:
         assert "scale_devices" in resp.context
         assert "label_printers" in resp.context
         assert "log_page" in resp.context
+        assert "pending_print_job_total" in resp.context
+        assert "pending_print_jobs_preview" in resp.context
+        assert "dispatched_print_job_total" in resp.context
+        assert "dispatched_print_jobs_preview" in resp.context
+
+    def test_edge_management_pending_print_queue_in_context(self, auth_client, site, edge_device):
+        enqueue_print_job(site=site, prn_content="TSPL", target_role="carcass")
+        resp = auth_client.get(reverse("scales:edge_management"))
+        assert resp.status_code == 200
+        assert resp.context["pending_print_job_total"] == 1
+        assert len(resp.context["pending_print_jobs_preview"]) == 1
 
     def test_edge_management_filter_by_site(self, auth_client, site, edge_device):
         resp = auth_client.get(
@@ -493,6 +506,37 @@ class TestEdgePrepareRelinkView:
         assert resp.context["relink_hint"] is True
         assert resp.context["initial_site_id"] == str(site.id)
         assert resp.context["initial_edge_name"] == "Kiosk"
+
+    def test_prepare_relink_cancels_all_pending_print_jobs(self, auth_client, site, edge_device, label_printer):
+        enqueue_print_job(site=site, prn_content="A", target_role="carcass")
+        enqueue_print_job(
+            site=site,
+            prn_content="B",
+            target_role="carcass",
+            target_printer=label_printer,
+        )
+        assert PrintJob.objects.filter(status="pending").count() == 2
+        auth_client.post(reverse("scales:edge_prepare_relink", kwargs={"pk": edge_device.pk}))
+        assert PrintJob.objects.filter(status="pending").count() == 0
+        assert PrintJob.objects.filter(status="cancelled").count() == 2
+
+    def test_edge_remove_cancels_only_printer_bound_pending_jobs(self, auth_client, site, edge_device, label_printer):
+        enqueue_print_job(site=site, prn_content="A", target_role="carcass")
+        enqueue_print_job(
+            site=site,
+            prn_content="B",
+            target_role="carcass",
+            target_printer=label_printer,
+        )
+        auth_client.post(
+            reverse("scales:edge_device_remove", kwargs={"pk": edge_device.pk}),
+            {"next": ""},
+        )
+        assert PrintJob.objects.filter(status="pending").count() == 1
+        assert PrintJob.objects.filter(status="cancelled").count() == 1
+        pending = PrintJob.objects.filter(status="pending").first()
+        assert pending.prn_content == "A"
+        assert pending.target_printer_id is None
 
 
 @pytest.mark.django_db
@@ -611,6 +655,8 @@ class TestEdgeBySiteJsonView:
         assert len(data["edges"]) == 1
         assert data["edges"][0]["id"] == str(edge_device.id)
         assert "is_online" in data["edges"][0]
+        assert data["edges"][0]["in_flight_prints"] == 0
+        assert data["edges"][0]["print_worker_pulse"] is None
 
     def test_edge_by_site_json_empty_without_site_id(self, auth_client):
         resp = auth_client.get(reverse("scales:edge_by_site_json"))

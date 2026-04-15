@@ -5,6 +5,7 @@ from . import views
 app_name = "labeling"
 
 urlpatterns = [
+    path("", views.LabelAppHomeView.as_view(), name="label_app"),
     # Animal Label Management
     path("animals/<uuid:animal_id>/labels/", views.AnimalLabelListView.as_view(), name="animal_label_list"),
     path(
@@ -34,7 +35,7 @@ urlpatterns = [
     path("templates/", views.LabelTemplateListView.as_view(), name="label_template_list"),
     path("templates/<uuid:pk>/", views.LabelTemplateDetailView.as_view(), name="label_template_detail"),
     # Custom Labels
-    path("custom/", views.CustomLabelListView.as_view(), name="custom_label_list"),
+    path("custom/", views.CustomLabelListRedirectView.as_view(), name="custom_label_list"),
     path("custom/create/", views.CustomLabelCreateView.as_view(), name="custom_label_create"),
     path("custom/<uuid:pk>/", views.CustomLabelDetailView.as_view(), name="custom_label_detail"),
     path("custom/<uuid:pk>/print/", views.PrintCustomLabelToEdgeView.as_view(), name="print_custom_label"),
