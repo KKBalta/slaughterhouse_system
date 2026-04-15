@@ -3,6 +3,12 @@
 
 {% block title %}{% trans "Edge Setup Code" %}{% endblock %}
 
+{% block extra_head %}
+{% if not setup_code.used_at %}
+<meta http-equiv="refresh" content="10">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="max-w-3xl mx-auto">
     <div class="bg-white shadow rounded-lg overflow-hidden">
@@ -45,6 +51,40 @@
             </p>
             {% endif %}
         </div>
+
+        {% if not setup_code.used_at %}
+        <div class="px-6 py-4 border-b bg-slate-50">
+            <p class="text-sm text-slate-700 font-medium">{% trans "Waiting for Edge activation…" %}</p>
+            <p class="text-xs text-slate-500 mt-1">
+                {% trans "This page refreshes every 10 seconds. After the site operator enters the code on the Edge, you will see connection status here." %}
+            </p>
+        </div>
+        {% elif edge_connected %}
+            {% if edge_online %}
+            <div class="px-6 py-4 border-b bg-emerald-50 border-emerald-100">
+                <p class="text-sm font-semibold text-emerald-900">{% trans "Edge connected and online" %}</p>
+                <ul class="mt-2 text-sm text-emerald-800 space-y-1">
+                    <li><span class="font-medium">{% trans "Name" %}:</span> {{ edge_name|default:"—" }}</li>
+                    {% if edge_version %}<li><span class="font-medium">{% trans "Version" %}:</span> {{ edge_version }}</li>{% endif %}
+                    {% if edge_health %}<li><span class="font-medium">{% trans "Health" %}:</span> {{ edge_health }}</li>{% endif %}
+                    <li><span class="font-medium">{% trans "Active printers" %}:</span> {{ edge_printer_count }}</li>
+                    {% if edge_last_seen %}<li><span class="font-medium">{% trans "Last seen" %}:</span> {{ edge_last_seen|date:"d M Y H:i:s" }}</li>{% endif %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="px-6 py-4 border-b bg-amber-50 border-amber-100">
+                <p class="text-sm font-semibold text-amber-900">{% trans "Edge activated but currently offline" %}</p>
+                <p class="text-sm text-amber-800 mt-2">
+                    <span class="font-medium">{% trans "Name" %}:</span> {{ edge_name|default:"—" }}
+                </p>
+                {% if edge_last_seen %}
+                <p class="text-xs text-amber-700 mt-1">{% trans "Last seen" %}: {{ edge_last_seen|date:"d M Y H:i:s" }}</p>
+                {% else %}
+                <p class="text-xs text-amber-700 mt-1">{% trans "No heartbeat recorded yet." %}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
 
         {% if setup_code.printers_config %}
         <div class="px-6 py-4 border-b bg-blue-50">

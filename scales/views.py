@@ -446,6 +446,24 @@ class EdgeSetupCodeDetailView(LoginRequiredMixin, AdminOnlyMixin, DetailView):
         else:
             public_api_base = f"https://api.{base_domain}"
         context["activate_url"] = f"{public_api_base}/api/v1/activate"
+
+        sc = self.object
+        if sc.used_by_edge_id:
+            edge = sc.used_by_edge
+            now = timezone.now()
+            context["edge_connected"] = True
+            context["edge_name"] = edge.name
+            context["edge_online"] = (
+                edge.is_online
+                and edge.last_seen_at is not None
+                and (now - edge.last_seen_at).total_seconds() < 120
+            )
+            context["edge_version"] = edge.version
+            context["edge_health"] = edge.health
+            context["edge_last_seen"] = edge.last_seen_at
+            context["edge_printer_count"] = edge.printers.filter(is_active=True).count()
+        else:
+            context["edge_connected"] = False
         return context
 
 

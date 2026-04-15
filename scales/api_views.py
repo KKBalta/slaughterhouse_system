@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -1063,7 +1063,12 @@ def edge_pending_print_jobs(request):
             site=request.edge_site,
             status="pending",
             dispatch_mode="edge",
-        ).order_by("print_date")[:50]
+        )
+        .filter(
+            models.Q(claimed_by_edge__isnull=True)
+            | models.Q(claimed_by_edge=request.edge_device)
+        )
+        .order_by("print_date")[:50]
     )
 
     jobs = [
@@ -1072,7 +1077,7 @@ def edge_pending_print_jobs(request):
             "targetRole": j.target_role or None,
             "targetPrinter": str(j.target_printer_id) if j.target_printer_id else None,
             "prnContent": j.prn_content,
-            "labelCount": 1,
+            "labelCount": j.quantity,
             "attempts": j.attempts,
             "createdAt": j.print_date.isoformat(),
         }
@@ -1112,6 +1117,11 @@ def edge_ack_print_job(request, job_id):
         job = PrintJob.objects.get(id=job_id, site=request.edge_site)
     except PrintJob.DoesNotExist:
         return JsonResponse({"error": "Job not found"}, status=404)
+
+    if job.status in ("cancelled", "completed"):
+        return JsonResponse(
+            {"ok": True, "ignored": True, "reason": f"job already {job.status}"}
+        )
 
     body = request.json_body
     status = (body.get("status") or "").strip()
