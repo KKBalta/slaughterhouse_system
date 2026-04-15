@@ -34,6 +34,7 @@ class EdgeDevice(BaseModel):
     is_online = models.BooleanField(default=False)
     last_seen_at = models.DateTimeField(null=True, blank=True)
     version = models.CharField(max_length=20, blank=True)
+    health = models.CharField(max_length=20, blank=True, default="")
 
     def __str__(self):
         return f"{self.name or str(self.id)[:8]} ({self.site.name})"

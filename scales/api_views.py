@@ -952,7 +952,7 @@ def edge_device_status(request):
     else:
         scale_device.status = status_val
         scale_device.device_type = device_type or scale_device.device_type
-        if status_val == "online":
+        if status_val not in ("disconnected",):
             scale_device.last_heartbeat_at = ts
         scale_device.save(update_fields=["status", "device_type", "last_heartbeat_at", "updated_at"])
         _log_edge_activity(
@@ -1256,6 +1256,9 @@ def edge_heartbeat(request):
     if body.get("version"):
         edge.version = (body.get("version") or "")[:20]
         update_fields.append("version")
+    if "health" in body:
+        edge.health = (body.get("health") or "")[:20]
+        update_fields.append("health")
     edge.save(update_fields=update_fields)
 
     devices_payload = body.get("devices") or []
