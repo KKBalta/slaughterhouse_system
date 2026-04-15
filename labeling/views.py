@@ -88,13 +88,25 @@ class LabelAppHomeView(LoginRequiredMixin, TemplateView):
         )
         pj_dispatched = (
             PrintJob.objects.filter(status="dispatched", dispatch_mode="edge", site__is_active=True)
-            .select_related("site", "claimed_by_edge")
+            .select_related("site", "claimed_by_edge", "target_printer")
             .order_by("-edge_received_at", "print_date")
+        )
+        pj_completed_recent = (
+            PrintJob.objects.filter(
+                status="completed",
+                dispatch_mode="edge",
+                site__is_active=True,
+                printed_at__isnull=False,
+            )
+            .select_related("site", "claimed_by_edge", "target_printer")
+            .order_by("-printed_at")
         )
         context["pending_print_jobs"] = list(pj_pending[:25])
         context["pending_print_job_total"] = pj_pending.count()
         context["dispatched_print_jobs"] = list(pj_dispatched[:25])
         context["dispatched_print_job_total"] = pj_dispatched.count()
+        context["completed_print_jobs"] = list(pj_completed_recent[:25])
+        context["completed_print_job_total"] = pj_completed_recent.count()
 
         site = get_default_label_site()
         context["label_site"] = site

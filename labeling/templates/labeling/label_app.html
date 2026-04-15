@@ -40,7 +40,7 @@
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
             <div>
                 <h2 class="text-xl font-semibold text-gray-900">{% trans "Edge print queue" %}</h2>
-                <p class="text-sm text-gray-600">{% trans "Pending and in-flight jobs for active sites (Edge dispatch)." %}</p>
+                <p class="text-sm text-gray-600">{% trans "Pending jobs, jobs at the printer (dispatched ACK), and latest print confirmations (completed ACK)." %}</p>
             </div>
         </div>
 
@@ -99,25 +99,32 @@
 
             <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
                 <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 class="font-semibold text-gray-900">{% trans "Dispatched" %}</h3>
-                    <span class="text-sm text-gray-500">{{ dispatched_print_job_total }}</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{% trans "Dispatched" %}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">{% trans "Edge acknowledged pickup; printing or waiting for the printer." %}</p>
+                    </div>
+                    <span class="text-sm text-gray-500 shrink-0">{{ dispatched_print_job_total }}</span>
                 </div>
                 {% if dispatched_print_jobs %}
                 <div class="overflow-x-auto max-h-96 overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50 sticky top-0">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Claimed" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Dispatched ACK" %}</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Edge" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printer" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Attempts" %}</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Item" %}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
                             {% for job in dispatched_print_jobs %}
                             <tr>
-                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.edge_received_at|default:job.print_date|date:"M d, H:i" }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{% if job.edge_received_at %}{{ job.edge_received_at|date:"M d, H:i" }}{% else %}—{% endif %}</td>
                                 <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
                                 <td class="px-3 py-2 text-gray-700">
                                     {% if job.claimed_by_edge %}
                                         {{ job.claimed_by_edge.name|default:job.claimed_by_edge.pk }}
@@ -125,10 +132,24 @@
                                         —
                                     {% endif %}
                                 </td>
+                                <td class="px-3 py-2 text-gray-700 text-xs">
+                                    {% if job.target_printer %}
+                                        {{ job.target_printer.display_name|default:job.target_printer.local_printer_id }}
+                                        <span class="block text-gray-400 font-mono">{{ job.target_printer.host }}:{{ job.target_printer.port }}</span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.attempts }}</td>
                                 <td class="px-3 py-2 font-mono text-xs text-gray-700">
                                     {% if job.item_id %}{{ job.item_type|default:"—" }} · {{ job.item_id }}{% else %}—{% endif %}
                                 </td>
                             </tr>
+                            {% if job.error_text %}
+                            <tr class="bg-amber-50/80">
+                                <td colspan="7" class="px-3 py-1.5 text-xs text-amber-900">{{ job.error_text|truncatechars:120 }}</td>
+                            </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -138,6 +159,55 @@
                 {% endif %}
                 {% else %}
                 <p class="px-4 py-6 text-sm text-gray-500 text-center bg-white">{% trans "No dispatched jobs." %}</p>
+                {% endif %}
+
+                <div class="border-t border-gray-200 bg-gray-50 px-4 py-3 flex justify-between items-center gap-2">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-sm">{% trans "Printed (Edge ACK)" %}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">{% trans "Latest successful print confirmations from the Edge." %}</p>
+                    </div>
+                    <span class="text-sm text-gray-500 shrink-0">{{ completed_print_job_total }}</span>
+                </div>
+                {% if completed_print_jobs %}
+                <div class="overflow-x-auto max-h-72 overflow-y-auto border-t border-gray-100">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printed ACK" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printer" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Attempts" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Item" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            {% for job in completed_print_jobs %}
+                            <tr class="bg-green-50/40">
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-800 font-medium">{{ job.printed_at|date:"M d, H:i" }}</td>
+                                <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                                <td class="px-3 py-2 text-gray-700 text-xs">
+                                    {% if job.target_printer %}
+                                        {{ job.target_printer.display_name|default:job.target_printer.local_printer_id }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.attempts }}</td>
+                                <td class="px-3 py-2 font-mono text-xs text-gray-700">
+                                    {% if job.item_id %}{{ job.item_type|default:"—" }} · {{ job.item_id }}{% else %}—{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if completed_print_job_total > completed_print_jobs|length %}
+                <p class="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-white">{% trans "Showing first" %} {{ completed_print_jobs|length }} {% trans "of" %} {{ completed_print_job_total }}</p>
+                {% endif %}
+                {% else %}
+                <p class="px-4 py-4 text-sm text-gray-500 text-center bg-white border-t border-gray-100">{% trans "No completed Edge prints yet." %}</p>
                 {% endif %}
             </div>
         </div>

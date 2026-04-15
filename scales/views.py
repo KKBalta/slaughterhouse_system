@@ -768,6 +768,7 @@ class PrintersByEdgeJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
                     "host": lan_printer.host,
                     "port": lan_printer.port,
                     "status": lan_printer.status,
+                    "warnings": lan_printer.warnings,
                     "enabled": lan_printer.enabled,
                     "is_online": is_lan_printer_online(lan_printer),
                     "last_seen_at": lan_printer.last_seen_at.isoformat() if lan_printer.last_seen_at else None,

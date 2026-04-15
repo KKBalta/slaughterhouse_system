@@ -24,7 +24,7 @@ class SiteAdmin(admin.ModelAdmin):
 class PrinterInline(admin.TabularInline):
     model = Printer
     extra = 0
-    readonly_fields = ("status", "last_seen_at", "last_error", "version")
+    readonly_fields = ("status", "last_seen_at", "last_error", "warnings", "version")
     fields = (
         "local_printer_id",
         "display_name",
@@ -36,6 +36,7 @@ class PrinterInline(admin.TabularInline):
         "status",
         "last_seen_at",
         "last_error",
+        "warnings",
     )
     show_change_link = True
 
@@ -78,6 +79,7 @@ class PrinterAdmin(admin.ModelAdmin):
         "host",
         "port",
         "status",
+        "warnings",
         "priority",
         "enabled",
         "last_seen_at",
@@ -88,6 +90,7 @@ class PrinterAdmin(admin.ModelAdmin):
         "status",
         "last_seen_at",
         "last_error",
+        "warnings",
         "version",
         "edge",
         "site",

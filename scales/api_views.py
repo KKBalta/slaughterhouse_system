@@ -1311,6 +1311,10 @@ def edge_heartbeat(request):
         status_val = (item.get("status") or "unknown").strip() or "unknown"
         last_seen = _parse_iso(item.get("lastSeenAt")) or timezone.now()
         last_error = (item.get("lastError") or "")[:255]
+        warnings_list = item.get("warnings") or []
+        if not isinstance(warnings_list, list):
+            warnings_list = []
+        warnings_val = ",".join(str(w).strip() for w in warnings_list if w)[:255]
 
         if not local_id:
             continue
@@ -1322,6 +1326,7 @@ def edge_heartbeat(request):
             status=status_val,
             last_seen_at=last_seen,
             last_error=last_error,
+            warnings=warnings_val,
         )
 
     _log_edge_activity(

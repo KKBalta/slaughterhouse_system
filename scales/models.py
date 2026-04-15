@@ -138,6 +138,7 @@ class Printer(BaseModel):
     STATUS_CHOICES = [
         ("unknown", "Unknown"),
         ("online", "Online"),
+        ("warning", "Warning"),
         ("offline", "Offline"),
         ("error", "Error"),
     ]
@@ -176,6 +177,11 @@ class Printer(BaseModel):
     enabled = models.BooleanField(default=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
     last_error = models.CharField(max_length=255, blank=True)
+    warnings = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Comma-separated TSPL warnings from edge (e.g. 'paper_low,ribbon_low'). Decoded from <ESC>!S response.",
+    )
     version = models.CharField(max_length=64, blank=True, help_text="Firmware version from ~!T query.")
 
     class Meta:

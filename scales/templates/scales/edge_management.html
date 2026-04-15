@@ -480,9 +480,15 @@
             const scales = data.scale_devices || data.printers || [];
             const rows = [];
             labels.forEach(function (p) {
-                const badge = p.is_online
-                    ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>'
-                    : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>';
+                let badge;
+                if (p.status === 'warning') {
+                    const warnText = p.warnings ? ' (' + escapeHtml(p.warnings) + ')' : '';
+                    badge = '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">{% trans "Warning" %}' + warnText + '</span>';
+                } else if (p.is_online) {
+                    badge = '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{% trans "Online" %}</span>';
+                } else {
+                    badge = '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{% trans "Offline" %}</span>';
+                }
                 const idLine = escapeHtml(p.local_printer_id) + (p.display_name ? ' <span class="text-gray-500">(' + escapeHtml(p.display_name) + ')</span>' : '');
                 const dis = p.enabled === false ? ' <span class="text-amber-600 text-xs">{% trans "disabled" %}</span>' : '';
                 const printerRemoveUrl = printerRemoveUrlTemplate.replace('__PRINTER_ID__', p.id);

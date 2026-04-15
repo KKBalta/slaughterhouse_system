@@ -597,6 +597,8 @@ def test_label_app_lists_custom_and_animal_labels(auth_client, admin_user, anima
     assert page_obj.paginator.per_page == LabelAppHomeView.label_table_per_page
     assert "pending_print_jobs" in ctx
     assert "dispatched_print_jobs" in ctx
+    assert "completed_print_jobs" in ctx
+    assert "completed_print_job_total" in ctx
     assert "edge_dispatch_available" in ctx
     assert "can_manage_edge" in ctx
 
