@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ order.slaughter_order_no }} - Sipariş - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+
+    {# Staff banner #}
+    {% if is_staff_view %}
+    <div class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200/70 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-sm">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        <span>Personel önizleme modu — müşteriler yalnızca kendi siparişlerini görebilir.</span>
+    </div>
+    {% endif %}
+
+    {# Breadcrumb + back link #}
+    <a href="{% url 'portal:order_list' %}{% if is_staff_view and request.GET.client %}?client={{ request.GET.client }}{% endif %}"
+       class="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Siparişlerim
+    </a>
+
+    {# Hero header #}
+    <div class="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Sipariş</p>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{{ order.slaughter_order_no }}</h1>
+            <p class="mt-2 text-sm text-slate-500">
+                {{ order.order_datetime|date:"d M Y, H:i" }}
+                <span class="mx-2 text-slate-300">·</span>
+                {{ animal_count }} hayvan
+                {% if order.service_package %}<span class="mx-2 text-slate-300">·</span> {{ order.service_package.name }}{% endif %}
+            </p>
+        </div>
+        <span class="inline-flex w-max items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold ring-1
+            {% if order.status == 'PENDING' %}bg-yellow-50 text-yellow-700 ring-yellow-200
+            {% elif order.status == 'IN_PROGRESS' %}bg-blue-50 text-blue-700 ring-blue-200
+            {% elif order.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700 ring-emerald-200
+            {% elif order.status == 'BILLED' %}bg-purple-50 text-purple-700 ring-purple-200
+            {% elif order.status == 'CANCELLED' %}bg-red-50 text-red-700 ring-red-200
+            {% endif %}">
+            <span class="h-1.5 w-1.5 rounded-full
+                {% if order.status == 'PENDING' %}bg-yellow-500
+                {% elif order.status == 'IN_PROGRESS' %}bg-blue-500
+                {% elif order.status == 'COMPLETED' %}bg-emerald-500
+                {% elif order.status == 'BILLED' %}bg-purple-500
+                {% elif order.status == 'CANCELLED' %}bg-red-500
+                {% endif %}"></span>
+            {{ order.get_status_display }}
+        </span>
+    </div>
+
+    {# 3 özet kart — premium aesthetic #}
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+        {# 1 — Sipariş bilgisi #}
+        <div class="group relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-200/80 shadow-sm transition-all hover:shadow-md">
+            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-blue-100 to-transparent opacity-60"></div>
+            <div class="relative">
+                <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Sipariş Bilgisi</p>
+                <p class="mt-1 text-lg font-bold text-slate-900">{{ order.slaughter_order_no }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ order.order_datetime|date:"d M Y" }}</p>
+                <p class="mt-3 text-xs text-slate-400">
+                    {{ animal_count }} hayvan{% if order.service_package %} · {{ order.service_package.name }}{% endif %}
+                </p>
+            </div>
+        </div>
+
+        {# 2 — Randıman #}
+        <div class="group relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-200/80 shadow-sm transition-all hover:shadow-md">
+            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br
+                {% if order_performance >= 55 %}from-emerald-100
+                {% elif order_performance >= 45 %}from-amber-100
+                {% elif order_performance %}from-red-100
+                {% else %}from-slate-100{% endif %} to-transparent opacity-60"></div>
+            <div class="relative">
+                <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl
+                    {% if order_performance >= 55 %}bg-emerald-50 text-emerald-600
+                    {% elif order_performance >= 45 %}bg-amber-50 text-amber-600
+                    {% elif order_performance %}bg-red-50 text-red-600
+                    {% else %}bg-slate-100 text-slate-400{% endif %}">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Randıman</p>
+                {% if order_performance %}
+                <p class="mt-1 text-3xl font-bold tracking-tight
+                    {% if order_performance >= 55 %}text-emerald-600
+                    {% elif order_performance >= 45 %}text-amber-600
+                    {% else %}text-red-600{% endif %}">
+                    {{ order_performance }}<span class="text-xl">%</span>
+                </p>
+                <p class="mt-1 text-xs text-slate-500">sıcak karkas / canlı ağırlık</p>
+                {% if total_live_kg %}
+                <p class="mt-2 inline-flex items-center gap-1.5 text-sm text-slate-600">
+                    <span class="font-medium">{{ total_live_kg }} kg</span>
+                    <svg class="h-3 w-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    <span class="font-medium">{{ total_carcass_kg }} kg</span>
+                </p>
+                {% endif %}
+                {% if excluded_from_totals %}
+                <p class="mt-2 text-[11px] text-orange-500">{{ excluded_from_totals }} hayvan canlı ağırlık eksik, hesaba katılmadı</p>
+                {% endif %}
+                {% else %}
+                <p class="mt-1 text-3xl font-bold text-slate-300">—</p>
+                <p class="mt-1 text-xs text-slate-400">Henüz ağırlık girilmemiş</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# 3 — Toplam kilogram #}
+        <div class="group relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-200/80 shadow-sm transition-all hover:shadow-md">
+            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-indigo-100 to-transparent opacity-60"></div>
+            <div class="relative">
+                <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                    </svg>
+                </div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toplam Ağırlık</p>
+                {% if total_carcass_kg %}
+                <p class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ total_carcass_kg }}<span class="text-base font-normal text-slate-400"> kg</span></p>
+                <p class="mt-1 text-xs text-slate-500">sıcak karkas ağırlığı</p>
+                {% if total_live_kg %}
+                <p class="mt-2 text-sm text-slate-600">Canlı: <span class="font-medium">{{ total_live_kg }} kg</span></p>
+                {% endif %}
+                {% if excluded_from_totals %}
+                <p class="mt-2 text-[11px] text-orange-500">{{ excluded_from_totals }} hayvan dahil edilmedi</p>
+                {% endif %}
+                {% elif total_live_kg %}
+                <p class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ total_live_kg }}<span class="text-base font-normal text-slate-400"> kg</span></p>
+                <p class="mt-1 text-xs text-slate-500">canlı ağırlık (karkas bekleniyor)</p>
+                {% else %}
+                <p class="mt-1 text-3xl font-bold text-slate-300">—</p>
+                <p class="mt-1 text-xs text-slate-400">Henüz ağırlık girilmemiş</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Hayvanlar tablosu #}
+    {% if animal_summaries %}
+    <section>
+        <div class="mb-3 flex items-baseline justify-between">
+            <h2 class="text-lg font-semibold tracking-tight text-slate-900">Hayvanlar</h2>
+            <p class="text-xs text-slate-400">Detayları görmek için kimlik etiketine tıklayın</p>
+        </div>
+        <div class="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50/70 border-b border-slate-200">
+                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hayvan</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Canlı</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Karkas</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Randıman</th>
+                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for s in animal_summaries %}
+                        <tr class="group transition-colors {% if s.live_weight_missing %}bg-orange-50/40 hover:bg-orange-50/70{% else %}hover:bg-slate-50/70{% endif %}">
+                            <td class="px-5 py-3.5">
+                                <button type="button"
+                                        onclick="openAnimalModal('modal-{{ s.animal.pk }}')"
+                                        class="group/btn inline-flex flex-wrap items-baseline gap-1.5 text-left">
+                                    <span class="font-medium text-slate-900 group-hover/btn:text-blue-700">{{ s.animal.get_animal_type_display }}</span>
+                                    {% if s.animal.identification_tag %}
+                                    <span class="font-mono text-xs text-blue-600 underline decoration-dotted underline-offset-[3px] group-hover/btn:text-blue-800 group-hover/btn:decoration-solid">#{{ s.animal.identification_tag }}</span>
+                                    {% endif %}
+                                </button>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                {% if s.live_weight_missing %}
+                                <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 ring-1 ring-orange-200">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
+                                    eksik
+                                </span>
+                                {% else %}
+                                <span class="text-slate-700">{{ s.live_weight }} <span class="text-xs text-slate-400">kg</span></span>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-3.5 text-right text-slate-700">
+                                {% if s.carcass_weight %}{{ s.carcass_weight }} <span class="text-xs text-slate-400">kg</span>{% else %}<span class="text-slate-300">—</span>{% endif %}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-semibold tabular-nums
+                                {% if s.performance >= 55 %}text-emerald-600
+                                {% elif s.performance >= 45 %}text-amber-600
+                                {% elif s.performance %}text-red-600
+                                {% else %}text-slate-300{% endif %}">
+                                {% if s.performance %}{{ s.performance }}%{% else %}—{% endif %}
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1
+                                    {% if s.animal.status == 'received' %}bg-slate-50 text-slate-700 ring-slate-200
+                                    {% elif s.animal.status == 'slaughtered' %}bg-orange-50 text-orange-700 ring-orange-200
+                                    {% elif s.animal.status == 'carcass_ready' %}bg-yellow-50 text-yellow-800 ring-yellow-200
+                                    {% elif s.animal.status == 'disassembled' %}bg-blue-50 text-blue-700 ring-blue-200
+                                    {% elif s.animal.status == 'packaged' %}bg-indigo-50 text-indigo-700 ring-indigo-200
+                                    {% elif s.animal.status == 'delivered' %}bg-emerald-50 text-emerald-700 ring-emerald-200
+                                    {% elif s.animal.status == 'returned' %}bg-slate-50 text-slate-700 ring-slate-200
+                                    {% elif s.animal.status == 'disposed' %}bg-red-50 text-red-700 ring-red-200
+                                    {% endif %}">
+                                    <span class="h-1.5 w-1.5 rounded-full
+                                        {% if s.animal.status == 'received' %}bg-slate-400
+                                        {% elif s.animal.status == 'slaughtered' %}bg-orange-500
+                                        {% elif s.animal.status == 'carcass_ready' %}bg-yellow-500
+                                        {% elif s.animal.status == 'disassembled' %}bg-blue-500
+                                        {% elif s.animal.status == 'packaged' %}bg-indigo-500
+                                        {% elif s.animal.status == 'delivered' %}bg-emerald-500
+                                        {% elif s.animal.status == 'returned' %}bg-slate-400
+                                        {% elif s.animal.status == 'disposed' %}bg-red-500
+                                        {% endif %}"></span>
+                                    {{ s.animal.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# Hayvan detay modalleri #}
+    {% for s in animal_summaries %}{% with animal=s.animal %}
+    <div id="modal-{{ animal.pk }}"
+         class="portal-modal hidden fixed inset-0 z-50 items-center justify-center p-4 sm:p-6"
+         role="dialog" aria-modal="true"
+         onclick="if(event.target===this)closeAnimalModal('modal-{{ animal.pk }}')">
+
+        {# Yarı saydam, bulanık arka plan #}
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md portal-modal-overlay"></div>
+
+        {# Modal kutusu — premium look #}
+        <div class="portal-modal-card relative z-10 flex w-full max-w-2xl flex-col max-h-[92vh] overflow-hidden rounded-3xl bg-white shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/5">
+
+            {# Renkli hero arkaplan #}
+            <div class="relative px-6 pt-6 pb-5 sm:px-8 sm:pt-8
+                {% if animal.status == 'received' %}bg-gradient-to-br from-slate-50 via-white to-slate-50
+                {% elif animal.status == 'slaughtered' %}bg-gradient-to-br from-orange-50 via-white to-amber-50/50
+                {% elif animal.status == 'carcass_ready' %}bg-gradient-to-br from-yellow-50 via-white to-amber-50/50
+                {% elif animal.status == 'disassembled' %}bg-gradient-to-br from-blue-50 via-white to-sky-50/50
+                {% elif animal.status == 'packaged' %}bg-gradient-to-br from-indigo-50 via-white to-violet-50/50
+                {% elif animal.status == 'delivered' %}bg-gradient-to-br from-emerald-50 via-white to-green-50/50
+                {% elif animal.status == 'returned' %}bg-gradient-to-br from-slate-50 via-white to-slate-50
+                {% elif animal.status == 'disposed' %}bg-gradient-to-br from-red-50 via-white to-rose-50/50
+                {% else %}bg-gradient-to-br from-slate-50 via-white to-slate-50{% endif %}">
+
+                {# Kapatma butonu #}
+                <button type="button"
+                        onclick="closeAnimalModal('modal-{{ animal.pk }}')"
+                        aria-label="Kapat"
+                        class="absolute right-4 top-4 rounded-full bg-white/80 p-2 text-slate-400 backdrop-blur transition-all hover:bg-white hover:text-slate-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                {# Status pill #}
+                <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ring-1
+                    {% if animal.status == 'received' %}bg-white text-slate-700 ring-slate-200
+                    {% elif animal.status == 'slaughtered' %}bg-white text-orange-700 ring-orange-200
+                    {% elif animal.status == 'carcass_ready' %}bg-white text-yellow-800 ring-yellow-200
+                    {% elif animal.status == 'disassembled' %}bg-white text-blue-700 ring-blue-200
+                    {% elif animal.status == 'packaged' %}bg-white text-indigo-700 ring-indigo-200
+                    {% elif animal.status == 'delivered' %}bg-white text-emerald-700 ring-emerald-200
+                    {% elif animal.status == 'returned' %}bg-white text-slate-700 ring-slate-200
+                    {% elif animal.status == 'disposed' %}bg-white text-red-700 ring-red-200
+                    {% endif %}">
+                    <span class="h-1.5 w-1.5 rounded-full
+                        {% if animal.status == 'received' %}bg-slate-400
+                        {% elif animal.status == 'slaughtered' %}bg-orange-500
+                        {% elif animal.status == 'carcass_ready' %}bg-yellow-500
+                        {% elif animal.status == 'disassembled' %}bg-blue-500
+                        {% elif animal.status == 'packaged' %}bg-indigo-500
+                        {% elif animal.status == 'delivered' %}bg-emerald-500
+                        {% elif animal.status == 'returned' %}bg-slate-400
+                        {% elif animal.status == 'disposed' %}bg-red-500
+                        {% endif %}"></span>
+                    {{ animal.get_status_display }}
+                </span>
+
+                <h3 class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">{{ animal.get_animal_type_display }}</h3>
+                {% if animal.identification_tag %}
+                <p class="mt-1 font-mono text-xs text-slate-500">#{{ animal.identification_tag }}</p>
+                {% endif %}
+                {% if s.live_weight_missing %}
+                <div class="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 ring-1 ring-orange-200">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    Canlı ağırlık girilmemiş
+                </div>
+                {% endif %}
+
+                {# Stat şeridi — hero içinde #}
+                {% if s.live_weight or s.carcass_weight or s.performance %}
+                <div class="mt-5 grid grid-cols-3 gap-2.5 text-center">
+                    <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Canlı</p>
+                        <p class="mt-1 text-lg font-bold tabular-nums text-slate-900">
+                            {% if s.live_weight %}{{ s.live_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span>{% else %}<span class="text-slate-300">—</span>{% endif %}
+                        </p>
+                    </div>
+                    <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Karkas</p>
+                        <p class="mt-1 text-lg font-bold tabular-nums text-slate-900">
+                            {% if s.carcass_weight %}{{ s.carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span>{% else %}<span class="text-slate-300">—</span>{% endif %}
+                        </p>
+                    </div>
+                    <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Randıman</p>
+                        <p class="mt-1 text-lg font-bold tabular-nums
+                            {% if s.performance >= 55 %}text-emerald-600
+                            {% elif s.performance >= 45 %}text-amber-600
+                            {% elif s.performance %}text-red-600
+                            {% else %}text-slate-300{% endif %}">
+                            {% if s.performance %}{{ s.performance }}<span class="text-xs">%</span>{% else %}—{% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>{# /hero #}
+
+            {# Kaydırılabilir gövde #}
+            <div class="flex-1 overflow-y-auto px-6 py-6 sm:px-8 space-y-6">
+
+                {# Görseller #}
+                {% if animal.picture or animal.passport_picture or animal.scale_receipt_picture %}
+                <section>
+                    <div class="mb-2.5 flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </span>
+                        <h4 class="text-sm font-semibold text-slate-900">Görseller</h4>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        {% if animal.picture %}
+                        <a href="{{ animal.picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
+                            <img src="{{ animal.picture.url }}" alt="Hayvan" loading="lazy"
+                                 class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Hayvan</span>
+                        </a>
+                        {% endif %}
+                        {% if animal.passport_picture %}
+                        <a href="{{ animal.passport_picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
+                            <img src="{{ animal.passport_picture.url }}" alt="Pasaport" loading="lazy"
+                                 class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Pasaport</span>
+                        </a>
+                        {% endif %}
+                        {% if animal.scale_receipt_picture %}
+                        <a href="{{ animal.scale_receipt_picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
+                            <img src="{{ animal.scale_receipt_picture.url }}" alt="Kantar fişi" loading="lazy"
+                                 class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Kantar fişi</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </section>
+                {% endif %}
+
+                {# Tarihler #}
+                <section>
+                    <div class="mb-2.5 flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </span>
+                        <h4 class="text-sm font-semibold text-slate-900">Tarihler</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Teslim alındı</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ animal.received_date|date:"d M Y" }}</p>
+                        </div>
+                        {% if animal.slaughter_date %}
+                        <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Kesim tarihi</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-900">{{ animal.slaughter_date|date:"d M Y" }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                {# Karkas #}
+                {% with carcass=animal.carcass %}
+                {% if carcass %}
+                    {% if carcass.hot_carcass_weight or carcass.cold_carcass_weight or carcass.disposition %}
+                    <section>
+                        <div class="mb-2.5 flex items-center gap-2">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-orange-50 text-orange-500">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4 M3 17l9 4 9-4"/></svg>
+                            </span>
+                            <h4 class="text-sm font-semibold text-slate-900">Karkas</h4>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            {% if carcass.hot_carcass_weight %}
+                            <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sıcak</p>
+                                <p class="mt-1 text-sm font-bold tabular-nums text-slate-900">{{ carcass.hot_carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span></p>
+                            </div>
+                            {% endif %}
+                            {% if carcass.cold_carcass_weight %}
+                            <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Soğuk</p>
+                                <p class="mt-1 text-sm font-bold tabular-nums text-slate-900">{{ carcass.cold_carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span></p>
+                            </div>
+                            {% endif %}
+                            {% if carcass.disposition %}
+                            <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Kullanım</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-900">{{ carcass.get_disposition_display }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                    {% endif %}
+                    {% if carcass.meat_cuts.all %}
+                    <section>
+                        <div class="mb-2.5 flex items-center gap-2">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-rose-50 text-rose-500">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121A3 3 0 1119.95 17.95l-2.829 2.828-4.243-4.242 1.243-2.415zM5 11l3 3-3 3-3-3 3-3z M11 5l3 3-3 3-3-3 3-3z"/></svg>
+                            </span>
+                            <h4 class="text-sm font-semibold text-slate-900">Et Kesimleri</h4>
+                            <span class="ml-auto text-[11px] font-medium text-slate-400">{{ carcass.meat_cuts.all|length }}</span>
+                        </div>
+                        <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
+                            <table class="min-w-full divide-y divide-slate-100 text-sm">
+                                <thead class="bg-slate-50/70">
+                                    <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+                                        <th class="px-3.5 py-2.5 text-left font-semibold">Kesim</th>
+                                        <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
+                                        <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    {% for cut in carcass.meat_cuts.all %}
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="px-3.5 py-2.5 font-medium text-slate-900">{{ cut.get_cut_type_display }}</td>
+                                        <td class="px-3.5 py-2.5 text-right tabular-nums text-slate-700">{{ cut.weight }} <span class="text-xs text-slate-400">kg</span></td>
+                                        <td class="px-3.5 py-2.5 text-slate-600">{{ cut.get_disposition_display }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    {% endif %}
+                {% endif %}
+                {% endwith %}
+
+                {# Sakatat #}
+                {% if animal.offals.all %}
+                <section>
+                    <div class="mb-2.5 flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-purple-50 text-purple-500">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                        </span>
+                        <h4 class="text-sm font-semibold text-slate-900">Sakatat</h4>
+                        <span class="ml-auto text-[11px] font-medium text-slate-400">{{ animal.offals.all|length }}</span>
+                    </div>
+                    <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
+                        <table class="min-w-full divide-y divide-slate-100 text-sm">
+                            <thead class="bg-slate-50/70">
+                                <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">Tür</th>
+                                    <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                {% for offal in animal.offals.all %}
+                                <tr class="hover:bg-slate-50/50">
+                                    <td class="px-3.5 py-2.5 font-medium text-slate-900">{{ offal.get_offal_type_display }}</td>
+                                    <td class="px-3.5 py-2.5 text-right tabular-nums text-slate-700">{{ offal.weight }} <span class="text-xs text-slate-400">kg</span></td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">{{ offal.get_disposition_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                {% endif %}
+
+                {# Yan ürünler #}
+                {% if animal.by_products.all %}
+                <section>
+                    <div class="mb-2.5 flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-teal-50 text-teal-500">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </span>
+                        <h4 class="text-sm font-semibold text-slate-900">Yan Ürünler</h4>
+                        <span class="ml-auto text-[11px] font-medium text-slate-400">{{ animal.by_products.all|length }}</span>
+                    </div>
+                    <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
+                        <table class="min-w-full divide-y divide-slate-100 text-sm">
+                            <thead class="bg-slate-50/70">
+                                <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">Tür</th>
+                                    <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                {% for bp in animal.by_products.all %}
+                                <tr class="hover:bg-slate-50/50">
+                                    <td class="px-3.5 py-2.5 font-medium text-slate-900">{{ bp.get_byproduct_type_display }}</td>
+                                    <td class="px-3.5 py-2.5 text-right tabular-nums text-slate-700">{{ bp.weight|default:"—" }}{% if bp.weight %} <span class="text-xs text-slate-400">kg</span>{% endif %}</td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">{{ bp.get_disposition_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                {% endif %}
+
+            </div>{# /scroll body #}
+        </div>{# /modal card #}
+    </div>{# /modal wrapper #}
+    {% endwith %}{% endfor %}
+
+    {# Modal davranışı: aç/kapa animasyonu, body scroll-lock, ESC ile kapatma #}
+    <style>
+        .portal-modal { display: none; }
+        .portal-modal.is-open { display: flex; animation: portalFadeIn .15s ease-out; }
+        .portal-modal.is-open .portal-modal-card { animation: portalSlideUp .22s cubic-bezier(.16,1,.3,1); }
+        @keyframes portalFadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes portalSlideUp {
+            from { opacity: 0; transform: translateY(16px) scale(.98) }
+            to   { opacity: 1; transform: translateY(0)    scale(1) }
+        }
+    </style>
+    <script>
+        function openAnimalModal(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeAnimalModal(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('is-open');
+            el.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.portal-modal.is-open').forEach(m => closeAnimalModal(m.id));
+            }
+        });
+    </script>
+
+</div>
+{% endblock %}

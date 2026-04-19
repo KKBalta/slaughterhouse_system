@@ -46,6 +46,7 @@ urlpatterns += i18n_patterns(
     path("processing/", include("processing.urls")),
     path("labeling/", include("labeling.urls")),
     path("scales/", include("scales.urls")),  # Scale operations / session management
+    path("portal/", include("portal.urls")),  # Client-facing order portal
     path("", include("users.urls")),  # Include user authentication URLs at the root
     prefix_default_language=True,  # Add language prefix for all languages for consistency
 )
