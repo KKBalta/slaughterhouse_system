@@ -122,12 +122,14 @@ class Client(TenantMixin):
 
         if not self.slug:
             self.slug = self.schema_name
-        # In non-multitenant environments (test settings, single-schema installs),
-        # django_tenants is not in INSTALLED_APPS, so its `migrate_schemas` command
-        # is not registered. TenantMixin.save() would still invoke it via
-        # create_schema() on PostgreSQL, which raises CommandError. Skip auto
-        # schema creation here; real tenants in multitenant mode are unaffected.
-        if not getattr(settings, "USE_MULTITENANT", True):
+        # When django_tenants is not installed (e.g. test settings — some tests
+        # still set USE_MULTITENANT=True via override_settings to exercise view
+        # behavior), its `migrate_schemas` management command is not registered.
+        # TenantMixin.save() would otherwise call create_schema() →
+        # call_command("migrate_schemas") on PostgreSQL and raise CommandError.
+        # Production has django_tenants in INSTALLED_APPS, so this branch is
+        # skipped and normal schema creation runs.
+        if "django_tenants" not in settings.INSTALLED_APPS:
             original = self.auto_create_schema
             self.auto_create_schema = False
             try:
