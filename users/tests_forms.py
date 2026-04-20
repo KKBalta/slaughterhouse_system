@@ -289,6 +289,22 @@ def test_user_registration_form_normalizes_phone_number():
         data={
             "username": "new-user",
             "email": "",
+            "phone_number": "+1 (202) 555-1234",
+            "role": User.Role.CLIENT,
+            "password1": "SecurePass123!",
+            "password2": "SecurePass123!",
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["phone_number"] == "+12025551234"
+
+
+def test_user_registration_form_rejects_phone_without_supported_country():
+    form = UserRegistrationForm(
+        data={
+            "username": "new-user",
+            "email": "",
             "phone_number": "(555) 123-4567",
             "role": User.Role.CLIENT,
             "password1": "SecurePass123!",
@@ -296,8 +312,24 @@ def test_user_registration_form_normalizes_phone_number():
         }
     )
 
-    assert form.is_valid()
-    assert form.cleaned_data["phone_number"] == "+5551234567"
+    assert not form.is_valid()
+    assert "phone_number" in form.errors
+
+
+def test_user_registration_form_rejects_short_us_phone():
+    form = UserRegistrationForm(
+        data={
+            "username": "new-user",
+            "email": "",
+            "phone_number": "+12025551",
+            "role": User.Role.CLIENT,
+            "password1": "SecurePass123!",
+            "password2": "SecurePass123!",
+        }
+    )
+
+    assert not form.is_valid()
+    assert "phone_number" in form.errors
 
 
 @pytest.mark.parametrize(
@@ -331,7 +363,7 @@ def test_client_profile_register_form_combines_area_code_and_strips_fields():
             "contact_person": " Alice ",
             "email": " alice@example.com ",
             "phone_area_code": "+1",
-            "phone_number": " 5551234 ",
+            "phone_number": " 2025551234 ",
             "address": "123 Test St",
             "default_destination": " Main Delivery Hub ",
             "company_name": " ",
@@ -341,7 +373,7 @@ def test_client_profile_register_form_combines_area_code_and_strips_fields():
 
     assert form.is_valid()
     assert form.cleaned_data["contact_person"] == "Alice"
-    assert form.cleaned_data["phone_number"] == "+15551234"
+    assert form.cleaned_data["phone_number"] == "+12025551234"
     assert form.cleaned_data["default_destination"] == "Main Delivery Hub"
     assert form.cleaned_data["company_name"] is None
     assert form.cleaned_data["tax_id"] is None
@@ -354,7 +386,7 @@ def test_client_profile_register_form_preserves_prefixed_phone_number():
             "contact_person": "Alice",
             "email": "",
             "phone_area_code": "+90",
-            "phone_number": "+15551234",
+            "phone_number": "+12025551234",
             "address": "123 Test St",
             "company_name": "",
             "tax_id": "",
@@ -362,7 +394,7 @@ def test_client_profile_register_form_preserves_prefixed_phone_number():
     )
 
     assert form.is_valid()
-    assert form.cleaned_data["phone_number"] == "+15551234"
+    assert form.cleaned_data["phone_number"] == "+12025551234"
 
 
 def test_client_profile_register_form_allows_email_only_registration():
@@ -486,6 +518,24 @@ def test_client_profile_register_form_allows_registered_phone_when_configured():
     assert form.registered_phone_user == existing_user
 
 
+def test_client_profile_register_form_rejects_short_turkish_phone():
+    form = ClientProfileRegisterForm(
+        data={
+            "account_type": ClientProfile.AccountType.INDIVIDUAL,
+            "contact_person": "Alice",
+            "email": "",
+            "phone_area_code": "+90",
+            "phone_number": "5551234",
+            "address": "123 Test St",
+            "company_name": "",
+            "tax_id": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert "phone_number" in form.errors
+
+
 def test_client_profile_register_form_rejects_duplicate_profile_phone_without_user():
     ClientProfile.objects.create(
         user=None,
@@ -519,7 +569,7 @@ def test_client_profile_register_form_requires_enterprise_fields():
             "contact_person": " ",
             "email": "enterprise@example.com",
             "phone_area_code": "+90",
-            "phone_number": "5551234",
+            "phone_number": "5551112233",
             "address": "123 Test St",
             "company_name": " ",
             "tax_id": " ",
@@ -539,7 +589,7 @@ def test_client_profile_register_form_requires_contact_person_for_individual():
             "contact_person": " ",
             "email": "individual@example.com",
             "phone_area_code": "+90",
-            "phone_number": "5551234",
+            "phone_number": "5551112233",
             "address": "123 Test St",
             "company_name": "",
             "tax_id": "",

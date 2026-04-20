@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 23:00+0300\n"
+"POT-Creation-Date: 2026-04-21 01:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,35 +25,38 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: labeling/admin.py:63
+#: labeling/admin.py:96
 msgid "Animal ID"
 msgstr ""
 
-#: labeling/admin.py:70 reporting/templates/reporting/simple_dashboard.html:66
+#: labeling/admin.py:103
+#: labeling/templates/labeling/animal_label_detail.html:145
+#: labeling/templates/labeling/custom_label_detail.html:154
+#: reporting/templates/reporting/simple_dashboard.html:66
 msgid "PDF"
 msgstr ""
 
-#: labeling/admin.py:79
+#: labeling/admin.py:112
 msgid "PRN Preview"
 msgstr ""
 
-#: labeling/admin.py:90
+#: labeling/admin.py:123
 msgid "PRN Content"
 msgstr ""
 
-#: labeling/admin.py:101
+#: labeling/admin.py:134
 msgid "BAT Content"
 msgstr ""
 
-#: labeling/admin.py:109
+#: labeling/admin.py:142
 msgid "PDF File"
 msgstr ""
 
-#: labeling/admin.py:135
+#: labeling/admin.py:168
 msgid "Regenerate PDF files"
 msgstr ""
 
-#: labeling/admin.py:155
+#: labeling/admin.py:188
 msgid "Delete PDF files"
 msgstr ""
 
@@ -210,6 +213,33 @@ msgstr ""
 msgid "Son tüketim tarihi kesim tarihinden önce olamaz."
 msgstr ""
 
+#: labeling/services.py:89
+msgid "Removed from queue by operator."
+msgstr ""
+
+#: labeling/templates/labeling/_edge_printers_hint.html:3
+msgid "Target printer(s)"
+msgstr ""
+
+#: labeling/templates/labeling/_edge_printers_hint.html:5
+msgid "Target role"
+msgstr ""
+
+#: labeling/templates/labeling/_edge_printers_hint.html:13
+msgid "Preferred"
+msgstr ""
+
+#: labeling/templates/labeling/_edge_printers_hint.html:25
+msgid "Priority"
+msgstr ""
+
+#: labeling/templates/labeling/_edge_printers_hint.html:32
+#, python-format
+msgid ""
+"No printer is assigned to role \"%(role)s\". The job will wait on the edge "
+"until one is registered."
+msgstr ""
+
 #: labeling/templates/labeling/animal_label_detail.html:4
 msgid "Animal Label Detail"
 msgstr ""
@@ -264,12 +294,14 @@ msgstr ""
 #: labeling/templates/labeling/animal_label_detail.html:65
 #: processing/forms.py:41
 #: processing/templates/processing/animal_detail.html:251
-#: reception/forms.py:397
+#: reception/forms.py:498
 msgid "Animal Type"
 msgstr ""
 
 #: labeling/templates/labeling/animal_label_detail.html:69
-#: processing/forms.py:27
+#: labeling/templates/labeling/animal_label_detail.html:106
+#: labeling/templates/labeling/custom_label_detail.html:115
+#: portal/templates/portal/order_detail.html:172 processing/forms.py:27
 #: processing/templates/processing/animal_detail.html:255
 #: processing/templates/processing/animal_list.html:318
 #: processing/templates/processing/disassembly_dashboard.html:262
@@ -277,13 +309,14 @@ msgstr ""
 #: reception/templates/reception/order_detail.html:113
 #: reception/templates/reception/order_list.html:43
 #: reporting/templates/reporting/report_list.html:39
-#: scales/templates/scales/edge_management.html:59
-#: scales/templates/scales/edge_management.html:103
+#: scales/templates/scales/edge_management.html:175
+#: scales/templates/scales/edge_management.html:258
+#: scales/templates/scales/edge_setup_code_list.html:30
 #: scales/templates/scales/session_detail.html:34
 #: scales/templates/scales/session_list.html:58
 #: users/templates/users/client_profile_list.html:134
-#: users/templates/users/user_management_list.html:96
-#: users/templates/users/user_management_list.html:182
+#: users/templates/users/user_management_list.html:216
+#: users/templates/users/user_management_list.html:437
 msgid "Status"
 msgstr ""
 
@@ -296,93 +329,104 @@ msgstr ""
 msgid "Not slaughtered yet"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:101
-#: labeling/templates/labeling/custom_label_detail.html:110
-msgid "Download Options"
+#: labeling/templates/labeling/animal_label_detail.html:100
+#: labeling/templates/labeling/custom_label_detail.html:109
+msgid "Print and download"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:107
-#: labeling/templates/labeling/custom_label_detail.html:116
-msgid "PRN Format"
+#: labeling/templates/labeling/animal_label_detail.html:104
+#: labeling/templates/labeling/custom_label_detail.html:113
+msgid "Latest print job"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:108
-#: labeling/templates/labeling/custom_label_detail.html:117
-msgid "TSC Programming Language for direct printer output"
+#: labeling/templates/labeling/animal_label_detail.html:119
+#: labeling/templates/labeling/custom_label_detail.html:128
+msgid "Print via Edge"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:112
-#: labeling/templates/labeling/custom_label_detail.html:121
-msgid "Download PRN"
-msgstr ""
-
-#: labeling/templates/labeling/animal_label_detail.html:121
-#: labeling/templates/labeling/custom_label_detail.html:130
-msgid "BAT Format"
+#: labeling/templates/labeling/animal_label_detail.html:120
+#: labeling/templates/labeling/custom_label_detail.html:129
+msgid "Send this label to the printer connected through your site Edge device."
 msgstr ""
 
 #: labeling/templates/labeling/animal_label_detail.html:122
 #: labeling/templates/labeling/custom_label_detail.html:131
-msgid "Windows batch file for easy label printing"
+msgid ""
+"No Edge printer is registered yet. Configure the Edge and sync printer "
+"inventory first."
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:126
-#: labeling/templates/labeling/custom_label_detail.html:135
-msgid "Download BAT"
+#: labeling/templates/labeling/animal_label_detail.html:132
+#: labeling/templates/labeling/animal_label_detail.html:137
+#: labeling/templates/labeling/custom_label_detail.html:141
+#: labeling/templates/labeling/custom_label_detail.html:146
+msgid "Print"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:135
-#: labeling/templates/labeling/custom_label_detail.html:144
-msgid "PDF Format"
+#: labeling/templates/labeling/animal_label_detail.html:133
+#: labeling/templates/labeling/custom_label_detail.html:142
+msgid "Sending…"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:136
-#: labeling/templates/labeling/custom_label_detail.html:145
-msgid "Portable Document Format for viewing and printing"
+#: labeling/templates/labeling/animal_label_detail.html:134
+#: labeling/templates/labeling/custom_label_detail.html:143
+msgid "Please wait"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:141
-#: labeling/templates/labeling/custom_label_detail.html:150
+#: labeling/templates/labeling/animal_label_detail.html:146
+#: labeling/templates/labeling/custom_label_detail.html:155
+msgid "Download a PDF preview of this label."
+msgstr ""
+
+#: labeling/templates/labeling/animal_label_detail.html:151
+#: labeling/templates/labeling/custom_label_detail.html:160
 msgid "Download PDF"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:144
-#: labeling/templates/labeling/custom_label_detail.html:153
+#: labeling/templates/labeling/animal_label_detail.html:154
+#: labeling/templates/labeling/custom_label_detail.html:163
 msgid "PDF not available"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:152
+#: labeling/templates/labeling/animal_label_detail.html:162
 #: labeling/templates/labeling/animal_label_list.html:57
-#: labeling/templates/labeling/custom_label_detail.html:162
+#: labeling/templates/labeling/custom_label_detail.html:172
 #: labeling/templates/labeling/custom_label_list.html:51
+#: labeling/templates/labeling/label_app.html:62
+#: labeling/templates/labeling/label_app.html:251
 #: processing/templates/processing/animal_list.html:324
 #: processing/templates/processing/disassembly_dashboard.html:265
 #: reception/templates/reception/order_list.html:44
 #: reporting/templates/reporting/report_list.html:42
+#: scales/templates/scales/edge_management.html:87
+#: scales/templates/scales/edge_management.html:178
+#: scales/templates/scales/edge_management.html:260
 #: scales/templates/scales/orphaned_batch_list.html:20
 #: scales/templates/scales/session_detail.html:102
 #: scales/templates/scales/session_list.html:60
+#: scales/templates/scales/site_list.html:38
 #: templates/tenants/platform_admin/dashboard.html:172
 #: templates/tenants/platform_admin/dashboard.html:263
 #: users/templates/users/client_profile_list.html:139
-#: users/templates/users/user_management_list.html:97
-#: users/templates/users/user_management_list.html:183
+#: users/templates/users/user_management_list.html:217
+#: users/templates/users/user_management_list.html:438
 msgid "Actions"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:155
-#: labeling/templates/labeling/animal_label_list.html:107
-#: labeling/templates/labeling/custom_label_detail.html:165
-#: labeling/templates/labeling/custom_label_list.html:99
+#: labeling/templates/labeling/animal_label_detail.html:165
+#: labeling/templates/labeling/animal_label_list.html:99
+#: labeling/templates/labeling/custom_label_detail.html:175
+#: labeling/templates/labeling/custom_label_list.html:91
+#: labeling/templates/labeling/label_app.html:296
 msgid "Are you sure you want to delete this label?"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:159
-#: labeling/templates/labeling/custom_label_detail.html:169
+#: labeling/templates/labeling/animal_label_detail.html:169
+#: labeling/templates/labeling/custom_label_detail.html:179
 msgid "Delete Label"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_detail.html:165
+#: labeling/templates/labeling/animal_label_detail.html:175
 #: labeling/templates/labeling/animal_label_list.html:26
 msgid "Generate New Label"
 msgstr ""
@@ -397,12 +441,13 @@ msgid "Generated Labels"
 msgstr ""
 
 #: labeling/templates/labeling/animal_label_list.html:48
-#: processing/templates/processing/animal_detail.html:627
+#: portal/templates/portal/order_detail.html:483
+#: portal/templates/portal/order_detail.html:516
+#: processing/templates/processing/animal_detail.html:626
 #: processing/templates/processing/batch_weights.html:283
 #: processing/templates/processing/disassembly_dashboard.html:261
 #: processing/templates/processing/disassembly_detail.html:439
 #: reporting/templates/reporting/report_list.html:30
-#: scales/templates/scales/edge_management.html:102
 #: users/templates/users/client_profile_list.html:135
 msgid "Type"
 msgstr ""
@@ -411,8 +456,10 @@ msgstr ""
 msgid "System"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:104
-#: labeling/templates/labeling/custom_label_list.html:96
+#: labeling/templates/labeling/animal_label_list.html:96
+#: labeling/templates/labeling/custom_label_list.html:88
+#: labeling/templates/labeling/label_app.html:274
+#: labeling/templates/labeling/label_app.html:295
 #: processing/templates/processing/animal_list.html:398
 #: processing/templates/processing/disassembly_detail.html:337
 #: scales/templates/scales/dashboard.html:35
@@ -421,22 +468,23 @@ msgstr ""
 msgid "View"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:111
-#: labeling/templates/labeling/custom_label_list.html:103
+#: labeling/templates/labeling/animal_label_list.html:103
+#: labeling/templates/labeling/custom_label_list.html:95
+#: labeling/templates/labeling/label_app.html:298
 #: processing/templates/processing/disassembly_detail.html:368
 #: processing/templates/processing/disassembly_detail.html:382
 msgid "Delete"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:128
+#: labeling/templates/labeling/animal_label_list.html:120
 msgid "No labels generated"
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:130
+#: labeling/templates/labeling/animal_label_list.html:122
 msgid "No labels have been generated for this animal yet."
 msgstr ""
 
-#: labeling/templates/labeling/animal_label_list.html:139
+#: labeling/templates/labeling/animal_label_list.html:131
 msgid "Generate First Label"
 msgstr ""
 
@@ -450,8 +498,7 @@ msgstr ""
 
 #: labeling/templates/labeling/custom_label_detail.html:18
 #: labeling/templates/labeling/custom_label_form.html:17
-#: processing/templates/processing/animal_detail.html:133
-msgid "Back to List"
+msgid "Back to Labels"
 msgstr ""
 
 #: labeling/templates/labeling/custom_label_detail.html:22
@@ -479,7 +526,7 @@ msgstr "Trader"
 msgid "Ağırlık"
 msgstr "Weight"
 
-#: labeling/templates/labeling/custom_label_detail.html:175
+#: labeling/templates/labeling/custom_label_detail.html:185
 msgid "Create New Label"
 msgstr ""
 
@@ -497,35 +544,34 @@ msgstr ""
 msgid "Usually slaughter date + 10 days"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_form.html:145
+#: labeling/templates/labeling/custom_label_form.html:151
 msgid "Optional URL or data for QR code"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_form.html:152
+#: labeling/templates/labeling/custom_label_form.html:158
 #: processing/templates/processing/animal_detail.html:413
 #: processing/templates/processing/disassembly_dashboard.html:210
 #: reception/templates/reception/add_animal.html:88
-#: reception/templates/reception/batch_add_animals.html:152
+#: reception/templates/reception/batch_add_animals.html:153
 #: reception/templates/reception/edit_animal.html:91
-#: reception/templates/reception/update_order.html:303
+#: reception/templates/reception/update_order.html:330
+#: scales/templates/scales/edge_setup_code_create.html:158
 #: scales/templates/scales/orphaned_batch_reconcile.html:24
 #: scales/templates/scales/session_create.html:46
 #: scales/templates/scales/session_create.html:79
 #: scales/templates/scales/session_event_edit.html:69
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:84
-#: templates/tenants/tenant_company_settings.html:142
+#: scales/templates/scales/site_form.html:41
+#: templates/tenants/tenant_company_settings.html:149
 #: users/templates/users/client_profile_confirm_delete.html:14
 msgid "Cancel"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_form.html:156
+#: labeling/templates/labeling/custom_label_form.html:162
 msgid "Create Label"
 msgstr ""
 
 #: labeling/templates/labeling/custom_label_list.html:4
 #: labeling/templates/labeling/custom_label_list.html:12
-#: users/templates/users/dashboard.html:360
-#: users/templates/users/dashboard.html:365
 msgid "Custom Labels"
 msgstr ""
 
@@ -538,7 +584,10 @@ msgid "All Custom Labels"
 msgstr ""
 
 #: labeling/templates/labeling/custom_label_list.html:45
-#: processing/templates/processing/animal_detail.html:630
+#: portal/templates/portal/order_detail.html:449
+#: portal/templates/portal/order_detail.html:484
+#: portal/templates/portal/order_detail.html:517
+#: processing/templates/processing/animal_detail.html:629
 #: processing/templates/processing/disassembly_detail.html:122
 #: processing/templates/processing/disassembly_detail.html:481
 #: scales/templates/scales/orphaned_batch_list.html:19
@@ -548,122 +597,590 @@ msgid "Weight"
 msgstr ""
 
 #: labeling/templates/labeling/custom_label_list.html:48
+#: labeling/templates/labeling/label_app.html:247
+#: scales/templates/scales/edge_setup_code_list.html:31
 msgid "Created"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:119
+#: labeling/templates/labeling/custom_label_list.html:111
 #: scales/templates/scales/orphaned_batch_list.html:51
 #: scales/templates/scales/plu_list.html:55
 #: scales/templates/scales/session_list.html:98
 msgid "Page"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:119
+#: labeling/templates/labeling/custom_label_list.html:111
+#: labeling/templates/labeling/label_app.html:93
+#: labeling/templates/labeling/label_app.html:158
+#: labeling/templates/labeling/label_app.html:207
 #: processing/templates/processing/disassembly_dashboard.html:366
 msgid "of"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:125
+#: labeling/templates/labeling/custom_label_list.html:117
+#: labeling/templates/labeling/label_app.html:320
+#: labeling/templates/labeling/label_app.html:323
 #: processing/templates/processing/animal_list.html:432
 #: processing/templates/processing/animal_list.html:439
 #: processing/templates/processing/disassembly_dashboard.html:349
 #: processing/templates/processing/disassembly_dashboard.html:376
 #: reception/templates/reception/order_list.html:95
 #: reception/templates/reception/order_list.html:102
+#: scales/templates/scales/edge_management.html:386
 #: scales/templates/scales/orphaned_batch_list.html:47
 #: scales/templates/scales/plu_list.html:51
 #: scales/templates/scales/session_list.html:94
+#: users/templates/users/user_management_list.html:304
+#: users/templates/users/user_management_list.html:307
+#: users/templates/users/user_management_list.html:517
+#: users/templates/users/user_management_list.html:520
 msgid "Previous"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:131
+#: labeling/templates/labeling/custom_label_list.html:123
+#: labeling/templates/labeling/label_app.html:328
+#: labeling/templates/labeling/label_app.html:331
 #: processing/templates/processing/animal_list.html:446
 #: processing/templates/processing/animal_list.html:453
 #: processing/templates/processing/disassembly_dashboard.html:355
 #: processing/templates/processing/disassembly_dashboard.html:392
 #: reception/templates/reception/order_list.html:109
 #: reception/templates/reception/order_list.html:116
+#: scales/templates/scales/edge_management.html:390
 #: scales/templates/scales/orphaned_batch_list.html:53
 #: scales/templates/scales/plu_list.html:57
 #: scales/templates/scales/session_list.html:100
+#: users/templates/users/user_management_list.html:324
+#: users/templates/users/user_management_list.html:327
+#: users/templates/users/user_management_list.html:537
+#: users/templates/users/user_management_list.html:540
 msgid "Next"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:145
+#: labeling/templates/labeling/custom_label_list.html:137
 msgid "No custom labels"
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:147
+#: labeling/templates/labeling/custom_label_list.html:139
 msgid "No custom labels have been created yet."
 msgstr ""
 
-#: labeling/templates/labeling/custom_label_list.html:152
+#: labeling/templates/labeling/custom_label_list.html:144
 msgid "Create First Custom Label"
 msgstr ""
 
-#: labeling/views.py:59
+#: labeling/templates/labeling/label_app.html:4
+#: labeling/templates/labeling/label_app.html:10
+#: users/templates/users/dashboard.html:381
+msgid "Labels"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:11
+msgid "Print queue first, then all carcass and custom labels (newest first)."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:16
+msgid "New custom label"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:21
+msgid "Edge management"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:27
+msgid "Labels sections"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:28
+msgid "Print queue"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:29
+#: labeling/templates/labeling/label_app.html:220
+msgid "All labels"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:34
+msgid ""
+"No active Edge printer is configured for the default label site. Print-to-"
+"Edge actions may be unavailable until a printer is set up."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:42
+msgid "Edge print queue"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:43
+msgid ""
+"Pending jobs, jobs at the printer (dispatched ACK), and latest print "
+"confirmations (completed ACK)."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:50
+#: templates/tenants/platform_admin/dashboard.html:138
+msgid "Pending"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:58
+#: scales/templates/scales/edge_management.html:82
+msgid "Queued"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:59
+#: labeling/templates/labeling/label_app.html:114
+#: labeling/templates/labeling/label_app.html:177
+#: scales/templates/scales/edge_management.html:39
+#: scales/templates/scales/edge_management.html:83
+#: scales/templates/scales/edge_management.html:136
+#: scales/templates/scales/edge_management.html:174
+#: scales/templates/scales/edge_setup_code_create.html:63
+#: scales/templates/scales/edge_setup_code_list.html:27
+#: scales/templates/scales/session_create.html:12
+msgid "Site"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:60
+#: labeling/templates/labeling/label_app.html:119
+#: labeling/templates/labeling/label_app.html:181
+msgid "Item"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:61
+#: labeling/templates/labeling/label_app.html:115
+#: labeling/templates/labeling/label_app.html:178
+#: scales/templates/scales/edge_management.html:84
+#: scales/templates/scales/edge_management.html:137
+#: scales/templates/scales/edge_setup_code_create.html:125
+#: templates/tenants/platform_admin/tenant_superuser.html:78 users/forms.py:156
+#: users/templates/users/account_profile.html:41
+#: users/templates/users/client_profile_detail.html:42
+#: users/templates/users/user_management_list.html:213
+msgid "Role"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:78
+#: scales/templates/scales/edge_management.html:102
+msgid "Remove this job from the print queue? The Edge will not print it."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:83
+#: reception/templates/reception/order_detail.html:116
+#: reception/templates/reception/order_detail.html:167
+#: scales/templates/scales/edge_management.html:107
+#: scales/templates/scales/edge_management.html:231
+#: scales/templates/scales/edge_management.html:295
+#: scales/templates/scales/edge_management.html:331
+#: scales/templates/scales/edge_management.html:466
+#: scales/templates/scales/edge_management.html:499
+#: scales/templates/scales/edge_management.html:520
+msgid "Remove"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:93
+#: labeling/templates/labeling/label_app.html:158
+#: labeling/templates/labeling/label_app.html:207
+msgid "Showing first"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:96
+msgid "No pending jobs."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:103
+msgid "Dispatched"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:104
+msgid "Edge acknowledged pickup; printing or waiting for the printer."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:113
+msgid "Dispatched ACK"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:116
+#: scales/templates/scales/edge_management.html:48
+msgid "Edge"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:117
+#: labeling/templates/labeling/label_app.html:179
+#: scales/templates/scales/edge_management.html:266
+#: scales/templates/scales/edge_management.html:501
+msgid "Printer"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:118
+#: labeling/templates/labeling/label_app.html:180
+msgid "Attempts"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:161
+#: scales/templates/scales/edge_management.html:126
+msgid "No dispatched jobs."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:166
+msgid "Printed (Edge ACK)"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:167
+msgid "Latest successful print confirmations from the Edge."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:176
+msgid "Printed ACK"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:210
+msgid "No completed Edge prints yet."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:222
+#, python-format
+msgid "%(animal)s from animals · %(custom)s custom · sorted by created date"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:228
+#, python-format
+msgid "Page %(page)s of %(pages)s · %(start)s–%(end)s of %(total)s"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:230
+#, python-format
+msgid "%(total)s row"
+msgid_plural "%(total)s rows"
+msgstr[0] ""
+msgstr[1] ""
+
+#: labeling/templates/labeling/label_app.html:238
+msgid "No labels yet."
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:239
+msgid "Create custom label"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:248
+msgid "Source"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:249
+#: scales/templates/scales/edge_setup_code_list.html:26
+msgid "Code"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:250
+msgid "Summary"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:261
+msgid "Carcass / animal"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:284
+msgid "Custom"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:312
+msgid "Label list pagination"
+msgstr ""
+
+#: labeling/templates/labeling/label_app.html:314
+#, python-format
+msgid "%(page)s / %(pages)s"
+msgstr ""
+
+#: labeling/views.py:127
+msgid "Print job removed from the queue."
+msgstr ""
+
+#: labeling/views.py:131
+msgid "Only pending Edge print jobs can be removed from the queue."
+msgstr ""
+
+#: labeling/views.py:176
 msgid "Hot carcass labels can only be generated for slaughtered animals."
 msgstr ""
 
-#: labeling/views.py:67
+#: labeling/views.py:185
 msgid ""
-"PRN label and BAT file generated successfully! You can now download and "
-"print the label."
+"Label created. Use “Print via Edge” on the label page to send it to your "
+"site printer."
 msgstr ""
 
-#: labeling/views.py:72 labeling/views.py:111
+#: labeling/views.py:190 labeling/views.py:229
 #, python-format
 msgid "Error generating label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:107
+#: labeling/views.py:225
 msgid "Cut label generated successfully!"
 msgstr ""
 
-#: labeling/views.py:171 labeling/views.py:485
+#: labeling/views.py:264 labeling/views.py:567
+msgid "No site is configured for this tenant."
+msgstr ""
+
+#: labeling/views.py:270 labeling/views.py:573
+msgid ""
+"No Edge printer is available. Register printers from the Edge device first "
+"(printer inventory sync)."
+msgstr ""
+
+#: labeling/views.py:276 labeling/views.py:579
+msgid "This label has no printable data."
+msgstr ""
+
+#: labeling/views.py:284 labeling/views.py:587
+msgid "Print job queued. The Edge device will pick it up shortly."
+msgstr ""
+
+#: labeling/views.py:297 labeling/views.py:600
+msgid ""
+"Only PDF download is available. Use “Print via Edge” to print at the site."
+msgstr ""
+
+#: labeling/views.py:310 labeling/views.py:613
 msgid "PDF file not found."
 msgstr ""
 
-#: labeling/views.py:175 labeling/views.py:489
+#: labeling/views.py:314 labeling/views.py:617
 #, python-format
 msgid "Error downloading label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:216
+#: labeling/views.py:355
 msgid "Please select at least one animal."
 msgstr ""
 
-#: labeling/views.py:242
+#: labeling/views.py:393
 #, python-format
 msgid "Successfully generated %(count)s labels."
 msgstr ""
 
-#: labeling/views.py:245
+#: labeling/views.py:396
 #, python-format
 msgid "Some errors occurred: %(errors)s"
 msgstr ""
 
-#: labeling/views.py:263
+#: labeling/views.py:409
 msgid "Label deleted successfully."
 msgstr ""
 
-#: labeling/views.py:266 labeling/views.py:507
+#: labeling/views.py:412 labeling/views.py:631
 #, python-format
 msgid "Error deleting label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:438
+#: labeling/views.py:524
 msgid ""
-"Custom label created successfully! You can now download and print the label."
+"Custom label created. Use “Print via Edge” on the label page to print at the "
+"site."
 msgstr ""
 
-#: labeling/views.py:443
+#: labeling/views.py:529
 #, python-format
 msgid "Error creating label: %(error)s"
 msgstr ""
 
-#: labeling/views.py:504
+#: labeling/views.py:628
 msgid "Custom label deleted successfully."
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:4
+#: portal/templates/portal/order_detail.html:31
+#: processing/templates/processing/animal_list.html:315
+#: processing/templates/processing/batch_weight_reports.html:174
+#: processing/templates/processing/batch_weights.html:279
+#: processing/templates/processing/disassembly_detail.html:16
+#: processing/templates/processing/disassembly_detail.html:459
+#: processing/templates/processing/quick_process.html:16
+#: reception/templates/reception/add_animal.html:43
+#: reception/templates/reception/batch_add_animals.html:48
+#: reception/templates/reception/edit_animal.html:44
+msgid "Order"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:15
+msgid "Staff preview mode — clients can only view their own orders."
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:25
+msgid "My Orders"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:36
+#: portal/templates/portal/order_detail.html:74
+#, python-format
+msgid "%(counter)s animal"
+msgid_plural "%(counter)s animals"
+msgstr[0] ""
+msgstr[1] ""
+
+#: portal/templates/portal/order_detail.html:70
+#: processing/templates/processing/animal_detail.html:462
+msgid "Order Information"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:96
+#: portal/templates/portal/order_detail.html:171
+#: portal/templates/portal/order_detail.html:329
+msgid "Yield"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:104
+msgid "hot carcass / live weight"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:114
+#, python-format
+msgid "%(counter)s animal has missing live weight and was excluded from totals"
+msgid_plural ""
+"%(counter)s animals have missing live weight and were excluded from totals"
+msgstr[0] ""
+msgstr[1] ""
+
+#: portal/templates/portal/order_detail.html:119
+#: portal/templates/portal/order_detail.html:150
+msgid "No weight entered yet"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:133
+#: processing/templates/processing/batch_weight_reports.html:80
+#: processing/templates/processing/batch_weight_reports.html:127
+#: processing/templates/processing/batch_weight_reports.html:177
+msgid "Total Weight"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:136 processing/views.py:659
+msgid "hot carcass weight"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:138
+msgid "Live:"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:142
+#, python-format
+msgid "%(counter)s animal was excluded"
+msgid_plural "%(counter)s animals were excluded"
+msgstr[0] ""
+msgstr[1] ""
+
+#: portal/templates/portal/order_detail.html:147
+msgid "live weight (carcass pending)"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:160
+#: processing/templates/processing/batch_weight_reports.html:176
+#: processing/templates/processing/batch_weights.html:287
+#: reception/templates/reception/order_detail.html:91
+#: scales/templates/scales/session_create.html:65
+#: scales/templates/scales/session_detail.html:32
+#: templates/tenants/platform_admin/dashboard.html:283
+msgid "Animals"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:161
+msgid "Click the identification tag to view details"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:168
+#: portal/templates/portal/order_detail.html:357
+#: portal/templates/portal/order_detail.html:359
+#: processing/templates/processing/animal_list.html:312
+#: scales/templates/scales/edge_setup_code_create.html:132
+#: scales/templates/scales/orphaned_batch_reconcile.html:14
+msgid "Animal"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:169
+#: portal/templates/portal/order_detail.html:317
+#: scales/templates/scales/edge_management.html:167
+#: scales/templates/scales/edge_management.html:247
+msgid "Live"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:170
+#: portal/templates/portal/order_detail.html:323
+#: portal/templates/portal/order_detail.html:411
+#: scales/templates/scales/edge_setup_code_create.html:128
+msgid "Carcass"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:192
+msgid "missing"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:269
+msgid "Close"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:309
+msgid "Live weight not entered"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:352
+msgid "Images"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:364
+#: portal/templates/portal/order_detail.html:366
+msgid "Passport"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:371
+#: portal/templates/portal/order_detail.html:373
+msgid "Scale receipt"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:386
+msgid "Dates"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:390 processing/models.py:80
+#: processing/templates/processing/animal_list.html:321
+#: processing/templates/processing/animal_list.html:698
+#: processing/templates/processing/dashboard.html:116
+msgid "Received"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:395
+msgid "Slaughter date"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:416
+msgid "Hot"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:422
+msgid "Cold"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:428
+#: portal/templates/portal/order_detail.html:450
+#: portal/templates/portal/order_detail.html:485
+#: portal/templates/portal/order_detail.html:518
+msgid "Disposition"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:441
+msgid "Meat Cuts"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:448
+#: processing/templates/processing/disassembly_detail.html:164
+msgid "Cut"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:476
+#: scales/templates/scales/edge_setup_code_create.html:130
+msgid "Offal"
+msgstr ""
+
+#: portal/templates/portal/order_detail.html:509
+msgid "By-products"
 msgstr ""
 
 #: processing/admin.py:22
@@ -731,7 +1248,7 @@ msgid "Pictures"
 msgstr ""
 
 #: processing/admin.py:148
-#: processing/templates/processing/animal_detail.html:678
+#: processing/templates/processing/animal_detail.html:677
 msgid "Scale Receipt"
 msgstr ""
 
@@ -838,7 +1355,7 @@ msgid ""
 "%(status)s."
 msgstr ""
 
-#: processing/forms.py:228 processing/forms.py:777 processing/views.py:598
+#: processing/forms.py:228 processing/forms.py:777 processing/views.py:602
 msgid "Leather Weight (kg)"
 msgstr ""
 
@@ -851,7 +1368,7 @@ msgid "Leather weight seems unusually high. Please verify."
 msgstr ""
 
 #: processing/forms.py:259
-#: processing/templates/processing/animal_detail.html:683
+#: processing/templates/processing/animal_detail.html:682
 msgid "Scale Receipt Image"
 msgstr ""
 
@@ -868,7 +1385,7 @@ msgstr ""
 msgid "Enter total weight in kilograms"
 msgstr ""
 
-#: processing/forms.py:319 reception/forms.py:404
+#: processing/forms.py:319 reception/forms.py:505
 msgid "Number of Animals"
 msgstr ""
 
@@ -925,21 +1442,21 @@ msgstr ""
 
 #: processing/forms.py:458 processing/forms.py:489 processing/forms.py:520
 #: processing/forms.py:599 processing/forms.py:630 processing/forms.py:661
-#: processing/forms.py:721 processing/views.py:593
+#: processing/forms.py:721 processing/views.py:597
 msgid "Breed"
 msgstr ""
 
 #: processing/forms.py:459 processing/forms.py:490 processing/forms.py:521
 #: processing/forms.py:551 processing/forms.py:575 processing/forms.py:600
 #: processing/forms.py:631 processing/forms.py:662 processing/forms.py:729
-#: processing/views.py:594
+#: processing/views.py:598
 msgid "Sakatat Status"
 msgstr ""
 
 #: processing/forms.py:460 processing/forms.py:491 processing/forms.py:522
 #: processing/forms.py:552 processing/forms.py:576 processing/forms.py:601
 #: processing/forms.py:632 processing/forms.py:663 processing/forms.py:743
-#: processing/views.py:595
+#: processing/views.py:599
 msgid "Bowels Status"
 msgstr ""
 
@@ -982,7 +1499,7 @@ msgstr ""
 msgid "Good"
 msgstr ""
 
-#: processing/forms.py:759 processing/views.py:596
+#: processing/forms.py:759 processing/views.py:600
 msgid "Live Weight (kg)"
 msgstr ""
 
@@ -990,7 +1507,7 @@ msgstr ""
 msgid "kg"
 msgstr ""
 
-#: processing/forms.py:768 processing/views.py:597
+#: processing/forms.py:768 processing/views.py:601
 msgid "Hot Carcass Weight (kg)"
 msgstr ""
 
@@ -1044,12 +1561,6 @@ msgstr ""
 
 #: processing/models.py:75
 msgid "Beef"
-msgstr ""
-
-#: processing/models.py:80 processing/templates/processing/animal_list.html:321
-#: processing/templates/processing/animal_list.html:698
-#: processing/templates/processing/dashboard.html:116
-msgid "Received"
 msgstr ""
 
 #: processing/models.py:81 processing/templates/processing/dashboard.html:132
@@ -1418,15 +1929,19 @@ msgstr ""
 msgid "Animal Detail"
 msgstr ""
 
+#: processing/templates/processing/animal_detail.html:133
+msgid "Back to List"
+msgstr ""
+
 #: processing/templates/processing/animal_detail.html:137
 #: processing/templates/processing/animal_detail.html:320
-#: processing/templates/processing/animal_detail.html:770
+#: processing/templates/processing/animal_detail.html:769
 #: processing/templates/processing/animal_list.html:406
 msgid "Mark animal as slaughtered?"
 msgstr ""
 
 #: processing/templates/processing/animal_detail.html:141
-#: processing/templates/processing/animal_detail.html:774
+#: processing/templates/processing/animal_detail.html:773
 msgid "Mark Slaughtered"
 msgstr ""
 
@@ -1533,146 +2048,141 @@ msgid "View All Labels"
 msgstr ""
 
 #: processing/templates/processing/animal_detail.html:451
-msgid "Label Types Available:"
+msgid "After generating a label:"
 msgstr ""
 
 #: processing/templates/processing/animal_detail.html:453
-msgid "PRN Format: Direct printer commands for TSC label printers"
+msgid ""
+"Use “Print via Edge” on the label page to send TSPL to your site printer "
+"(Edge must be online and printers synced)."
 msgstr ""
 
 #: processing/templates/processing/animal_detail.html:454
-msgid "BAT Format: Windows batch file for easy printing"
+msgid "Download PDF for a preview or office printing."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:455
-msgid "PDF Format: Printable document for any printer"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:463
-msgid "Order Information"
-msgstr ""
-
-#: processing/templates/processing/animal_detail.html:466
+#: processing/templates/processing/animal_detail.html:465
 msgid "Order Number"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:475
+#: processing/templates/processing/animal_detail.html:474
 #: processing/templates/processing/disassembly_dashboard.html:263
 #: processing/templates/processing/disassembly_dashboard.html:321
 #: reception/templates/reception/order_list.html:41 tenants/views.py:337
-#: users/forms.py:302 users/templates/users/client_profile_detail.html:4
+#: users/forms.py:304 users/models.py:31
+#: users/templates/users/client_profile_detail.html:4
 #: users/templates/users/client_profile_list.html:133
 #: users/templates/users/dashboard.html:53
 msgid "Client"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:485
+#: processing/templates/processing/animal_detail.html:484
 #: processing/templates/processing/disassembly_detail.html:468
 msgid "Service Package"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:489
+#: processing/templates/processing/animal_detail.html:488
 #: reception/templates/reception/order_list.html:42
 msgid "Order Date"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:499
+#: processing/templates/processing/animal_detail.html:498
 msgid "Photos"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:503
+#: processing/templates/processing/animal_detail.html:502
 msgid "Animal Photo"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:510
+#: processing/templates/processing/animal_detail.html:509
 msgid "Passport Photo"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:523
-#: users/templates/users/dashboard.html:316
+#: processing/templates/processing/animal_detail.html:522
+#: users/templates/users/dashboard.html:337
 msgid "Disassembly"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:526
+#: processing/templates/processing/animal_detail.html:525
 #: processing/templates/processing/disassembly_dashboard.html:107
 #: processing/templates/processing/disassembly_detail.html:40
 msgid "Boneless Service"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:530
+#: processing/templates/processing/animal_detail.html:529
 #: processing/templates/processing/disassembly_dashboard.html:111
 #: processing/templates/processing/disassembly_detail.html:44
 msgid "Standard Cuts"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:547
+#: processing/templates/processing/animal_detail.html:546
 #: processing/templates/processing/disassembly_dashboard.html:126
 #: processing/templates/processing/disassembly_detail.html:96
 msgid "Cannot Proceed to Disassembly"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:551
+#: processing/templates/processing/animal_detail.html:550
 #: processing/templates/processing/disassembly_dashboard.html:129
 #: processing/templates/processing/disassembly_detail.html:99
 msgid "Hot carcass weight must be logged before disassembly can begin."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:562
+#: processing/templates/processing/animal_detail.html:561
 msgid "Record the total weight of boneless meat after removing all bones."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:564
+#: processing/templates/processing/animal_detail.html:563
 msgid "Manage disassembly cuts and generate labels for individual pieces."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:572
+#: processing/templates/processing/animal_detail.html:571
 #: processing/templates/processing/disassembly_dashboard.html:222
 msgid "Boneless Meat Weight:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:577
+#: processing/templates/processing/animal_detail.html:576
 msgid "Total Cuts:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:579
+#: processing/templates/processing/animal_detail.html:578
 #: processing/templates/processing/disassembly_dashboard.html:235
 msgid "Total Weight:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:585
+#: processing/templates/processing/animal_detail.html:584
 msgid "Individual Cuts:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:607
+#: processing/templates/processing/animal_detail.html:606
 #: processing/templates/processing/disassembly_dashboard.html:292
 #: processing/templates/processing/disassembly_dashboard.html:332
-#: users/templates/users/dashboard.html:321
+#: users/templates/users/dashboard.html:342
 msgid "Manage Cuts"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:616
+#: processing/templates/processing/animal_detail.html:615
 msgid "Weight History"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:624
+#: processing/templates/processing/animal_detail.html:623
 msgid "Date"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:651
+#: processing/templates/processing/animal_detail.html:650
 msgid "No weight records yet."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:658
+#: processing/templates/processing/animal_detail.html:657
 msgid "Scale sessions"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:659
+#: processing/templates/processing/animal_detail.html:658
 msgid ""
 "Sessions where this animal was scaled (total allocated weight and average "
 "per event)."
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:664
+#: processing/templates/processing/animal_detail.html:663
 #: scales/templates/scales/session_detail.html:4
 #: scales/templates/scales/session_detail.html:12
 #: scales/templates/scales/session_event_edit.html:4
@@ -1680,62 +2190,62 @@ msgstr ""
 msgid "Session"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:667
+#: processing/templates/processing/animal_detail.html:666
 #: processing/templates/processing/disassembly_detail.html:124
 msgid "Allocated"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:668
+#: processing/templates/processing/animal_detail.html:667
 #: processing/templates/processing/batch_weights.html:262
 #: processing/templates/processing/disassembly_detail.html:64
 #: processing/templates/processing/disassembly_detail.html:423
 msgid "avg"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:668
+#: processing/templates/processing/animal_detail.html:667
 #: processing/templates/processing/disassembly_detail.html:64
 #: processing/templates/processing/disassembly_detail.html:423
 msgid "event"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:687
+#: processing/templates/processing/animal_detail.html:686
 #: reception/templates/reception/edit_animal.html:57
 msgid "Current Image:"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:694
+#: processing/templates/processing/animal_detail.html:693
 #: reception/templates/reception/edit_animal.html:64
 msgid "Upload a new image to replace"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:711
+#: processing/templates/processing/animal_detail.html:710
 msgid "Choose Scale Receipt Image"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:742
+#: processing/templates/processing/animal_detail.html:741
 msgid "Upload"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:766
+#: processing/templates/processing/animal_detail.html:765
 #: processing/templates/processing/disassembly_detail.html:535
 #: reporting/templates/reporting/dashboard.html:154
 #: reporting/templates/reporting/simple_dashboard.html:82
 msgid "Quick Actions"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:781
+#: processing/templates/processing/animal_detail.html:780
 #: processing/templates/processing/quick_process.html:4
 #: reception/templates/reception/order_detail.html:147
 msgid "Quick Process"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:786
+#: processing/templates/processing/animal_detail.html:785
 #: reception/templates/reception/edit_animal.html:42
 msgid "Edit Animal"
 msgstr ""
 
-#: processing/templates/processing/animal_detail.html:793
-#: processing/templates/processing/animal_detail.html:846
+#: processing/templates/processing/animal_detail.html:792
+#: processing/templates/processing/animal_detail.html:845
 msgid "Log Weight"
 msgstr ""
 
@@ -1783,23 +2293,6 @@ msgstr ""
 
 #: processing/templates/processing/animal_list.html:302
 msgid "per page"
-msgstr ""
-
-#: processing/templates/processing/animal_list.html:312
-#: scales/templates/scales/orphaned_batch_reconcile.html:14
-msgid "Animal"
-msgstr ""
-
-#: processing/templates/processing/animal_list.html:315
-#: processing/templates/processing/batch_weight_reports.html:174
-#: processing/templates/processing/batch_weights.html:279
-#: processing/templates/processing/disassembly_detail.html:16
-#: processing/templates/processing/disassembly_detail.html:459
-#: processing/templates/processing/quick_process.html:16
-#: reception/templates/reception/add_animal.html:43
-#: reception/templates/reception/batch_add_animals.html:48
-#: reception/templates/reception/edit_animal.html:44
-msgid "Order"
 msgstr ""
 
 #: processing/templates/processing/animal_list.html:343
@@ -1891,7 +2384,7 @@ msgid "No order"
 msgstr ""
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1173 processing/views.py:1250
+#: processing/views.py:1177 processing/views.py:1254
 msgid "Walk-in Client"
 msgstr ""
 
@@ -2006,12 +2499,6 @@ msgstr ""
 msgid "Animals Weighed"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:80
-#: processing/templates/processing/batch_weight_reports.html:127
-#: processing/templates/processing/batch_weight_reports.html:177
-msgid "Total Weight"
-msgstr ""
-
 #: processing/templates/processing/batch_weight_reports.html:94
 #: processing/templates/processing/batch_weight_reports.html:128
 msgid "Avg Weight/Animal"
@@ -2053,15 +2540,6 @@ msgstr ""
 msgid "Date & Time"
 msgstr ""
 
-#: processing/templates/processing/batch_weight_reports.html:176
-#: processing/templates/processing/batch_weights.html:287
-#: reception/templates/reception/order_detail.html:91
-#: scales/templates/scales/session_create.html:65
-#: scales/templates/scales/session_detail.html:32
-#: templates/tenants/platform_admin/dashboard.html:283
-msgid "Animals"
-msgstr ""
-
 #: processing/templates/processing/batch_weight_reports.html:178
 msgid "Avg Weight"
 msgstr ""
@@ -2095,7 +2573,7 @@ msgstr ""
 
 #: processing/templates/processing/batch_weights.html:48
 #: templates/tenants/platform_admin/dashboard.html:298
-#: theme/templates/base.html:40 users/templates/users/dashboard.html:4
+#: users/templates/users/dashboard.html:4
 msgid "Dashboard"
 msgstr ""
 
@@ -2426,6 +2904,7 @@ msgstr ""
 #: processing/templates/processing/disassembly_dashboard.html:93
 #: reception/templates/reception/order_list.html:24
 #: users/templates/users/client_profile_list.html:61
+#: users/templates/users/user_management_list.html:90
 msgid "Search"
 msgstr ""
 
@@ -2516,7 +2995,8 @@ msgstr ""
 #: processing/templates/processing/disassembly_detail.html:418
 #: scales/templates/scales/session_detail.html:33
 #: scales/templates/scales/session_list.html:57 tenants/views.py:336
-#: users/forms.py:303 users/templates/users/dashboard.html:45
+#: users/forms.py:305 users/models.py:30
+#: users/templates/users/dashboard.html:45
 msgid "Operator"
 msgstr ""
 
@@ -2549,7 +3029,7 @@ msgid "Scale events"
 msgstr ""
 
 #: processing/templates/processing/disassembly_detail.html:119
-#: scales/templates/scales/edge_management.html:144
+#: scales/templates/scales/edge_management.html:352
 #: scales/templates/scales/orphaned_batch_reconcile.html:33
 #: scales/templates/scales/session_detail.html:72
 #: scales/templates/scales/session_detail.html:97
@@ -2589,10 +3069,6 @@ msgstr ""
 msgid "Editing Cut"
 msgstr ""
 
-#: processing/templates/processing/disassembly_detail.html:164
-msgid "Cut"
-msgstr ""
-
 #: processing/templates/processing/disassembly_detail.html:165
 msgid "Current Weight"
 msgstr ""
@@ -2619,6 +3095,8 @@ msgid "Total (yield):"
 msgstr ""
 
 #: processing/templates/processing/disassembly_detail.html:297
+#: scales/templates/scales/edge_management.html:303
+#: scales/templates/scales/edge_management.html:522
 msgid "Scale"
 msgstr ""
 
@@ -2672,11 +3150,20 @@ msgstr ""
 #: scales/templates/scales/session_detail.html:121
 #: scales/templates/scales/session_detail.html:174
 #: scales/templates/scales/session_detail.html:185
+#: scales/templates/scales/site_list.html:51
 #: users/templates/users/client_profile_detail.html:23
 #: users/templates/users/client_profile_list.html:108
 #: users/templates/users/client_profile_list.html:175
-#: users/templates/users/user_management_list.html:145
-#: users/templates/users/user_management_list.html:213
+#: users/templates/users/user_management_list.html:128
+#: users/templates/users/user_management_list.html:179
+#: users/templates/users/user_management_list.html:229
+#: users/templates/users/user_management_list.html:270
+#: users/templates/users/user_management_list.html:362
+#: users/templates/users/user_management_list.html:366
+#: users/templates/users/user_management_list.html:402
+#: users/templates/users/user_management_list.html:450
+#: users/templates/users/user_management_list.html:454
+#: users/templates/users/user_management_list.html:483
 msgid "Edit"
 msgstr ""
 
@@ -2777,107 +3264,103 @@ msgstr ""
 msgid "Next: %(tag)s (%(type)s)"
 msgstr ""
 
-#: processing/views.py:394
+#: processing/views.py:398
 msgid "Scale receipt image deleted."
 msgstr ""
 
-#: processing/views.py:396
+#: processing/views.py:400
 msgid "No scale receipt image to delete."
 msgstr ""
 
-#: processing/views.py:401
+#: processing/views.py:405
 msgid "Scale receipt image uploaded successfully."
 msgstr ""
 
-#: processing/views.py:403
+#: processing/views.py:407
 msgid "Failed to upload scale receipt image."
 msgstr ""
 
-#: processing/views.py:448 processing/views.py:453
+#: processing/views.py:452 processing/views.py:457
 #, python-format
 msgid "%(animal_type)s Details"
 msgstr ""
 
-#: processing/views.py:646
+#: processing/views.py:650
 msgid "details"
 msgstr ""
 
-#: processing/views.py:651
+#: processing/views.py:655
 msgid "live weight"
 msgstr ""
 
-#: processing/views.py:655
-msgid "hot carcass weight"
-msgstr ""
-
-#: processing/views.py:659
+#: processing/views.py:663
 msgid "leather weight"
 msgstr ""
 
-#: processing/views.py:664
+#: processing/views.py:668
 #, python-format
 msgid "Saved %(items)s for %(tag)s."
 msgstr ""
 
-#: processing/views.py:671
+#: processing/views.py:675
 msgid "No changes to save."
 msgstr ""
 
-#: processing/views.py:686
+#: processing/views.py:690
 #, python-format
 msgid "Label generation failed: %(error)s"
 msgstr ""
 
-#: processing/views.py:704
+#: processing/views.py:708
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr ""
 
-#: processing/views.py:706
+#: processing/views.py:710
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr ""
 
-#: processing/views.py:726 processing/views.py:1204
+#: processing/views.py:730 processing/views.py:1208
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:739
+#: processing/views.py:743
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr ""
 
-#: processing/views.py:749
+#: processing/views.py:753
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr ""
 
-#: processing/views.py:757
+#: processing/views.py:761
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:823
+#: processing/views.py:827
 msgid "Please select an order."
 msgstr ""
 
-#: processing/views.py:840
+#: processing/views.py:844
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr ""
 
-#: processing/views.py:842
+#: processing/views.py:846
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr ""
 
-#: processing/views.py:882
+#: processing/views.py:886
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr ""
 
-#: processing/views.py:1013
+#: processing/views.py:1017
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2885,7 +3368,7 @@ msgid ""
 "%(average_weight).2fkg average."
 msgstr ""
 
-#: processing/views.py:1025
+#: processing/views.py:1029
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -2893,12 +3376,12 @@ msgid ""
 "%(weight_type)s."
 msgstr ""
 
-#: processing/views.py:1037
+#: processing/views.py:1041
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1068
+#: processing/views.py:1072
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -2906,296 +3389,337 @@ msgid ""
 "animals."
 msgstr ""
 
-#: processing/views.py:1080
+#: processing/views.py:1084
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
 "pending, so individual animal logs for this type were removed."
 msgstr ""
 
-#: processing/views.py:1089
+#: processing/views.py:1093
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1140
+#: processing/views.py:1144
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr ""
 
-#: processing/views.py:1208
+#: processing/views.py:1212
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr ""
 
-#: processing/views.py:1294
+#: processing/views.py:1298
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
 "Current status: %(status)s. Please slaughter the animal first."
 msgstr ""
 
-#: processing/views.py:1307
+#: processing/views.py:1311
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr ""
 
-#: processing/views.py:1315
+#: processing/views.py:1319
 msgid "updated"
 msgstr ""
 
-#: processing/views.py:1319
+#: processing/views.py:1323
 msgid "created"
 msgstr ""
 
-#: processing/views.py:1328
+#: processing/views.py:1332
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr ""
 
-#: processing/views.py:1472 processing/views.py:1485
+#: processing/views.py:1476 processing/views.py:1489
 msgid "No animal found matching the query"
 msgstr ""
 
-#: processing/views.py:1482
+#: processing/views.py:1486
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
 msgstr ""
 
-#: processing/views.py:1728
+#: processing/views.py:1732
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr ""
 
-#: processing/views.py:1733
+#: processing/views.py:1737
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr ""
 
-#: processing/views.py:1737
+#: processing/views.py:1741
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1769 processing/views.py:1779
+#: processing/views.py:1773 processing/views.py:1783
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 
-#: processing/views.py:1786
+#: processing/views.py:1790
 msgid "Cut updated successfully."
 msgstr ""
 
-#: processing/views.py:1789
+#: processing/views.py:1793
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr ""
 
-#: processing/views.py:1807
+#: processing/views.py:1811
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
 msgstr ""
 
-#: processing/views.py:1814
+#: processing/views.py:1818
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr ""
 
-#: reception/forms.py:16 reception/forms.py:169
+#: reception/forms.py:35 reception/forms.py:192
 #: reception/templates/reception/create_order.html:154
-#: reception/templates/reception/update_order.html:141
-msgid "Search Registered Client"
+#: reception/templates/reception/update_order.html:165
+msgid "Search client"
 msgstr ""
 
-#: reception/forms.py:20 reception/forms.py:173
-msgid "Type client name to search..."
+#: reception/forms.py:39 reception/forms.py:196
+msgid "Search by name, phone, or destination..."
 msgstr ""
 
-#: reception/forms.py:33 reception/forms.py:186
+#: reception/forms.py:52 reception/forms.py:209
 msgid "Walk-in Client Name"
 msgstr ""
 
-#: reception/forms.py:37 reception/forms.py:190
+#: reception/forms.py:56 reception/forms.py:213
 msgid "Enter client name for walk-in customers"
 msgstr ""
 
-#: reception/forms.py:52 reception/forms.py:205
+#: reception/forms.py:71 reception/forms.py:228
 msgid "Area Code"
 msgstr ""
 
-#: reception/forms.py:54 reception/forms.py:207 ⁨tenants/forms 2.py⁩:35
-#: tenants/forms.py:35 users/forms.py:48 users/forms.py:181 users/forms.py:336
+#: reception/forms.py:73 reception/forms.py:230 tenants/forms.py:35
+#: users/forms.py:48 users/forms.py:182 users/forms.py:341
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr ""
 
-#: reception/forms.py:61 reception/forms.py:214
-#: reception/templates/reception/create_order.html:217
-#: reception/templates/reception/update_order.html:205
+#: reception/forms.py:80 reception/forms.py:237
+#: reception/templates/reception/create_order.html:220
+#: reception/templates/reception/update_order.html:232
 msgid "Walk-in Client Phone"
 msgstr ""
 
-#: reception/forms.py:62 reception/forms.py:215
+#: reception/forms.py:81 reception/forms.py:238
 msgid ""
 "Required for walk-in clients so this customer can be saved as a reusable "
 "prospect."
 msgstr ""
 
-#: reception/forms.py:66 reception/forms.py:219 ⁨tenants/forms 2.py⁩:63
-#: tenants/forms.py:64 users/forms.py:366
+#: reception/forms.py:85 reception/forms.py:242 tenants/forms.py:70
+#: users/forms.py:371
 msgid "Enter phone number"
 msgstr ""
 
-#: reception/forms.py:74 reception/forms.py:227
+#: reception/forms.py:93 reception/forms.py:250
 msgid "Destination Client"
 msgstr ""
 
-#: reception/forms.py:75 reception/forms.py:228
+#: reception/forms.py:94 reception/forms.py:251
 msgid ""
 "Type to search destination clients. Select one to keep it linked for future "
 "orders."
 msgstr ""
 
-#: reception/forms.py:79 reception/forms.py:232
+#: reception/forms.py:98 reception/forms.py:255
 msgid "Type destination client name to search..."
 msgstr ""
 
-#: reception/forms.py:94 reception/forms.py:247
+#: reception/forms.py:113 reception/forms.py:270
 msgid "Service package"
 msgstr ""
 
-#: reception/forms.py:95 reception/forms.py:248
+#: reception/forms.py:114 reception/forms.py:271
 msgid "Order datetime"
 msgstr ""
 
-#: reception/forms.py:96 reception/forms.py:249
+#: reception/forms.py:115 reception/forms.py:272
 msgid "Destination"
 msgstr ""
 
-#: reception/forms.py:99 reception/forms.py:252
+#: reception/forms.py:118 reception/forms.py:275
 msgid "The service package selected for this order."
 msgstr ""
 
-#: reception/forms.py:100 reception/forms.py:253
+#: reception/forms.py:119 reception/forms.py:276
 msgid "Hidden snapshot of the selected destination client."
 msgstr ""
 
-#: reception/forms.py:121 reception/forms.py:277
+#: reception/forms.py:140 reception/forms.py:308
 msgid "Select service package"
 msgstr ""
 
-#: reception/forms.py:126
+#: reception/forms.py:145
 msgid "Please choose a service package before creating the order."
 msgstr ""
 
-#: reception/forms.py:127 reception/forms.py:282
+#: reception/forms.py:146 reception/forms.py:313
 msgid "Select a valid service package."
 msgstr ""
 
-#: reception/forms.py:139 reception/forms.py:320
+#: reception/forms.py:158 reception/forms.py:396
 msgid ""
-"An order must be linked to either a registered client or a walk-in client "
-"name."
+"An order must be linked to either a saved client from search or a walk-in "
+"client name."
 msgstr ""
 
-#: reception/forms.py:143 reception/forms.py:324
-msgid ""
-"Please provide either a registered client or a walk-in client, not both."
+#: reception/forms.py:162 reception/forms.py:401
+msgid "Please provide either a client from search or walk-in fields, not both."
 msgstr ""
 
-#: reception/forms.py:149 reception/forms.py:330
+#: reception/forms.py:168 reception/forms.py:408
 msgid "Walk-in client phone is required."
 msgstr ""
 
-#: reception/forms.py:281
+#: reception/forms.py:312
 msgid "Please choose a service package before saving the order."
 msgstr ""
 
-#: reception/forms.py:354
+#: reception/forms.py:455
 msgid "Enter identification tag (optional - auto-generated if empty)"
 msgstr ""
 
-#: reception/forms.py:381 reception/forms.py:459
+#: reception/forms.py:482 reception/forms.py:562
 msgid "Select animal type"
 msgstr ""
 
-#: reception/forms.py:385
+#: reception/forms.py:486
 msgid "Animal Photo (Optional)"
 msgstr ""
 
-#: reception/forms.py:386
+#: reception/forms.py:487
 msgid "Passport/Document Photo (Optional)"
 msgstr ""
 
-#: reception/forms.py:408
+#: reception/forms.py:509
 msgid "Enter number of animals (1-100)"
 msgstr ""
 
-#: reception/forms.py:416
+#: reception/forms.py:517
 msgid "Tag Prefix (Optional)"
 msgstr ""
 
-#: reception/forms.py:420
+#: reception/forms.py:521
 msgid "e.g., BATCH-001 (leave empty for auto-generation)"
 msgstr ""
 
-#: reception/forms.py:423
+#: reception/forms.py:525
 msgid ""
-"Custom prefix for identification tags. If empty, auto-generated tags will be "
-"used."
+"Custom prefix for identification tags. The sequence continues for the same "
+"prefix on the same day and resets the next day. If empty, auto-generated "
+"tags will be used."
 msgstr ""
 
-#: reception/forms.py:428
+#: reception/forms.py:531
 msgid "Received Date & Time"
 msgstr ""
 
-#: reception/forms.py:444
+#: reception/forms.py:547
 msgid ""
 "Pre-filled with the current date and time; clear to use the time when you "
 "submit."
 msgstr ""
 
-#: reception/forms.py:450
+#: reception/forms.py:553
 msgid "Skip Photos for Batch"
 msgstr ""
 
-#: reception/forms.py:454
+#: reception/forms.py:557
 msgid "Check this to create animals without photos (photos can be added later)"
 msgstr ""
 
-#: reception/forms.py:466 reception/services.py:399
+#: reception/forms.py:569 reception/services.py:552
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr ""
 
-#: reception/services.py:240
+#: reception/services.py:174
+msgid ""
+"This phone number cannot be used for a walk-in client because it is already "
+"assigned to another account type. Use a different number, or pick the client "
+"from search if they already exist."
+msgstr ""
+
+#: reception/services.py:320
 msgid ""
 "Failed to create order after multiple attempts due to high concurrency. "
 "Please try again."
 msgstr ""
 
-#: reception/services.py:255 reception/services.py:284
+#: reception/services.py:335
 msgid ""
-"Cannot update an order that is already in progress, completed, or cancelled."
+"Cannot change the client once animals have been added or processing has "
+"started."
 msgstr ""
 
-#: reception/services.py:302
+#: reception/services.py:360
+msgid ""
+"Cannot update the order date once animals have been added or processing has "
+"started."
+msgstr ""
+
+#: reception/services.py:382
+msgid ""
+"Cannot update destination for an order that is already billed or cancelled."
+msgstr ""
+
+#: reception/services.py:402
+msgid ""
+"Cannot update the service package for an order that is completed, billed, "
+"cancelled, or has terminal animals."
+msgstr ""
+
+#: reception/services.py:407
+msgid "A service package is required."
+msgstr ""
+
+#: reception/services.py:414
+msgid ""
+"Cannot change the service package after an animal has already been "
+"delivered, returned, or disposed."
+msgstr ""
+
+#: reception/services.py:421
+msgid ""
+"Cannot change the disassembly service type after disassembly work or cut "
+"records already exist."
+msgstr ""
+
+#: reception/services.py:455
 msgid "Cannot cancel an order that is already in progress or completed."
 msgstr ""
 
-#: reception/services.py:339
+#: reception/services.py:492
 msgid "Cannot bill an order that is not yet completed."
 msgstr ""
 
-#: reception/services.py:352 reception/services.py:396
+#: reception/services.py:505 reception/services.py:549
 msgid "Can only add animals to a PENDING order."
 msgstr ""
 
-#: reception/services.py:364
+#: reception/services.py:517
 msgid "Can only remove animals from a PENDING order."
 msgstr ""
 
-#: reception/services.py:367
+#: reception/services.py:520
 msgid "Animal does not belong to the specified order."
 msgstr ""
 
@@ -3263,15 +3787,21 @@ msgid "With prefix 'FARM-A': FARM-A-001, FARM-A-002, FARM-A-003..."
 msgstr ""
 
 #: reception/templates/reception/batch_add_animals.html:118
+msgid ""
+"If you use 'FARM-A' again later the same day, numbering continues from the "
+"last tag."
+msgstr ""
+
+#: reception/templates/reception/batch_add_animals.html:119
 msgid "Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02..."
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:156
+#: reception/templates/reception/batch_add_animals.html:157
 msgid ""
 "Are you sure you want to create these animals? This action cannot be undone."
 msgstr ""
 
-#: reception/templates/reception/batch_add_animals.html:157
+#: reception/templates/reception/batch_add_animals.html:158
 msgid "Create Batch Animals"
 msgstr ""
 
@@ -3283,45 +3813,57 @@ msgstr ""
 msgid "Create New Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:160
+#: reception/templates/reception/create_order.html:159
+#: reception/templates/reception/update_order.html:170
+msgid ""
+"Includes registered accounts and saved walk-in prospects. Past walk-ins only "
+"on an order with no profile also appear here—select to fill walk-in fields."
+msgstr ""
+
+#: reception/templates/reception/create_order.html:163
 msgid "Create New Client Account"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:164
-#: reception/templates/reception/update_order.html:146
+#: reception/templates/reception/create_order.html:167
+#: reception/templates/reception/update_order.html:173
 msgid ""
 "Tip: after you link a destination client once, picking the same client can "
 "fill it automatically."
 msgstr ""
 
-#: reception/templates/reception/create_order.html:192
-#: reception/templates/reception/update_order.html:180
+#: reception/templates/reception/create_order.html:195
+#: reception/templates/reception/update_order.html:207
 msgid "OR"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:310
-#: users/templates/users/dashboard.html:100
+#: reception/templates/reception/create_order.html:313
+#: users/templates/users/dashboard.html:99
 msgid "Create Order"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:317
-#: reception/templates/reception/update_order.html:165
-#: reception/templates/reception/update_order.html:359
+#: reception/templates/reception/create_order.html:320
+#: reception/templates/reception/update_order.html:192
 #: reception/templates/reception/update_order.html:388
-#: users/templates/users/dashboard.html:636
+#: reception/templates/reception/update_order.html:417
+#: users/templates/users/dashboard.html:657
 msgid "Preferred destination"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:318
-#: reception/templates/reception/update_order.html:379
+#: reception/templates/reception/create_order.html:321
+#: reception/templates/reception/update_order.html:408
 #: users/templates/users/client_profile_list.html:201
-#: users/templates/users/dashboard.html:630
+#: users/templates/users/dashboard.html:651
 msgid "No clients found"
 msgstr ""
 
-#: reception/templates/reception/create_order.html:319
-#: reception/templates/reception/update_order.html:492
+#: reception/templates/reception/create_order.html:322
+#: reception/templates/reception/update_order.html:526
 msgid "Preferred destination client"
+msgstr ""
+
+#: reception/templates/reception/create_order.html:408
+#: reception/templates/reception/update_order.html:421
+msgid "From order (fill walk-in)"
 msgstr ""
 
 #: reception/templates/reception/edit_animal.html:4
@@ -3344,6 +3886,8 @@ msgstr ""
 
 #: reception/templates/reception/order_detail.html:30
 #: users/templates/users/client_profile_list.html:98
+#: users/templates/users/user_management_list.html:169
+#: users/templates/users/user_management_list.html:395
 msgid "Phone:"
 msgstr ""
 
@@ -3364,7 +3908,7 @@ msgid "Edit Order"
 msgstr ""
 
 #: reception/templates/reception/order_detail.html:60
-#: users/templates/users/dashboard.html:294
+#: users/templates/users/dashboard.html:315
 msgid "Operation Dashboard"
 msgstr ""
 
@@ -3396,11 +3940,6 @@ msgstr ""
 msgid "Process"
 msgstr ""
 
-#: reception/templates/reception/order_detail.html:116
-#: reception/templates/reception/order_detail.html:167
-msgid "Remove"
-msgstr ""
-
 #: reception/templates/reception/order_detail.html:166
 msgid "Are you sure you want to remove this animal?"
 msgstr ""
@@ -3418,7 +3957,7 @@ msgid "Slaughter Orders"
 msgstr ""
 
 #: reception/templates/reception/order_list.html:10
-#: users/templates/users/dashboard.html:95
+#: users/templates/users/dashboard.html:94
 msgid "New Order"
 msgstr ""
 
@@ -3428,7 +3967,7 @@ msgstr ""
 
 #: reception/templates/reception/order_list.html:29
 #: users/templates/users/client_profile_list.html:66
-#: users/templates/users/user_management_list.html:81
+#: users/templates/users/user_management_list.html:95
 msgid "Clear"
 msgstr ""
 
@@ -3473,69 +4012,134 @@ msgid "Update Slaughter Order"
 msgstr ""
 
 #: reception/templates/reception/update_order.html:131
-#: reception/templates/reception/update_order.html:307
+#: reception/templates/reception/update_order.html:335
 msgid "Update Order"
 msgstr ""
 
-#: reception/views.py:77
+#: reception/templates/reception/update_order.html:136
+msgid "This order is billed or cancelled and can no longer be edited."
+msgstr ""
+
+#: reception/templates/reception/update_order.html:140
+msgid ""
+"Client, service package, and order date are locked once animals have been "
+"added or processing has started. You can still update the destination."
+msgstr ""
+
+#: reception/templates/reception/update_order.html:144
+msgid ""
+"Client and order date are locked once animals have been added or processing "
+"has started. Destination can still be updated. Service package changes are "
+"allowed only while the order is still active and only when they do not "
+"conflict with existing processing data."
+msgstr ""
+
+#: reception/templates/reception/update_order.html:150
+#, python-format
+msgid ""
+"\n"
+"                        This order already has 1 active generated animal "
+"label. If you change the destination and save, the old label will be "
+"archived automatically and removed from the active label history. Regenerate "
+"it afterward so the printed data matches the new destination.\n"
+"                    "
+msgid_plural ""
+"\n"
+"                        This order already has %(count)s active generated "
+"animal labels. If you change the destination and save, the old labels will "
+"be archived automatically and removed from the active label history. "
+"Regenerate them afterward so the printed data matches the new destination.\n"
+"                    "
+msgstr[0] ""
+msgstr[1] ""
+
+#: reception/templates/reception/update_order.html:330
+#: templates/public/signin.html:75 templates/public/signin.html:95
+msgid "Back"
+msgstr ""
+
+#: reception/templates/reception/update_order.html:335
+msgid "Update Destination"
+msgstr ""
+
+#: reception/views.py:101
 msgid "No contact person"
 msgstr ""
 
-#: reception/views.py:90 reception/views.py:93 users/views.py:842
+#: reception/views.py:114 reception/views.py:117 users/models.py:51
 msgid "Individual"
 msgstr ""
 
-#: reception/views.py:99
+#: reception/views.py:123
 msgid "Walk-in prospect"
 msgstr ""
 
-#: reception/views.py:148
+#: reception/views.py:165
+msgid "Walk-in on order (not linked yet)"
+msgstr ""
+
+#: reception/views.py:211
 #, python-format
 msgid "Slaughter order %(order_no)s created successfully."
 msgstr ""
 
-#: reception/views.py:155
+#: reception/views.py:220
 msgid ""
 "We could not save this order. Please try again, or contact support if it "
 "keeps happening."
 msgstr ""
 
-#: reception/views.py:160
+#: reception/views.py:225
 msgid "Check the highlighted fields below, fix any issues, and submit again."
 msgstr ""
 
-#: reception/views.py:244
+#: reception/views.py:338
+msgid "This order can no longer be edited."
+msgstr ""
+
+#: reception/views.py:346
 msgid "Order updated successfully."
 msgstr ""
 
-#: reception/views.py:250
+#: reception/views.py:350
+#, python-format
+msgid ""
+"Archived %(count)s previously generated animal labels. Regenerate them "
+"before printing."
+msgstr ""
+
+#: reception/views.py:358
 msgid "The selected client could not be found. Please choose it again."
 msgstr ""
 
-#: reception/views.py:261
+#: reception/views.py:364
+msgid "We could not update this order right now. Please try again."
+msgstr ""
+
+#: reception/views.py:376
 #, python-format
 msgid "Order %(order_no)s has been cancelled."
 msgstr ""
 
-#: reception/views.py:275
+#: reception/views.py:390
 #, python-format
 msgid "Order %(order_no)s has been marked as billed."
 msgstr ""
 
-#: reception/views.py:294
+#: reception/views.py:409
 msgid "Animal added to the order successfully."
 msgstr ""
 
-#: reception/views.py:317
+#: reception/views.py:432
 msgid "Animal details updated successfully."
 msgstr ""
 
-#: reception/views.py:333
+#: reception/views.py:448
 #, python-format
 msgid "Animal %(tag)s removed from the order."
 msgstr ""
 
-#: reception/views.py:370
+#: reception/views.py:485
 #, python-format
 msgid ""
 "Successfully created %(count)d %(animal_type)s animals for order "
@@ -3558,7 +4162,7 @@ msgid ""
 msgstr ""
 
 #: reporting/templates/reporting/dashboard.html:32
-#: users/templates/users/dashboard.html:444
+#: users/templates/users/dashboard.html:465
 msgid "Daily Reports"
 msgstr ""
 
@@ -3668,6 +4272,10 @@ msgstr ""
 #: users/templates/users/client_profile_detail.html:25
 #: users/templates/users/client_profile_list.html:113
 #: users/templates/users/client_profile_list.html:180
+#: users/templates/users/user_management_list.html:191
+#: users/templates/users/user_management_list.html:276
+#: users/templates/users/user_management_list.html:412
+#: users/templates/users/user_management_list.html:489
 msgid "Archive"
 msgstr ""
 
@@ -3820,11 +4428,21 @@ msgstr ""
 msgid "Error generating test report"
 msgstr ""
 
-#: scales/models.py:170
+#: scales/forms.py:20
+msgid "Site name"
+msgstr ""
+
+#: scales/forms.py:21 scales/templates/scales/edge_management.html:257
+#: scales/templates/scales/site_list.html:36 templates/public/setup.html:96
+#: tenants/forms.py:241 users/templates/users/client_profile_detail.html:65
+msgid "Address"
+msgstr ""
+
+#: scales/models.py:325
 msgid "No animals"
 msgstr ""
 
-#: scales/models.py:176
+#: scales/models.py:331
 #, python-format
 msgid "+%(count)s more"
 msgstr ""
@@ -3860,153 +4478,702 @@ msgstr ""
 msgid "PLU catalog"
 msgstr ""
 
+#: scales/templates/scales/dashboard.html:47
+#: scales/templates/scales/edge_management.html:17
+#: scales/templates/scales/site_list.html:4
+#: scales/templates/scales/site_list.html:10
+msgid "Sites"
+msgstr ""
+
+#: scales/templates/scales/dashboard.html:48
 #: scales/templates/scales/edge_management.html:4
 #: scales/templates/scales/edge_management.html:10
-#: users/templates/users/dashboard.html:557
+#: scales/templates/scales/site_list.html:25
+#: users/templates/users/dashboard.html:578
 msgid "Edge Management"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:11
-msgid "Browse infrastructure as site -> edge -> printer and review edge logs."
+msgid "Site, Edge, printers, scales, and activity logs for your location."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:13
-#: users/templates/users/client_profile_list.html:22
-msgid "Back to dashboard"
+#: scales/templates/scales/edge_management.html:21
+#: scales/templates/scales/edge_setup_code_list.html:4
+msgid "Setup Codes"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:17
-msgid "Topology Selector"
-msgstr ""
-
-#: scales/templates/scales/edge_management.html:20
-#: scales/templates/scales/edge_management.html:58
-#: scales/templates/scales/session_create.html:12
-msgid "Site"
-msgstr ""
-
-#: scales/templates/scales/edge_management.html:22
-msgid "Select site"
-msgstr ""
-
-#: scales/templates/scales/edge_management.html:29
-msgid "Edge"
+#: scales/templates/scales/edge_management.html:28
+#: scales/templates/scales/edge_setup_code_create.html:4
+#: scales/templates/scales/edge_setup_code_create.html:9
+msgid "Add Edge Device"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:31
-#: scales/templates/scales/edge_management.html:284
-msgid "Select edge"
+#: users/templates/users/client_profile_list.html:22
+#: users/templates/users/user_management_list.html:47
+msgid "Back to dashboard"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:36
+msgid "Filter by site and edge"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:41
-msgid "Apply filter"
+msgid "Select site"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:50
-msgid "Available Edges"
-msgstr ""
-
-#: scales/templates/scales/edge_management.html:51
-#: scales/templates/scales/edge_management.html:95
-msgid "Live"
-msgstr ""
-
-#: scales/templates/scales/edge_management.html:57
-#: scales/templates/scales/plu_list.html:26
-msgid "Name"
+#: scales/templates/scales/edge_management.html:593
+msgid "Select edge"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:60
-msgid "Last seen"
+msgid "Apply filter"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:70
-#: scales/templates/scales/edge_management.html:114
-#: scales/templates/scales/edge_management.html:205
-#: scales/templates/scales/edge_management.html:224
-msgid "Online"
+#: scales/templates/scales/edge_management.html:67
+msgid "Cloud print queue"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:69
+msgid ""
+"Pending jobs are not assigned to a worker until an Edge ACKs “dispatched”. "
+"Redis stores a short-lived pulse per Edge (last poll / last ACK) for quick "
+"dashboard checks; in-flight counts come from the database."
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:72
-#: scales/templates/scales/edge_management.html:116
-#: scales/templates/scales/edge_management.html:206
-#: scales/templates/scales/edge_management.html:225
-msgid "Offline"
+msgid "No pending edge print jobs."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:77
-#: scales/templates/scales/edge_management.html:78
-#: scales/templates/scales/edge_management.html:79
-#: scales/templates/scales/edge_management.html:122
-#: scales/templates/scales/edge_management.html:123
-#: scales/templates/scales/edge_management.html:124
-#: scales/templates/scales/edge_management.html:193
-#: scales/templates/scales/edge_management.html:194
-#: scales/templates/scales/edge_management.html:195
-msgid "ago"
+#: scales/templates/scales/edge_management.html:72
+#: scales/templates/scales/edge_management.html:126
+msgid "(filtered by site)"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:75
+#, python-format
+msgid "%(counter)s job waiting for Edge"
+msgid_plural "%(counter)s jobs waiting for Edge"
+msgstr[0] ""
+msgstr[1] ""
+
+#: scales/templates/scales/edge_management.html:76
+msgid "— site filter applied"
 msgstr ""
 
 #: scales/templates/scales/edge_management.html:85
-#: scales/templates/scales/edge_management.html:200
+msgid "Worker"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:86
+#: scales/templates/scales/edge_management.html:139
+msgid "Job ID"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:96
+msgid "—"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:118
+#, python-format
+msgid "Showing %(shown)s of %(total)s jobs. Narrow by site filter if needed."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:123
+msgid "At printer (dispatched)"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:124
+msgid ""
+"These jobs were claimed by an Edge worker (dispatched ACK) and should "
+"complete or fail shortly."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:129
+#, python-format
+msgid "%(counter)s job at printer"
+msgid_plural "%(counter)s jobs at printer"
+msgstr[0] ""
+msgstr[1] ""
+
+#: scales/templates/scales/edge_management.html:135
+msgid "Claimed"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:138
+msgid "Worker (Edge)"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:157
+#, python-format
+msgid "Showing %(shown)s of %(total)s dispatched jobs."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:166
+msgid "Available Edges"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:173
+#: scales/templates/scales/edge_setup_code_detail.html:67
+#: scales/templates/scales/edge_setup_code_detail.html:78
+#: scales/templates/scales/plu_list.html:26
+#: scales/templates/scales/site_list.html:35
+msgid "Name"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:176
+#: scales/templates/scales/edge_setup_code_detail.html:71
+#: scales/templates/scales/edge_setup_code_detail.html:81
+msgid "Last seen"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:177
+msgid "Print worker"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:188
+#: scales/templates/scales/edge_management.html:272
+#: scales/templates/scales/edge_management.html:309
+#: scales/templates/scales/edge_management.html:453
+#: scales/templates/scales/edge_management.html:488
+#: scales/templates/scales/edge_management.html:512
+msgid "Online"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:190
+#: scales/templates/scales/edge_management.html:274
+#: scales/templates/scales/edge_management.html:311
+#: scales/templates/scales/edge_management.html:454
+#: scales/templates/scales/edge_management.html:490
+#: scales/templates/scales/edge_management.html:513
+msgid "Offline"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:195
+#: scales/templates/scales/edge_management.html:196
+#: scales/templates/scales/edge_management.html:197
+#: scales/templates/scales/edge_management.html:281
+#: scales/templates/scales/edge_management.html:282
+#: scales/templates/scales/edge_management.html:283
+#: scales/templates/scales/edge_management.html:317
+#: scales/templates/scales/edge_management.html:318
+#: scales/templates/scales/edge_management.html:319
+#: scales/templates/scales/edge_management.html:418
+#: scales/templates/scales/edge_management.html:419
+#: scales/templates/scales/edge_management.html:420
+msgid "ago"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:203
+#: scales/templates/scales/edge_management.html:443
+msgid "at printer"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:206
+#: scales/templates/scales/edge_management.html:440
+msgid "Last poll batch"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:209
+#: scales/templates/scales/edge_management.html:439
+msgid "ACK"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:217
+#, python-format
+msgid ""
+"Clear registration for \"%(name)s\" and open Add Edge Device with this site "
+"pre-filled? Use this after the Edge app was deleted or reinstalled. Active "
+"scale sessions on this edge must be closed first."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:221
+#: scales/templates/scales/edge_management.html:461
+msgid "Re-link"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:226
+#, python-format
+msgid ""
+"Remove edge \"%(name)s\" and all its devices/printers? This cannot be undone."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:237
+#: scales/templates/scales/edge_management.html:448
 msgid "No edges for this filter."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:94
-msgid "Available Printers / Scale Devices"
+#: scales/templates/scales/edge_management.html:246
+msgid "Label printers & scale devices"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:101
-msgid "Device ID"
+#: scales/templates/scales/edge_management.html:249
+msgid ""
+"Label printers come from Edge inventory sync; scales from scale "
+"registration / heartbeat."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:104
-msgid "Last heartbeat"
+#: scales/templates/scales/edge_management.html:254
+msgid "Kind"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:130
-#: scales/templates/scales/edge_management.html:219
-msgid "No printers for this filter."
+#: scales/templates/scales/edge_management.html:255
+msgid "Identifier"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:139
+#: scales/templates/scales/edge_management.html:256
+msgid "Role / type"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:259
+#: templates/tenants/platform_admin/dashboard.html:295
+msgid "Last activity"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:277
+#: scales/templates/scales/edge_management.html:493
+msgid "disabled"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:290
+#, python-format
+msgid ""
+"Remove label printer \"%(lid)s\" from the dashboard? It may reappear after "
+"the next Edge inventory sync."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:326
+#, python-format
+msgid "Remove scale \"%(did)s\" from the dashboard?"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:338
+msgid ""
+"No label printers or scale devices for this filter. Select a site or edge, "
+"or wait for the Edge to sync inventory and heartbeats."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:347
 msgid "Recent Edge Logs"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:145
+#: scales/templates/scales/edge_management.html:353
 msgid "Level"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:146
+#: scales/templates/scales/edge_management.html:354
 msgid "Action"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:147
+#: scales/templates/scales/edge_management.html:355
 msgid "Site / Edge / Printer"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:148
+#: scales/templates/scales/edge_management.html:356
 msgid "Message"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:165
+#: scales/templates/scales/edge_management.html:373
 msgid "No edge logs yet."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:285
-#: scales/templates/scales/edge_management.html:312
-msgid "Select an edge to list printers."
+#: scales/templates/scales/edge_management.html:379
+msgid "Logs pagination"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:288
+#: scales/templates/scales/edge_management.html:381
+#, python-format
+msgid "Page %(page)s of %(num_pages)s — %(total)s entries"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:427
+msgid ""
+"Clear this Edge registration and open Add Edge Device with this site pre-"
+"filled? For use after reinstall. Close active sessions first."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:430
+msgid ""
+"Remove this label printer from the dashboard? It may reappear after the next "
+"Edge inventory sync."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:431
+msgid "Remove this scale from the dashboard?"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:463
+msgid "Remove this edge and all its devices/printers?"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:486
+msgid "Warning"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:532
+msgid "No label printers or scale devices for this filter."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:594
+msgid "Loading…"
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:597
 msgid "Select a site to list edges."
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:302
+#: scales/templates/scales/edge_management.html:598
+#: scales/templates/scales/edge_management.html:628
+msgid "Select a site to list devices."
+msgstr ""
+
+#: scales/templates/scales/edge_management.html:612
 msgid "online"
 msgstr ""
 
-#: scales/templates/scales/edge_management.html:302
+#: scales/templates/scales/edge_management.html:612
 msgid "offline"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:11
+msgid ""
+"Create a setup code for a new Edge device. The operator at the site will "
+"enter this code when they first run the Edge software."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:17
+msgid "Re-linking after reinstall"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:19
+msgid ""
+"The site and Edge name below match the device you just cleared. Generate a "
+"new setup code, then enter it in the fresh Edge app so it reconnects to this "
+"site."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:33
+#: scales/templates/scales/edge_setup_code_detail.html:139
+msgid "Download CarniTrack Edge"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:34
+msgid ""
+"Install on the PC at the site (near printers and scales). Then generate a "
+"setup code below and enter it in the app on first run."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:44
+msgid "Download for Windows"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:52
+msgid "Download for Linux"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:55
+msgid ""
+"Latest builds: GitHub release edge-latest. Re-download after updates if your "
+"IT policy allows."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:67
+msgid "Select a site..."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:76
+msgid "Edge Device Name"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:80
+msgid "e.g., Main Facility Edge"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:83
+msgid "Optional. If left empty, the site name will be used."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:89
+msgid "Code Valid For"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:93
+#: scales/templates/scales/edge_setup_code_create.html:94
+msgid "hours"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:95
+msgid "days"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:100
+msgid "Printer Configuration"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:102
+msgid ""
+"Configure printers for this Edge device. These will be auto-configured on "
+"the Edge when the setup code is used."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:107
+msgid "Select from existing printers at this site"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:115
+msgid "Add printers manually"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:120
+msgid "IP Address"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:129
+msgid "Meat Cut"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:131
+msgid "By-Product"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:133
+msgid "Generic"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:137
+#, fuzzy
+#| msgid "Company logo"
+msgid "Display Name"
+msgstr "Company logo"
+
+#: scales/templates/scales/edge_setup_code_create.html:138
+msgid "Carcass Line"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:144
+#, fuzzy
+#| msgid "Remove current logo"
+msgid "Remove printer row"
+msgstr "Remove current logo"
+
+#: scales/templates/scales/edge_setup_code_create.html:150
+msgid "Add another printer"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_create.html:162
+msgid "Generate Setup Code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:4
+msgid "Edge Setup Code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:22
+msgid "Edge Device Created"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:32
+msgid "Setup Code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:41
+msgid "Copy to clipboard"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:46
+msgid "Already used"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:50
+msgid "Expires:"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:57
+msgid "Waiting for Edge activation…"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:59
+msgid ""
+"This page refreshes every 10 seconds. After the site operator enters the "
+"code on the Edge, you will see connection status here."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:65
+msgid "Edge connected and online"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:68
+msgid "Version"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:69
+#: templates/tenants/platform_admin/dashboard.html:262
+msgid "Health"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:70
+msgid "Active printers"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:76
+msgid "Edge activated but currently offline"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:83
+msgid "No heartbeat recorded yet."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:92
+msgid "Pre-configured Printers"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:108
+msgid "Activation URL"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:112
+#: scales/templates/scales/edge_setup_code_detail.html:121
+msgid "Copy"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:115
+msgid ""
+"The Edge calls this single URL to activate. The server resolves the tenant "
+"from the setup code automatically."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:117
+msgid "Cloud API URL (post-activation)"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:124
+msgid ""
+"After activation, the Edge uses this tenant-specific URL for all subsequent "
+"API calls (returned in config.baseUrl)."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:130
+msgid "Setup Instructions"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:133
+msgid "Send these instructions to the site operator:"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:142
+msgid "Windows (.exe)"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:145
+msgid "Linux"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:153
+msgid "Extract and run the application"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:154
+msgid "On Windows: double-click carnitrack-edge.exe"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:160
+msgid "Open browser"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:162
+msgid "Go to"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:169
+msgid "Enter the setup code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:171
+msgid "Type or paste:"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:179
+msgid "Verify printers are connected"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:181
+msgid ""
+"After activation, the Edge will auto-configure printers and test "
+"connectivity. Check the Edge dashboard for printer status."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:188
+msgid "Install as a service (optional)"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:190
+msgid ""
+"Run install-service.bat as Administrator so it starts automatically on "
+"reboot."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:200
+msgid "Back to Edge Management"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:204
+msgid "Are you sure you want to revoke this setup code?"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_detail.html:208
+msgid "Revoke Code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:10
+msgid "Edge Setup Codes"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:11
+msgid "Manage provisioning codes for Edge devices."
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:18
+msgid "New Setup Code"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:28
+msgid "Edge Name"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:29
+msgid "Printers"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:32
+msgid "Expires"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:47
+msgid "Used"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:49
+#: templates/tenants/platform_admin/dashboard.html:134
+#: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:157
+#: users/templates/users/client_profile_detail.html:13
+#: users/templates/users/client_profile_list.html:36
+#: users/templates/users/client_profile_list.html:88
+#: users/templates/users/client_profile_list.html:151
+#: users/templates/users/user_management_list.html:61
+#: users/templates/users/user_management_list.html:139
+#: users/templates/users/user_management_list.html:260
+#: users/templates/users/user_management_list.html:375
+#: users/templates/users/user_management_list.html:473
+msgid "Active"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:51
+msgid "Expired"
+msgstr ""
+
+#: scales/templates/scales/edge_setup_code_list.html:59
+msgid "No setup codes yet."
 msgstr ""
 
 #: scales/templates/scales/orphaned_batch_list.html:9
@@ -4118,7 +5285,7 @@ msgstr ""
 msgid "Search animals..."
 msgstr ""
 
-#: scales/templates/scales/session_create.html:75 scales/views.py:436
+#: scales/templates/scales/session_create.html:75 scales/views.py:1023
 msgid "Select at least one animal."
 msgstr ""
 
@@ -4237,8 +5404,8 @@ msgid "Choose one animal to assign full weight, or Split to share evenly."
 msgstr ""
 
 #: scales/templates/scales/session_event_edit.html:68
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:81
-#: templates/tenants/tenant_company_settings.html:139
+#: scales/templates/scales/site_form.html:45
+#: templates/tenants/tenant_company_settings.html:146
 msgid "Save"
 msgstr ""
 
@@ -4256,7 +5423,6 @@ msgid "Scale Sessions"
 msgstr ""
 
 #: scales/templates/scales/session_list.html:16
-#: users/templates/users/user_management_list.html:70
 msgid "All statuses"
 msgstr ""
 
@@ -4269,91 +5435,249 @@ msgstr ""
 msgid "Affected Animals"
 msgstr ""
 
-#: scales/views.py:237
+#: scales/templates/scales/site_form.html:5
+#: scales/templates/scales/site_form.html:12
+msgid "Edit site"
+msgstr ""
+
+#: scales/templates/scales/site_form.html:5
+#: scales/templates/scales/site_form.html:12
+#: scales/templates/scales/site_list.html:21
+msgid "New site"
+msgstr ""
+
+#: scales/templates/scales/site_form.html:15
+msgid ""
+"Sites group your hardware: each site can have one or more Edge computers, "
+"scales, and label printers."
+msgstr ""
+
+#: scales/templates/scales/site_form.html:35
+msgid "Optional. Shown for your team’s reference."
+msgstr ""
+
+#: scales/templates/scales/site_form.html:45
+msgid "Create site"
+msgstr ""
+
+#: scales/templates/scales/site_list.html:12
+msgid ""
+"Plants or locations in your tenant. Each site can have Edge devices, scales, "
+"and printers. Create a site before adding setup codes or Edge hardware."
+msgstr ""
+
+#: scales/templates/scales/site_list.html:37
+msgid "Edges"
+msgstr ""
+
+#: scales/templates/scales/site_list.html:54
+#, python-format
+msgid ""
+"Deactivate site \"%(name)s\"? It will disappear from Edge and label setup "
+"until restored in admin."
+msgstr ""
+
+#: scales/templates/scales/site_list.html:56
+#: scales/templates/scales/site_list.html:59
+#: templates/tenants/platform_admin/dashboard.html:339
+msgid "Deactivate"
+msgstr ""
+
+#: scales/templates/scales/site_list.html:59
+msgid "Remove Edge devices first"
+msgstr ""
+
+#: scales/templates/scales/site_list.html:66
+msgid "No sites yet. Create one to attach Edge devices and scales."
+msgstr ""
+
+#: scales/views.py:263
+#, python-format
+msgid "Site “%(name)s” was created."
+msgstr ""
+
+#: scales/views.py:279
+#, python-format
+msgid "Site “%(name)s” was updated."
+msgstr ""
+
+#: scales/views.py:292
+msgid ""
+"This site still has active Edge devices. Remove them from Edge Management "
+"before deactivating the site."
+msgstr ""
+
+#: scales/views.py:298
+#, python-format
+msgid "Site “%(name)s” was deactivated."
+msgstr ""
+
+#: scales/views.py:365
+msgid "Please select a site."
+msgstr ""
+
+#: scales/views.py:371
+msgid "Site not found."
+msgstr ""
+
+#: scales/views.py:477
+msgid "Setup code not found or already used."
+msgstr ""
+
+#: scales/views.py:481
+msgid "Setup code revoked successfully."
+msgstr ""
+
+#: scales/views.py:513
+msgid "Target printer was removed with Edge; job cancelled."
+msgstr ""
+
+#: scales/views.py:529
+msgid "Edge re-linked; pending queue cleared for this site."
+msgstr ""
+
+#: scales/views.py:541
+msgid "Edge removed or re-linked; in-flight print cleared."
+msgstr ""
+
+#: scales/views.py:564 scales/views.py:607
+msgid "Edge device not found."
+msgstr ""
+
+#: scales/views.py:575
+#, python-format
+msgid ""
+"Cannot remove this edge — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+
+#: scales/views.py:586
+#, python-format
+msgid "Edge device '%(name)s' has been removed."
+msgstr ""
+
+#: scales/views.py:591
+#, python-format
+msgid "Cancelled %(n)s print job(s) that targeted this Edge's printers."
+msgstr ""
+
+#: scales/views.py:618
+#, python-format
+msgid ""
+"Cannot re-link this edge — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+
+#: scales/views.py:631
+#, python-format
+msgid ""
+"Registration cleared for this Edge. %(n)s pending print job(s) for %(site)s "
+"were cancelled so they will not all run at once after reinstall. Generate a "
+"new setup code on the next screen, then enter it in a fresh Edge install."
+msgstr ""
+
+#: scales/views.py:660
+#, python-format
+msgid ""
+"Cannot remove this scale — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+
+#: scales/views.py:668
+#, python-format
+msgid "Scale “%(id)s” was removed from the dashboard."
+msgstr ""
+
+#: scales/views.py:683
+#, python-format
+msgid "Printer “%(id)s” was removed from the dashboard."
+msgstr ""
+
+#: scales/views.py:824
 msgid "Scale device"
 msgstr ""
 
-#: scales/views.py:294 users/views.py:853
+#: scales/views.py:881 users/models.py:32 users/views.py:906
 msgid "Walk-in"
 msgstr ""
 
-#: scales/views.py:355 scales/views.py:388
+#: scales/views.py:942 scales/views.py:975
 #, python-format
 msgid ""
 "Animal %(tag)s is not eligible for scale session. It must be carcass-ready "
 "with hot carcass weight."
 msgstr ""
 
-#: scales/views.py:362
+#: scales/views.py:949
 msgid "Animal not found. The scanned QR code may be invalid."
 msgstr ""
 
-#: scales/views.py:395
+#: scales/views.py:982
 msgid "Animal not found or not eligible for scale session."
 msgstr ""
 
-#: scales/views.py:401
+#: scales/views.py:988
 msgid "Could not find animal from this QR code."
 msgstr ""
 
-#: scales/views.py:450
+#: scales/views.py:1037
 msgid "One or more selected animals are invalid or not eligible."
 msgstr ""
 
-#: scales/views.py:473
+#: scales/views.py:1060
 #, python-format
 msgid ""
 "Device %(device)s already has an active session (animal: %(tag)s). Close it "
 "before starting a new one."
 msgstr ""
 
-#: scales/views.py:506
+#: scales/views.py:1093
 #, python-format
 msgid "Session started for %(tag)s on %(device)s."
 msgstr ""
 
-#: scales/views.py:512
+#: scales/views.py:1099
 #, python-format
 msgid "Session started for %(count)s animals on %(device)s."
 msgstr ""
 
-#: scales/views.py:722
+#: scales/views.py:1309
 msgid "Event updated."
 msgstr ""
 
-#: scales/views.py:737
+#: scales/views.py:1324
 msgid "This event is already deleted."
 msgstr ""
 
-#: scales/views.py:748
+#: scales/views.py:1335
 msgid "Event deleted."
 msgstr ""
 
-#: scales/views.py:761
+#: scales/views.py:1348
 msgid "This event is already active."
 msgstr ""
 
-#: scales/views.py:770
+#: scales/views.py:1357
 msgid "Event reactivated."
 msgstr ""
 
-#: scales/views.py:783 scales/views.py:800
+#: scales/views.py:1370 scales/views.py:1387
 msgid "Session is already closed."
 msgstr ""
 
-#: scales/views.py:789
+#: scales/views.py:1376
 msgid "Session closed."
 msgstr ""
 
-#: scales/views.py:806
+#: scales/views.py:1393
 msgid "Session cancelled."
 msgstr ""
 
-#: scales/views.py:869
+#: scales/views.py:1456
 msgid "Please select an animal."
 msgstr ""
 
-#: scales/views.py:900
+#: scales/views.py:1487
 #, python-format
 msgid "Batch reconciled to animal %(tag)s."
 msgstr ""
@@ -4361,7 +5685,7 @@ msgstr ""
 #: templates/public/base_public.html:9 templates/public/landing.html:4
 #: templates/public/setup.html:4 templates/public/setup_status.html:4
 #: templates/public/signin.html:5 theme/templates/base.html:8
-#: theme/templates/base.html:32
+#: theme/templates/base.html:33
 msgid "CarniTrack"
 msgstr ""
 
@@ -4521,23 +5845,22 @@ msgid ""
 "review your request faster."
 msgstr ""
 
-#: templates/public/setup.html:52 tenants/forms.py:128 tenants/forms.py:223
+#: templates/public/setup.html:52 tenants/forms.py:134 tenants/forms.py:229
 msgid "Company name"
 msgstr ""
 
-#: templates/public/setup.html:60 tenants/forms.py:224
+#: templates/public/setup.html:60 tenants/forms.py:230
 msgid "Owner email"
 msgstr ""
 
 #: templates/public/setup.html:69 templates/public/signin.html:89
-#: tenants/forms.py:153 tenants/forms.py:185 tenants/forms.py:225
+#: tenants/forms.py:159 tenants/forms.py:191 tenants/forms.py:231
 #: users/templates/users/client_register_done.html:20
-#: users/templates/users/login.html:40
 msgid "Password"
 msgstr ""
 
-#: templates/public/setup.html:76 tenants/forms.py:154 tenants/forms.py:186
-#: tenants/forms.py:227
+#: templates/public/setup.html:76 tenants/forms.py:160 tenants/forms.py:192
+#: tenants/forms.py:233
 msgid "Confirm password"
 msgstr ""
 
@@ -4545,21 +5868,16 @@ msgstr ""
 msgid "Optional company details"
 msgstr ""
 
-#: templates/public/setup.html:89 tenants/forms.py:231
+#: templates/public/setup.html:89 tenants/forms.py:237
 msgid "Registered company name"
 msgstr ""
 
-#: templates/public/setup.html:96 tenants/forms.py:235
-#: users/templates/users/client_profile_detail.html:65
-msgid "Address"
-msgstr ""
-
-#: templates/public/setup.html:104 tenants/forms.py:238
+#: templates/public/setup.html:104 tenants/forms.py:244
 #: users/templates/users/account_profile.html:49
 #: users/templates/users/client_profile_detail.html:47
 #: users/templates/users/client_profile_list.html:136
-#: users/templates/users/user_management_list.html:95
-#: users/templates/users/user_management_list.html:181
+#: users/templates/users/user_management_list.html:215
+#: users/templates/users/user_management_list.html:436
 msgid "Phone"
 msgstr ""
 
@@ -4586,7 +5904,6 @@ msgstr ""
 #: templates/tenants/platform_admin/login.html:170
 #: templates/tenants/platform_admin/setup.html:62
 #: users/templates/users/client_register_done.html:26
-#: users/templates/users/login.html:49
 msgid "Sign in"
 msgstr ""
 
@@ -4735,10 +6052,6 @@ msgid ""
 "continue."
 msgstr ""
 
-#: templates/public/signin.html:75 templates/public/signin.html:95
-msgid "Back"
-msgstr ""
-
 #: templates/public/signin.html:83 templates/public/signin.html:121
 msgid "Workspace"
 msgstr ""
@@ -4789,21 +6102,6 @@ msgstr ""
 msgid "Tenant host unavailable"
 msgstr ""
 
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:4
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:8
-#, fuzzy
-#| msgid "Company settings"
-msgid "Company & label settings"
-msgstr "Company settings"
-
-#: ⁨templates/tenants 2/tenant_company_settings.html⁩:10
-#: templates/tenants/tenant_company_settings.html:28
-msgid ""
-"These values appear on printed labels (company block, İşletme onay no, VD "
-"number) and on PDF reports. İşletme onay no must match your official "
-"registration."
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:8
 msgid "Tenant dashboard"
 msgstr ""
@@ -4831,19 +6129,6 @@ msgstr ""
 msgid "Tenants"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:134
-#: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:156
-#: users/templates/users/client_profile_detail.html:13
-#: users/templates/users/client_profile_list.html:36
-#: users/templates/users/client_profile_list.html:88
-#: users/templates/users/client_profile_list.html:151
-#: users/templates/users/user_management_list.html:48
-#: users/templates/users/user_management_list.html:71
-#: users/templates/users/user_management_list.html:135
-#: users/templates/users/user_management_list.html:206
-msgid "Active"
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:135
 #: tenants/dashboard_services.py:344
 msgid "Healthy"
@@ -4855,10 +6140,6 @@ msgstr ""
 
 #: templates/tenants/platform_admin/dashboard.html:137
 msgid "Active in 7d"
-msgstr ""
-
-#: templates/tenants/platform_admin/dashboard.html:138
-msgid "Pending"
 msgstr ""
 
 #: templates/tenants/platform_admin/dashboard.html:143
@@ -4879,7 +6160,7 @@ msgid "Schema"
 msgstr ""
 
 #: templates/tenants/platform_admin/dashboard.html:170
-#: tenants/dashboard_services.py:227 tenants/views.py:333
+#: tenants/dashboard_services.py:227 tenants/views.py:333 users/models.py:27
 #: users/templates/users/dashboard.html:16
 msgid "Owner"
 msgstr ""
@@ -4924,10 +6205,6 @@ msgstr ""
 msgid "Usage"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:262
-msgid "Health"
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:269
 #, python-format
 msgid "Deactivate %(schema)s?"
@@ -4940,7 +6217,7 @@ msgstr ""
 
 #: templates/tenants/platform_admin/dashboard.html:280
 #: users/templates/users/user_management_list.html:4
-#: users/templates/users/user_management_list.html:10
+#: users/templates/users/user_management_list.html:11
 msgid "Users"
 msgstr ""
 
@@ -4973,10 +6250,6 @@ msgstr ""
 msgid "Managers"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:295
-msgid "Last activity"
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:297
 msgid "Recent logins (7d)"
 msgstr ""
@@ -5006,14 +6279,14 @@ msgstr ""
 msgid "Create admin user"
 msgstr ""
 
-#: templates/tenants/platform_admin/dashboard.html:339
-msgid "Deactivate"
-msgstr ""
-
 #: templates/tenants/platform_admin/dashboard.html:341
 #: users/templates/users/client_profile_detail.html:29
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
+#: users/templates/users/user_management_list.html:198
+#: users/templates/users/user_management_list.html:283
+#: users/templates/users/user_management_list.html:419
+#: users/templates/users/user_management_list.html:496
 msgid "Activate"
 msgstr ""
 
@@ -5034,7 +6307,7 @@ msgid "Impersonation could not be started"
 msgstr ""
 
 #: templates/tenants/platform_admin/impersonation_error.html:20
-#: theme/templates/base.html:70
+#: theme/templates/base.html:71
 msgid "Return to platform admin"
 msgstr ""
 
@@ -5110,7 +6383,7 @@ msgid "Users in this tenant"
 msgstr ""
 
 #: templates/tenants/platform_admin/tenant_superuser.html:76
-#: tenants/forms.py:181 users/forms.py:40
+#: tenants/forms.py:187 users/forms.py:40
 #: users/templates/users/account_profile.html:37
 #: users/templates/users/client_profile_detail.html:76
 #: users/templates/users/client_profile_list.html:137
@@ -5119,19 +6392,12 @@ msgid "Username"
 msgstr ""
 
 #: templates/tenants/platform_admin/tenant_superuser.html:77
-#: tenants/forms.py:152 tenants/forms.py:184 tenants/forms.py:213
-#: users/forms.py:41 users/forms.py:174 users/forms.py:327
+#: tenants/forms.py:158 tenants/forms.py:190 tenants/forms.py:219
+#: users/forms.py:41 users/forms.py:175 users/forms.py:332
 #: users/templates/users/account_profile.html:45
 #: users/templates/users/client_profile_detail.html:80
-#: users/templates/users/user_management_list.html:94
+#: users/templates/users/user_management_list.html:214
 msgid "Email"
-msgstr ""
-
-#: templates/tenants/platform_admin/tenant_superuser.html:78 users/forms.py:155
-#: users/templates/users/account_profile.html:41
-#: users/templates/users/client_profile_detail.html:42
-#: users/templates/users/user_management_list.html:92
-msgid "Role"
 msgstr ""
 
 #: templates/tenants/platform_admin/tenant_superuser.html:80
@@ -5172,20 +6438,27 @@ msgstr ""
 
 #: templates/tenants/tenant_company_settings.html:4
 #: templates/tenants/tenant_company_settings.html:26
-#: users/templates/users/dashboard.html:487
-#: users/templates/users/dashboard.html:492
+#: users/templates/users/dashboard.html:508
+#: users/templates/users/dashboard.html:513
 msgid "Company settings"
 msgstr "Company settings"
 
-#: templates/tenants/tenant_company_settings.html:96
+#: templates/tenants/tenant_company_settings.html:28
+msgid ""
+"These values appear on printed labels (company block, İşletme onay no, VD "
+"number) and on PDF reports. İşletme onay no must match your official "
+"registration."
+msgstr ""
+
+#: templates/tenants/tenant_company_settings.html:103
 msgid "Current logo"
 msgstr "Current logo"
 
-#: templates/tenants/tenant_company_settings.html:96
+#: templates/tenants/tenant_company_settings.html:103
 msgid "Preview"
 msgstr "Preview"
 
-#: templates/tenants/tenant_company_settings.html:107
+#: templates/tenants/tenant_company_settings.html:114
 msgid ""
 "Shown in the app header at a fixed size (recommended: wide logo or "
 "horizontal mark)."
@@ -5193,29 +6466,29 @@ msgstr ""
 "Shown in the app header at a fixed size (recommended: wide logo or "
 "horizontal mark)."
 
-#: ⁨tenants/admin 2.py⁩:24 tenants/admin.py:24
+#: tenants/admin.py:24
 msgid "Identity"
 msgstr ""
 
-#: ⁨tenants/admin 2.py⁩:28 tenants/admin.py:28
+#: tenants/admin.py:28
 msgid "Labels and reports — company block"
 msgstr ""
 
-#: ⁨tenants/admin 2.py⁩:38 tenants/admin.py:38
+#: tenants/admin.py:39
 msgid ""
 "İşletme onay no and VD numbers are printed on meat labels; keep them aligned "
 "with official registrations."
 msgstr ""
 
-#: ⁨tenants/admin 2.py⁩:43 tenants/admin.py:43
+#: tenants/admin.py:44
 msgid "Branding and contact"
 msgstr ""
 
-#: ⁨tenants/admin 2.py⁩:47 tenants/admin.py:47
+#: tenants/admin.py:48
 msgid "Locale and printing"
 msgstr ""
 
-#: tenants/dashboard_services.py:228 tenants/views.py:334
+#: tenants/dashboard_services.py:228 tenants/views.py:334 users/models.py:28
 msgid "Admin"
 msgstr ""
 
@@ -5252,9 +6525,11 @@ msgid "Data issue"
 msgstr ""
 
 #: tenants/dashboard_services.py:335
-#: users/templates/users/user_management_list.html:52
-#: users/templates/users/user_management_list.html:72
-#: users/templates/users/user_management_list.html:137
+#: users/templates/users/user_management_list.html:66
+#: users/templates/users/user_management_list.html:143
+#: users/templates/users/user_management_list.html:262
+#: users/templates/users/user_management_list.html:379
+#: users/templates/users/user_management_list.html:475
 msgid "Inactive"
 msgstr ""
 
@@ -5266,193 +6541,222 @@ msgstr ""
 msgid "Attention"
 msgstr ""
 
-#: ⁨tenants/forms 2.py⁩:19 tenants/forms.py:19
+#: tenants/email_index.py:44
+msgid "Enter a valid phone number including country code."
+msgstr ""
+
+#: tenants/email_index.py:47
+msgid "Enter a valid phone number."
+msgstr ""
+
+#: tenants/email_index.py:49
+msgid "Phone number is too long."
+msgstr ""
+
+#: tenants/email_index.py:53
+msgid ""
+"Turkish numbers must include 10 digits after +90 (for example +905551112233)."
+msgstr ""
+
+#: tenants/email_index.py:59
+msgid ""
+"US/Canada numbers must include 10 digits after +1 (for example +12025551234)."
+msgstr ""
+
+#: tenants/email_index.py:62
+msgid "Only +90 (Turkey) and +1 (USA/Canada) are supported for this field."
+msgstr ""
+
+#: tenants/forms.py:19
 msgid "Remove current logo"
 msgstr "Remove current logo"
 
-#: ⁨tenants/forms 2.py⁩:20 tenants/forms.py:20
+#: tenants/forms.py:20
 msgid "Current file"
 msgstr "Current file"
 
-#: ⁨tenants/forms 2.py⁩:21 tenants/forms.py:21
+#: tenants/forms.py:21
 msgid "Replace with"
 msgstr "Replace with"
 
-#: ⁨tenants/forms 2.py⁩:31 tenants/forms.py:31 users/forms.py:46
-#: users/forms.py:179 users/forms.py:334
+#: tenants/forms.py:31 users/forms.py:46 users/forms.py:180 users/forms.py:339
 msgid "Area code"
 msgstr ""
 
-#: ⁨tenants/forms 2.py⁩:96 tenants/forms.py:97
-msgid "Please upload a PNG, JPEG, WebP, or GIF image."
-msgstr "Please upload a PNG, JPEG, WebP, or GIF image."
-
-#: tenants/forms.py:60 tenants/forms.py:121
+#: tenants/forms.py:66 tenants/forms.py:127
 msgid "Display name"
 msgstr ""
 
-#: tenants/forms.py:74
+#: tenants/forms.py:80
 msgid "Unicode (recommended)"
 msgstr ""
 
-#: tenants/forms.py:75
+#: tenants/forms.py:81
 msgid "ASCII (replace Turkish characters)"
 msgstr ""
 
-#: tenants/forms.py:76
+#: tenants/forms.py:82
 msgid "Windows-1254"
 msgstr ""
 
-#: tenants/forms.py:118
+#: tenants/forms.py:103
+msgid "Please upload a PNG, JPEG, WebP, or GIF image."
+msgstr "Please upload a PNG, JPEG, WebP, or GIF image."
+
+#: tenants/forms.py:124
 msgid "Schema name"
 msgstr ""
 
-#: tenants/forms.py:119
+#: tenants/forms.py:125
 msgid ""
 "Lowercase letters, digits and hyphens only. Used as PostgreSQL schema and "
 "subdomain."
 msgstr ""
 
-#: tenants/forms.py:125
+#: tenants/forms.py:131
 msgid "Custom domain"
 msgstr ""
 
-#: tenants/forms.py:126
+#: tenants/forms.py:132
 #, python-brace-format
 msgid "Leave blank to auto-generate {schema}.{base_domain}."
 msgstr ""
 
-#: tenants/forms.py:129 ⁨tenants/models 2.py⁩:78 tenants/models.py:91
+#: tenants/forms.py:135 tenants/models.py:102
 msgid "Contact email"
 msgstr ""
 
-#: tenants/forms.py:134
+#: tenants/forms.py:140
 msgid ""
 "Use lowercase letters, digits and hyphens; must start with a letter or digit."
 msgstr ""
 
-#: tenants/forms.py:136
+#: tenants/forms.py:142
 msgid "\"public\" is reserved."
-msgstr ""
-
-#: tenants/forms.py:138
-#, python-format
-msgid "Schema \"%(value)s\" already exists."
 msgstr ""
 
 #: tenants/forms.py:144
 #, python-format
+msgid "Schema \"%(value)s\" already exists."
+msgstr ""
+
+#: tenants/forms.py:150
+#, python-format
 msgid "Domain \"%(value)s\" is already in use."
 msgstr ""
 
-#: tenants/forms.py:151
+#: tenants/forms.py:157
 msgid "Your name"
 msgstr ""
 
-#: tenants/forms.py:161
+#: tenants/forms.py:167
 msgid "An account with that email already exists."
 msgstr ""
 
-#: tenants/forms.py:169 tenants/forms.py:206 tenants/forms.py:259
+#: tenants/forms.py:175 tenants/forms.py:212 tenants/forms.py:265
 msgid "Passwords do not match."
 msgstr ""
 
-#: tenants/forms.py:182
+#: tenants/forms.py:188
 msgid ""
 "Sign in with this or your email on the tenant site (language-prefixed /tr/"
 "login/ etc.)."
 msgstr ""
 
-#: tenants/forms.py:188 users/templates/users/client_profile_detail.html:37
-#: users/templates/users/user_management_list.html:93
-#: users/templates/users/user_management_list.html:179
+#: tenants/forms.py:194 users/templates/users/client_profile_detail.html:37
 msgid "Account type"
 msgstr ""
 
-#: tenants/forms.py:192
+#: tenants/forms.py:198
 msgid ""
 "Tenant app admin (role ADMIN, full CarniTrack app access; not Django /admin/)"
 msgstr ""
 
-#: tenants/forms.py:196
+#: tenants/forms.py:202
 msgid "Django superuser (role ADMIN plus Django /admin/ on this tenant host)"
 msgstr ""
 
-#: tenants/forms.py:242 ⁨tenants/models 2.py⁩:62 tenants/models.py:74
+#: tenants/forms.py:248 tenants/models.py:76
 msgid "İşletme onay no"
 msgstr ""
 
-#: tenants/forms.py:243
+#: tenants/forms.py:249
 msgid "Government approval number on labels (ISLETME ONAY NO)."
 msgstr ""
 
-#: tenants/forms.py:248 ⁨tenants/models 2.py⁩:68 tenants/models.py:80
+#: tenants/forms.py:254 tenants/models.py:82
 msgid "Vergi dairesi / işletme no (VD)"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:44 tenants/models.py:56
+#: tenants/models.py:58
 msgid "Company name (label header)"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:45 tenants/models.py:57
+#: tenants/models.py:59
 msgid "Short trading name printed on labels."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:50 tenants/models.py:62
+#: tenants/models.py:64
 msgid "Legal company name"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:51 tenants/models.py:63
+#: tenants/models.py:65
 msgid "Full legal title on labels."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:56 tenants/models.py:68
+#: tenants/models.py:70
 msgid "Company address"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:57 tenants/models.py:69
+#: tenants/models.py:71
 msgid "Address block on labels and reports."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:63 tenants/models.py:75
+#: tenants/models.py:77
 msgid ""
 "Government approval number; same value as ISLETME ONAY NO on printed labels."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:69 tenants/models.py:81
+#: tenants/models.py:83
 msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:75 tenants/models.py:88
+#: tenants/models.py:89
+msgid "Company registration province"
+msgstr ""
+
+#: tenants/models.py:91
+msgid ""
+"Turkish province (plaka) where the company is registered; drives the VD "
+"prefix on printed labels."
+msgstr ""
+
+#: tenants/models.py:99
 msgid "Logo"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:76 tenants/models.py:89
+#: tenants/models.py:100
 msgid "Optional branding image in the app header."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:79 tenants/models.py:92
+#: tenants/models.py:103
 msgid "Contact phone"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:85 tenants/models.py:98
+#: tenants/models.py:109
 msgid "Printer Turkish mode"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:86 tenants/models.py:99
+#: tenants/models.py:110
 msgid "unicode, ascii, or codepage1254 for label printers."
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:88 tenants/models.py:101
+#: tenants/models.py:112
 msgid "Timezone"
 msgstr ""
 
-#: ⁨tenants/models 2.py⁩:89 tenants/models.py:102
+#: tenants/models.py:113
 msgid "Language code"
-msgstr ""
-
-#: ⁨tenants/views 2.py⁩:353 tenants/views.py:478
-msgid "Company and label settings saved. They apply to new labels and reports."
 msgstr ""
 
 #: tenants/views.py:66 tenants/views.py:86
@@ -5483,7 +6787,8 @@ msgstr ""
 msgid "Rejected registration for \"%(company)s\"."
 msgstr ""
 
-#: tenants/views.py:335 users/templates/users/dashboard.html:36
+#: tenants/views.py:335 users/models.py:29
+#: users/templates/users/dashboard.html:36
 msgid "Manager"
 msgstr ""
 
@@ -5541,6 +6846,10 @@ msgstr ""
 msgid "Tenant \"%(schema)s\" %(state)s."
 msgstr ""
 
+#: tenants/views.py:478
+msgid "Company and label settings saved. They apply to new labels and reports."
+msgstr ""
+
 #: tenants/views.py:497
 msgid "Setup already complete. Please sign in."
 msgstr ""
@@ -5549,30 +6858,15 @@ msgstr ""
 msgid "Account created. Please sign in."
 msgstr ""
 
-#: theme/templates/base.html:24
+#: theme/templates/base.html:25
 msgid "Company logo"
 msgstr "Company logo"
 
-#: theme/templates/base.html:41 users/templates/users/account_profile.html:4
-#: users/templates/users/account_profile.html:28
-msgid "My Account"
-msgstr ""
-
-#: theme/templates/base.html:44
-msgid "Logout"
-msgstr ""
-
-#: theme/templates/base.html:47
-#: users/templates/users/client_profile_form.html:122
-#: users/templates/users/login.html:7
-msgid "Login"
-msgstr ""
-
-#: theme/templates/base.html:61
+#: theme/templates/base.html:62
 msgid "Impersonation Active"
 msgstr ""
 
-#: theme/templates/base.html:63
+#: theme/templates/base.html:64
 #, python-format
 msgid ""
 "\n"
@@ -5581,22 +6875,22 @@ msgid ""
 "                                "
 msgstr ""
 
-#: theme/templates/base.html:75
+#: theme/templates/base.html:76
 msgid "Exit impersonation"
 msgstr ""
 
-#: users/forms.py:54 users/forms.py:187 users/forms.py:370
-#: users/templates/users/client_profile_form.html:95
+#: users/forms.py:54 users/forms.py:188 users/forms.py:375
+#: users/templates/users/client_profile_form.html:110
 #: users/templates/users/client_profile_register.html:84
 msgid "Phone number"
 msgstr ""
 
-#: users/forms.py:55 users/forms.py:188 users/forms.py:328 users/forms.py:371
+#: users/forms.py:55 users/forms.py:189 users/forms.py:333 users/forms.py:376
 #: users/templates/users/staff_user_form.html:82
 msgid "At least one of email or phone is required."
 msgstr ""
 
-#: users/forms.py:58 users/forms.py:243
+#: users/forms.py:58 users/forms.py:245
 msgid "New password"
 msgstr ""
 
@@ -5604,7 +6898,7 @@ msgstr ""
 msgid "Leave blank to keep the current password."
 msgstr ""
 
-#: users/forms.py:64 users/forms.py:247
+#: users/forms.py:64 users/forms.py:249
 msgid "Confirm new password"
 msgstr ""
 
@@ -5616,70 +6910,93 @@ msgstr ""
 msgid "A user with that username already exists."
 msgstr ""
 
-#: users/forms.py:112 users/forms.py:209 users/forms.py:396
+#: users/forms.py:112 users/forms.py:210 users/forms.py:401
 msgid "A user with that email already exists in this tenant."
 msgstr ""
 
-#: users/forms.py:126 users/forms.py:223 users/forms.py:427
+#: users/forms.py:127 users/forms.py:225 users/forms.py:437
 msgid "A user with that phone number already exists in this tenant."
 msgstr ""
 
-#: users/forms.py:136 users/forms.py:233 users/forms.py:320 users/forms.py:416
+#: users/forms.py:137 users/forms.py:235 users/forms.py:325 users/forms.py:421
 msgid "At least one of email or phone number is required."
 msgstr ""
 
-#: users/forms.py:143 users/forms.py:148 users/forms.py:272
+#: users/forms.py:144 users/forms.py:149 users/forms.py:274
 msgid "The two password fields don't match."
 msgstr ""
 
-#: users/forms.py:145 users/forms.py:150
+#: users/forms.py:146 users/forms.py:151
 msgid "Password must be at least 8 characters."
 msgstr ""
 
-#: users/forms.py:169
+#: users/forms.py:170
 msgid "You cannot assign that role from this screen."
 msgstr ""
 
-#: users/forms.py:239
+#: users/forms.py:241
 #, fuzzy
 #| msgid "Current logo"
 msgid "Current password"
 msgstr "Current logo"
 
-#: users/forms.py:262 users/views.py:211
+#: users/forms.py:264 users/views.py:229
 msgid "Your current password was entered incorrectly."
 msgstr ""
 
-#: users/forms.py:435
+#: users/forms.py:445
 msgid "A client profile with that phone number already exists."
 msgstr ""
 
-#: users/forms.py:460
+#: users/forms.py:470
 msgid "Company name is required for enterprise accounts."
 msgstr ""
 
-#: users/forms.py:462
+#: users/forms.py:472
 msgid "Tax ID is required for enterprise accounts."
 msgstr ""
 
-#: users/forms.py:464
+#: users/forms.py:474
 msgid "Contact person is required for enterprise accounts."
 msgstr ""
 
-#: users/forms.py:466
+#: users/forms.py:476
 msgid "Address is required for enterprise accounts."
 msgstr ""
 
-#: users/forms.py:469
+#: users/forms.py:479
 msgid "Contact person is required for individual accounts."
 msgstr ""
 
-#: users/forms.py:471
+#: users/forms.py:481
 msgid "Address is required for individual accounts."
 msgstr ""
 
-#: users/forms.py:474
+#: users/forms.py:484
 msgid "Name is required for walk-in accounts."
+msgstr ""
+
+#: users/models.py:50
+msgid "Unclassified"
+msgstr ""
+
+#: users/models.py:52
+msgid "Enterprise"
+msgstr ""
+
+#: users/models.py:67
+msgid ""
+"Preferred delivery destination for this client. Used to prefill new orders."
+msgstr ""
+
+#: users/models.py:75
+msgid ""
+"Preferred destination client for this client. Used to prefill new orders."
+msgstr ""
+
+#: users/templates/users/account_profile.html:4
+#: users/templates/users/account_profile.html:28
+msgid "My Account"
 msgstr ""
 
 #: users/templates/users/account_profile.html:29
@@ -5782,7 +7099,7 @@ msgstr ""
 #: users/templates/users/client_profile_form.html:42
 #: users/templates/users/client_profile_list.html:18
 #: users/templates/users/client_profile_list.html:218
-#: users/templates/users/user_management_list.html:17
+#: users/templates/users/user_management_list.html:20
 msgid "Add client"
 msgstr ""
 
@@ -5791,39 +7108,48 @@ msgstr ""
 msgid "Edit client"
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:63
-#: users/templates/users/user_management_list.html:151
-#: users/templates/users/user_management_list.html:218
+#: users/templates/users/client_profile_form.html:54
+msgid "Please fix the following before saving:"
+msgstr ""
+
+#: users/templates/users/client_profile_form.html:78
+#: users/templates/users/user_management_list.html:185
+#: users/templates/users/user_management_list.html:407
 msgid "Profile"
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:125
+#: users/templates/users/client_profile_form.html:137
+msgid "Login"
+msgstr ""
+
+#: users/templates/users/client_profile_form.html:140
 msgid ""
 "If the phone number already belongs to a registered account, this form will "
 "create only the client profile and link matching walk-in orders by phone."
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:140
+#: users/templates/users/client_profile_form.html:155
 msgid ""
 "Use email or phone. Client phone is synced from the profile section above."
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:174
+#: users/templates/users/client_profile_form.html:189
 msgid ""
 "This profile has no client login yet. Save the walk-in details now and "
 "promote it to a full client account later."
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:180
+#: users/templates/users/client_profile_form.html:195
 msgid "Create client"
 msgstr ""
 
-#: users/templates/users/client_profile_form.html:180
+#: users/templates/users/client_profile_form.html:195
 #: users/templates/users/staff_user_form.html:124
 msgid "Save changes"
 msgstr ""
 
 #: users/templates/users/client_profile_list.html:4
+#: users/templates/users/user_management_list.html:43
 msgid "Registered clients"
 msgstr ""
 
@@ -5833,11 +7159,12 @@ msgid ""
 msgstr ""
 
 #: users/templates/users/client_profile_list.html:27
+#: users/templates/users/user_management_list.html:52
 msgid "Status filters"
 msgstr ""
 
 #: users/templates/users/client_profile_list.html:31
-#: users/templates/users/user_management_list.html:44
+#: users/templates/users/user_management_list.html:56 users/views.py:1280
 msgid "All"
 msgstr ""
 
@@ -5901,200 +7228,170 @@ msgstr ""
 msgid "Save these credentials now. They will not be shown again."
 msgstr ""
 
-#: users/templates/users/dashboard.html:9
-#, python-format
-msgid "Welcome, %(username)s!"
-msgstr ""
-
 #: users/templates/users/dashboard.html:25
 msgid "System Administrator"
 msgstr ""
 
 #: users/templates/users/dashboard.html:62
-#: users/templates/users/user_management_list.html:91
+#: users/templates/users/user_management_list.html:212
 msgid "User"
 msgstr ""
 
-#: users/templates/users/dashboard.html:66
-msgid "This is your dashboard. Here are the actions you can perform."
-msgstr ""
-
-#: users/templates/users/dashboard.html:81
+#: users/templates/users/dashboard.html:80
 msgid "Reception Management"
 msgstr ""
 
-#: users/templates/users/dashboard.html:97
+#: users/templates/users/dashboard.html:96
 msgid "Create slaughter order for new or existing clients"
 msgstr ""
 
-#: users/templates/users/dashboard.html:117
+#: users/templates/users/dashboard.html:116
 msgid "All Orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:119
+#: users/templates/users/dashboard.html:118
 msgid "View and manage all slaughter orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:122
-#: users/templates/users/dashboard.html:218
+#: users/templates/users/dashboard.html:121
 msgid "View Orders"
 msgstr ""
 
-#: users/templates/users/dashboard.html:197
+#: users/templates/users/dashboard.html:139
 msgid "Client Portal"
 msgstr ""
 
-#: users/templates/users/dashboard.html:212
-msgid "My Orders"
+#: users/templates/users/dashboard.html:141
+msgid "Preview the client-facing order tracking portal"
 msgstr ""
 
-#: users/templates/users/dashboard.html:214
-msgid "Track your order status and progress"
+#: users/templates/users/dashboard.html:144
+msgid "Open Portal"
 msgstr ""
 
-#: users/templates/users/dashboard.html:234
-msgid "History"
-msgstr ""
-
-#: users/templates/users/dashboard.html:236
-msgid "View past orders and invoices"
-msgstr ""
-
-#: users/templates/users/dashboard.html:240
-msgid "Order History"
-msgstr ""
-
-#: users/templates/users/dashboard.html:257
-msgid "Documents"
-msgstr ""
-
-#: users/templates/users/dashboard.html:259
-msgid "Download certificates and reports"
-msgstr ""
-
-#: users/templates/users/dashboard.html:263
-msgid "View Documents"
-msgstr ""
-
-#: users/templates/users/dashboard.html:279
+#: users/templates/users/dashboard.html:300
 msgid "Processing & Operations"
 msgstr ""
 
-#: users/templates/users/dashboard.html:296
+#: users/templates/users/dashboard.html:317
 msgid "Processing overview and workflow status"
 msgstr ""
 
-#: users/templates/users/dashboard.html:299
+#: users/templates/users/dashboard.html:320
 msgid "View Dashboard"
 msgstr ""
 
-#: users/templates/users/dashboard.html:318
+#: users/templates/users/dashboard.html:339
 msgid "Manage animal disassembly and cuts"
 msgstr ""
 
-#: users/templates/users/dashboard.html:337
+#: users/templates/users/dashboard.html:358
 msgid "Inventory"
 msgstr ""
 
-#: users/templates/users/dashboard.html:339
+#: users/templates/users/dashboard.html:360
 msgid "Stock levels and storage"
 msgstr ""
 
-#: users/templates/users/dashboard.html:343
+#: users/templates/users/dashboard.html:364
 msgid "View Inventory"
 msgstr ""
 
-#: users/templates/users/dashboard.html:362
-msgid "Create and print custom hot carcass labels"
-msgstr ""
-
 #: users/templates/users/dashboard.html:383
-msgid "Management & Reporting"
+msgid "Animal and custom labels, plus Edge print queue"
 msgstr ""
 
-#: users/templates/users/dashboard.html:398
-msgid "Analytics"
-msgstr ""
-
-#: users/templates/users/dashboard.html:400
-msgid "Performance metrics and KPIs"
+#: users/templates/users/dashboard.html:386
+msgid "Open Labels"
 msgstr ""
 
 #: users/templates/users/dashboard.html:404
-msgid "View Analytics"
+msgid "Management & Reporting"
+msgstr ""
+
+#: users/templates/users/dashboard.html:419
+msgid "Analytics"
 msgstr ""
 
 #: users/templates/users/dashboard.html:421
+msgid "Performance metrics and KPIs"
+msgstr ""
+
+#: users/templates/users/dashboard.html:425
+msgid "View Analytics"
+msgstr ""
+
+#: users/templates/users/dashboard.html:442
 msgid "Finance"
 msgstr ""
 
-#: users/templates/users/dashboard.html:423
+#: users/templates/users/dashboard.html:444
 msgid "Revenue and cost analysis"
 msgstr ""
 
-#: users/templates/users/dashboard.html:427
+#: users/templates/users/dashboard.html:448
 msgid "Financial Reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:446
+#: users/templates/users/dashboard.html:467
 msgid "Generate daily slaughter reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:449
+#: users/templates/users/dashboard.html:470
 msgid "Generate Reports"
 msgstr ""
 
-#: users/templates/users/dashboard.html:468
+#: users/templates/users/dashboard.html:489
 msgid "System Administration"
 msgstr ""
 
-#: users/templates/users/dashboard.html:489
+#: users/templates/users/dashboard.html:510
 msgid "Company name, İşletme onay no, label printer mode"
 msgstr ""
 
-#: users/templates/users/dashboard.html:512
+#: users/templates/users/dashboard.html:533
 msgid "User management"
 msgstr ""
 
-#: users/templates/users/dashboard.html:514
-#: users/templates/users/user_management_list.html:11
+#: users/templates/users/dashboard.html:535
+#: users/templates/users/user_management_list.html:13
 msgid "Manage staff roles, client accounts, and contact identifiers."
 msgstr ""
 
-#: users/templates/users/dashboard.html:517
+#: users/templates/users/dashboard.html:538
 msgid "Manage users"
 msgstr ""
 
-#: users/templates/users/dashboard.html:534
-#: users/templates/users/dashboard.html:540
+#: users/templates/users/dashboard.html:555
+#: users/templates/users/dashboard.html:561
 msgid "Maintenance"
 msgstr ""
 
-#: users/templates/users/dashboard.html:536
+#: users/templates/users/dashboard.html:557
 msgid "Database backup and system health"
 msgstr ""
 
-#: users/templates/users/dashboard.html:559
+#: users/templates/users/dashboard.html:580
 msgid "Manage Site -> Edge -> Printer topology and edge logs"
 msgstr ""
 
-#: users/templates/users/dashboard.html:562
+#: users/templates/users/dashboard.html:583
 msgid "Open Edge Console"
 msgstr ""
 
-#: users/templates/users/dashboard.html:579
+#: users/templates/users/dashboard.html:600
 msgid "Search Clients"
 msgstr ""
 
-#: users/templates/users/dashboard.html:587
+#: users/templates/users/dashboard.html:608
 msgid " Type client name to search..."
 msgstr ""
 
-#: users/templates/users/dashboard.html:645
+#: users/templates/users/dashboard.html:666
 msgid "Selected client"
 msgstr ""
 
-#: users/templates/users/dashboard.html:654
+#: users/templates/users/dashboard.html:675
 msgid "Error searching clients"
 msgstr ""
 
@@ -6148,22 +7445,6 @@ msgstr ""
 msgid "Log back in"
 msgstr ""
 
-#: users/templates/users/login.html:12
-msgid "Sign in to your account"
-msgstr ""
-
-#: users/templates/users/login.html:31
-msgid "Username, email, or phone"
-msgstr ""
-
-#: users/templates/users/login.html:54
-msgid "Need an account?"
-msgstr ""
-
-#: users/templates/users/login.html:54
-msgid "Contact your administrator."
-msgstr ""
-
 #: users/templates/users/register.html:5 users/templates/users/register.html:41
 msgid "Register"
 msgstr ""
@@ -6181,7 +7462,7 @@ msgstr ""
 msgid "Edit user"
 msgstr ""
 
-#: users/templates/users/staff_user_form.html:32
+#: users/templates/users/staff_user_form.html:32 users/views.py:1168
 msgid "Back to users"
 msgstr ""
 
@@ -6199,120 +7480,203 @@ msgid ""
 "different login name."
 msgstr ""
 
-#: users/templates/users/user_management_list.html:23
+#: users/templates/users/user_management_list.html:26
 msgid "Add operator"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:29
+#: users/templates/users/user_management_list.html:32
 msgid "Add manager"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:35
+#: users/templates/users/user_management_list.html:38
 msgid "Add admin"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:60
-msgid "Search username, email, phone, client name…"
+#: users/templates/users/user_management_list.html:71
+#: users/templates/users/user_management_list.html:73
+msgid "Search users"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:77
-msgid "Apply filters"
+#: users/templates/users/user_management_list.html:78
+msgid "Search name, email, phone, client name…"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:164
-msgid "No users found"
+#: users/templates/users/user_management_list.html:107
+#, python-format
+msgid "Showing %(start)s–%(end)s of %(total)s users."
 msgstr ""
 
-#: users/templates/users/user_management_list.html:165
-msgid "Adjust your filters or create a new user account."
+#: users/templates/users/user_management_list.html:109
+#, python-format
+msgid "Showing %(total)s user."
+msgid_plural "Showing %(total)s users."
+msgstr[0] ""
+msgstr[1] ""
+
+#: users/templates/users/user_management_list.html:112
+msgid "visible on this page (live filter)"
 msgstr ""
 
 #: users/templates/users/user_management_list.html:172
+msgid "Email:"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:296
+msgid "User pagination"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:298
+#: users/templates/users/user_management_list.html:511
+#, python-format
+msgid "Page %(page)s of %(pages)s"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:336
+msgid "No users found"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:337
+msgid "Adjust your filters or create a new user account."
+msgstr ""
+
+#: users/templates/users/user_management_list.html:346
 msgid "Client accounts"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:177
+#: users/templates/users/user_management_list.html:433
 #, fuzzy
 #| msgid "Company logo"
 msgid "Company / Name"
 msgstr "Company logo"
 
-#: users/templates/users/user_management_list.html:178
+#: users/templates/users/user_management_list.html:434
 msgid "Client type"
 msgstr ""
 
-#: users/templates/users/user_management_list.html:180
+#: users/templates/users/user_management_list.html:435
 msgid "Contact"
 msgstr ""
 
-#: users/views.py:200
+#: users/templates/users/user_management_list.html:509
+msgid "Client pagination"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:549
+msgid "No matches on this page"
+msgstr ""
+
+#: users/templates/users/user_management_list.html:550
+msgid "Clear the search box or try different keywords."
+msgstr ""
+
+#: users/views.py:218
 msgid "Your contact details were updated."
 msgstr ""
 
-#: users/views.py:214
+#: users/views.py:232
 msgid "Your password was changed."
 msgstr ""
 
-#: users/views.py:217
+#: users/views.py:235
 msgid "Unknown account action."
 msgstr ""
 
-#: users/views.py:545
+#: users/views.py:563
 #, python-format
 msgid ""
 "Platform admin impersonation active for %(username)s (%(role)s). Use Exit "
 "impersonation to return."
 msgstr ""
 
-#: users/views.py:844
-msgid "Enterprise"
-msgstr ""
-
-#: users/views.py:846
-msgid "Unclassified"
-msgstr ""
-
-#: users/views.py:854
+#: users/views.py:907
 msgid "Profile (no login)"
 msgstr ""
 
-#: users/views.py:950
+#: users/views.py:1009
 msgid "Client profile created and linked to the existing registered account."
 msgstr ""
 
-#: users/views.py:955
+#: users/views.py:1014
 msgid "Client profile created and linked to the existing walk-in record."
 msgstr ""
 
-#: users/views.py:961
+#: users/views.py:1020
 msgid ""
 "Client profile created without creating a second login for this registered "
 "phone number."
 msgstr ""
 
-#: users/views.py:965 users/views.py:1006 users/views.py:1020
-#: users/views.py:1042
+#: users/views.py:1024 users/views.py:1065 users/views.py:1079
+#: users/views.py:1136
 msgid "Matching walk-in orders were linked by phone number."
 msgstr ""
 
-#: users/views.py:998 users/views.py:1012
+#: users/views.py:1057 users/views.py:1071
 #, python-format
 msgid ""
 "Client created. Temporary password: %(pwd)s — copy it now; the user can "
 "change it later."
 msgstr ""
 
-#: users/views.py:1004 users/views.py:1018
+#: users/views.py:1063 users/views.py:1077
 msgid "Client created."
 msgstr ""
 
-#: users/views.py:1102
+#: users/views.py:1121
+#, python-format
+msgid "%(name)s promoted to %(account_type)s client account."
+msgstr ""
+
+#: users/views.py:1127
+#, python-format
+msgid "Walk-in prospect %(name)s updated."
+msgstr ""
+
+#: users/views.py:1132
+#, python-format
+msgid "%(name)s updated as %(account_type)s client."
+msgstr ""
+
+#: users/views.py:1147
+msgid "Please correct the errors below and save again."
+msgstr ""
+
+#: users/views.py:1179
+msgid "You cannot create that role from this screen."
+msgstr ""
+
+#: users/views.py:1205
 #, python-format
 msgid ""
 "User created. Temporary password: %(pwd)s — copy it now; the user can change "
 "it later."
 msgstr ""
 
-#: users/views.py:1106
+#: users/views.py:1209
 msgid "User created."
 msgstr ""
+
+#: users/views.py:1220
+msgid "User updated."
+msgstr ""
+
+#: users/views.py:1523
+msgid "This account cannot be managed from the client list."
+msgstr ""
+
+#: users/views.py:1551
+msgid "This client is already active."
+msgstr ""
+
+#: users/views.py:1554
+msgid "Client activated and login enabled."
+msgstr ""
+
+#: users/views.py:1568
+msgid "Client archived and login disabled."
+msgstr ""
+
+#, fuzzy
+#~| msgid "Company settings"
+#~ msgid "Company & label settings"
+#~ msgstr "Company settings"

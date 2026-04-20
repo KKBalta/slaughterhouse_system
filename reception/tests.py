@@ -162,6 +162,22 @@ class TestSlaughterOrderFormValidation:
         assert "client_phone" in form.errors
         assert "required" in str(form.errors["client_phone"]).lower()
 
+    def test_walk_in_phone_rejects_too_short_turkish_number(self, reception_state):
+        form = SlaughterOrderForm(
+            data={
+                "client_name": "Walk-in Customer",
+                "client_phone_area_code": "+90",
+                "client_phone": "5551234",
+                "destination_search": "",
+                "destination": "",
+                "service_package": str(reception_state["service_package"].id),
+                "order_datetime": "2026-04-01T12:00",
+            }
+        )
+
+        assert not form.is_valid()
+        assert "client_phone" in form.errors
+
     def test_destination_search_populates_destination_snapshot(self, reception_state):
         destination_user = User.objects.create_user(
             username="destination-form-user",

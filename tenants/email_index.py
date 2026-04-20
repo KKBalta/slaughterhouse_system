@@ -6,8 +6,10 @@ Only tenant users (users.User) are indexed; platform admins are never included.
 
 from __future__ import annotations
 
+from django import forms
 from django.conf import settings
 from django.db import connection
+from django.utils.translation import gettext_lazy as _
 from django_tenants.utils import get_public_schema_name, schema_context, tenant_context
 
 from tenants.models import Client, EmailTenantMembership
@@ -26,6 +28,38 @@ def normalize_phone(phone: str | None) -> str:
     if not digits:
         return ""
     return f"+{digits}"
+
+
+def validate_normalized_phone_length(normalized: str) -> None:
+    """
+    Require full national length for supported regions (+90 Turkey, +1 NANP).
+
+    Empty string is allowed (optional phone). Raises django.forms.ValidationError
+    when a non-empty value does not match an expected length.
+    """
+    if not (normalized or "").strip():
+        return
+    value = normalized.strip()
+    if not value.startswith("+"):
+        raise forms.ValidationError(_("Enter a valid phone number including country code."))
+    digits = value[1:]
+    if not digits.isdigit():
+        raise forms.ValidationError(_("Enter a valid phone number."))
+    if len(digits) > 15:
+        raise forms.ValidationError(_("Phone number is too long."))
+    if digits.startswith("90"):
+        if len(digits) != 12:
+            raise forms.ValidationError(
+                _("Turkish numbers must include 10 digits after +90 (for example +905551112233).")
+            )
+        return
+    if digits.startswith("1"):
+        if len(digits) != 11:
+            raise forms.ValidationError(
+                _("US/Canada numbers must include 10 digits after +1 (for example +12025551234).")
+            )
+        return
+    raise forms.ValidationError(_("Only +90 (Turkey) and +1 (USA/Canada) are supported for this field."))
 
 
 def _host_is_local(host: str) -> bool:

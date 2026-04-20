@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from processing.models import Animal
+from tenants.email_index import normalize_phone, validate_normalized_phone_length
 
 from .models import ServicePackage, SlaughterOrder
 from .services import (
@@ -12,6 +13,18 @@ from .services import (
     can_edit_order_service_package,
     can_reassign_order_client,
 )
+
+
+def _normalize_walk_in_client_phone(area_code: str | None, phone: str | None) -> str:
+    """Combine area + local digits, normalize to +digits, validate supported lengths."""
+    raw = (phone or "").strip()
+    if not raw:
+        return ""
+    area = (area_code or "+90").strip() or "+90"
+    combined = raw if raw.startswith("+") else f"{area}{raw}"
+    normalized = normalize_phone(combined)
+    validate_normalized_phone_length(normalized)
+    return normalized
 
 
 class SlaughterOrderForm(forms.ModelForm):
@@ -155,7 +168,11 @@ class SlaughterOrderForm(forms.ModelForm):
             self.add_error("client_phone", _("Walk-in client phone is required."))
             cleaned_data["client_phone"] = ""
         elif phone:
-            cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+            try:
+                cleaned_data["client_phone"] = _normalize_walk_in_client_phone(area_code, phone)
+            except forms.ValidationError as exc:
+                self.add_error("client_phone", exc)
+                cleaned_data["client_phone"] = ""
         else:
             cleaned_data["client_phone"] = ""
 
@@ -391,7 +408,11 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
                 self.add_error("client_phone", _("Walk-in client phone is required."))
                 cleaned_data["client_phone"] = ""
             elif phone:
-                cleaned_data["client_phone"] = phone if phone.startswith("+") else f"{area_code}{phone}"
+                try:
+                    cleaned_data["client_phone"] = _normalize_walk_in_client_phone(area_code, phone)
+                except forms.ValidationError as exc:
+                    self.add_error("client_phone", exc)
+                    cleaned_data["client_phone"] = ""
             else:
                 cleaned_data["client_phone"] = ""
         else:

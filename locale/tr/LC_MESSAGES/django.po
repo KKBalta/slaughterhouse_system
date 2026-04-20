@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-09 05:07+0300\n"
-"PO-Revision-Date: 2025-08-20 05:18+0300\n"
+"POT-Creation-Date: 2026-04-21 01:48+0300\n"
+"PO-Revision-Date: 2026-04-21 01:45+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
 "Language: tr\n"
@@ -25,43 +25,44 @@ msgstr "Türkçe"
 msgid "English"
 msgstr "İngilizce"
 
-#: labeling/admin.py:63
+#: labeling/admin.py:96
 msgid "Animal ID"
 msgstr "Hayvan ID"
 
-#: labeling/admin.py:70 reporting/templates/reporting/simple_dashboard.html:66
+#: labeling/admin.py:103
+#: labeling/templates/labeling/animal_label_detail.html:145
+#: labeling/templates/labeling/custom_label_detail.html:154
+#: reporting/templates/reporting/simple_dashboard.html:66
 msgid "PDF"
 msgstr "PDF"
 
-#: labeling/admin.py:79
+#: labeling/admin.py:112
 msgid "PRN Preview"
 msgstr "PRN Önizleme"
 
-#: labeling/admin.py:90
+#: labeling/admin.py:123
 msgid "PRN Content"
 msgstr "PRN İçeriği"
 
-#: labeling/admin.py:101
+#: labeling/admin.py:134
 msgid "BAT Content"
 msgstr "BAT İçeriği"
 
-#: labeling/admin.py:109
+#: labeling/admin.py:142
 msgid "PDF File"
 msgstr "PDF Dosyası"
 
-#: labeling/admin.py:135
+#: labeling/admin.py:168
 msgid "Regenerate PDF files"
 msgstr "PDF dosyalarını yeniden oluştur"
 
-#: labeling/admin.py:155
+#: labeling/admin.py:188
 msgid "Delete PDF files"
 msgstr "PDF dosyalarını sil"
 
 #: labeling/forms.py:109
-#, fuzzy
-#| msgid "Üretici"
 msgid "Üretici Ünvanı"
-msgstr "Üretici"
+msgstr "Üretici ünvanı"
 
 #: labeling/forms.py:110
 #: labeling/templates/labeling/custom_label_detail.html:40
@@ -70,10 +71,8 @@ msgid "Küpe No"
 msgstr "Küpe No"
 
 #: labeling/forms.py:111
-#, fuzzy
-#| msgid "Tüccar"
 msgid "Tüccar Ünvanı"
-msgstr "Tüccar"
+msgstr "Tüccar ünvanı"
 
 #: labeling/forms.py:112
 #: labeling/templates/labeling/custom_label_detail.html:79
@@ -97,10 +96,8 @@ msgid "Cinsi"
 msgstr "Cinsi"
 
 #: labeling/forms.py:116 labeling/forms.py:125
-#, fuzzy
-#| msgid "Ağırlık"
 msgid "Ağırlık (kg)"
-msgstr "Ağırlık"
+msgstr "Ağırlık (kg)"
 
 #: labeling/forms.py:117
 #: labeling/templates/labeling/custom_label_detail.html:93
@@ -113,124 +110,137 @@ msgid "QR Verisi"
 msgstr "QR Verisi"
 
 #: labeling/forms.py:121
-#, fuzzy
-#| msgid "Üretici"
 msgid "Üretici adı"
-msgstr "Üretici"
+msgstr "Üretici adı"
 
 #: labeling/forms.py:122
 msgid "Küpe numarası"
-msgstr ""
+msgstr "Küpe numarası"
 
 #: labeling/forms.py:123
 msgid "Tüccar adı (opsiyonel)"
-msgstr ""
+msgstr "Tüccar adı (opsiyonel)"
 
 #: labeling/forms.py:124
 msgid "Sipariş numarası (opsiyonel)"
-msgstr ""
+msgstr "Sipariş numarası (opsiyonel)"
 
 #: labeling/forms.py:126
-#, fuzzy
-#| msgid "Sakatat Durumu"
 msgid "Sakatat durumu"
-msgstr "Sakatat Durumu"
+msgstr "Sakatat durumu"
 
 #: labeling/forms.py:127
 msgid "QR kod verisi (opsiyonel)"
-msgstr ""
+msgstr "QR kod verisi (opsiyonel)"
 
 #: labeling/forms.py:130
 msgid "Üretici / firma adı"
-msgstr ""
+msgstr "Üretici / firma adı"
 
 #: labeling/forms.py:131
 msgid "Kulak küpe numarası / kimlik numarası"
-msgstr ""
+msgstr "Kulak küpe numarası / kimlik numarası"
 
 #: labeling/forms.py:132
-#, fuzzy
-#| msgid "Tüccar"
 msgid "Tüccar adı"
-msgstr "Tüccar"
+msgstr "Tüccar adı"
 
 #: labeling/forms.py:133
-#, fuzzy
-#| msgid "Kesim Tarihi"
 msgid "Kesim tarihi"
-msgstr "Kesim Tarihi"
+msgstr "Kesim tarihi"
 
 #: labeling/forms.py:134
-#, fuzzy
-#| msgid "Son Tüketim Tarihi"
 msgid "Son tüketim tarihi"
-msgstr "Son Tüketim Tarihi"
+msgstr "Son tüketim tarihi"
 
 #: labeling/forms.py:135
-#, fuzzy
-#| msgid "Sipariş No"
 msgid "Sipariş numarası"
-msgstr "Sipariş No"
+msgstr "Sipariş numarası"
 
 #: labeling/forms.py:136
 msgid "Hayvan türü"
-msgstr ""
+msgstr "Hayvan türü"
 
 #: labeling/forms.py:137
-#, fuzzy
-#| msgid "Ağırlık"
 msgid "Net ağırlık (kg)"
-msgstr "Ağırlık"
+msgstr "Net ağırlık (kg)"
 
 #: labeling/forms.py:138
-#, fuzzy
-#| msgid "Sakatat Durumu"
 msgid "Sakatat durum değeri"
-msgstr "Sakatat Durumu"
+msgstr "Sakatat durum değeri"
 
 #: labeling/forms.py:139
 msgid "İsteğe bağlı QR kod verisi"
-msgstr ""
+msgstr "İsteğe bağlı QR kod verisi"
 
 #: labeling/forms.py:150
 msgid "Sığır"
-msgstr ""
+msgstr "Sığır"
 
 #: labeling/forms.py:151
 msgid "Koyun"
-msgstr ""
+msgstr "Koyun"
 
 #: labeling/forms.py:152
 msgid "Keçi"
-msgstr ""
+msgstr "Keçi"
 
 #: labeling/forms.py:153
 msgid "Kuzu"
-msgstr ""
+msgstr "Kuzu"
 
 #: labeling/forms.py:154
 msgid "Oğlak"
-msgstr ""
+msgstr "Oğlak"
 
 #: labeling/forms.py:155
 msgid "Buzağı"
-msgstr ""
+msgstr "Buzağı"
 
 #: labeling/forms.py:156
 msgid "Düve"
-msgstr ""
+msgstr "Düve"
 
 #: labeling/forms.py:157
 msgid "Dana"
-msgstr ""
+msgstr "Dana"
 
 #: labeling/forms.py:183
 msgid "Ağırlık 0'dan büyük olmalıdır."
-msgstr ""
+msgstr "Ağırlık 0'dan büyük olmalıdır."
 
 #: labeling/forms.py:192
 msgid "Son tüketim tarihi kesim tarihinden önce olamaz."
+msgstr "Son tüketim tarihi kesim tarihinden önce olamaz."
+
+#: labeling/services.py:89
+msgid "Removed from queue by operator."
+msgstr "Operatör tarafından kuyruktan kaldırıldı."
+
+#: labeling/templates/labeling/_edge_printers_hint.html:3
+msgid "Target printer(s)"
+msgstr "Hedef yazıcı(lar)"
+
+#: labeling/templates/labeling/_edge_printers_hint.html:5
+msgid "Target role"
+msgstr "Hedef rol"
+
+#: labeling/templates/labeling/_edge_printers_hint.html:13
+msgid "Preferred"
+msgstr "Tercih edilen"
+
+#: labeling/templates/labeling/_edge_printers_hint.html:25
+msgid "Priority"
+msgstr "Öncelik"
+
+#: labeling/templates/labeling/_edge_printers_hint.html:32
+#, python-format
+msgid ""
+"No printer is assigned to role \"%(role)s\". The job will wait on the edge "
+"until one is registered."
 msgstr ""
+"\"%(role)s\" rolüne atanmış yazıcı yok. İş, bir yazıcı kaydedilene kadar "
+"kenarda bekleyecek."
 
 #: labeling/templates/labeling/animal_label_detail.html:4
 msgid "Animal Label Detail"
@@ -286,12 +296,14 @@ msgstr "Kimlik Etiketi"
 #: labeling/templates/labeling/animal_label_detail.html:65
 #: processing/forms.py:41
 #: processing/templates/processing/animal_detail.html:251
-#: reception/forms.py:397
+#: reception/forms.py:498
 msgid "Animal Type"
 msgstr "Hayvan Türü"
 
 #: labeling/templates/labeling/animal_label_detail.html:69
-#: processing/forms.py:27
+#: labeling/templates/labeling/animal_label_detail.html:106
+#: labeling/templates/labeling/custom_label_detail.html:115
+#: portal/templates/portal/order_detail.html:172 processing/forms.py:27
 #: processing/templates/processing/animal_detail.html:255
 #: processing/templates/processing/animal_list.html:318
 #: processing/templates/processing/disassembly_dashboard.html:262
@@ -299,13 +311,14 @@ msgstr "Hayvan Türü"
 #: reception/templates/reception/order_detail.html:113
 #: reception/templates/reception/order_list.html:43
 #: reporting/templates/reporting/report_list.html:39
-#: scales/templates/scales/edge_management.html:59
-#: scales/templates/scales/edge_management.html:103
+#: scales/templates/scales/edge_management.html:175
+#: scales/templates/scales/edge_management.html:258
+#: scales/templates/scales/edge_setup_code_list.html:30
 #: scales/templates/scales/session_detail.html:34
 #: scales/templates/scales/session_list.html:58
 #: users/templates/users/client_profile_list.html:134
-#: users/templates/users/user_management_list.html:96
-#: users/templates/users/user_management_list.html:196
+#: users/templates/users/user_management_list.html:216
+#: users/templates/users/user_management_list.html:437
 msgid "Status"
 msgstr "Durum"
 
@@ -318,93 +331,106 @@ msgstr "Kesim Tarihi"
 msgid "Not slaughtered yet"
 msgstr "Henüz kesilmedi"
 
-#: labeling/templates/labeling/animal_label_detail.html:101
-#: labeling/templates/labeling/custom_label_detail.html:110
-msgid "Download Options"
-msgstr "İndirme Seçenekleri"
+#: labeling/templates/labeling/animal_label_detail.html:100
+#: labeling/templates/labeling/custom_label_detail.html:109
+msgid "Print and download"
+msgstr "Yazdır ve indir"
 
-#: labeling/templates/labeling/animal_label_detail.html:107
-#: labeling/templates/labeling/custom_label_detail.html:116
-msgid "PRN Format"
-msgstr "PRN Formatı"
+#: labeling/templates/labeling/animal_label_detail.html:104
+#: labeling/templates/labeling/custom_label_detail.html:113
+msgid "Latest print job"
+msgstr "Son yazdırma işi"
 
-#: labeling/templates/labeling/animal_label_detail.html:108
-#: labeling/templates/labeling/custom_label_detail.html:117
-msgid "TSC Programming Language for direct printer output"
-msgstr "Direkt yazıcı çıktısı için TSC Programlama Dili"
+#: labeling/templates/labeling/animal_label_detail.html:119
+#: labeling/templates/labeling/custom_label_detail.html:128
+msgid "Print via Edge"
+msgstr "Kenar üzerinden yazdır"
 
-#: labeling/templates/labeling/animal_label_detail.html:112
-#: labeling/templates/labeling/custom_label_detail.html:121
-msgid "Download PRN"
-msgstr "PRN İndir"
-
-#: labeling/templates/labeling/animal_label_detail.html:121
-#: labeling/templates/labeling/custom_label_detail.html:130
-msgid "BAT Format"
-msgstr "BAT Formatı"
+#: labeling/templates/labeling/animal_label_detail.html:120
+#: labeling/templates/labeling/custom_label_detail.html:129
+msgid "Send this label to the printer connected through your site Edge device."
+msgstr "Bu etiketi sitenizin Kenar cihazı üzerinden bağlı yazıcıya gönderin."
 
 #: labeling/templates/labeling/animal_label_detail.html:122
 #: labeling/templates/labeling/custom_label_detail.html:131
-msgid "Windows batch file for easy label printing"
-msgstr "Kolay etiket yazdırma için Windows toplu işlem dosyası"
+msgid ""
+"No Edge printer is registered yet. Configure the Edge and sync printer "
+"inventory first."
+msgstr ""
+"Henüz Kenar yazıcısı kayıtlı değil. Önce Kenar’ı yapılandırın ve yazıcı "
+"envanterini eşitleyin."
 
-#: labeling/templates/labeling/animal_label_detail.html:126
-#: labeling/templates/labeling/custom_label_detail.html:135
-msgid "Download BAT"
-msgstr "BAT İndir"
+#: labeling/templates/labeling/animal_label_detail.html:132
+#: labeling/templates/labeling/animal_label_detail.html:137
+#: labeling/templates/labeling/custom_label_detail.html:141
+#: labeling/templates/labeling/custom_label_detail.html:146
+msgid "Print"
+msgstr "Yazdır"
 
-#: labeling/templates/labeling/animal_label_detail.html:135
-#: labeling/templates/labeling/custom_label_detail.html:144
-msgid "PDF Format"
-msgstr "PDF Formatı"
+#: labeling/templates/labeling/animal_label_detail.html:133
+#: labeling/templates/labeling/custom_label_detail.html:142
+msgid "Sending…"
+msgstr "Gönderiliyor…"
 
-#: labeling/templates/labeling/animal_label_detail.html:136
-#: labeling/templates/labeling/custom_label_detail.html:145
-msgid "Portable Document Format for viewing and printing"
-msgstr "Görüntüleme ve yazdırma için Taşınabilir Belge Formatı"
+#: labeling/templates/labeling/animal_label_detail.html:134
+#: labeling/templates/labeling/custom_label_detail.html:143
+msgid "Please wait"
+msgstr "Lütfen bekleyin"
 
-#: labeling/templates/labeling/animal_label_detail.html:141
-#: labeling/templates/labeling/custom_label_detail.html:150
+#: labeling/templates/labeling/animal_label_detail.html:146
+#: labeling/templates/labeling/custom_label_detail.html:155
+msgid "Download a PDF preview of this label."
+msgstr "Bu etiketin PDF önizlemesini indirin."
+
+#: labeling/templates/labeling/animal_label_detail.html:151
+#: labeling/templates/labeling/custom_label_detail.html:160
 msgid "Download PDF"
 msgstr "PDF İndir"
 
-#: labeling/templates/labeling/animal_label_detail.html:144
-#: labeling/templates/labeling/custom_label_detail.html:153
+#: labeling/templates/labeling/animal_label_detail.html:154
+#: labeling/templates/labeling/custom_label_detail.html:163
 msgid "PDF not available"
 msgstr "PDF mevcut değil"
 
-#: labeling/templates/labeling/animal_label_detail.html:152
+#: labeling/templates/labeling/animal_label_detail.html:162
 #: labeling/templates/labeling/animal_label_list.html:57
-#: labeling/templates/labeling/custom_label_detail.html:162
+#: labeling/templates/labeling/custom_label_detail.html:172
 #: labeling/templates/labeling/custom_label_list.html:51
+#: labeling/templates/labeling/label_app.html:62
+#: labeling/templates/labeling/label_app.html:251
 #: processing/templates/processing/animal_list.html:324
 #: processing/templates/processing/disassembly_dashboard.html:265
 #: reception/templates/reception/order_list.html:44
 #: reporting/templates/reporting/report_list.html:42
+#: scales/templates/scales/edge_management.html:87
+#: scales/templates/scales/edge_management.html:178
+#: scales/templates/scales/edge_management.html:260
 #: scales/templates/scales/orphaned_batch_list.html:20
 #: scales/templates/scales/session_detail.html:102
 #: scales/templates/scales/session_list.html:60
+#: scales/templates/scales/site_list.html:38
 #: templates/tenants/platform_admin/dashboard.html:172
 #: templates/tenants/platform_admin/dashboard.html:263
 #: users/templates/users/client_profile_list.html:139
-#: users/templates/users/user_management_list.html:97
-#: users/templates/users/user_management_list.html:197
+#: users/templates/users/user_management_list.html:217
+#: users/templates/users/user_management_list.html:438
 msgid "Actions"
 msgstr "İşlemler"
 
-#: labeling/templates/labeling/animal_label_detail.html:155
-#: labeling/templates/labeling/animal_label_list.html:107
-#: labeling/templates/labeling/custom_label_detail.html:165
-#: labeling/templates/labeling/custom_label_list.html:99
+#: labeling/templates/labeling/animal_label_detail.html:165
+#: labeling/templates/labeling/animal_label_list.html:99
+#: labeling/templates/labeling/custom_label_detail.html:175
+#: labeling/templates/labeling/custom_label_list.html:91
+#: labeling/templates/labeling/label_app.html:296
 msgid "Are you sure you want to delete this label?"
 msgstr "Bu etiketi silmek istediğinizden emin misiniz?"
 
-#: labeling/templates/labeling/animal_label_detail.html:159
-#: labeling/templates/labeling/custom_label_detail.html:169
+#: labeling/templates/labeling/animal_label_detail.html:169
+#: labeling/templates/labeling/custom_label_detail.html:179
 msgid "Delete Label"
 msgstr "Etiketi Sil"
 
-#: labeling/templates/labeling/animal_label_detail.html:165
+#: labeling/templates/labeling/animal_label_detail.html:175
 #: labeling/templates/labeling/animal_label_list.html:26
 msgid "Generate New Label"
 msgstr "Yeni Etiket Oluştur"
@@ -419,12 +445,13 @@ msgid "Generated Labels"
 msgstr "Oluşturulan Etiketler"
 
 #: labeling/templates/labeling/animal_label_list.html:48
-#: processing/templates/processing/animal_detail.html:627
+#: portal/templates/portal/order_detail.html:483
+#: portal/templates/portal/order_detail.html:516
+#: processing/templates/processing/animal_detail.html:626
 #: processing/templates/processing/batch_weights.html:283
 #: processing/templates/processing/disassembly_dashboard.html:261
 #: processing/templates/processing/disassembly_detail.html:439
 #: reporting/templates/reporting/report_list.html:30
-#: scales/templates/scales/edge_management.html:102
 #: users/templates/users/client_profile_list.html:135
 msgid "Type"
 msgstr "Tür"
@@ -433,8 +460,10 @@ msgstr "Tür"
 msgid "System"
 msgstr "Sistem"
 
-#: labeling/templates/labeling/animal_label_list.html:104
-#: labeling/templates/labeling/custom_label_list.html:96
+#: labeling/templates/labeling/animal_label_list.html:96
+#: labeling/templates/labeling/custom_label_list.html:88
+#: labeling/templates/labeling/label_app.html:274
+#: labeling/templates/labeling/label_app.html:295
 #: processing/templates/processing/animal_list.html:398
 #: processing/templates/processing/disassembly_detail.html:337
 #: scales/templates/scales/dashboard.html:35
@@ -443,22 +472,23 @@ msgstr "Sistem"
 msgid "View"
 msgstr "Görüntüle"
 
-#: labeling/templates/labeling/animal_label_list.html:111
-#: labeling/templates/labeling/custom_label_list.html:103
+#: labeling/templates/labeling/animal_label_list.html:103
+#: labeling/templates/labeling/custom_label_list.html:95
+#: labeling/templates/labeling/label_app.html:298
 #: processing/templates/processing/disassembly_detail.html:368
 #: processing/templates/processing/disassembly_detail.html:382
 msgid "Delete"
 msgstr "Sil"
 
-#: labeling/templates/labeling/animal_label_list.html:128
+#: labeling/templates/labeling/animal_label_list.html:120
 msgid "No labels generated"
 msgstr "Oluşturulmuş etiket yok"
 
-#: labeling/templates/labeling/animal_label_list.html:130
+#: labeling/templates/labeling/animal_label_list.html:122
 msgid "No labels have been generated for this animal yet."
 msgstr "Bu hayvan için henüz etiket oluşturulmadı."
 
-#: labeling/templates/labeling/animal_label_list.html:139
+#: labeling/templates/labeling/animal_label_list.html:131
 msgid "Generate First Label"
 msgstr "İlk Etiketi Oluştur"
 
@@ -472,9 +502,8 @@ msgstr "Özel Etiket"
 
 #: labeling/templates/labeling/custom_label_detail.html:18
 #: labeling/templates/labeling/custom_label_form.html:17
-#: processing/templates/processing/animal_detail.html:133
-msgid "Back to List"
-msgstr "Listeye Dön"
+msgid "Back to Labels"
+msgstr "Etiketlere dön"
 
 #: labeling/templates/labeling/custom_label_detail.html:22
 msgid "Create New"
@@ -501,7 +530,7 @@ msgstr "Tüccar"
 msgid "Ağırlık"
 msgstr "Ağırlık"
 
-#: labeling/templates/labeling/custom_label_detail.html:175
+#: labeling/templates/labeling/custom_label_detail.html:185
 msgid "Create New Label"
 msgstr "Yeni Etiket Oluştur"
 
@@ -519,34 +548,34 @@ msgstr "Sıcak karkas etiketi oluşturmak için etiket bilgilerini manuel girin"
 msgid "Usually slaughter date + 10 days"
 msgstr "Genellikle kesim tarihi + 10 gün"
 
-#: labeling/templates/labeling/custom_label_form.html:145
+#: labeling/templates/labeling/custom_label_form.html:151
 msgid "Optional URL or data for QR code"
 msgstr "QR kodu için isteğe bağlı URL veya veri"
 
-#: labeling/templates/labeling/custom_label_form.html:152
+#: labeling/templates/labeling/custom_label_form.html:158
 #: processing/templates/processing/animal_detail.html:413
 #: processing/templates/processing/disassembly_dashboard.html:210
 #: reception/templates/reception/add_animal.html:88
-#: reception/templates/reception/batch_add_animals.html:152
+#: reception/templates/reception/batch_add_animals.html:153
 #: reception/templates/reception/edit_animal.html:91
-#: reception/templates/reception/update_order.html:306
+#: reception/templates/reception/update_order.html:330
+#: scales/templates/scales/edge_setup_code_create.html:158
 #: scales/templates/scales/orphaned_batch_reconcile.html:24
 #: scales/templates/scales/session_create.html:46
 #: scales/templates/scales/session_create.html:79
 #: scales/templates/scales/session_event_edit.html:69
+#: scales/templates/scales/site_form.html:41
 #: templates/tenants/tenant_company_settings.html:149
 #: users/templates/users/client_profile_confirm_delete.html:14
 msgid "Cancel"
 msgstr "İptal"
 
-#: labeling/templates/labeling/custom_label_form.html:156
+#: labeling/templates/labeling/custom_label_form.html:162
 msgid "Create Label"
 msgstr "Etiket Oluştur"
 
 #: labeling/templates/labeling/custom_label_list.html:4
 #: labeling/templates/labeling/custom_label_list.html:12
-#: users/templates/users/dashboard.html:360
-#: users/templates/users/dashboard.html:365
 msgid "Custom Labels"
 msgstr "Özel Etiketler"
 
@@ -559,7 +588,10 @@ msgid "All Custom Labels"
 msgstr "Tüm Özel Etiketler"
 
 #: labeling/templates/labeling/custom_label_list.html:45
-#: processing/templates/processing/animal_detail.html:630
+#: portal/templates/portal/order_detail.html:449
+#: portal/templates/portal/order_detail.html:484
+#: portal/templates/portal/order_detail.html:517
+#: processing/templates/processing/animal_detail.html:629
 #: processing/templates/processing/disassembly_detail.html:122
 #: processing/templates/processing/disassembly_detail.html:481
 #: scales/templates/scales/orphaned_batch_list.html:19
@@ -569,128 +601,610 @@ msgid "Weight"
 msgstr "Ağırlık"
 
 #: labeling/templates/labeling/custom_label_list.html:48
+#: labeling/templates/labeling/label_app.html:247
+#: scales/templates/scales/edge_setup_code_list.html:31
 msgid "Created"
 msgstr "Oluşturulma"
 
-#: labeling/templates/labeling/custom_label_list.html:119
+#: labeling/templates/labeling/custom_label_list.html:111
 #: scales/templates/scales/orphaned_batch_list.html:51
 #: scales/templates/scales/plu_list.html:55
 #: scales/templates/scales/session_list.html:98
 msgid "Page"
 msgstr "Sayfa"
 
-#: labeling/templates/labeling/custom_label_list.html:119
+#: labeling/templates/labeling/custom_label_list.html:111
+#: labeling/templates/labeling/label_app.html:93
+#: labeling/templates/labeling/label_app.html:158
+#: labeling/templates/labeling/label_app.html:207
 #: processing/templates/processing/disassembly_dashboard.html:366
 msgid "of"
 msgstr "/"
 
-#: labeling/templates/labeling/custom_label_list.html:125
+#: labeling/templates/labeling/custom_label_list.html:117
+#: labeling/templates/labeling/label_app.html:320
+#: labeling/templates/labeling/label_app.html:323
 #: processing/templates/processing/animal_list.html:432
 #: processing/templates/processing/animal_list.html:439
 #: processing/templates/processing/disassembly_dashboard.html:349
 #: processing/templates/processing/disassembly_dashboard.html:376
 #: reception/templates/reception/order_list.html:95
 #: reception/templates/reception/order_list.html:102
+#: scales/templates/scales/edge_management.html:386
 #: scales/templates/scales/orphaned_batch_list.html:47
 #: scales/templates/scales/plu_list.html:51
 #: scales/templates/scales/session_list.html:94
+#: users/templates/users/user_management_list.html:304
+#: users/templates/users/user_management_list.html:307
+#: users/templates/users/user_management_list.html:517
+#: users/templates/users/user_management_list.html:520
 msgid "Previous"
 msgstr "Önceki"
 
-#: labeling/templates/labeling/custom_label_list.html:131
+#: labeling/templates/labeling/custom_label_list.html:123
+#: labeling/templates/labeling/label_app.html:328
+#: labeling/templates/labeling/label_app.html:331
 #: processing/templates/processing/animal_list.html:446
 #: processing/templates/processing/animal_list.html:453
 #: processing/templates/processing/disassembly_dashboard.html:355
 #: processing/templates/processing/disassembly_dashboard.html:392
 #: reception/templates/reception/order_list.html:109
 #: reception/templates/reception/order_list.html:116
+#: scales/templates/scales/edge_management.html:390
 #: scales/templates/scales/orphaned_batch_list.html:53
 #: scales/templates/scales/plu_list.html:57
 #: scales/templates/scales/session_list.html:100
+#: users/templates/users/user_management_list.html:324
+#: users/templates/users/user_management_list.html:327
+#: users/templates/users/user_management_list.html:537
+#: users/templates/users/user_management_list.html:540
 msgid "Next"
 msgstr "Sonraki"
 
-#: labeling/templates/labeling/custom_label_list.html:145
+#: labeling/templates/labeling/custom_label_list.html:137
 msgid "No custom labels"
 msgstr "Özel etiket yok"
 
-#: labeling/templates/labeling/custom_label_list.html:147
+#: labeling/templates/labeling/custom_label_list.html:139
 msgid "No custom labels have been created yet."
 msgstr "Henüz özel etiket oluşturulmadı."
 
-#: labeling/templates/labeling/custom_label_list.html:152
+#: labeling/templates/labeling/custom_label_list.html:144
 msgid "Create First Custom Label"
 msgstr "İlk Özel Etiketi Oluştur"
 
-#: labeling/views.py:59
+#: labeling/templates/labeling/label_app.html:4
+#: labeling/templates/labeling/label_app.html:10
+#: users/templates/users/dashboard.html:381
+msgid "Labels"
+msgstr "Etiketler"
+
+#: labeling/templates/labeling/label_app.html:11
+msgid "Print queue first, then all carcass and custom labels (newest first)."
+msgstr ""
+"Önce yazdırma kuyruğu, ardından tüm karkas ve özel etiketler (önce en "
+"yeniler)."
+
+#: labeling/templates/labeling/label_app.html:16
+msgid "New custom label"
+msgstr "Yeni özel etiket"
+
+#: labeling/templates/labeling/label_app.html:21
+msgid "Edge management"
+msgstr "Kenar yönetimi"
+
+#: labeling/templates/labeling/label_app.html:27
+msgid "Labels sections"
+msgstr "Etiket bölümleri"
+
+#: labeling/templates/labeling/label_app.html:28
+msgid "Print queue"
+msgstr "Yazdırma kuyruğu"
+
+#: labeling/templates/labeling/label_app.html:29
+#: labeling/templates/labeling/label_app.html:220
+msgid "All labels"
+msgstr "Tüm etiketler"
+
+#: labeling/templates/labeling/label_app.html:34
+msgid ""
+"No active Edge printer is configured for the default label site. Print-to-"
+"Edge actions may be unavailable until a printer is set up."
+msgstr ""
+"Varsayılan etiket sitesi için etkin Kenar yazıcısı yapılandırılmamış. Bir "
+"yazıcı kurulana kadar Kenar’a yazdırma işlemleri kullanılamayabilir."
+
+#: labeling/templates/labeling/label_app.html:42
+msgid "Edge print queue"
+msgstr "Kenar yazdırma kuyruğu"
+
+#: labeling/templates/labeling/label_app.html:43
+msgid ""
+"Pending jobs, jobs at the printer (dispatched ACK), and latest print "
+"confirmations (completed ACK)."
+msgstr ""
+"Bekleyen işler, yazıcıdaki işler (gönderim ACK) ve son yazdırma onayları "
+"(tamamlanma ACK)."
+
+#: labeling/templates/labeling/label_app.html:50
+#: templates/tenants/platform_admin/dashboard.html:138
+msgid "Pending"
+msgstr "Beklemede"
+
+#: labeling/templates/labeling/label_app.html:58
+#: scales/templates/scales/edge_management.html:82
+msgid "Queued"
+msgstr "Kuyrukta"
+
+#: labeling/templates/labeling/label_app.html:59
+#: labeling/templates/labeling/label_app.html:114
+#: labeling/templates/labeling/label_app.html:177
+#: scales/templates/scales/edge_management.html:39
+#: scales/templates/scales/edge_management.html:83
+#: scales/templates/scales/edge_management.html:136
+#: scales/templates/scales/edge_management.html:174
+#: scales/templates/scales/edge_setup_code_create.html:63
+#: scales/templates/scales/edge_setup_code_list.html:27
+#: scales/templates/scales/session_create.html:12
+msgid "Site"
+msgstr "Site"
+
+#: labeling/templates/labeling/label_app.html:60
+#: labeling/templates/labeling/label_app.html:119
+#: labeling/templates/labeling/label_app.html:181
+msgid "Item"
+msgstr "Öğe"
+
+#: labeling/templates/labeling/label_app.html:61
+#: labeling/templates/labeling/label_app.html:115
+#: labeling/templates/labeling/label_app.html:178
+#: scales/templates/scales/edge_management.html:84
+#: scales/templates/scales/edge_management.html:137
+#: scales/templates/scales/edge_setup_code_create.html:125
+#: templates/tenants/platform_admin/tenant_superuser.html:78 users/forms.py:156
+#: users/templates/users/account_profile.html:41
+#: users/templates/users/client_profile_detail.html:42
+#: users/templates/users/user_management_list.html:213
+msgid "Role"
+msgstr "Rol"
+
+#: labeling/templates/labeling/label_app.html:78
+#: scales/templates/scales/edge_management.html:102
+msgid "Remove this job from the print queue? The Edge will not print it."
+msgstr "Bu iş yazdırma kuyruğundan kaldırılsın mı? Kenar bunu yazdırmayacak."
+
+#: labeling/templates/labeling/label_app.html:83
+#: reception/templates/reception/order_detail.html:116
+#: reception/templates/reception/order_detail.html:167
+#: scales/templates/scales/edge_management.html:107
+#: scales/templates/scales/edge_management.html:231
+#: scales/templates/scales/edge_management.html:295
+#: scales/templates/scales/edge_management.html:331
+#: scales/templates/scales/edge_management.html:466
+#: scales/templates/scales/edge_management.html:499
+#: scales/templates/scales/edge_management.html:520
+msgid "Remove"
+msgstr "Kaldır"
+
+#: labeling/templates/labeling/label_app.html:93
+#: labeling/templates/labeling/label_app.html:158
+#: labeling/templates/labeling/label_app.html:207
+msgid "Showing first"
+msgstr "İlk kayıtlar"
+
+#: labeling/templates/labeling/label_app.html:96
+msgid "No pending jobs."
+msgstr "Bekleyen iş yok."
+
+#: labeling/templates/labeling/label_app.html:103
+msgid "Dispatched"
+msgstr "Gönderildi"
+
+#: labeling/templates/labeling/label_app.html:104
+msgid "Edge acknowledged pickup; printing or waiting for the printer."
+msgstr "Kenar alımı onayladı; yazdırılıyor veya yazıcı bekleniyor."
+
+#: labeling/templates/labeling/label_app.html:113
+msgid "Dispatched ACK"
+msgstr "Gönderim ACK"
+
+#: labeling/templates/labeling/label_app.html:116
+#: scales/templates/scales/edge_management.html:48
+msgid "Edge"
+msgstr "Kenar"
+
+#: labeling/templates/labeling/label_app.html:117
+#: labeling/templates/labeling/label_app.html:179
+#: scales/templates/scales/edge_management.html:266
+#: scales/templates/scales/edge_management.html:501
+msgid "Printer"
+msgstr "Yazıcı"
+
+#: labeling/templates/labeling/label_app.html:118
+#: labeling/templates/labeling/label_app.html:180
+msgid "Attempts"
+msgstr "Denemeler"
+
+#: labeling/templates/labeling/label_app.html:161
+#: scales/templates/scales/edge_management.html:126
+msgid "No dispatched jobs."
+msgstr "Gönderilmiş iş yok."
+
+#: labeling/templates/labeling/label_app.html:166
+msgid "Printed (Edge ACK)"
+msgstr "Yazdırıldı (Kenar ACK)"
+
+#: labeling/templates/labeling/label_app.html:167
+msgid "Latest successful print confirmations from the Edge."
+msgstr "Kenardan gelen son başarılı yazdırma onayları."
+
+#: labeling/templates/labeling/label_app.html:176
+msgid "Printed ACK"
+msgstr "Yazdırma onayı"
+
+#: labeling/templates/labeling/label_app.html:210
+msgid "No completed Edge prints yet."
+msgstr "Henüz tamamlanmış Kenar yazdırması yok."
+
+#: labeling/templates/labeling/label_app.html:222
+#, python-format
+msgid "%(animal)s from animals · %(custom)s custom · sorted by created date"
+msgstr ""
+"Hayvanlardan %(animal)s · özel %(custom)s · oluşturulma tarihine göre sıralı"
+
+#: labeling/templates/labeling/label_app.html:228
+#, python-format
+msgid "Page %(page)s of %(pages)s · %(start)s–%(end)s of %(total)s"
+msgstr "Sayfa %(page)s / %(pages)s · %(start)s–%(end)s / %(total)s"
+
+#: labeling/templates/labeling/label_app.html:230
+#, python-format
+msgid "%(total)s row"
+msgid_plural "%(total)s rows"
+msgstr[0] "%(total)s satır"
+msgstr[1] "%(total)s satır"
+
+#: labeling/templates/labeling/label_app.html:238
+msgid "No labels yet."
+msgstr "Henüz etiket yok."
+
+#: labeling/templates/labeling/label_app.html:239
+msgid "Create custom label"
+msgstr "Özel etiket oluştur"
+
+#: labeling/templates/labeling/label_app.html:248
+msgid "Source"
+msgstr "Kaynak"
+
+#: labeling/templates/labeling/label_app.html:249
+#: scales/templates/scales/edge_setup_code_list.html:26
+msgid "Code"
+msgstr "Kod"
+
+#: labeling/templates/labeling/label_app.html:250
+msgid "Summary"
+msgstr "Özet"
+
+#: labeling/templates/labeling/label_app.html:261
+msgid "Carcass / animal"
+msgstr "Karkas / hayvan"
+
+#: labeling/templates/labeling/label_app.html:284
+msgid "Custom"
+msgstr "Özel"
+
+#: labeling/templates/labeling/label_app.html:312
+msgid "Label list pagination"
+msgstr "Etiket listesi sayfalama"
+
+#: labeling/templates/labeling/label_app.html:314
+#, python-format
+msgid "%(page)s / %(pages)s"
+msgstr "%(page)s / %(pages)s"
+
+#: labeling/views.py:127
+msgid "Print job removed from the queue."
+msgstr "Yazdırma işi kuyruktan kaldırıldı."
+
+#: labeling/views.py:131
+msgid "Only pending Edge print jobs can be removed from the queue."
+msgstr "Yalnızca bekleyen Kenar yazdırma işleri kuyruktan kaldırılabilir."
+
+#: labeling/views.py:176
 msgid "Hot carcass labels can only be generated for slaughtered animals."
 msgstr ""
 "Sıcak karkas etiketleri yalnızca kesilmiş hayvanlar için oluşturulabilir."
 
-#: labeling/views.py:67
+#: labeling/views.py:185
 msgid ""
-"PRN label and BAT file generated successfully! You can now download and "
-"print the label."
+"Label created. Use “Print via Edge” on the label page to send it to your "
+"site printer."
 msgstr ""
-"PRN etiketi ve BAT dosyası başarıyla oluşturuldu! Artık etiketi indirebilir "
-"ve yazdırabilirsiniz."
+"Etiket oluşturuldu. Sitendeki yazıcıya göndermek için etiket sayfasında "
+"«Kenar üzerinden yazdır» seçeneğini kullanın."
 
-#: labeling/views.py:72 labeling/views.py:111
+#: labeling/views.py:190 labeling/views.py:229
 #, python-format
 msgid "Error generating label: %(error)s"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
-#: labeling/views.py:107
+#: labeling/views.py:225
 msgid "Cut label generated successfully!"
 msgstr "Parça etiketi başarıyla oluşturuldu!"
 
-#: labeling/views.py:171 labeling/views.py:485
+#: labeling/views.py:264 labeling/views.py:567
+msgid "No site is configured for this tenant."
+msgstr "Bu kiracı için site yapılandırılmamış."
+
+#: labeling/views.py:270 labeling/views.py:573
+msgid ""
+"No Edge printer is available. Register printers from the Edge device first "
+"(printer inventory sync)."
+msgstr ""
+"Kenar yazıcısı yok. Önce Kenar cihazından yazıcıları kaydedin (yazıcı "
+"envanteri eşitlemesi)."
+
+#: labeling/views.py:276 labeling/views.py:579
+msgid "This label has no printable data."
+msgstr "Bu etiketin yazdırılabilir verisi yok."
+
+#: labeling/views.py:284 labeling/views.py:587
+msgid "Print job queued. The Edge device will pick it up shortly."
+msgstr "Yazdırma işi kuyruğa alındı. Kenar cihazı kısa süre içinde alacak."
+
+#: labeling/views.py:297 labeling/views.py:600
+msgid ""
+"Only PDF download is available. Use “Print via Edge” to print at the site."
+msgstr ""
+"Yalnızca PDF indirme kullanılabilir. Tesisde yazdırmak için «Kenar üzerinden "
+"yazdır» seçeneğini kullanın."
+
+#: labeling/views.py:310 labeling/views.py:613
 msgid "PDF file not found."
 msgstr "PDF dosyası bulunamadı."
 
-#: labeling/views.py:175 labeling/views.py:489
+#: labeling/views.py:314 labeling/views.py:617
 #, python-format
 msgid "Error downloading label: %(error)s"
 msgstr "Etiket indirilirken hata oluştu: %(error)s"
 
-#: labeling/views.py:216
+#: labeling/views.py:355
 msgid "Please select at least one animal."
 msgstr "Lütfen en az bir hayvan seçin."
 
-#: labeling/views.py:242
+#: labeling/views.py:393
 #, python-format
 msgid "Successfully generated %(count)s labels."
 msgstr "%(count)s etiket başarıyla oluşturuldu."
 
-#: labeling/views.py:245
+#: labeling/views.py:396
 #, python-format
 msgid "Some errors occurred: %(errors)s"
 msgstr "Bazı hatalar oluştu: %(errors)s"
 
-#: labeling/views.py:263
+#: labeling/views.py:409
 msgid "Label deleted successfully."
 msgstr "Etiket başarıyla silindi."
 
-#: labeling/views.py:266 labeling/views.py:507
+#: labeling/views.py:412 labeling/views.py:631
 #, python-format
 msgid "Error deleting label: %(error)s"
 msgstr "Etiket silinirken hata oluştu: %(error)s"
 
-#: labeling/views.py:438
+#: labeling/views.py:524
 msgid ""
-"Custom label created successfully! You can now download and print the label."
+"Custom label created. Use “Print via Edge” on the label page to print at the "
+"site."
 msgstr ""
-"Özel etiket başarıyla oluşturuldu! Artık etiketi indirebilir ve "
-"yazdırabilirsiniz."
+"Özel etiket oluşturuldu. Tesisde yazdırmak için etiket sayfasında «Kenar "
+"üzerinden yazdır» seçeneğini kullanın."
 
-#: labeling/views.py:443
+#: labeling/views.py:529
 #, python-format
 msgid "Error creating label: %(error)s"
 msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
 
-#: labeling/views.py:504
+#: labeling/views.py:628
 msgid "Custom label deleted successfully."
 msgstr "Özel etiket başarıyla silindi."
+
+#: portal/templates/portal/order_detail.html:4
+#: portal/templates/portal/order_detail.html:31
+#: processing/templates/processing/animal_list.html:315
+#: processing/templates/processing/batch_weight_reports.html:174
+#: processing/templates/processing/batch_weights.html:279
+#: processing/templates/processing/disassembly_detail.html:16
+#: processing/templates/processing/disassembly_detail.html:459
+#: processing/templates/processing/quick_process.html:16
+#: reception/templates/reception/add_animal.html:43
+#: reception/templates/reception/batch_add_animals.html:48
+#: reception/templates/reception/edit_animal.html:44
+msgid "Order"
+msgstr "Sipariş"
+
+#: portal/templates/portal/order_detail.html:15
+msgid "Staff preview mode — clients can only view their own orders."
+msgstr ""
+"Personel önizleme modu — müşteriler yalnızca kendi siparişlerini görebilir."
+
+#: portal/templates/portal/order_detail.html:25
+msgid "My Orders"
+msgstr "Siparişlerim"
+
+#: portal/templates/portal/order_detail.html:36
+#: portal/templates/portal/order_detail.html:74
+#, python-format
+msgid "%(counter)s animal"
+msgid_plural "%(counter)s animals"
+msgstr[0] "%(counter)s hayvan"
+msgstr[1] "%(counter)s hayvan"
+
+#: portal/templates/portal/order_detail.html:70
+#: processing/templates/processing/animal_detail.html:462
+msgid "Order Information"
+msgstr "Sipariş Bilgileri"
+
+#: portal/templates/portal/order_detail.html:96
+#: portal/templates/portal/order_detail.html:171
+#: portal/templates/portal/order_detail.html:329
+msgid "Yield"
+msgstr "Verim"
+
+#: portal/templates/portal/order_detail.html:104
+msgid "hot carcass / live weight"
+msgstr "sıcak karkas / canlı ağırlık"
+
+#: portal/templates/portal/order_detail.html:114
+#, python-format
+msgid "%(counter)s animal has missing live weight and was excluded from totals"
+msgid_plural ""
+"%(counter)s animals have missing live weight and were excluded from totals"
+msgstr[0] ""
+"%(counter)s hayvanın canlı ağırlığı eksik; toplamlara dahil edilmedi."
+msgstr[1] ""
+"%(counter)s hayvanın canlı ağırlıkları eksik; toplamlara dahil edilmedi."
+
+#: portal/templates/portal/order_detail.html:119
+#: portal/templates/portal/order_detail.html:150
+msgid "No weight entered yet"
+msgstr "Henüz ağırlık girilmedi"
+
+#: portal/templates/portal/order_detail.html:133
+#: processing/templates/processing/batch_weight_reports.html:80
+#: processing/templates/processing/batch_weight_reports.html:127
+#: processing/templates/processing/batch_weight_reports.html:177
+msgid "Total Weight"
+msgstr "Toplam Ağırlık"
+
+#: portal/templates/portal/order_detail.html:136 processing/views.py:659
+msgid "hot carcass weight"
+msgstr "sıcak karkas ağırlığı"
+
+#: portal/templates/portal/order_detail.html:138
+msgid "Live:"
+msgstr "Canlı:"
+
+#: portal/templates/portal/order_detail.html:142
+#, python-format
+msgid "%(counter)s animal was excluded"
+msgid_plural "%(counter)s animals were excluded"
+msgstr[0] "%(counter)s hayvan hariç tutuldu"
+msgstr[1] "%(counter)s hayvan hariç tutuldu"
+
+#: portal/templates/portal/order_detail.html:147
+msgid "live weight (carcass pending)"
+msgstr "canlı ağırlık (karkas bekleniyor)"
+
+#: portal/templates/portal/order_detail.html:160
+#: processing/templates/processing/batch_weight_reports.html:176
+#: processing/templates/processing/batch_weights.html:287
+#: reception/templates/reception/order_detail.html:91
+#: scales/templates/scales/session_create.html:65
+#: scales/templates/scales/session_detail.html:32
+#: templates/tenants/platform_admin/dashboard.html:283
+msgid "Animals"
+msgstr "Hayvanlar"
+
+#: portal/templates/portal/order_detail.html:161
+msgid "Click the identification tag to view details"
+msgstr "Ayrıntıları görmek için tanımlama küpesine tıklayın."
+
+#: portal/templates/portal/order_detail.html:168
+#: portal/templates/portal/order_detail.html:357
+#: portal/templates/portal/order_detail.html:359
+#: processing/templates/processing/animal_list.html:312
+#: scales/templates/scales/edge_setup_code_create.html:132
+#: scales/templates/scales/orphaned_batch_reconcile.html:14
+msgid "Animal"
+msgstr "Hayvan"
+
+#: portal/templates/portal/order_detail.html:169
+#: portal/templates/portal/order_detail.html:317
+#: scales/templates/scales/edge_management.html:167
+#: scales/templates/scales/edge_management.html:247
+msgid "Live"
+msgstr "Canlı"
+
+#: portal/templates/portal/order_detail.html:170
+#: portal/templates/portal/order_detail.html:323
+#: portal/templates/portal/order_detail.html:411
+#: scales/templates/scales/edge_setup_code_create.html:128
+msgid "Carcass"
+msgstr "Karkas"
+
+#: portal/templates/portal/order_detail.html:192
+msgid "missing"
+msgstr "eksik"
+
+#: portal/templates/portal/order_detail.html:269
+msgid "Close"
+msgstr "Kapat"
+
+#: portal/templates/portal/order_detail.html:309
+msgid "Live weight not entered"
+msgstr "Canlı ağırlık girilmedi"
+
+#: portal/templates/portal/order_detail.html:352
+msgid "Images"
+msgstr "Görseller"
+
+#: portal/templates/portal/order_detail.html:364
+#: portal/templates/portal/order_detail.html:366
+msgid "Passport"
+msgstr "Pasaport"
+
+#: portal/templates/portal/order_detail.html:371
+#: portal/templates/portal/order_detail.html:373
+msgid "Scale receipt"
+msgstr "Kantar fişi"
+
+#: portal/templates/portal/order_detail.html:386
+msgid "Dates"
+msgstr "Tarihler"
+
+#: portal/templates/portal/order_detail.html:390 processing/models.py:80
+#: processing/templates/processing/animal_list.html:321
+#: processing/templates/processing/animal_list.html:698
+#: processing/templates/processing/dashboard.html:116
+msgid "Received"
+msgstr "Alındı"
+
+#: portal/templates/portal/order_detail.html:395
+msgid "Slaughter date"
+msgstr "Kesim tarihi"
+
+#: portal/templates/portal/order_detail.html:416
+msgid "Hot"
+msgstr "Sıcak"
+
+#: portal/templates/portal/order_detail.html:422
+msgid "Cold"
+msgstr "Soğuk"
+
+#: portal/templates/portal/order_detail.html:428
+#: portal/templates/portal/order_detail.html:450
+#: portal/templates/portal/order_detail.html:485
+#: portal/templates/portal/order_detail.html:518
+msgid "Disposition"
+msgstr "Yönlendirme"
+
+#: portal/templates/portal/order_detail.html:441
+msgid "Meat Cuts"
+msgstr "Et parçaları"
+
+#: portal/templates/portal/order_detail.html:448
+#: processing/templates/processing/disassembly_detail.html:164
+msgid "Cut"
+msgstr "Parça"
+
+#: portal/templates/portal/order_detail.html:476
+#: scales/templates/scales/edge_setup_code_create.html:130
+msgid "Offal"
+msgstr "Sakatat"
+
+#: portal/templates/portal/order_detail.html:509
+msgid "By-products"
+msgstr "Yan ürünler"
 
 #: processing/admin.py:22
 msgid "Cattle Details"
@@ -757,7 +1271,7 @@ msgid "Pictures"
 msgstr "Resimler"
 
 #: processing/admin.py:148
-#: processing/templates/processing/animal_detail.html:678
+#: processing/templates/processing/animal_detail.html:677
 msgid "Scale Receipt"
 msgstr "Kantar Fişi"
 
@@ -873,7 +1387,7 @@ msgstr ""
 "Deri ağırlığı kesimden sonra kaydedilmelidir. Hayvan %(tag)s şu anda "
 "%(status)s durumundadır."
 
-#: processing/forms.py:228 processing/forms.py:777 processing/views.py:598
+#: processing/forms.py:228 processing/forms.py:777 processing/views.py:602
 msgid "Leather Weight (kg)"
 msgstr "Deri Ağırlığı (kg)"
 
@@ -887,7 +1401,7 @@ msgstr ""
 "Deri ağırlığı alışılmadık derecede yüksek görünüyor. Lütfen doğrulayın."
 
 #: processing/forms.py:259
-#: processing/templates/processing/animal_detail.html:683
+#: processing/templates/processing/animal_detail.html:682
 msgid "Scale Receipt Image"
 msgstr "Kantar Fişi Görüntüsü"
 
@@ -904,7 +1418,7 @@ msgstr "Partideki tüm hayvanların toplam ağırlığını girin"
 msgid "Enter total weight in kilograms"
 msgstr "Toplam ağırlığı kilogram olarak girin"
 
-#: processing/forms.py:319 reception/forms.py:404
+#: processing/forms.py:319 reception/forms.py:505
 msgid "Number of Animals"
 msgstr "Hayvan Sayısı"
 
@@ -970,21 +1484,21 @@ msgstr "Bu toplu ağırlık kaydında hayvan sayısı yok; düzenlenemez."
 
 #: processing/forms.py:458 processing/forms.py:489 processing/forms.py:520
 #: processing/forms.py:599 processing/forms.py:630 processing/forms.py:661
-#: processing/forms.py:721 processing/views.py:593
+#: processing/forms.py:721 processing/views.py:597
 msgid "Breed"
 msgstr "Irk"
 
 #: processing/forms.py:459 processing/forms.py:490 processing/forms.py:521
 #: processing/forms.py:551 processing/forms.py:575 processing/forms.py:600
 #: processing/forms.py:631 processing/forms.py:662 processing/forms.py:729
-#: processing/views.py:594
+#: processing/views.py:598
 msgid "Sakatat Status"
 msgstr "Sakatat Durumu"
 
 #: processing/forms.py:460 processing/forms.py:491 processing/forms.py:522
 #: processing/forms.py:552 processing/forms.py:576 processing/forms.py:601
 #: processing/forms.py:632 processing/forms.py:663 processing/forms.py:743
-#: processing/views.py:595
+#: processing/views.py:599
 msgid "Bowels Status"
 msgstr "Bağırsak Durumu"
 
@@ -1027,7 +1541,7 @@ msgstr "Fena Değil"
 msgid "Good"
 msgstr "İyi"
 
-#: processing/forms.py:759 processing/views.py:596
+#: processing/forms.py:759 processing/views.py:600
 msgid "Live Weight (kg)"
 msgstr "Canlı Ağırlık (kg)"
 
@@ -1035,7 +1549,7 @@ msgstr "Canlı Ağırlık (kg)"
 msgid "kg"
 msgstr "kg"
 
-#: processing/forms.py:768 processing/views.py:597
+#: processing/forms.py:768 processing/views.py:601
 msgid "Hot Carcass Weight (kg)"
 msgstr "Sıcak Karkas Ağırlığı (kg)"
 
@@ -1093,12 +1607,6 @@ msgstr "Düve"
 #: processing/models.py:75
 msgid "Beef"
 msgstr "Dana"
-
-#: processing/models.py:80 processing/templates/processing/animal_list.html:321
-#: processing/templates/processing/animal_list.html:698
-#: processing/templates/processing/dashboard.html:116
-msgid "Received"
-msgstr "Alındı"
 
 #: processing/models.py:81 processing/templates/processing/dashboard.html:132
 msgid "Slaughtered"
@@ -1476,15 +1984,19 @@ msgstr ""
 msgid "Animal Detail"
 msgstr "Hayvan Detayı"
 
+#: processing/templates/processing/animal_detail.html:133
+msgid "Back to List"
+msgstr "Listeye Dön"
+
 #: processing/templates/processing/animal_detail.html:137
 #: processing/templates/processing/animal_detail.html:320
-#: processing/templates/processing/animal_detail.html:770
+#: processing/templates/processing/animal_detail.html:769
 #: processing/templates/processing/animal_list.html:406
 msgid "Mark animal as slaughtered?"
 msgstr "Hayvan kesildi olarak işaretlensin mi?"
 
 #: processing/templates/processing/animal_detail.html:141
-#: processing/templates/processing/animal_detail.html:774
+#: processing/templates/processing/animal_detail.html:773
 msgid "Mark Slaughtered"
 msgstr "Kesildi Olarak İşaretle"
 
@@ -1600,144 +2112,140 @@ msgid "View All Labels"
 msgstr "Tüm Etiketleri Görüntüle"
 
 #: processing/templates/processing/animal_detail.html:451
-msgid "Label Types Available:"
-msgstr "Mevcut Etiket Türleri:"
+msgid "After generating a label:"
+msgstr "Etiket oluşturulduktan sonra:"
 
 #: processing/templates/processing/animal_detail.html:453
-msgid "PRN Format: Direct printer commands for TSC label printers"
-msgstr "PRN Formatı: TSC etiket yazıcıları için direkt yazıcı komutları"
+msgid ""
+"Use “Print via Edge” on the label page to send TSPL to your site printer "
+"(Edge must be online and printers synced)."
+msgstr ""
+"Etiket sayfasında “Kenar Üzerinden Yazdır”ı kullanarak TSPL’yi tesis "
+"yazıcınıza gönderin (Kenar çevrimiçi olmalı ve yazıcılar eşlenmiş olmalıdır)."
 
 #: processing/templates/processing/animal_detail.html:454
-msgid "BAT Format: Windows batch file for easy printing"
-msgstr "BAT Formatı: Kolay yazdırma için Windows toplu işlem dosyası"
+msgid "Download PDF for a preview or office printing."
+msgstr "Önizleme veya ofis çıktısı için PDF indirin."
 
-#: processing/templates/processing/animal_detail.html:455
-msgid "PDF Format: Printable document for any printer"
-msgstr "PDF Formatı: Herhangi bir yazıcı için yazdırılabilir belge"
-
-#: processing/templates/processing/animal_detail.html:463
-msgid "Order Information"
-msgstr "Sipariş Bilgileri"
-
-#: processing/templates/processing/animal_detail.html:466
+#: processing/templates/processing/animal_detail.html:465
 msgid "Order Number"
 msgstr "Sipariş Numarası"
 
-#: processing/templates/processing/animal_detail.html:475
+#: processing/templates/processing/animal_detail.html:474
 #: processing/templates/processing/disassembly_dashboard.html:263
 #: processing/templates/processing/disassembly_dashboard.html:321
 #: reception/templates/reception/order_list.html:41 tenants/views.py:337
-#: users/forms.py:302 users/models.py:31
+#: users/forms.py:304 users/models.py:31
 #: users/templates/users/client_profile_detail.html:4
 #: users/templates/users/client_profile_list.html:133
 #: users/templates/users/dashboard.html:53
 msgid "Client"
 msgstr "Müşteri"
 
-#: processing/templates/processing/animal_detail.html:485
+#: processing/templates/processing/animal_detail.html:484
 #: processing/templates/processing/disassembly_detail.html:468
 msgid "Service Package"
 msgstr "Hizmet Paketi"
 
-#: processing/templates/processing/animal_detail.html:489
+#: processing/templates/processing/animal_detail.html:488
 #: reception/templates/reception/order_list.html:42
 msgid "Order Date"
 msgstr "Sipariş Tarihi"
 
-#: processing/templates/processing/animal_detail.html:499
+#: processing/templates/processing/animal_detail.html:498
 msgid "Photos"
 msgstr "Fotoğraflar"
 
-#: processing/templates/processing/animal_detail.html:503
+#: processing/templates/processing/animal_detail.html:502
 msgid "Animal Photo"
 msgstr "Hayvan Fotoğrafı"
 
-#: processing/templates/processing/animal_detail.html:510
+#: processing/templates/processing/animal_detail.html:509
 msgid "Passport Photo"
 msgstr "Pasaport Fotoğrafı"
 
-#: processing/templates/processing/animal_detail.html:523
-#: users/templates/users/dashboard.html:316
+#: processing/templates/processing/animal_detail.html:522
+#: users/templates/users/dashboard.html:337
 msgid "Disassembly"
 msgstr "Parçalama"
 
-#: processing/templates/processing/animal_detail.html:526
+#: processing/templates/processing/animal_detail.html:525
 #: processing/templates/processing/disassembly_dashboard.html:107
 #: processing/templates/processing/disassembly_detail.html:40
 msgid "Boneless Service"
 msgstr "Kemiksiz Hizmet"
 
-#: processing/templates/processing/animal_detail.html:530
+#: processing/templates/processing/animal_detail.html:529
 #: processing/templates/processing/disassembly_dashboard.html:111
 #: processing/templates/processing/disassembly_detail.html:44
 msgid "Standard Cuts"
 msgstr "Standart Parçalar"
 
-#: processing/templates/processing/animal_detail.html:547
+#: processing/templates/processing/animal_detail.html:546
 #: processing/templates/processing/disassembly_dashboard.html:126
 #: processing/templates/processing/disassembly_detail.html:96
 msgid "Cannot Proceed to Disassembly"
 msgstr "Parçalama İşlemine Devam Edilemez"
 
-#: processing/templates/processing/animal_detail.html:551
+#: processing/templates/processing/animal_detail.html:550
 #: processing/templates/processing/disassembly_dashboard.html:129
 #: processing/templates/processing/disassembly_detail.html:99
 msgid "Hot carcass weight must be logged before disassembly can begin."
 msgstr ""
 "Parçalama işlemine başlamadan önce sıcak karkas ağırlığı kaydedilmelidir."
 
-#: processing/templates/processing/animal_detail.html:562
+#: processing/templates/processing/animal_detail.html:561
 msgid "Record the total weight of boneless meat after removing all bones."
 msgstr ""
 "Tüm kemikler çıkarıldıktan sonra kemiksiz etin toplam ağırlığını kaydedin."
 
-#: processing/templates/processing/animal_detail.html:564
+#: processing/templates/processing/animal_detail.html:563
 msgid "Manage disassembly cuts and generate labels for individual pieces."
 msgstr ""
 "Parçalama kesimlerini yönetin ve bireysel parçalar için etiket oluşturun."
 
-#: processing/templates/processing/animal_detail.html:572
+#: processing/templates/processing/animal_detail.html:571
 #: processing/templates/processing/disassembly_dashboard.html:222
 msgid "Boneless Meat Weight:"
 msgstr "Kemiksiz Et Ağırlığı:"
 
-#: processing/templates/processing/animal_detail.html:577
+#: processing/templates/processing/animal_detail.html:576
 msgid "Total Cuts:"
 msgstr "Toplam Parça:"
 
-#: processing/templates/processing/animal_detail.html:579
+#: processing/templates/processing/animal_detail.html:578
 #: processing/templates/processing/disassembly_dashboard.html:235
 msgid "Total Weight:"
 msgstr "Toplam Ağırlık:"
 
-#: processing/templates/processing/animal_detail.html:585
+#: processing/templates/processing/animal_detail.html:584
 msgid "Individual Cuts:"
 msgstr "Bireysel Parçalar:"
 
-#: processing/templates/processing/animal_detail.html:607
+#: processing/templates/processing/animal_detail.html:606
 #: processing/templates/processing/disassembly_dashboard.html:292
 #: processing/templates/processing/disassembly_dashboard.html:332
-#: users/templates/users/dashboard.html:321
+#: users/templates/users/dashboard.html:342
 msgid "Manage Cuts"
 msgstr "Parçaları Yönet"
 
-#: processing/templates/processing/animal_detail.html:616
+#: processing/templates/processing/animal_detail.html:615
 msgid "Weight History"
 msgstr "Ağırlık Geçmişi"
 
-#: processing/templates/processing/animal_detail.html:624
+#: processing/templates/processing/animal_detail.html:623
 msgid "Date"
 msgstr "Tarih"
 
-#: processing/templates/processing/animal_detail.html:651
+#: processing/templates/processing/animal_detail.html:650
 msgid "No weight records yet."
 msgstr "Henüz ağırlık kaydı yok."
 
-#: processing/templates/processing/animal_detail.html:658
+#: processing/templates/processing/animal_detail.html:657
 msgid "Scale sessions"
 msgstr "Kantar oturumları"
 
-#: processing/templates/processing/animal_detail.html:659
+#: processing/templates/processing/animal_detail.html:658
 msgid ""
 "Sessions where this animal was scaled (total allocated weight and average "
 "per event)."
@@ -1745,7 +2253,7 @@ msgstr ""
 "Bu hayvanın tartıldığı oturumlar (toplam atanmış ağırlık ve olay başına "
 "ortalama)."
 
-#: processing/templates/processing/animal_detail.html:664
+#: processing/templates/processing/animal_detail.html:663
 #: scales/templates/scales/session_detail.html:4
 #: scales/templates/scales/session_detail.html:12
 #: scales/templates/scales/session_event_edit.html:4
@@ -1753,62 +2261,62 @@ msgstr ""
 msgid "Session"
 msgstr "Oturum"
 
-#: processing/templates/processing/animal_detail.html:667
+#: processing/templates/processing/animal_detail.html:666
 #: processing/templates/processing/disassembly_detail.html:124
 msgid "Allocated"
 msgstr "Atanmış"
 
-#: processing/templates/processing/animal_detail.html:668
+#: processing/templates/processing/animal_detail.html:667
 #: processing/templates/processing/batch_weights.html:262
 #: processing/templates/processing/disassembly_detail.html:64
 #: processing/templates/processing/disassembly_detail.html:423
 msgid "avg"
 msgstr "ort"
 
-#: processing/templates/processing/animal_detail.html:668
+#: processing/templates/processing/animal_detail.html:667
 #: processing/templates/processing/disassembly_detail.html:64
 #: processing/templates/processing/disassembly_detail.html:423
 msgid "event"
 msgstr "olay"
 
-#: processing/templates/processing/animal_detail.html:687
+#: processing/templates/processing/animal_detail.html:686
 #: reception/templates/reception/edit_animal.html:57
 msgid "Current Image:"
 msgstr "Mevcut Resim:"
 
-#: processing/templates/processing/animal_detail.html:694
+#: processing/templates/processing/animal_detail.html:693
 #: reception/templates/reception/edit_animal.html:64
 msgid "Upload a new image to replace"
 msgstr "Değiştirmek için yeni bir resim yükleyin"
 
-#: processing/templates/processing/animal_detail.html:711
+#: processing/templates/processing/animal_detail.html:710
 msgid "Choose Scale Receipt Image"
 msgstr "Kantar Fişi Görüntüsü Seç"
 
-#: processing/templates/processing/animal_detail.html:742
+#: processing/templates/processing/animal_detail.html:741
 msgid "Upload"
 msgstr "Yükle"
 
-#: processing/templates/processing/animal_detail.html:766
+#: processing/templates/processing/animal_detail.html:765
 #: processing/templates/processing/disassembly_detail.html:535
 #: reporting/templates/reporting/dashboard.html:154
 #: reporting/templates/reporting/simple_dashboard.html:82
 msgid "Quick Actions"
 msgstr "Hızlı İşlemler"
 
-#: processing/templates/processing/animal_detail.html:781
+#: processing/templates/processing/animal_detail.html:780
 #: processing/templates/processing/quick_process.html:4
 #: reception/templates/reception/order_detail.html:147
 msgid "Quick Process"
 msgstr "Hızlı İşlem"
 
-#: processing/templates/processing/animal_detail.html:786
+#: processing/templates/processing/animal_detail.html:785
 #: reception/templates/reception/edit_animal.html:42
 msgid "Edit Animal"
 msgstr "Hayvanı Düzenle"
 
-#: processing/templates/processing/animal_detail.html:793
-#: processing/templates/processing/animal_detail.html:846
+#: processing/templates/processing/animal_detail.html:792
+#: processing/templates/processing/animal_detail.html:845
 msgid "Log Weight"
 msgstr "Ağırlık Kaydet"
 
@@ -1857,23 +2365,6 @@ msgstr "Göster:"
 #: processing/templates/processing/animal_list.html:302
 msgid "per page"
 msgstr "sayfa başına"
-
-#: processing/templates/processing/animal_list.html:312
-#: scales/templates/scales/orphaned_batch_reconcile.html:14
-msgid "Animal"
-msgstr "Hayvan"
-
-#: processing/templates/processing/animal_list.html:315
-#: processing/templates/processing/batch_weight_reports.html:174
-#: processing/templates/processing/batch_weights.html:279
-#: processing/templates/processing/disassembly_detail.html:16
-#: processing/templates/processing/disassembly_detail.html:459
-#: processing/templates/processing/quick_process.html:16
-#: reception/templates/reception/add_animal.html:43
-#: reception/templates/reception/batch_add_animals.html:48
-#: reception/templates/reception/edit_animal.html:44
-msgid "Order"
-msgstr "Sipariş"
 
 #: processing/templates/processing/animal_list.html:343
 #, python-format
@@ -1974,7 +2465,7 @@ msgid "No order"
 msgstr "Sipariş yok"
 
 #: processing/templates/processing/animal_list.html:684
-#: processing/views.py:1173 processing/views.py:1250
+#: processing/views.py:1177 processing/views.py:1254
 msgid "Walk-in Client"
 msgstr "Parakende Müşteri"
 
@@ -2094,12 +2585,6 @@ msgstr "Toplam Kayıt"
 msgid "Animals Weighed"
 msgstr "Tartılan Hayvanlar"
 
-#: processing/templates/processing/batch_weight_reports.html:80
-#: processing/templates/processing/batch_weight_reports.html:127
-#: processing/templates/processing/batch_weight_reports.html:177
-msgid "Total Weight"
-msgstr "Toplam Ağırlık"
-
 #: processing/templates/processing/batch_weight_reports.html:94
 #: processing/templates/processing/batch_weight_reports.html:128
 msgid "Avg Weight/Animal"
@@ -2141,15 +2626,6 @@ msgstr "Detaylı Ağırlık Kayıtları"
 msgid "Date & Time"
 msgstr "Tarih ve Saat"
 
-#: processing/templates/processing/batch_weight_reports.html:176
-#: processing/templates/processing/batch_weights.html:287
-#: reception/templates/reception/order_detail.html:91
-#: scales/templates/scales/session_create.html:65
-#: scales/templates/scales/session_detail.html:32
-#: templates/tenants/platform_admin/dashboard.html:283
-msgid "Animals"
-msgstr "Hayvanlar"
-
 #: processing/templates/processing/batch_weight_reports.html:178
 msgid "Avg Weight"
 msgstr "Ort. Ağırlık"
@@ -2185,7 +2661,7 @@ msgstr ""
 
 #: processing/templates/processing/batch_weights.html:48
 #: templates/tenants/platform_admin/dashboard.html:298
-#: theme/templates/base.html:40 users/templates/users/dashboard.html:4
+#: users/templates/users/dashboard.html:4
 msgid "Dashboard"
 msgstr "Anasayfa"
 
@@ -2532,6 +3008,7 @@ msgstr "Oturum başlat"
 #: processing/templates/processing/disassembly_dashboard.html:93
 #: reception/templates/reception/order_list.html:24
 #: users/templates/users/client_profile_list.html:61
+#: users/templates/users/user_management_list.html:90
 msgid "Search"
 msgstr "Ara"
 
@@ -2622,7 +3099,7 @@ msgstr "Cihaz"
 #: processing/templates/processing/disassembly_detail.html:418
 #: scales/templates/scales/session_detail.html:33
 #: scales/templates/scales/session_list.html:57 tenants/views.py:336
-#: users/forms.py:303 users/models.py:30
+#: users/forms.py:305 users/models.py:30
 #: users/templates/users/dashboard.html:45
 msgid "Operator"
 msgstr "Operatör"
@@ -2656,7 +3133,7 @@ msgid "Scale events"
 msgstr "Kantar olayları"
 
 #: processing/templates/processing/disassembly_detail.html:119
-#: scales/templates/scales/edge_management.html:144
+#: scales/templates/scales/edge_management.html:352
 #: scales/templates/scales/orphaned_batch_reconcile.html:33
 #: scales/templates/scales/session_detail.html:72
 #: scales/templates/scales/session_detail.html:97
@@ -2696,10 +3173,6 @@ msgstr "Her 5 saniyede bir güncellenir."
 msgid "Editing Cut"
 msgstr "Parça Düzenleniyor"
 
-#: processing/templates/processing/disassembly_detail.html:164
-msgid "Cut"
-msgstr "Parça"
-
 #: processing/templates/processing/disassembly_detail.html:165
 msgid "Current Weight"
 msgstr "Mevcut Ağırlık"
@@ -2726,6 +3199,8 @@ msgid "Total (yield):"
 msgstr "Toplam (verim):"
 
 #: processing/templates/processing/disassembly_detail.html:297
+#: scales/templates/scales/edge_management.html:303
+#: scales/templates/scales/edge_management.html:522
 msgid "Scale"
 msgstr "Kantar"
 
@@ -2781,11 +3256,20 @@ msgstr "Etiket"
 #: scales/templates/scales/session_detail.html:121
 #: scales/templates/scales/session_detail.html:174
 #: scales/templates/scales/session_detail.html:185
+#: scales/templates/scales/site_list.html:51
 #: users/templates/users/client_profile_detail.html:23
 #: users/templates/users/client_profile_list.html:108
 #: users/templates/users/client_profile_list.html:175
-#: users/templates/users/user_management_list.html:145
-#: users/templates/users/user_management_list.html:231
+#: users/templates/users/user_management_list.html:128
+#: users/templates/users/user_management_list.html:179
+#: users/templates/users/user_management_list.html:229
+#: users/templates/users/user_management_list.html:270
+#: users/templates/users/user_management_list.html:362
+#: users/templates/users/user_management_list.html:366
+#: users/templates/users/user_management_list.html:402
+#: users/templates/users/user_management_list.html:450
+#: users/templates/users/user_management_list.html:454
+#: users/templates/users/user_management_list.html:483
 msgid "Edit"
 msgstr "Düzenle"
 
@@ -2869,7 +3353,7 @@ msgstr "Ağırlıklar"
 
 #: processing/templates/processing/quick_process.html:166
 msgid "Save & Print Label"
-msgstr ""
+msgstr "Kaydet ve Etiketi Yazdır"
 
 #: processing/templates/processing/quick_process.html:189
 msgid "Save All"
@@ -2884,108 +3368,103 @@ msgstr "Kaydet ve Sonraki"
 msgid "Next: %(tag)s (%(type)s)"
 msgstr "Sonraki: %(tag)s (%(type)s)"
 
-#: processing/views.py:394
+#: processing/views.py:398
 msgid "Scale receipt image deleted."
 msgstr "Kantar fişi görüntüsü silindi."
 
-#: processing/views.py:396
+#: processing/views.py:400
 msgid "No scale receipt image to delete."
 msgstr "Silinecek kantar fişi görüntüsü yok."
 
-#: processing/views.py:401
+#: processing/views.py:405
 msgid "Scale receipt image uploaded successfully."
 msgstr "Kantar fişi görüntüsü başarıyla yüklendi."
 
-#: processing/views.py:403
+#: processing/views.py:407
 msgid "Failed to upload scale receipt image."
 msgstr "Kantar fişi görüntüsü yüklenemedi."
 
-#: processing/views.py:448 processing/views.py:453
+#: processing/views.py:452 processing/views.py:457
 #, python-format
 msgid "%(animal_type)s Details"
 msgstr "%(animal_type)s Detayları"
 
-#: processing/views.py:646
+#: processing/views.py:650
 msgid "details"
 msgstr "detaylar"
 
-#: processing/views.py:651
+#: processing/views.py:655
 msgid "live weight"
 msgstr "canlı ağırlık"
 
-#: processing/views.py:655
-msgid "hot carcass weight"
-msgstr "sıcak karkas ağırlığı"
-
-#: processing/views.py:659
+#: processing/views.py:663
 msgid "leather weight"
 msgstr "deri ağırlığı"
 
-#: processing/views.py:664
+#: processing/views.py:668
 #, python-format
 msgid "Saved %(items)s for %(tag)s."
 msgstr "%(tag)s için %(items)s kaydedildi."
 
-#: processing/views.py:671
+#: processing/views.py:675
 msgid "No changes to save."
 msgstr "Kaydedilecek değişiklik yok."
 
-#: processing/views.py:686
-#, fuzzy, python-format
-#| msgid "Error generating label: %(error)s"
+#: processing/views.py:690
+#, python-format
 msgid "Label generation failed: %(error)s"
-msgstr "Etiket oluşturulurken hata oluştu: %(error)s"
+msgstr "Etiket oluşturma başarısız: %(error)s"
 
-#: processing/views.py:704
+#: processing/views.py:708
 #, python-format
 msgid "Animal %(tag)s marked as slaughtered."
 msgstr "Hayvan %(tag)s kesildi olarak işaretlendi."
 
-#: processing/views.py:706
+#: processing/views.py:710
 #, python-format
 msgid "Error marking animal as slaughtered: %(error)s"
 msgstr "Hayvan kesildi olarak işaretlenirken hata oluştu: %(error)s"
 
-#: processing/views.py:726 processing/views.py:1204
+#: processing/views.py:730 processing/views.py:1208
 #, python-format
 msgid "Leather weight (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için deri ağırlığı (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:739
+#: processing/views.py:743
 #, python-format
 msgid "%(weight_type)s updated to %(weight)s kg for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s %(weight)s kg olarak güncellendi."
 
-#: processing/views.py:749
+#: processing/views.py:753
 #, python-format
 msgid "%(weight_type)s (%(weight)s kg) logged for %(tag)s."
 msgstr "%(tag)s için %(weight_type)s (%(weight)s kg) kaydedildi."
 
-#: processing/views.py:757
+#: processing/views.py:761
 #, python-format
 msgid "Error logging weight: %(error)s"
 msgstr "Ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:823
+#: processing/views.py:827
 msgid "Please select an order."
 msgstr "Lütfen bir sipariş seçin."
 
-#: processing/views.py:840
+#: processing/views.py:844
 #, python-format
 msgid "Successfully slaughtered %(count)s animals."
 msgstr "%(count)s hayvan başarıyla kesildi."
 
-#: processing/views.py:842
+#: processing/views.py:846
 #, python-format
 msgid "%(count)s animals could not be processed."
 msgstr "%(count)s hayvan işlenemedi."
 
-#: processing/views.py:882
+#: processing/views.py:886
 #, python-format
 msgid "%(field)s: %(error)s"
 msgstr "%(field)s: %(error)s"
 
-#: processing/views.py:1013
+#: processing/views.py:1017
 #, python-format
 msgid ""
 "Batch weight logged successfully. All %(available_count)s animals for "
@@ -2996,7 +3475,7 @@ msgstr ""
 "%(available_count)s hayvan tartıldı; bireysel ağırlık kayıtları hayvan "
 "başına %(average_weight).2f kg ortalama ile oluşturuldu."
 
-#: processing/views.py:1025
+#: processing/views.py:1029
 #, python-format
 msgid ""
 "Batch weight logged: %(animal_count)s animals weighed (%(total_weight)skg "
@@ -3007,12 +3486,12 @@ msgstr ""
 "(%(total_weight)skg toplam, %(average_weight).2fkg ortalama). "
 "%(weight_type)s için %(remaining)s hayvan kaldı."
 
-#: processing/views.py:1037
+#: processing/views.py:1041
 #, python-format
 msgid "Error logging batch weight: %(error)s"
 msgstr "Toplu ağırlık kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1068
+#: processing/views.py:1072
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. Individual animal weights were "
@@ -3023,7 +3502,7 @@ msgstr ""
 "%(available_count)s hayvanda %(average_weight).2f kg ortalamaya yeniden "
 "senkronize edildi."
 
-#: processing/views.py:1080
+#: processing/views.py:1084
 #, python-format
 msgid ""
 "Batch total updated for %(weight_type)s. %(remaining)s animals are still "
@@ -3032,22 +3511,22 @@ msgstr ""
 "%(weight_type)s için toplam güncellendi. %(remaining)s hayvan hâlâ "
 "beklemede; bu tür için bireysel kayıtlar kaldırıldı."
 
-#: processing/views.py:1089
+#: processing/views.py:1093
 #, python-format
 msgid "Error updating batch weight: %(error)s"
 msgstr "Toplu ağırlık güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1140
+#: processing/views.py:1144
 #, python-format
 msgid "Order %(order_no)s status updated."
 msgstr "Sipariş %(order_no)s durumu güncellendi."
 
-#: processing/views.py:1208
+#: processing/views.py:1212
 #, python-format
 msgid "Error logging leather weight: %(error)s"
 msgstr "Deri ağırlığı kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1294
+#: processing/views.py:1298
 #, python-format
 msgid ""
 "Animal details can only be filled after the animal has been slaughtered. "
@@ -3056,29 +3535,29 @@ msgstr ""
 "Hayvan detayları ancak hayvan kesildikten sonra doldurulabilir. Mevcut "
 "durum: %(status)s. Lütfen önce hayvanı kesin."
 
-#: processing/views.py:1307
+#: processing/views.py:1311
 #, python-format
 msgid "No detail form available for %(animal_type)s."
 msgstr "%(animal_type)s için detay formu mevcut değil."
 
-#: processing/views.py:1315
+#: processing/views.py:1319
 msgid "updated"
 msgstr "güncellendi"
 
-#: processing/views.py:1319
+#: processing/views.py:1323
 msgid "created"
 msgstr "oluşturuldu"
 
-#: processing/views.py:1328
+#: processing/views.py:1332
 #, python-format
 msgid "%(animal_type)s details %(action)s successfully for %(tag)s."
 msgstr "%(tag)s için %(animal_type)s detayları başarıyla %(action)s."
 
-#: processing/views.py:1472 processing/views.py:1485
+#: processing/views.py:1476 processing/views.py:1489
 msgid "No animal found matching the query"
 msgstr "Sorguya uyan hayvan bulunamadı"
 
-#: processing/views.py:1482
+#: processing/views.py:1486
 msgid ""
 "This animal is not eligible for disassembly. The order may not include the "
 "disassembly service, or hot carcass weight may not be logged yet."
@@ -3086,38 +3565,38 @@ msgstr ""
 "Bu hayvan parçalamaya uygun değil. Sipariş parçalama hizmeti içermeyebilir "
 "veya sıcak karkas ağırlığı henüz kaydedilmemiş olabilir."
 
-#: processing/views.py:1728
+#: processing/views.py:1732
 #, python-format
 msgid "Boneless meat weight (%(weight)s kg) recorded successfully."
 msgstr "Kemiksiz et ağırlığı (%(weight)s kg) başarıyla kaydedildi."
 
-#: processing/views.py:1733
+#: processing/views.py:1737
 #, python-format
 msgid "Cut \"%(cut)s\" (%(weight)s kg) added successfully."
 msgstr "\"%(cut)s\" parçası (%(weight)s kg) başarıyla eklendi."
 
-#: processing/views.py:1737
+#: processing/views.py:1741
 #, python-format
 msgid "Error saving cut: %(error)s"
 msgstr "Parça kaydedilirken hata oluştu: %(error)s"
 
-#: processing/views.py:1769 processing/views.py:1779
+#: processing/views.py:1773 processing/views.py:1783
 msgid ""
 "Scale-origin cuts are read-only. Edit the source event in Scale Session."
 msgstr ""
 "Kantar kaynaklı parçalar salt okunurdur. Kantar Oturumunda kaynak olayı "
 "düzenleyin."
 
-#: processing/views.py:1786
+#: processing/views.py:1790
 msgid "Cut updated successfully."
 msgstr "Parça başarıyla güncellendi."
 
-#: processing/views.py:1789
+#: processing/views.py:1793
 #, python-format
 msgid "Error updating cut: %(error)s"
 msgstr "Parça güncellenirken hata oluştu: %(error)s"
 
-#: processing/views.py:1807
+#: processing/views.py:1811
 msgid ""
 "Scale-origin cuts cannot be deleted directly. Delete or reassign the source "
 "scale event."
@@ -3125,49 +3604,45 @@ msgstr ""
 "Kantar kaynaklı parçalar doğrudan silinemez. Kaynak kantar olayını silin "
 "veya yeniden atayın."
 
-#: processing/views.py:1814
+#: processing/views.py:1818
 #, python-format
 msgid "Cut \"%(cut)s\" deleted successfully."
 msgstr "\"%(cut)s\" parçası başarıyla silindi."
 
-#: reception/forms.py:16 reception/forms.py:169
+#: reception/forms.py:35 reception/forms.py:192
 #: reception/templates/reception/create_order.html:154
-#: reception/templates/reception/update_order.html:141
-#, fuzzy
-#| msgid "Search clients"
+#: reception/templates/reception/update_order.html:165
 msgid "Search client"
 msgstr "Müşteri ara"
 
-#: reception/forms.py:20 reception/forms.py:173
-#, fuzzy
-#| msgid "Search by order number, client name, or destination client..."
+#: reception/forms.py:39 reception/forms.py:196
 msgid "Search by name, phone, or destination..."
-msgstr "Sipariş numarası, müşteri adı veya teslimat müşterisine göre arayın..."
+msgstr "İsme, telefona veya varış yerine göre arayın..."
 
-#: reception/forms.py:33 reception/forms.py:186
+#: reception/forms.py:52 reception/forms.py:209
 msgid "Walk-in Client Name"
 msgstr "Parakende Müşteri Adı"
 
-#: reception/forms.py:37 reception/forms.py:190
+#: reception/forms.py:56 reception/forms.py:213
 msgid "Enter client name for walk-in customers"
 msgstr "Parakende müşteriler için müşteri adını girin"
 
-#: reception/forms.py:52 reception/forms.py:205
+#: reception/forms.py:71 reception/forms.py:228
 msgid "Area Code"
 msgstr "Alan Kodu"
 
-#: reception/forms.py:54 reception/forms.py:207 tenants/forms.py:35
-#: users/forms.py:48 users/forms.py:181 users/forms.py:336
+#: reception/forms.py:73 reception/forms.py:230 tenants/forms.py:35
+#: users/forms.py:48 users/forms.py:182 users/forms.py:341
 msgid "Select country code: +90 for Turkey, +1 for USA/Canada"
 msgstr "Ülke kodunu seçin: Türkiye için +90, ABD/Kanada için +1"
 
-#: reception/forms.py:61 reception/forms.py:214
+#: reception/forms.py:80 reception/forms.py:237
 #: reception/templates/reception/create_order.html:220
-#: reception/templates/reception/update_order.html:208
+#: reception/templates/reception/update_order.html:232
 msgid "Walk-in Client Phone"
 msgstr "Parakende Müşteri Telefonu"
 
-#: reception/forms.py:62 reception/forms.py:215
+#: reception/forms.py:81 reception/forms.py:238
 msgid ""
 "Required for walk-in clients so this customer can be saved as a reusable "
 "prospect."
@@ -3175,16 +3650,16 @@ msgstr ""
 "Bu müşterinin tekrar kullanılabilir bir aday müşteri olarak kaydedilebilmesi "
 "için parakende müşterilerde telefon zorunludur."
 
-#: reception/forms.py:66 reception/forms.py:219 tenants/forms.py:70
-#: users/forms.py:366
+#: reception/forms.py:85 reception/forms.py:242 tenants/forms.py:70
+#: users/forms.py:371
 msgid "Enter phone number"
 msgstr "Telefon numarası girin"
 
-#: reception/forms.py:74 reception/forms.py:227
+#: reception/forms.py:93 reception/forms.py:250
 msgid "Destination Client"
 msgstr "Teslimat Müşterisi"
 
-#: reception/forms.py:75 reception/forms.py:228
+#: reception/forms.py:94 reception/forms.py:251
 msgid ""
 "Type to search destination clients. Select one to keep it linked for future "
 "orders."
@@ -3192,113 +3667,108 @@ msgstr ""
 "Teslimat müşterilerini aramak için yazın. Gelecek siparişlerde bağlı kalması "
 "için bir müşteri seçin."
 
-#: reception/forms.py:79 reception/forms.py:232
+#: reception/forms.py:98 reception/forms.py:255
 msgid "Type destination client name to search..."
 msgstr "Aramak için teslimat müşterisi adını yazın..."
 
-#: reception/forms.py:94 reception/forms.py:247
+#: reception/forms.py:113 reception/forms.py:270
 msgid "Service package"
 msgstr "Hizmet paketi"
 
-#: reception/forms.py:95 reception/forms.py:248
+#: reception/forms.py:114 reception/forms.py:271
 msgid "Order datetime"
 msgstr "Sipariş zamanı"
 
-#: reception/forms.py:96 reception/forms.py:249
+#: reception/forms.py:115 reception/forms.py:272
 msgid "Destination"
 msgstr "Varış Yeri"
 
-#: reception/forms.py:99 reception/forms.py:252
+#: reception/forms.py:118 reception/forms.py:275
 msgid "The service package selected for this order."
 msgstr "Bu sipariş için seçilen hizmet paketi."
 
-#: reception/forms.py:100 reception/forms.py:253
+#: reception/forms.py:119 reception/forms.py:276
 msgid "Hidden snapshot of the selected destination client."
 msgstr "Seçilen teslimat müşterisinin saklanan anlık kopyası."
 
-#: reception/forms.py:121 reception/forms.py:277
+#: reception/forms.py:140 reception/forms.py:308
 msgid "Select service package"
 msgstr "Hizmet paketini seçin"
 
-#: reception/forms.py:126
+#: reception/forms.py:145
 msgid "Please choose a service package before creating the order."
 msgstr "Siparişi oluşturmadan önce bir hizmet paketi seçin."
 
-#: reception/forms.py:127 reception/forms.py:282
+#: reception/forms.py:146 reception/forms.py:313
 msgid "Select a valid service package."
 msgstr "Geçerli bir hizmet paketi seçin."
 
-#: reception/forms.py:139 reception/forms.py:320
-#, fuzzy
-#| msgid ""
-#| "An order must be linked to either a registered client or a walk-in client "
-#| "name."
+#: reception/forms.py:158 reception/forms.py:396
 msgid ""
 "An order must be linked to either a saved client from search or a walk-in "
 "client name."
 msgstr ""
-"Bir sipariş, kayıtlı bir müşteriye veya Parakende bir müşteri adına "
-"bağlanmalıdır."
+"Bir sipariş ya aramadan seçilen kayıtlı bir müşteriye ya da Perakende "
+"müşteri adına bağlanmalıdır."
 
-#: reception/forms.py:143 reception/forms.py:324
-#, fuzzy
-#| msgid ""
-#| "Please provide either a registered client or a walk-in client, not both."
+#: reception/forms.py:162 reception/forms.py:401
 msgid "Please provide either a client from search or walk-in fields, not both."
 msgstr ""
-"Lütfen kayıtlı bir müşteri veya Parakende bir müşteri sağlayın, ikisini "
-"birden değil."
+"Lütfen arama ile müşteri veya Perakende alanlarından yalnızca birini "
+"doldurun; ikisini birden değil."
 
-#: reception/forms.py:149 reception/forms.py:330
+#: reception/forms.py:168 reception/forms.py:408
 msgid "Walk-in client phone is required."
 msgstr "Parakende müşteri telefonu zorunludur."
 
-#: reception/forms.py:281
+#: reception/forms.py:312
 msgid "Please choose a service package before saving the order."
 msgstr "Siparişi kaydetmeden önce bir hizmet paketi seçin."
 
-#: reception/forms.py:354
+#: reception/forms.py:455
 msgid "Enter identification tag (optional - auto-generated if empty)"
 msgstr ""
 "Kimlik etiketini girin (isteğe bağlı - boş bırakılırsa otomatik oluşturulur)"
 
-#: reception/forms.py:381 reception/forms.py:459
+#: reception/forms.py:482 reception/forms.py:562
 msgid "Select animal type"
 msgstr "Hayvan türünü seçin"
 
-#: reception/forms.py:385
+#: reception/forms.py:486
 msgid "Animal Photo (Optional)"
 msgstr "Hayvan Fotoğrafı (İsteğe Bağlı)"
 
-#: reception/forms.py:386
+#: reception/forms.py:487
 msgid "Passport/Document Photo (Optional)"
 msgstr "Pasaport/Belge Fotoğrafı (İsteğe Bağlı)"
 
-#: reception/forms.py:408
+#: reception/forms.py:509
 msgid "Enter number of animals (1-100)"
 msgstr "Hayvan sayısını girin (1-100)"
 
-#: reception/forms.py:416
+#: reception/forms.py:517
 msgid "Tag Prefix (Optional)"
 msgstr "Etiket Öneki (İsteğe Bağlı)"
 
-#: reception/forms.py:420
+#: reception/forms.py:521
 msgid "e.g., BATCH-001 (leave empty for auto-generation)"
 msgstr "örn., BATCH-001 (otomatik oluşturma için boş bırakın)"
 
-#: reception/forms.py:423
+#: reception/forms.py:525
 msgid ""
-"Custom prefix for identification tags. If empty, auto-generated tags will be "
-"used."
+"Custom prefix for identification tags. The sequence continues for the same "
+"prefix on the same day and resets the next day. If empty, auto-generated "
+"tags will be used."
 msgstr ""
-"Kimlik etiketleri için özel önek. Boş bırakılırsa, otomatik oluşturulan "
-"etiketler kullanılacaktır."
+"Kimlik etiketleri için özel önek. Aynı gün ve aynı önek için sıra devam "
+"eder, ertesi gün sıfırlanır. Boş bırakılırsa otomatik oluşturulan etiketler "
+"kullanılır."
 
-#: reception/forms.py:428
+#: reception/forms.py:531
 msgid "Received Date & Time"
 msgstr "Alınış Tarihi ve Saati"
 
-#: reception/forms.py:444
+#: reception/forms.py:547
 msgid ""
 "Pre-filled with the current date and time; clear to use the time when you "
 "submit."
@@ -3306,28 +3776,31 @@ msgstr ""
 "Bugünün tarihi ve saati ile önceden doldurulur; gönderme anındaki zamanı "
 "kullanmak için alanı temizleyin."
 
-#: reception/forms.py:450
+#: reception/forms.py:553
 msgid "Skip Photos for Batch"
 msgstr "Toplu İşlem için Fotoğrafları Atla"
 
-#: reception/forms.py:454
+#: reception/forms.py:557
 msgid "Check this to create animals without photos (photos can be added later)"
 msgstr ""
 "Fotoğrafsız hayvan oluşturmak için bunu işaretleyin (fotoğraflar daha sonra "
 "eklenebilir)"
 
-#: reception/forms.py:466 reception/services.py:411
+#: reception/forms.py:569 reception/services.py:552
 msgid "Maximum 100 animals can be created in a single batch."
 msgstr "Tek bir toplu işlemde en fazla 100 hayvan oluşturulabilir."
 
-#: reception/services.py:89
+#: reception/services.py:174
 msgid ""
 "This phone number cannot be used for a walk-in client because it is already "
 "assigned to another account type. Use a different number, or pick the client "
 "from search if they already exist."
 msgstr ""
+"Bu telefon numarası başka bir hesap türüne zaten atanmış olduğu için "
+"perakende müşteri için kullanılamaz. Farklı bir numara kullanın veya müşteri "
+"zaten varsa aramadan seçin."
 
-#: reception/services.py:252
+#: reception/services.py:320
 msgid ""
 "Failed to create order after multiple attempts due to high concurrency. "
 "Please try again."
@@ -3335,28 +3808,72 @@ msgstr ""
 "Yüksek eşzamanlılık nedeniyle sipariş birden fazla denemeden sonra "
 "oluşturulamadı. Lütfen tekrar deneyin."
 
-#: reception/services.py:267 reception/services.py:296
+#: reception/services.py:335
 msgid ""
-"Cannot update an order that is already in progress, completed, or cancelled."
-msgstr "Devam eden, tamamlanmış veya iptal edilmiş bir sipariş güncellenemez."
+"Cannot change the client once animals have been added or processing has "
+"started."
+msgstr ""
+"Hayvanlar eklendikten veya işleme başladıktan sonra müşteri değiştirilemez."
 
-#: reception/services.py:314
+#: reception/services.py:360
+msgid ""
+"Cannot update the order date once animals have been added or processing has "
+"started."
+msgstr ""
+"Hayvanlar eklendikten veya işleme başladıktan sonra sipariş tarihi "
+"güncellenemez."
+
+#: reception/services.py:382
+msgid ""
+"Cannot update destination for an order that is already billed or cancelled."
+msgstr ""
+"Faturalanmış veya iptal edilmiş bir siparişin varış yeri güncellenemez."
+
+#: reception/services.py:402
+msgid ""
+"Cannot update the service package for an order that is completed, billed, "
+"cancelled, or has terminal animals."
+msgstr ""
+"Tamamlanmış, faturalanmış, iptal edilmiş veya terminal hayvanları bulunan "
+"bir siparişin hizmet paketi güncellenemez."
+
+#: reception/services.py:407
+msgid "A service package is required."
+msgstr "Bir hizmet paketi gerekli."
+
+#: reception/services.py:414
+msgid ""
+"Cannot change the service package after an animal has already been "
+"delivered, returned, or disposed."
+msgstr ""
+"Bir hayvan teslim edildikten, iade edildikten veya imha edildikten sonra "
+"hizmet paketi değiştirilemez."
+
+#: reception/services.py:421
+msgid ""
+"Cannot change the disassembly service type after disassembly work or cut "
+"records already exist."
+msgstr ""
+"Parçalama işi veya kesim kayıtları oluştuktan sonra parçalama hizmet türü "
+"değiştirilemez."
+
+#: reception/services.py:455
 msgid "Cannot cancel an order that is already in progress or completed."
 msgstr "Devam eden veya tamamlanmış bir sipariş iptal edilemez."
 
-#: reception/services.py:351
+#: reception/services.py:492
 msgid "Cannot bill an order that is not yet completed."
 msgstr "Henüz tamamlanmamış bir sipariş faturalandırılamaz."
 
-#: reception/services.py:364 reception/services.py:408
+#: reception/services.py:505 reception/services.py:549
 msgid "Can only add animals to a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişe eklenebilir."
 
-#: reception/services.py:376
+#: reception/services.py:517
 msgid "Can only remove animals from a PENDING order."
 msgstr "Hayvanlar yalnızca beklemedeki siparişten kaldırılabilir."
 
-#: reception/services.py:379
+#: reception/services.py:520
 msgid "Animal does not belong to the specified order."
 msgstr "Hayvan belirtilen siparişe ait değil."
 
@@ -3426,16 +3943,24 @@ msgid "With prefix 'FARM-A': FARM-A-001, FARM-A-002, FARM-A-003..."
 msgstr "'FARM-A' önekiyle: FARM-A-001, FARM-A-002, FARM-A-003..."
 
 #: reception/templates/reception/batch_add_animals.html:118
+msgid ""
+"If you use 'FARM-A' again later the same day, numbering continues from the "
+"last tag."
+msgstr ""
+"Aynı gün içinde daha sonra tekrar 'FARM-A' kullanırsanız, numaralandırma son "
+"küpeden devam eder."
+
+#: reception/templates/reception/batch_add_animals.html:119
 msgid "Without prefix: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02..."
 msgstr "Öneksiz: CATTLE-BATCH-A1B2C3-01, CATTLE-BATCH-A1B2C3-02..."
 
-#: reception/templates/reception/batch_add_animals.html:156
+#: reception/templates/reception/batch_add_animals.html:157
 msgid ""
 "Are you sure you want to create these animals? This action cannot be undone."
 msgstr ""
 "Bu hayvanları oluşturmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
-#: reception/templates/reception/batch_add_animals.html:157
+#: reception/templates/reception/batch_add_animals.html:158
 msgid "Create Batch Animals"
 msgstr "Toplu Hayvan Oluştur"
 
@@ -3448,18 +3973,21 @@ msgid "Create New Order"
 msgstr "Yeni Kesim Oluştur"
 
 #: reception/templates/reception/create_order.html:159
-#: reception/templates/reception/update_order.html:146
+#: reception/templates/reception/update_order.html:170
 msgid ""
 "Includes registered accounts and saved walk-in prospects. Past walk-ins only "
 "on an order with no profile also appear here—select to fill walk-in fields."
 msgstr ""
+"Kayıtlı hesapları ve kayıtlı perakende adaylarını içerir. Profili olmayan "
+"bir siparişteki geçmiş perakendeler de burada görünür—perakende alanlarını "
+"doldurmak için seçin."
 
 #: reception/templates/reception/create_order.html:163
 msgid "Create New Client Account"
 msgstr "Yeni Müşteri Hesabı Oluştur"
 
 #: reception/templates/reception/create_order.html:167
-#: reception/templates/reception/update_order.html:149
+#: reception/templates/reception/update_order.html:173
 msgid ""
 "Tip: after you link a destination client once, picking the same client can "
 "fill it automatically."
@@ -3468,39 +3996,39 @@ msgstr ""
 "seçtiğinizde sistem bunu otomatik doldurabilir."
 
 #: reception/templates/reception/create_order.html:195
-#: reception/templates/reception/update_order.html:183
+#: reception/templates/reception/update_order.html:207
 msgid "OR"
 msgstr "VEYA"
 
 #: reception/templates/reception/create_order.html:313
-#: users/templates/users/dashboard.html:100
+#: users/templates/users/dashboard.html:99
 msgid "Create Order"
 msgstr "Kesim Oluştur"
 
 #: reception/templates/reception/create_order.html:320
-#: reception/templates/reception/update_order.html:168
-#: reception/templates/reception/update_order.html:362
-#: reception/templates/reception/update_order.html:391
-#: users/templates/users/dashboard.html:636
+#: reception/templates/reception/update_order.html:192
+#: reception/templates/reception/update_order.html:388
+#: reception/templates/reception/update_order.html:417
+#: users/templates/users/dashboard.html:657
 msgid "Preferred destination"
 msgstr "Tercih edilen teslimat"
 
 #: reception/templates/reception/create_order.html:321
-#: reception/templates/reception/update_order.html:382
+#: reception/templates/reception/update_order.html:408
 #: users/templates/users/client_profile_list.html:201
-#: users/templates/users/dashboard.html:630
+#: users/templates/users/dashboard.html:651
 msgid "No clients found"
 msgstr "Müşteri bulunamadı"
 
 #: reception/templates/reception/create_order.html:322
-#: reception/templates/reception/update_order.html:500
+#: reception/templates/reception/update_order.html:526
 msgid "Preferred destination client"
 msgstr "Tercih edilen teslimat müşterisi"
 
 #: reception/templates/reception/create_order.html:408
-#: reception/templates/reception/update_order.html:395
+#: reception/templates/reception/update_order.html:421
 msgid "From order (fill walk-in)"
-msgstr ""
+msgstr "Siparişten (perakendeyi doldur)"
 
 #: reception/templates/reception/edit_animal.html:4
 msgid "Edit Animal in Order"
@@ -3521,6 +4049,8 @@ msgstr "Müşteri:"
 
 #: reception/templates/reception/order_detail.html:30
 #: users/templates/users/client_profile_list.html:98
+#: users/templates/users/user_management_list.html:169
+#: users/templates/users/user_management_list.html:395
 msgid "Phone:"
 msgstr "Telefon:"
 
@@ -3541,7 +4071,7 @@ msgid "Edit Order"
 msgstr "Siparişi Düzenle"
 
 #: reception/templates/reception/order_detail.html:60
-#: users/templates/users/dashboard.html:294
+#: users/templates/users/dashboard.html:315
 msgid "Operation Dashboard"
 msgstr "Operasyon Paneli"
 
@@ -3574,11 +4104,6 @@ msgstr "Tür"
 msgid "Process"
 msgstr "İşle"
 
-#: reception/templates/reception/order_detail.html:116
-#: reception/templates/reception/order_detail.html:167
-msgid "Remove"
-msgstr "Kaldır"
-
 #: reception/templates/reception/order_detail.html:166
 msgid "Are you sure you want to remove this animal?"
 msgstr "Bu hayvanı kaldırmak istediğinizden emin misiniz?"
@@ -3596,7 +4121,7 @@ msgid "Slaughter Orders"
 msgstr "Kesim Siparişleri"
 
 #: reception/templates/reception/order_list.html:10
-#: users/templates/users/dashboard.html:95
+#: users/templates/users/dashboard.html:94
 msgid "New Order"
 msgstr "Yeni Kesim"
 
@@ -3606,7 +4131,7 @@ msgstr "Sipariş numarası, müşteri adı veya teslimat müşterisine göre ara
 
 #: reception/templates/reception/order_list.html:29
 #: users/templates/users/client_profile_list.html:66
-#: users/templates/users/user_management_list.html:81
+#: users/templates/users/user_management_list.html:95
 msgid "Clear"
 msgstr "Temizle"
 
@@ -3658,32 +4183,96 @@ msgid "Update Slaughter Order"
 msgstr "Kesim Siparişini Güncelle"
 
 #: reception/templates/reception/update_order.html:131
-#: reception/templates/reception/update_order.html:310
+#: reception/templates/reception/update_order.html:335
 msgid "Update Order"
 msgstr "Siparişi Güncelle"
 
-#: reception/views.py:89
+#: reception/templates/reception/update_order.html:136
+msgid "This order is billed or cancelled and can no longer be edited."
+msgstr "Bu sipariş faturalandı veya iptal edildi; artık düzenlenemez."
+
+#: reception/templates/reception/update_order.html:140
+msgid ""
+"Client, service package, and order date are locked once animals have been "
+"added or processing has started. You can still update the destination."
+msgstr ""
+"Müşteri, hizmet paketi ve sipariş tarihi, hayvanlar eklendikten veya işleme "
+"başlandıktan sonra kilitlenir. Hedefi güncellemeye devam edebilirsiniz."
+
+#: reception/templates/reception/update_order.html:144
+msgid ""
+"Client and order date are locked once animals have been added or processing "
+"has started. Destination can still be updated. Service package changes are "
+"allowed only while the order is still active and only when they do not "
+"conflict with existing processing data."
+msgstr ""
+"Müşteri ve sipariş tarihi, hayvanlar eklendikten veya işleme başlandıktan "
+"sonra kilitlenir. Hedef güncellenebilir. Hizmet paketi değişikliklerine "
+"yalnızca sipariş hâlâ etkinken ve mevcut işleme verileriyle çelişmediği "
+"sürece izin verilir."
+
+#: reception/templates/reception/update_order.html:150
+#, python-format
+msgid ""
+"\n"
+"                        This order already has 1 active generated animal "
+"label. If you change the destination and save, the old label will be "
+"archived automatically and removed from the active label history. Regenerate "
+"it afterward so the printed data matches the new destination.\n"
+"                    "
+msgid_plural ""
+"\n"
+"                        This order already has %(count)s active generated "
+"animal labels. If you change the destination and save, the old labels will "
+"be archived automatically and removed from the active label history. "
+"Regenerate them afterward so the printed data matches the new destination.\n"
+"                    "
+msgstr[0] ""
+"\n"
+"                        Bu siparişte zaten 1 etkin oluşturulmuş hayvan "
+"etiketi var. Hedefi değiştirip kaydederseniz, eski etiket otomatik olarak "
+"arşivlenir ve etkin etiket geçmişinden kaldırılır. Basılan verilerin yeni "
+"hedefle eşleşmesi için sonradan yeniden oluşturun.\n"
+"                    "
+msgstr[1] ""
+"\n"
+"                        Bu siparişte zaten %(count)s etkin oluşturulmuş "
+"hayvan etiketi var. Hedefi değiştirip kaydederseniz, eski etiketler otomatik "
+"olarak arşivlenir ve etkin etiket geçmişinden kaldırılır. Basılan verilerin "
+"yeni hedefle eşleşmesi için sonradan yeniden oluşturun.\n"
+"                    "
+
+#: reception/templates/reception/update_order.html:330
+#: templates/public/signin.html:75 templates/public/signin.html:95
+msgid "Back"
+msgstr "Geri"
+
+#: reception/templates/reception/update_order.html:335
+msgid "Update Destination"
+msgstr "Varış yerini güncelle"
+
+#: reception/views.py:101
 msgid "No contact person"
 msgstr "İletişim kişisi yok"
 
-#: reception/views.py:102 reception/views.py:105 users/models.py:51
+#: reception/views.py:114 reception/views.py:117 users/models.py:51
 msgid "Individual"
 msgstr "Bireysel"
 
-#: reception/views.py:111
+#: reception/views.py:123
 msgid "Walk-in prospect"
 msgstr "Perakende müşteri adayı"
 
-#: reception/views.py:153
+#: reception/views.py:165
 msgid "Walk-in on order (not linked yet)"
-msgstr ""
+msgstr "Siparişte perakende (henüz bağlı değil)"
 
-#: reception/views.py:199
+#: reception/views.py:211
 #, python-format
 msgid "Slaughter order %(order_no)s created successfully."
 msgstr "%(order_no)s kesim siparişi başarıyla oluşturuldu."
 
-#: reception/views.py:208
+#: reception/views.py:220
 msgid ""
 "We could not save this order. Please try again, or contact support if it "
 "keeps happening."
@@ -3691,44 +4280,61 @@ msgstr ""
 "Bu sipariş kaydedilemedi. Lütfen tekrar deneyin; sorun sürerse destek ile "
 "iletişime geçin."
 
-#: reception/views.py:213
+#: reception/views.py:225
 msgid "Check the highlighted fields below, fix any issues, and submit again."
 msgstr ""
 "Aşağıda vurgulanan alanları kontrol edin, gerekli düzeltmeleri yapıp tekrar "
 "gönderin."
 
-#: reception/views.py:297
+#: reception/views.py:338
+msgid "This order can no longer be edited."
+msgstr "Bu sipariş artık düzenlenemez."
+
+#: reception/views.py:346
 msgid "Order updated successfully."
 msgstr "Sipariş başarıyla güncellendi."
 
-#: reception/views.py:303
+#: reception/views.py:350
+#, python-format
+msgid ""
+"Archived %(count)s previously generated animal labels. Regenerate them "
+"before printing."
+msgstr ""
+"%(count)s adet önceden oluşturulmuş hayvan etiketi arşivlendi. Yazdırmadan "
+"önce yeniden oluşturun."
+
+#: reception/views.py:358
 msgid "The selected client could not be found. Please choose it again."
 msgstr "Seçilen müşteri bulunamadı. Lütfen tekrar seçin."
 
-#: reception/views.py:314
+#: reception/views.py:364
+msgid "We could not update this order right now. Please try again."
+msgstr "Bu sipariş şu anda güncellenemedi. Lütfen tekrar deneyin."
+
+#: reception/views.py:376
 #, python-format
 msgid "Order %(order_no)s has been cancelled."
 msgstr "%(order_no)s numaralı sipariş iptal edildi."
 
-#: reception/views.py:328
+#: reception/views.py:390
 #, python-format
 msgid "Order %(order_no)s has been marked as billed."
 msgstr "%(order_no)s numaralı sipariş faturalandı olarak işaretlendi."
 
-#: reception/views.py:347
+#: reception/views.py:409
 msgid "Animal added to the order successfully."
 msgstr "Hayvan siparişe başarıyla eklendi."
 
-#: reception/views.py:370
+#: reception/views.py:432
 msgid "Animal details updated successfully."
 msgstr "Hayvan bilgileri başarıyla güncellendi."
 
-#: reception/views.py:386
+#: reception/views.py:448
 #, python-format
 msgid "Animal %(tag)s removed from the order."
 msgstr "%(tag)s hayvanı siparişten kaldırıldı."
 
-#: reception/views.py:423
+#: reception/views.py:485
 #, python-format
 msgid ""
 "Successfully created %(count)d %(animal_type)s animals for order "
@@ -3755,7 +4361,7 @@ msgstr ""
 "ve yönetin."
 
 #: reporting/templates/reporting/dashboard.html:32
-#: users/templates/users/dashboard.html:444
+#: users/templates/users/dashboard.html:465
 msgid "Daily Reports"
 msgstr "Günlük Raporlar"
 
@@ -3865,8 +4471,10 @@ msgstr "Oluşturulan Raporlar"
 #: users/templates/users/client_profile_detail.html:25
 #: users/templates/users/client_profile_list.html:113
 #: users/templates/users/client_profile_list.html:180
-#: users/templates/users/user_management_list.html:157
-#: users/templates/users/user_management_list.html:241
+#: users/templates/users/user_management_list.html:191
+#: users/templates/users/user_management_list.html:276
+#: users/templates/users/user_management_list.html:412
+#: users/templates/users/user_management_list.html:489
 msgid "Archive"
 msgstr "Arşiv"
 
@@ -4023,11 +4631,21 @@ msgstr "Oluşturuluyor..."
 msgid "Error generating test report"
 msgstr "Test raporu oluşturulurken hata oluştu"
 
-#: scales/models.py:170
+#: scales/forms.py:20
+msgid "Site name"
+msgstr "Site adı"
+
+#: scales/forms.py:21 scales/templates/scales/edge_management.html:257
+#: scales/templates/scales/site_list.html:36 templates/public/setup.html:96
+#: tenants/forms.py:241 users/templates/users/client_profile_detail.html:65
+msgid "Address"
+msgstr "Adres"
+
+#: scales/models.py:325
 msgid "No animals"
 msgstr "Hayvan yok"
 
-#: scales/models.py:176
+#: scales/models.py:331
 #, python-format
 msgid "+%(count)s more"
 msgstr "+%(count)s daha"
@@ -4063,156 +4681,746 @@ msgstr "beklemede"
 msgid "PLU catalog"
 msgstr "PLU kataloğu"
 
+#: scales/templates/scales/dashboard.html:47
+#: scales/templates/scales/edge_management.html:17
+#: scales/templates/scales/site_list.html:4
+#: scales/templates/scales/site_list.html:10
+msgid "Sites"
+msgstr "Siteler"
+
+#: scales/templates/scales/dashboard.html:48
 #: scales/templates/scales/edge_management.html:4
 #: scales/templates/scales/edge_management.html:10
-#: users/templates/users/dashboard.html:557
+#: scales/templates/scales/site_list.html:25
+#: users/templates/users/dashboard.html:578
 msgid "Edge Management"
 msgstr "Kenar Yönetimi"
 
 #: scales/templates/scales/edge_management.html:11
-msgid "Browse infrastructure as site -> edge -> printer and review edge logs."
+msgid "Site, Edge, printers, scales, and activity logs for your location."
 msgstr ""
-"Site -> kenar -> yazıcı olarak altyapıyı gezin ve kenar günlüklerini "
-"inceleyin."
+"Konumunuz için tesis, Kenar, yazıcılar, kantarlar ve etkinlik günlükleri."
 
-#: scales/templates/scales/edge_management.html:13
+#: scales/templates/scales/edge_management.html:21
+#: scales/templates/scales/edge_setup_code_list.html:4
+msgid "Setup Codes"
+msgstr "Kurulum kodları"
+
+#: scales/templates/scales/edge_management.html:28
+#: scales/templates/scales/edge_setup_code_create.html:4
+#: scales/templates/scales/edge_setup_code_create.html:9
+msgid "Add Edge Device"
+msgstr "Kenar Cihazı Ekle"
+
+#: scales/templates/scales/edge_management.html:31
 #: users/templates/users/client_profile_list.html:22
+#: users/templates/users/user_management_list.html:47
 msgid "Back to dashboard"
 msgstr "Dashboard'a dön"
 
-#: scales/templates/scales/edge_management.html:17
-msgid "Topology Selector"
-msgstr "Topoloji Seçici"
+#: scales/templates/scales/edge_management.html:36
+msgid "Filter by site and edge"
+msgstr "Tesis ve kenara göre filtrele"
 
-#: scales/templates/scales/edge_management.html:20
-#: scales/templates/scales/edge_management.html:58
-#: scales/templates/scales/session_create.html:12
-msgid "Site"
-msgstr "Site"
-
-#: scales/templates/scales/edge_management.html:22
+#: scales/templates/scales/edge_management.html:41
 msgid "Select site"
 msgstr "Site seçin"
 
-#: scales/templates/scales/edge_management.html:29
-msgid "Edge"
-msgstr "Kenar"
-
-#: scales/templates/scales/edge_management.html:31
-#: scales/templates/scales/edge_management.html:284
+#: scales/templates/scales/edge_management.html:50
+#: scales/templates/scales/edge_management.html:593
 msgid "Select edge"
 msgstr "Kenar seçin"
 
-#: scales/templates/scales/edge_management.html:41
+#: scales/templates/scales/edge_management.html:60
 msgid "Apply filter"
 msgstr "Filtreyi uygula"
 
-#: scales/templates/scales/edge_management.html:50
+#: scales/templates/scales/edge_management.html:67
+msgid "Cloud print queue"
+msgstr "Bulut yazdırma kuyruğu"
+
+#: scales/templates/scales/edge_management.html:69
+msgid ""
+"Pending jobs are not assigned to a worker until an Edge ACKs “dispatched”. "
+"Redis stores a short-lived pulse per Edge (last poll / last ACK) for quick "
+"dashboard checks; in-flight counts come from the database."
+msgstr ""
+"Bekleyen işler, bir Kenar “gönderildi” (dispatched) durumunu ACK’leyene "
+"kadar bir işçiye atanmaz. Redis, hızlı panel denetimleri için Kenar başına "
+"kısa süreli bir nabız (son anket / son ACK) saklar; uçuştaki sayılar "
+"veritabanından gelir."
+
+#: scales/templates/scales/edge_management.html:72
+msgid "No pending edge print jobs."
+msgstr "Bekleyen kenar yazdırma işi yok."
+
+#: scales/templates/scales/edge_management.html:72
+#: scales/templates/scales/edge_management.html:126
+msgid "(filtered by site)"
+msgstr "(siteye göre filtrelenmiş)"
+
+#: scales/templates/scales/edge_management.html:75
+#, python-format
+msgid "%(counter)s job waiting for Edge"
+msgid_plural "%(counter)s jobs waiting for Edge"
+msgstr[0] "%(counter)s yazdırma işi Kenarı bekliyor"
+msgstr[1] "%(counter)s yazdırma işi Kenarı bekliyor"
+
+#: scales/templates/scales/edge_management.html:76
+msgid "— site filter applied"
+msgstr "— tesis filtresi uygulandı"
+
+#: scales/templates/scales/edge_management.html:85
+msgid "Worker"
+msgstr "Çalışan"
+
+#: scales/templates/scales/edge_management.html:86
+#: scales/templates/scales/edge_management.html:139
+msgid "Job ID"
+msgstr "İş Kimliği"
+
+#: scales/templates/scales/edge_management.html:96
+msgid "—"
+msgstr "—"
+
+#: scales/templates/scales/edge_management.html:118
+#, python-format
+msgid "Showing %(shown)s of %(total)s jobs. Narrow by site filter if needed."
+msgstr ""
+"%(total)s işten %(shown)s tanesi gösteriliyor. Gerekirse tesis filtresiyle "
+"daraltın."
+
+#: scales/templates/scales/edge_management.html:123
+msgid "At printer (dispatched)"
+msgstr "Yazıcıda (gönderildi)"
+
+#: scales/templates/scales/edge_management.html:124
+msgid ""
+"These jobs were claimed by an Edge worker (dispatched ACK) and should "
+"complete or fail shortly."
+msgstr ""
+"Bu işler bir Kenar işçisi tarafından üzerine alındı (gönderildi ACK) ve kısa "
+"sürede tamamlanmalı veya başarısız olmalıdır."
+
+#: scales/templates/scales/edge_management.html:129
+#, python-format
+msgid "%(counter)s job at printer"
+msgid_plural "%(counter)s jobs at printer"
+msgstr[0] "Yazıcıda %(counter)s iş"
+msgstr[1] "Yazıcıda %(counter)s iş"
+
+#: scales/templates/scales/edge_management.html:135
+msgid "Claimed"
+msgstr "Üzerine alındı"
+
+#: scales/templates/scales/edge_management.html:138
+msgid "Worker (Edge)"
+msgstr "İşçi (Kenar)"
+
+#: scales/templates/scales/edge_management.html:157
+#, python-format
+msgid "Showing %(shown)s of %(total)s dispatched jobs."
+msgstr "%(total)s gönderilmiş işten %(shown)s tanesi gösteriliyor."
+
+#: scales/templates/scales/edge_management.html:166
 msgid "Available Edges"
 msgstr "Mevcut Kenarlar"
 
-#: scales/templates/scales/edge_management.html:51
-#: scales/templates/scales/edge_management.html:95
-msgid "Live"
-msgstr "Canlı"
-
-#: scales/templates/scales/edge_management.html:57
+#: scales/templates/scales/edge_management.html:173
+#: scales/templates/scales/edge_setup_code_detail.html:67
+#: scales/templates/scales/edge_setup_code_detail.html:78
 #: scales/templates/scales/plu_list.html:26
+#: scales/templates/scales/site_list.html:35
 msgid "Name"
 msgstr "Ad"
 
-#: scales/templates/scales/edge_management.html:60
+#: scales/templates/scales/edge_management.html:176
+#: scales/templates/scales/edge_setup_code_detail.html:71
+#: scales/templates/scales/edge_setup_code_detail.html:81
 msgid "Last seen"
 msgstr "Son görülme"
 
-#: scales/templates/scales/edge_management.html:70
-#: scales/templates/scales/edge_management.html:114
-#: scales/templates/scales/edge_management.html:205
-#: scales/templates/scales/edge_management.html:224
+#: scales/templates/scales/edge_management.html:177
+msgid "Print worker"
+msgstr "Yazdırma çalışanı"
+
+#: scales/templates/scales/edge_management.html:188
+#: scales/templates/scales/edge_management.html:272
+#: scales/templates/scales/edge_management.html:309
+#: scales/templates/scales/edge_management.html:453
+#: scales/templates/scales/edge_management.html:488
+#: scales/templates/scales/edge_management.html:512
 msgid "Online"
 msgstr "Çevrimiçi"
 
-#: scales/templates/scales/edge_management.html:72
-#: scales/templates/scales/edge_management.html:116
-#: scales/templates/scales/edge_management.html:206
-#: scales/templates/scales/edge_management.html:225
+#: scales/templates/scales/edge_management.html:190
+#: scales/templates/scales/edge_management.html:274
+#: scales/templates/scales/edge_management.html:311
+#: scales/templates/scales/edge_management.html:454
+#: scales/templates/scales/edge_management.html:490
+#: scales/templates/scales/edge_management.html:513
 msgid "Offline"
 msgstr "Çevrimdışı"
 
-#: scales/templates/scales/edge_management.html:77
-#: scales/templates/scales/edge_management.html:78
-#: scales/templates/scales/edge_management.html:79
-#: scales/templates/scales/edge_management.html:122
-#: scales/templates/scales/edge_management.html:123
-#: scales/templates/scales/edge_management.html:124
-#: scales/templates/scales/edge_management.html:193
-#: scales/templates/scales/edge_management.html:194
 #: scales/templates/scales/edge_management.html:195
+#: scales/templates/scales/edge_management.html:196
+#: scales/templates/scales/edge_management.html:197
+#: scales/templates/scales/edge_management.html:281
+#: scales/templates/scales/edge_management.html:282
+#: scales/templates/scales/edge_management.html:283
+#: scales/templates/scales/edge_management.html:317
+#: scales/templates/scales/edge_management.html:318
+#: scales/templates/scales/edge_management.html:319
+#: scales/templates/scales/edge_management.html:418
+#: scales/templates/scales/edge_management.html:419
+#: scales/templates/scales/edge_management.html:420
 msgid "ago"
 msgstr "önce"
 
-#: scales/templates/scales/edge_management.html:85
-#: scales/templates/scales/edge_management.html:200
+#: scales/templates/scales/edge_management.html:203
+#: scales/templates/scales/edge_management.html:443
+msgid "at printer"
+msgstr "yazıcıda"
+
+#: scales/templates/scales/edge_management.html:206
+#: scales/templates/scales/edge_management.html:440
+msgid "Last poll batch"
+msgstr "Son anket grubu"
+
+#: scales/templates/scales/edge_management.html:209
+#: scales/templates/scales/edge_management.html:439
+msgid "ACK"
+msgstr "ACK"
+
+#: scales/templates/scales/edge_management.html:217
+#, python-format
+msgid ""
+"Clear registration for \"%(name)s\" and open Add Edge Device with this site "
+"pre-filled? Use this after the Edge app was deleted or reinstalled. Active "
+"scale sessions on this edge must be closed first."
+msgstr ""
+"\"%(name)s\" için kaydı temizleyip bu tesis önceden doldurulmuş şekilde "
+"Kenar Cihazı Ekle’yi açmak istiyor musunuz? Kenar uygulaması silindi veya "
+"yeniden yüklendikten sonra kullanın. Bu kenarda etkin kantar oturumları önce "
+"kapatılmalıdır."
+
+#: scales/templates/scales/edge_management.html:221
+#: scales/templates/scales/edge_management.html:461
+msgid "Re-link"
+msgstr "Yeniden bağla"
+
+#: scales/templates/scales/edge_management.html:226
+#, python-format
+msgid ""
+"Remove edge \"%(name)s\" and all its devices/printers? This cannot be undone."
+msgstr ""
+"\"%(name)s\" kenarını ve tüm cihazlarını/yazıcılarını kaldırmak istiyor "
+"musunuz? Bu işlem geri alınamaz."
+
+#: scales/templates/scales/edge_management.html:237
+#: scales/templates/scales/edge_management.html:448
 msgid "No edges for this filter."
 msgstr "Bu filtre için kenar yok."
 
-#: scales/templates/scales/edge_management.html:94
-msgid "Available Printers / Scale Devices"
-msgstr "Mevcut Yazıcılar / Kantar Cihazları"
+#: scales/templates/scales/edge_management.html:246
+msgid "Label printers & scale devices"
+msgstr "Etiket yazıcıları ve kantar cihazları"
 
-#: scales/templates/scales/edge_management.html:101
-msgid "Device ID"
-msgstr "Cihaz ID"
+#: scales/templates/scales/edge_management.html:249
+msgid ""
+"Label printers come from Edge inventory sync; scales from scale "
+"registration / heartbeat."
+msgstr ""
+"Etiket yazıcıları Kenar envanter eşitlemesinden gelir; kantarlar kantar "
+"kaydı / nabız ile."
 
-#: scales/templates/scales/edge_management.html:104
-msgid "Last heartbeat"
-msgstr "Son sinyal"
+#: scales/templates/scales/edge_management.html:254
+msgid "Kind"
+msgstr "Tür"
 
-#: scales/templates/scales/edge_management.html:130
-#: scales/templates/scales/edge_management.html:219
-msgid "No printers for this filter."
-msgstr "Bu filtre için yazıcı yok."
+#: scales/templates/scales/edge_management.html:255
+msgid "Identifier"
+msgstr "Tanımlayıcı"
 
-#: scales/templates/scales/edge_management.html:139
+#: scales/templates/scales/edge_management.html:256
+msgid "Role / type"
+msgstr "Rol / tip"
+
+#: scales/templates/scales/edge_management.html:259
+#: templates/tenants/platform_admin/dashboard.html:295
+msgid "Last activity"
+msgstr "Son etkinlik"
+
+#: scales/templates/scales/edge_management.html:277
+#: scales/templates/scales/edge_management.html:493
+msgid "disabled"
+msgstr "devre dışı"
+
+#: scales/templates/scales/edge_management.html:290
+#, python-format
+msgid ""
+"Remove label printer \"%(lid)s\" from the dashboard? It may reappear after "
+"the next Edge inventory sync."
+msgstr ""
+"\"%(lid)s\" etiket yazıcısını panelden kaldırmak istiyor musunuz? Sonraki "
+"Kenar envanter eşitlemesinden sonra yeniden görünebilir."
+
+#: scales/templates/scales/edge_management.html:326
+#, python-format
+msgid "Remove scale \"%(did)s\" from the dashboard?"
+msgstr "\"%(did)s\" kantarını panelden kaldırmak istiyor musunuz?"
+
+#: scales/templates/scales/edge_management.html:338
+msgid ""
+"No label printers or scale devices for this filter. Select a site or edge, "
+"or wait for the Edge to sync inventory and heartbeats."
+msgstr ""
+"Bu filtre için etiket yazıcısı veya kantar cihazı yok. Bir tesis veya kenar "
+"seçin ya da Kenarın envanter ve nabızları eşitlemesini bekleyin."
+
+#: scales/templates/scales/edge_management.html:347
 msgid "Recent Edge Logs"
 msgstr "Son Kenar Günlükleri"
 
-#: scales/templates/scales/edge_management.html:145
+#: scales/templates/scales/edge_management.html:353
 msgid "Level"
 msgstr "Seviye"
 
-#: scales/templates/scales/edge_management.html:146
+#: scales/templates/scales/edge_management.html:354
 msgid "Action"
 msgstr "İşlem"
 
-#: scales/templates/scales/edge_management.html:147
+#: scales/templates/scales/edge_management.html:355
 msgid "Site / Edge / Printer"
 msgstr "Site / Kenar / Yazıcı"
 
-#: scales/templates/scales/edge_management.html:148
+#: scales/templates/scales/edge_management.html:356
 msgid "Message"
 msgstr "Mesaj"
 
-#: scales/templates/scales/edge_management.html:165
+#: scales/templates/scales/edge_management.html:373
 msgid "No edge logs yet."
 msgstr "Henüz kenar günlüğü yok."
 
-#: scales/templates/scales/edge_management.html:285
-#: scales/templates/scales/edge_management.html:312
-msgid "Select an edge to list printers."
-msgstr "Yazıcıları listelemek için bir kenar seçin."
+#: scales/templates/scales/edge_management.html:379
+msgid "Logs pagination"
+msgstr "Günlük sayfalama"
 
-#: scales/templates/scales/edge_management.html:288
+#: scales/templates/scales/edge_management.html:381
+#, python-format
+msgid "Page %(page)s of %(num_pages)s — %(total)s entries"
+msgstr "Sayfa %(page)s / %(num_pages)s — %(total)s kayıt"
+
+#: scales/templates/scales/edge_management.html:427
+msgid ""
+"Clear this Edge registration and open Add Edge Device with this site pre-"
+"filled? For use after reinstall. Close active sessions first."
+msgstr ""
+"Bu Kenar kaydını temizleyip bu tesis önceden doldurulmuş şekilde Kenar "
+"Cihazı Ekle’yi açmak istiyor musunuz? Yeniden kurulum sonrası kullanım "
+"içindir. Önce etkin oturumları kapatın."
+
+#: scales/templates/scales/edge_management.html:430
+msgid ""
+"Remove this label printer from the dashboard? It may reappear after the next "
+"Edge inventory sync."
+msgstr ""
+"Bu etiket yazıcısını panelden kaldırmak istiyor musunuz? Sonraki Kenar "
+"envanter eşitlemesinden sonra yeniden görünebilir."
+
+#: scales/templates/scales/edge_management.html:431
+msgid "Remove this scale from the dashboard?"
+msgstr "Bu kantarı panelden kaldırmak istiyor musunuz?"
+
+#: scales/templates/scales/edge_management.html:463
+msgid "Remove this edge and all its devices/printers?"
+msgstr "Bu kenarı ve tüm cihazlarını/yazıcılarını kaldırmak istiyor musunuz?"
+
+#: scales/templates/scales/edge_management.html:486
+msgid "Warning"
+msgstr "Uyarı"
+
+#: scales/templates/scales/edge_management.html:532
+msgid "No label printers or scale devices for this filter."
+msgstr "Bu filtre için etiket yazıcısı veya kantar cihazı yok."
+
+#: scales/templates/scales/edge_management.html:594
+msgid "Loading…"
+msgstr "Yükleniyor…"
+
+#: scales/templates/scales/edge_management.html:597
 msgid "Select a site to list edges."
 msgstr "Kenarları listelemek için bir site seçin."
 
-#: scales/templates/scales/edge_management.html:302
+#: scales/templates/scales/edge_management.html:598
+#: scales/templates/scales/edge_management.html:628
+msgid "Select a site to list devices."
+msgstr "Cihazları listelemek için bir site seçin."
+
+#: scales/templates/scales/edge_management.html:612
 msgid "online"
 msgstr "çevrimiçi"
 
-#: scales/templates/scales/edge_management.html:302
+#: scales/templates/scales/edge_management.html:612
 msgid "offline"
 msgstr "çevrimdışı"
+
+#: scales/templates/scales/edge_setup_code_create.html:11
+msgid ""
+"Create a setup code for a new Edge device. The operator at the site will "
+"enter this code when they first run the Edge software."
+msgstr ""
+"Yeni bir Kenar cihazı için kurulum kodu oluşturun. Tesis operatörü, Kenar "
+"yazılımını ilk çalıştırdığında bu kodu girecek."
+
+#: scales/templates/scales/edge_setup_code_create.html:17
+msgid "Re-linking after reinstall"
+msgstr "Yeniden kurulum sonrası yeniden bağlama"
+
+#: scales/templates/scales/edge_setup_code_create.html:19
+msgid ""
+"The site and Edge name below match the device you just cleared. Generate a "
+"new setup code, then enter it in the fresh Edge app so it reconnects to this "
+"site."
+msgstr ""
+"Aşağıdaki tesis ve Kenar adı, az önce temizlediğiniz cihazla eşleşir. Yeni "
+"bir kurulum kodu oluşturun, ardından taze Kenar uygulamasına girerek bu "
+"tesise yeniden bağlanmasını sağlayın."
+
+#: scales/templates/scales/edge_setup_code_create.html:33
+#: scales/templates/scales/edge_setup_code_detail.html:139
+msgid "Download CarniTrack Edge"
+msgstr "CarniTrack Kenar’ı indirin"
+
+#: scales/templates/scales/edge_setup_code_create.html:34
+msgid ""
+"Install on the PC at the site (near printers and scales). Then generate a "
+"setup code below and enter it in the app on first run."
+msgstr ""
+"Tesis bilgisayarına (yazıcılar ve kantarlar yakınında) kurun. Ardından "
+"aşağıdan bir kurulum kodu oluşturup uygulamada ilk çalıştırmada girin."
+
+#: scales/templates/scales/edge_setup_code_create.html:44
+msgid "Download for Windows"
+msgstr "Windows için indir"
+
+#: scales/templates/scales/edge_setup_code_create.html:52
+msgid "Download for Linux"
+msgstr "Linux için indir"
+
+#: scales/templates/scales/edge_setup_code_create.html:55
+msgid ""
+"Latest builds: GitHub release edge-latest. Re-download after updates if your "
+"IT policy allows."
+msgstr ""
+"En son sürümler: GitHub sürümü edge-latest. BT politikanız uygunsa "
+"güncellemelerden sonra yeniden indirin."
+
+#: scales/templates/scales/edge_setup_code_create.html:67
+msgid "Select a site..."
+msgstr "Bir site seçin..."
+
+#: scales/templates/scales/edge_setup_code_create.html:76
+msgid "Edge Device Name"
+msgstr "Kenar Cihazı Adı"
+
+#: scales/templates/scales/edge_setup_code_create.html:80
+msgid "e.g., Main Facility Edge"
+msgstr "ör. Ana Tesis Kenarı"
+
+#: scales/templates/scales/edge_setup_code_create.html:83
+msgid "Optional. If left empty, the site name will be used."
+msgstr "İsteğe bağlı. Boş bırakılırsa tesis adı kullanılır."
+
+#: scales/templates/scales/edge_setup_code_create.html:89
+msgid "Code Valid For"
+msgstr "Kod Geçerlilik Süresi"
+
+#: scales/templates/scales/edge_setup_code_create.html:93
+#: scales/templates/scales/edge_setup_code_create.html:94
+msgid "hours"
+msgstr "saat"
+
+#: scales/templates/scales/edge_setup_code_create.html:95
+msgid "days"
+msgstr "gün"
+
+#: scales/templates/scales/edge_setup_code_create.html:100
+msgid "Printer Configuration"
+msgstr "Yazıcı yapılandırması"
+
+#: scales/templates/scales/edge_setup_code_create.html:102
+msgid ""
+"Configure printers for this Edge device. These will be auto-configured on "
+"the Edge when the setup code is used."
+msgstr ""
+"Bu Kenar cihazı için yazıcıları yapılandırın. Kurulum kodu kullanıldığında "
+"bunlar Kenarda otomatik yapılandırılır."
+
+#: scales/templates/scales/edge_setup_code_create.html:107
+msgid "Select from existing printers at this site"
+msgstr "Bu tesisteki mevcut yazıcılardan seç"
+
+#: scales/templates/scales/edge_setup_code_create.html:115
+msgid "Add printers manually"
+msgstr "Yazıcıları elle ekle"
+
+#: scales/templates/scales/edge_setup_code_create.html:120
+msgid "IP Address"
+msgstr "IP adresi"
+
+#: scales/templates/scales/edge_setup_code_create.html:129
+msgid "Meat Cut"
+msgstr "Et kesimi"
+
+#: scales/templates/scales/edge_setup_code_create.html:131
+msgid "By-Product"
+msgstr "Yan ürün"
+
+#: scales/templates/scales/edge_setup_code_create.html:133
+msgid "Generic"
+msgstr "Genel"
+
+#: scales/templates/scales/edge_setup_code_create.html:137
+msgid "Display Name"
+msgstr "Görünen ad"
+
+#: scales/templates/scales/edge_setup_code_create.html:138
+msgid "Carcass Line"
+msgstr "Karkas hattı"
+
+#: scales/templates/scales/edge_setup_code_create.html:144
+msgid "Remove printer row"
+msgstr "Yazıcı satırını kaldır"
+
+#: scales/templates/scales/edge_setup_code_create.html:150
+msgid "Add another printer"
+msgstr "Başka yazıcı ekle"
+
+#: scales/templates/scales/edge_setup_code_create.html:162
+msgid "Generate Setup Code"
+msgstr "Kurulum kodu oluştur"
+
+#: scales/templates/scales/edge_setup_code_detail.html:4
+msgid "Edge Setup Code"
+msgstr "Kenar Kurulum Kodu"
+
+#: scales/templates/scales/edge_setup_code_detail.html:22
+msgid "Edge Device Created"
+msgstr "Kenar Cihazı Oluşturuldu"
+
+#: scales/templates/scales/edge_setup_code_detail.html:32
+msgid "Setup Code"
+msgstr "Kurulum kodu"
+
+#: scales/templates/scales/edge_setup_code_detail.html:41
+msgid "Copy to clipboard"
+msgstr "Panoya kopyala"
+
+#: scales/templates/scales/edge_setup_code_detail.html:46
+msgid "Already used"
+msgstr "Zaten kullanıldı"
+
+#: scales/templates/scales/edge_setup_code_detail.html:50
+msgid "Expires:"
+msgstr "Sona erme:"
+
+#: scales/templates/scales/edge_setup_code_detail.html:57
+msgid "Waiting for Edge activation…"
+msgstr "Kenar etkinleştirmesi bekleniyor…"
+
+#: scales/templates/scales/edge_setup_code_detail.html:59
+msgid ""
+"This page refreshes every 10 seconds. After the site operator enters the "
+"code on the Edge, you will see connection status here."
+msgstr ""
+"Bu sayfa her 10 saniyede bir yenilenir. Tesis operatörü kodu Kenara "
+"girdikten sonra burada bağlantı durumunu görürsünüz."
+
+#: scales/templates/scales/edge_setup_code_detail.html:65
+msgid "Edge connected and online"
+msgstr "Kenar bağlandı ve çevrimiçi"
+
+#: scales/templates/scales/edge_setup_code_detail.html:68
+msgid "Version"
+msgstr "Sürüm"
+
+#: scales/templates/scales/edge_setup_code_detail.html:69
+#: templates/tenants/platform_admin/dashboard.html:262
+msgid "Health"
+msgstr "Sağlık"
+
+#: scales/templates/scales/edge_setup_code_detail.html:70
+msgid "Active printers"
+msgstr "Aktif yazıcılar"
+
+#: scales/templates/scales/edge_setup_code_detail.html:76
+msgid "Edge activated but currently offline"
+msgstr "Kenar etkinleştirildi ancak şu an çevrimdışı"
+
+#: scales/templates/scales/edge_setup_code_detail.html:83
+msgid "No heartbeat recorded yet."
+msgstr "Henüz canlılık sinyali kaydedilmedi."
+
+#: scales/templates/scales/edge_setup_code_detail.html:92
+msgid "Pre-configured Printers"
+msgstr "Önceden Yapılandırılmış Yazıcılar"
+
+#: scales/templates/scales/edge_setup_code_detail.html:108
+msgid "Activation URL"
+msgstr "Etkinleştirme URL'si"
+
+#: scales/templates/scales/edge_setup_code_detail.html:112
+#: scales/templates/scales/edge_setup_code_detail.html:121
+msgid "Copy"
+msgstr "Kopyala"
+
+#: scales/templates/scales/edge_setup_code_detail.html:115
+msgid ""
+"The Edge calls this single URL to activate. The server resolves the tenant "
+"from the setup code automatically."
+msgstr ""
+"Kenar etkinleştirmek için bu tek URL’yi çağırır. Sunucu kiracıyı kurulum "
+"kodundan otomatik olarak çözer."
+
+#: scales/templates/scales/edge_setup_code_detail.html:117
+msgid "Cloud API URL (post-activation)"
+msgstr "Bulut API URL’si (etkinleştirme sonrası)"
+
+#: scales/templates/scales/edge_setup_code_detail.html:124
+msgid ""
+"After activation, the Edge uses this tenant-specific URL for all subsequent "
+"API calls (returned in config.baseUrl)."
+msgstr ""
+"Etkinleştirmeden sonra Kenar, sonraki tüm API çağrıları için bu kiracıya "
+"özel URL'yi kullanır (config.baseUrl içinde döndürülür)."
+
+#: scales/templates/scales/edge_setup_code_detail.html:130
+msgid "Setup Instructions"
+msgstr "Kurulum talimatları"
+
+#: scales/templates/scales/edge_setup_code_detail.html:133
+msgid "Send these instructions to the site operator:"
+msgstr "Bu talimatları tesis operatörüne gönderin:"
+
+#: scales/templates/scales/edge_setup_code_detail.html:142
+msgid "Windows (.exe)"
+msgstr "Windows (.exe)"
+
+#: scales/templates/scales/edge_setup_code_detail.html:145
+msgid "Linux"
+msgstr "Linux"
+
+#: scales/templates/scales/edge_setup_code_detail.html:153
+msgid "Extract and run the application"
+msgstr "Arşivi çıkarın ve uygulamayı çalıştırın"
+
+#: scales/templates/scales/edge_setup_code_detail.html:154
+msgid "On Windows: double-click carnitrack-edge.exe"
+msgstr "Windows'ta: carnitrack-edge.exe dosyasına çift tıklayın"
+
+#: scales/templates/scales/edge_setup_code_detail.html:160
+msgid "Open browser"
+msgstr "Tarayıcıyı açın"
+
+#: scales/templates/scales/edge_setup_code_detail.html:162
+msgid "Go to"
+msgstr "Şu adrese gidin:"
+
+#: scales/templates/scales/edge_setup_code_detail.html:169
+msgid "Enter the setup code"
+msgstr "Kurulum kodunu girin"
+
+#: scales/templates/scales/edge_setup_code_detail.html:171
+msgid "Type or paste:"
+msgstr "Yazın veya yapıştırın:"
+
+#: scales/templates/scales/edge_setup_code_detail.html:179
+msgid "Verify printers are connected"
+msgstr "Yazıcıların bağlı olduğunu doğrulayın"
+
+#: scales/templates/scales/edge_setup_code_detail.html:181
+msgid ""
+"After activation, the Edge will auto-configure printers and test "
+"connectivity. Check the Edge dashboard for printer status."
+msgstr ""
+"Etkinleştirmeden sonra Kenar yazıcıları otomatik yapılandırır ve bağlantıyı "
+"test eder. Yazıcı durumunu Kenar panosundan kontrol edin."
+
+#: scales/templates/scales/edge_setup_code_detail.html:188
+msgid "Install as a service (optional)"
+msgstr "Hizmet olarak kurun (isteğe bağlı)"
+
+#: scales/templates/scales/edge_setup_code_detail.html:190
+msgid ""
+"Run install-service.bat as Administrator so it starts automatically on "
+"reboot."
+msgstr ""
+"Yeniden başlatmada otomatik başlaması için install-service.bat dosyasını "
+"Yönetici olarak çalıştırın."
+
+#: scales/templates/scales/edge_setup_code_detail.html:200
+msgid "Back to Edge Management"
+msgstr "Kenar yönetimine dön"
+
+#: scales/templates/scales/edge_setup_code_detail.html:204
+msgid "Are you sure you want to revoke this setup code?"
+msgstr "Bu kurulum kodunu iptal etmek istediğinizden emin misiniz?"
+
+#: scales/templates/scales/edge_setup_code_detail.html:208
+msgid "Revoke Code"
+msgstr "Kodu iptal et"
+
+#: scales/templates/scales/edge_setup_code_list.html:10
+msgid "Edge Setup Codes"
+msgstr "Kenar kurulum kodları"
+
+#: scales/templates/scales/edge_setup_code_list.html:11
+msgid "Manage provisioning codes for Edge devices."
+msgstr "Kenar cihazları için sağlama kodlarını yönetin."
+
+#: scales/templates/scales/edge_setup_code_list.html:18
+msgid "New Setup Code"
+msgstr "Yeni kurulum kodu"
+
+#: scales/templates/scales/edge_setup_code_list.html:28
+msgid "Edge Name"
+msgstr "Kenar adı"
+
+#: scales/templates/scales/edge_setup_code_list.html:29
+msgid "Printers"
+msgstr "Yazıcılar"
+
+#: scales/templates/scales/edge_setup_code_list.html:32
+msgid "Expires"
+msgstr "Son kullanma"
+
+#: scales/templates/scales/edge_setup_code_list.html:47
+msgid "Used"
+msgstr "Kullanıldı"
+
+#: scales/templates/scales/edge_setup_code_list.html:49
+#: templates/tenants/platform_admin/dashboard.html:134
+#: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:157
+#: users/templates/users/client_profile_detail.html:13
+#: users/templates/users/client_profile_list.html:36
+#: users/templates/users/client_profile_list.html:88
+#: users/templates/users/client_profile_list.html:151
+#: users/templates/users/user_management_list.html:61
+#: users/templates/users/user_management_list.html:139
+#: users/templates/users/user_management_list.html:260
+#: users/templates/users/user_management_list.html:375
+#: users/templates/users/user_management_list.html:473
+msgid "Active"
+msgstr "Aktif"
+
+#: scales/templates/scales/edge_setup_code_list.html:51
+msgid "Expired"
+msgstr "Süresi doldu"
+
+#: scales/templates/scales/edge_setup_code_list.html:59
+msgid "No setup codes yet."
+msgstr "Henüz kurulum kodu yok."
 
 #: scales/templates/scales/orphaned_batch_list.html:9
 msgid ""
@@ -4331,7 +5539,7 @@ msgstr ""
 msgid "Search animals..."
 msgstr "Hayvan ara..."
 
-#: scales/templates/scales/session_create.html:75 scales/views.py:436
+#: scales/templates/scales/session_create.html:75 scales/views.py:1023
 msgid "Select at least one animal."
 msgstr "En az bir hayvan seçin."
 
@@ -4455,6 +5663,7 @@ msgstr ""
 "seçin."
 
 #: scales/templates/scales/session_event_edit.html:68
+#: scales/templates/scales/site_form.html:45
 #: templates/tenants/tenant_company_settings.html:146
 msgid "Save"
 msgstr "Kaydet"
@@ -4475,7 +5684,6 @@ msgid "Scale Sessions"
 msgstr "Kantar Oturumları"
 
 #: scales/templates/scales/session_list.html:16
-#: users/templates/users/user_management_list.html:70
 msgid "All statuses"
 msgstr "Tüm durumlar"
 
@@ -4488,15 +5696,193 @@ msgstr "Oturum yok."
 msgid "Affected Animals"
 msgstr "Etkilenen Hayvanlar"
 
-#: scales/views.py:237
+#: scales/templates/scales/site_form.html:5
+#: scales/templates/scales/site_form.html:12
+msgid "Edit site"
+msgstr "Siteyi düzenle"
+
+#: scales/templates/scales/site_form.html:5
+#: scales/templates/scales/site_form.html:12
+#: scales/templates/scales/site_list.html:21
+msgid "New site"
+msgstr "Yeni site"
+
+#: scales/templates/scales/site_form.html:15
+msgid ""
+"Sites group your hardware: each site can have one or more Edge computers, "
+"scales, and label printers."
+msgstr ""
+"Siteler donanımınızı gruplar: her sitede bir veya daha fazla Kenar "
+"bilgisayarı, kantar ve etiket yazıcısı olabilir."
+
+#: scales/templates/scales/site_form.html:35
+msgid "Optional. Shown for your team’s reference."
+msgstr "İsteğe bağlı. Ekibinizin referansı için gösterilir."
+
+#: scales/templates/scales/site_form.html:45
+msgid "Create site"
+msgstr "Site oluştur"
+
+#: scales/templates/scales/site_list.html:12
+msgid ""
+"Plants or locations in your tenant. Each site can have Edge devices, scales, "
+"and printers. Create a site before adding setup codes or Edge hardware."
+msgstr ""
+"Kiracınızdaki tesisler veya konumlar. Her sitede Kenar cihazları, kantarlar "
+"ve yazıcılar olabilir. Kurulum kodu veya Kenar donanımı eklemeden önce bir "
+"site oluşturun."
+
+#: scales/templates/scales/site_list.html:37
+msgid "Edges"
+msgstr "Kenarlar"
+
+#: scales/templates/scales/site_list.html:54
+#, python-format
+msgid ""
+"Deactivate site \"%(name)s\"? It will disappear from Edge and label setup "
+"until restored in admin."
+msgstr ""
+"\"%(name)s\" sitesi devre dışı bırakılsın mı? Yönetici panelinden geri "
+"yüklenene kadar Kenar ve etiket kurulumunda görünmez."
+
+#: scales/templates/scales/site_list.html:56
+#: scales/templates/scales/site_list.html:59
+#: templates/tenants/platform_admin/dashboard.html:339
+msgid "Deactivate"
+msgstr "Devre dışı bırak"
+
+#: scales/templates/scales/site_list.html:59
+msgid "Remove Edge devices first"
+msgstr "Önce Kenar cihazlarını kaldırın"
+
+#: scales/templates/scales/site_list.html:66
+msgid "No sites yet. Create one to attach Edge devices and scales."
+msgstr ""
+"Henüz site yok. Kenar cihazları ve kantarları bağlamak için bir tane "
+"oluşturun."
+
+#: scales/views.py:263
+#, python-format
+msgid "Site “%(name)s” was created."
+msgstr "“%(name)s” sitesi oluşturuldu."
+
+#: scales/views.py:279
+#, python-format
+msgid "Site “%(name)s” was updated."
+msgstr "“%(name)s” sitesi güncellendi."
+
+#: scales/views.py:292
+msgid ""
+"This site still has active Edge devices. Remove them from Edge Management "
+"before deactivating the site."
+msgstr ""
+"Bu sitede hâlâ aktif Kenar cihazları var. Siteyi devre dışı bırakmadan önce "
+"bunları Kenar Yönetimi'nden kaldırın."
+
+#: scales/views.py:298
+#, python-format
+msgid "Site “%(name)s” was deactivated."
+msgstr "“%(name)s” sitesi devre dışı bırakıldı."
+
+#: scales/views.py:365
+msgid "Please select a site."
+msgstr "Lütfen bir site seçin."
+
+#: scales/views.py:371
+msgid "Site not found."
+msgstr "Site bulunamadı."
+
+#: scales/views.py:477
+msgid "Setup code not found or already used."
+msgstr "Kurulum kodu bulunamadı veya zaten kullanıldı."
+
+#: scales/views.py:481
+msgid "Setup code revoked successfully."
+msgstr "Kurulum kodu başarıyla iptal edildi."
+
+#: scales/views.py:513
+msgid "Target printer was removed with Edge; job cancelled."
+msgstr "Hedef yazıcı Kenar ile kaldırıldı; iş iptal edildi."
+
+#: scales/views.py:529
+msgid "Edge re-linked; pending queue cleared for this site."
+msgstr "Kenar yeniden bağlandı; bu site için bekleyen kuyruk temizlendi."
+
+#: scales/views.py:541
+msgid "Edge removed or re-linked; in-flight print cleared."
+msgstr ""
+"Kenar kaldırıldı veya yeniden bağlandı; sürmekte olan yazdırma temizlendi."
+
+#: scales/views.py:564 scales/views.py:607
+msgid "Edge device not found."
+msgstr "Kenar cihazı bulunamadı."
+
+#: scales/views.py:575
+#, python-format
+msgid ""
+"Cannot remove this edge — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+"Bu Kenar kaldırılamıyor — %(count)s aktif oturum var. Önce bunları kapatın."
+
+#: scales/views.py:586
+#, python-format
+msgid "Edge device '%(name)s' has been removed."
+msgstr "'%(name)s' Kenar cihazı kaldırıldı."
+
+#: scales/views.py:591
+#, python-format
+msgid "Cancelled %(n)s print job(s) that targeted this Edge's printers."
+msgstr "Bu Kenarın yazıcılarını hedefleyen %(n)s yazdırma işi iptal edildi."
+
+#: scales/views.py:618
+#, python-format
+msgid ""
+"Cannot re-link this edge — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+"Bu Kenar yeniden bağlanamıyor — %(count)s aktif oturum var. Önce bunları "
+"kapatın."
+
+#: scales/views.py:631
+#, python-format
+msgid ""
+"Registration cleared for this Edge. %(n)s pending print job(s) for %(site)s "
+"were cancelled so they will not all run at once after reinstall. Generate a "
+"new setup code on the next screen, then enter it in a fresh Edge install."
+msgstr ""
+"Bu Kenar için kayıt temizlendi. Yeniden kurulumdan sonra hepsinin aynı anda "
+"çalışmaması için %(site)s için bekleyen %(n)s yazdırma işi iptal edildi. "
+"Sonraki ekranda yeni bir kurulum kodu oluşturun, ardından yeni bir Kenar "
+"kurulumunda girin."
+
+#: scales/views.py:660
+#, python-format
+msgid ""
+"Cannot remove this scale — it has %(count)s active session(s). Close them "
+"first."
+msgstr ""
+"Bu kantar kaldırılamıyor — %(count)s aktif oturum var. Önce bunları kapatın."
+
+#: scales/views.py:668
+#, python-format
+msgid "Scale “%(id)s” was removed from the dashboard."
+msgstr "“%(id)s” kantarı panelden kaldırıldı."
+
+#: scales/views.py:683
+#, python-format
+msgid "Printer “%(id)s” was removed from the dashboard."
+msgstr "“%(id)s” yazıcısı panelden kaldırıldı."
+
+#: scales/views.py:824
 msgid "Scale device"
 msgstr "Kantar cihazı"
 
-#: scales/views.py:294 users/models.py:32 users/views.py:906
+#: scales/views.py:881 users/models.py:32 users/views.py:906
 msgid "Walk-in"
 msgstr "Parakende"
 
-#: scales/views.py:355 scales/views.py:388
+#: scales/views.py:942 scales/views.py:975
 #, python-format
 msgid ""
 "Animal %(tag)s is not eligible for scale session. It must be carcass-ready "
@@ -4505,23 +5891,23 @@ msgstr ""
 "Hayvan %(tag)s kantar oturumu için uygun değil. Sıcak karkas ağırlığı ile "
 "karkas hazır durumda olmalıdır."
 
-#: scales/views.py:362
+#: scales/views.py:949
 msgid "Animal not found. The scanned QR code may be invalid."
 msgstr "Hayvan bulunamadı. Taranan QR kodu geçersiz olabilir."
 
-#: scales/views.py:395
+#: scales/views.py:982
 msgid "Animal not found or not eligible for scale session."
 msgstr "Hayvan bulunamadı veya kantar oturumu için uygun değil."
 
-#: scales/views.py:401
+#: scales/views.py:988
 msgid "Could not find animal from this QR code."
 msgstr "Bu QR koddan hayvan bulunamadı."
 
-#: scales/views.py:450
+#: scales/views.py:1037
 msgid "One or more selected animals are invalid or not eligible."
 msgstr "Seçilen hayvanlardan biri veya daha fazlası geçersiz veya uygun değil."
 
-#: scales/views.py:473
+#: scales/views.py:1060
 #, python-format
 msgid ""
 "Device %(device)s already has an active session (animal: %(tag)s). Close it "
@@ -4530,53 +5916,53 @@ msgstr ""
 "Cihaz %(device)s zaten aktif bir oturuma sahip (hayvan: %(tag)s). Yeni bir "
 "oturum başlatmadan önce kapatın."
 
-#: scales/views.py:506
+#: scales/views.py:1093
 #, python-format
 msgid "Session started for %(tag)s on %(device)s."
 msgstr "%(tag)s için %(device)s üzerinde oturum başlatıldı."
 
-#: scales/views.py:512
+#: scales/views.py:1099
 #, python-format
 msgid "Session started for %(count)s animals on %(device)s."
 msgstr "%(count)s hayvan için %(device)s üzerinde oturum başlatıldı."
 
-#: scales/views.py:722
+#: scales/views.py:1309
 msgid "Event updated."
 msgstr "Olay güncellendi."
 
-#: scales/views.py:737
+#: scales/views.py:1324
 msgid "This event is already deleted."
 msgstr "Bu olay zaten silindi."
 
-#: scales/views.py:748
+#: scales/views.py:1335
 msgid "Event deleted."
 msgstr "Olay silindi."
 
-#: scales/views.py:761
+#: scales/views.py:1348
 msgid "This event is already active."
 msgstr "Bu olay zaten aktif."
 
-#: scales/views.py:770
+#: scales/views.py:1357
 msgid "Event reactivated."
 msgstr "Olay yeniden etkinleştirildi."
 
-#: scales/views.py:783 scales/views.py:800
+#: scales/views.py:1370 scales/views.py:1387
 msgid "Session is already closed."
 msgstr "Oturum zaten kapatıldı."
 
-#: scales/views.py:789
+#: scales/views.py:1376
 msgid "Session closed."
 msgstr "Oturum kapatıldı."
 
-#: scales/views.py:806
+#: scales/views.py:1393
 msgid "Session cancelled."
 msgstr "Oturum iptal edildi."
 
-#: scales/views.py:869
+#: scales/views.py:1456
 msgid "Please select an animal."
 msgstr "Lütfen bir hayvan seçin."
 
-#: scales/views.py:900
+#: scales/views.py:1487
 #, python-format
 msgid "Batch reconciled to animal %(tag)s."
 msgstr "Toplu işlem hayvan %(tag)s ile eşleştirildi."
@@ -4584,7 +5970,7 @@ msgstr "Toplu işlem hayvan %(tag)s ile eşleştirildi."
 #: templates/public/base_public.html:9 templates/public/landing.html:4
 #: templates/public/setup.html:4 templates/public/setup_status.html:4
 #: templates/public/signin.html:5 theme/templates/base.html:8
-#: theme/templates/base.html:32
+#: theme/templates/base.html:33
 msgid "CarniTrack"
 msgstr "CarniTrack"
 
@@ -4776,7 +6162,6 @@ msgstr "Sahip e-postası"
 #: templates/public/setup.html:69 templates/public/signin.html:89
 #: tenants/forms.py:159 tenants/forms.py:191 tenants/forms.py:231
 #: users/templates/users/client_register_done.html:20
-#: users/templates/users/login.html:40
 msgid "Password"
 msgstr "Şifre"
 
@@ -4793,17 +6178,12 @@ msgstr "İsteğe bağlı şirket bilgileri"
 msgid "Registered company name"
 msgstr "Ticari unvan (kayıtlı)"
 
-#: templates/public/setup.html:96 tenants/forms.py:241
-#: users/templates/users/client_profile_detail.html:65
-msgid "Address"
-msgstr "Adres"
-
 #: templates/public/setup.html:104 tenants/forms.py:244
 #: users/templates/users/account_profile.html:49
 #: users/templates/users/client_profile_detail.html:47
 #: users/templates/users/client_profile_list.html:136
-#: users/templates/users/user_management_list.html:95
-#: users/templates/users/user_management_list.html:195
+#: users/templates/users/user_management_list.html:215
+#: users/templates/users/user_management_list.html:436
 msgid "Phone"
 msgstr "Telefon"
 
@@ -4830,7 +6210,6 @@ msgstr "Onaylı bir tenantınız var mı?"
 #: templates/tenants/platform_admin/login.html:170
 #: templates/tenants/platform_admin/setup.html:62
 #: users/templates/users/client_register_done.html:26
-#: users/templates/users/login.html:49
 msgid "Sign in"
 msgstr "Giriş Yap"
 
@@ -4999,10 +6378,6 @@ msgstr ""
 "Bu e-posta birden fazla tenantta kayıtlı. Devam etmek için doğru çalışma "
 "alanını seçin."
 
-#: templates/public/signin.html:75 templates/public/signin.html:95
-msgid "Back"
-msgstr "Geri"
-
 #: templates/public/signin.html:83 templates/public/signin.html:121
 msgid "Workspace"
 msgstr "Çalışma alanı"
@@ -5056,16 +6431,12 @@ msgid "Tenant host unavailable"
 msgstr "Tenant ana bilgisayarı kullanılamıyor"
 
 #: templates/tenants/platform_admin/dashboard.html:8
-#, fuzzy
-#| msgid "Operation dashboard"
 msgid "Tenant dashboard"
-msgstr "Operasyon paneli"
+msgstr "Tenant paneli"
 
 #: templates/tenants/platform_admin/dashboard.html:114
-#, fuzzy
-#| msgid "Tenant registration"
 msgid "Tenant Operations"
-msgstr "Tenant kaydı"
+msgstr "Tenant işlemleri"
 
 #: templates/tenants/platform_admin/dashboard.html:115
 #, python-format
@@ -5077,6 +6448,8 @@ msgid ""
 "Provision tenants, review health, and launch god-mode sessions into each "
 "tenant app without leaving the platform console."
 msgstr ""
+"Kiracıları sağlayın, sağlık durumunu inceleyin ve platform konsolundan "
+"ayrılmadan her kiracı uygulamasında tanrı modu oturumları başlatın."
 
 #: templates/tenants/platform_admin/dashboard.html:120
 msgid "Sign out"
@@ -5086,47 +6459,24 @@ msgstr "Çıkış yap"
 msgid "Tenants"
 msgstr "Tenantlar"
 
-#: templates/tenants/platform_admin/dashboard.html:134
-#: templates/tenants/platform_admin/tenant_superuser.html:79 users/forms.py:156
-#: users/templates/users/client_profile_detail.html:13
-#: users/templates/users/client_profile_list.html:36
-#: users/templates/users/client_profile_list.html:88
-#: users/templates/users/client_profile_list.html:151
-#: users/templates/users/user_management_list.html:48
-#: users/templates/users/user_management_list.html:71
-#: users/templates/users/user_management_list.html:135
-#: users/templates/users/user_management_list.html:221
-msgid "Active"
-msgstr "Aktif"
-
 #: templates/tenants/platform_admin/dashboard.html:135
 #: tenants/dashboard_services.py:344
 msgid "Healthy"
-msgstr ""
+msgstr "Sorunsuz"
 
 #: templates/tenants/platform_admin/dashboard.html:136
 msgid "Need Attention"
-msgstr ""
+msgstr "Dikkat gerekli"
 
 #: templates/tenants/platform_admin/dashboard.html:137
-#, fuzzy
-#| msgid "Active Sessions"
 msgid "Active in 7d"
-msgstr "Aktif Oturumlar"
-
-#: templates/tenants/platform_admin/dashboard.html:138
-#, fuzzy
-#| msgid "pending"
-msgid "Pending"
-msgstr "beklemede"
+msgstr "Son 7 günde aktif"
 
 #: templates/tenants/platform_admin/dashboard.html:143
 msgid "Attention Queue"
-msgstr ""
+msgstr "Dikkat kuyruğu"
 
 #: templates/tenants/platform_admin/dashboard.html:164
-#, fuzzy
-#| msgid "Pending tenant registrations"
 msgid "Pending Tenant Registrations"
 msgstr "Bekleyen tenant kayıtları"
 
@@ -5136,10 +6486,8 @@ msgid "Company"
 msgstr "Şirket"
 
 #: templates/tenants/platform_admin/dashboard.html:169
-#, fuzzy
-#| msgid "Schema name"
 msgid "Schema"
-msgstr "Şema adı"
+msgstr "Şema"
 
 #: templates/tenants/platform_admin/dashboard.html:170
 #: tenants/dashboard_services.py:227 tenants/views.py:333 users/models.py:27
@@ -5152,10 +6500,8 @@ msgid "Submitted"
 msgstr "Gönderildi"
 
 #: templates/tenants/platform_admin/dashboard.html:177
-#, fuzzy
-#| msgid "Tenant registration"
 msgid "Reject this registration?"
-msgstr "Tenant kaydı"
+msgstr "Bu kayıt reddedilsin mi?"
 
 #: templates/tenants/platform_admin/dashboard.html:191
 msgid "Approve"
@@ -5166,8 +6512,6 @@ msgid "Reject"
 msgstr "Reddet"
 
 #: templates/tenants/platform_admin/dashboard.html:209
-#, fuzzy
-#| msgid "Provision new tenant"
 msgid "Provision New Tenant"
 msgstr "Yeni tenant oluştur"
 
@@ -5176,33 +6520,20 @@ msgid "Provision tenant"
 msgstr "Tenant oluştur"
 
 #: templates/tenants/platform_admin/dashboard.html:246
-#, fuzzy
-#| msgid "Creates the PostgreSQL schema and runs migrations automatically."
 msgid "Creates the tenant schema and runs migrations automatically."
-msgstr ""
-"PostgreSQL şemasını oluşturur ve migrasyonları otomatik olarak çalıştırır."
+msgstr "Tenant şemasını oluşturur ve migrasyonları otomatik olarak çalıştırır."
 
 #: templates/tenants/platform_admin/dashboard.html:254
-#, fuzzy
-#| msgid "Tenant URL"
 msgid "Tenant Fleet"
-msgstr "Tenant URL'si"
+msgstr "Tenant filosu"
 
 #: templates/tenants/platform_admin/dashboard.html:259
-#, fuzzy
-#| msgid "Tenants"
 msgid "Tenant"
-msgstr "Tenantlar"
+msgstr "Tenant"
 
 #: templates/tenants/platform_admin/dashboard.html:260
-#, fuzzy
-#| msgid "Message"
 msgid "Usage"
-msgstr "Mesaj"
-
-#: templates/tenants/platform_admin/dashboard.html:262
-msgid "Health"
-msgstr ""
+msgstr "Kullanım"
 
 #: templates/tenants/platform_admin/dashboard.html:269
 #, python-format
@@ -5210,30 +6541,24 @@ msgid "Deactivate %(schema)s?"
 msgstr "%(schema)s devre dışı bırakılsın mı?"
 
 #: templates/tenants/platform_admin/dashboard.html:270
-#, fuzzy, python-format
-#| msgid ""
-#| "Permanently delete tenant \"%(schema)s\"? This runs DROP SCHEMA ... "
-#| "CASCADE and cannot be undone."
+#, python-format
 msgid "Permanently delete tenant \"%(schema)s\"? This cannot be undone."
 msgstr ""
-"\"%(schema)s\" tenantı kalıcı olarak silinsin mi? Bu işlem DROP SCHEMA ... "
-"CASCADE çalıştırır ve geri alınamaz."
+"\"%(schema)s\" tenantı kalıcı olarak silinsin mi? Bu işlem geri alınamaz."
 
 #: templates/tenants/platform_admin/dashboard.html:280
 #: users/templates/users/user_management_list.html:4
-#: users/templates/users/user_management_list.html:10
+#: users/templates/users/user_management_list.html:11
 msgid "Users"
 msgstr "Kullanıcılar"
 
 #: templates/tenants/platform_admin/dashboard.html:281
 msgid "Staff"
-msgstr ""
+msgstr "Personel"
 
 #: templates/tenants/platform_admin/dashboard.html:282
-#, fuzzy
-#| msgid "Order"
 msgid "Orders"
-msgstr "Sipariş"
+msgstr "Siparişler"
 
 #: templates/tenants/platform_admin/dashboard.html:284
 #: users/templates/users/client_profile_list.html:10
@@ -5241,82 +6566,58 @@ msgid "Clients"
 msgstr "Müşteriler"
 
 #: templates/tenants/platform_admin/dashboard.html:285
-#, fuzzy
-#| msgid "Service:"
 msgid "Services"
-msgstr "Hizmet:"
+msgstr "Hizmetler"
 
 #: templates/tenants/platform_admin/dashboard.html:288
-#, fuzzy
-#| msgid "Owner"
 msgid "Owners"
-msgstr "Sahip"
+msgstr "Sahipler"
 
 #: templates/tenants/platform_admin/dashboard.html:289
-#, fuzzy
-#| msgid "Admin"
 msgid "Admins"
-msgstr "Yönetici"
+msgstr "Yöneticiler"
 
 #: templates/tenants/platform_admin/dashboard.html:290
-#, fuzzy
-#| msgid "Manager"
 msgid "Managers"
-msgstr "Yönetici"
-
-#: templates/tenants/platform_admin/dashboard.html:295
-#, fuzzy
-#| msgid "Activity"
-msgid "Last activity"
-msgstr "Aktivite"
+msgstr "Müdürler"
 
 #: templates/tenants/platform_admin/dashboard.html:297
 msgid "Recent logins (7d)"
-msgstr ""
+msgstr "Son oturum açmalar (7 gün)"
 
 #: templates/tenants/platform_admin/dashboard.html:313
-#, fuzzy
-#| msgid "Open"
 msgid "Open app"
-msgstr "Aç"
+msgstr "Uygulamayı aç"
 
 #: templates/tenants/platform_admin/dashboard.html:314
-#, fuzzy
-#| msgid "Django Admin"
 msgid "Django admin URL"
-msgstr "Django Yönetici"
+msgstr "Django yönetici URL'si"
 
 #: templates/tenants/platform_admin/dashboard.html:318
 #: tenants/dashboard_services.py:229
 msgid "God mode"
-msgstr ""
+msgstr "Tanrı modu"
 
 #: templates/tenants/platform_admin/dashboard.html:324
-#, fuzzy
-#| msgid "Owner"
 msgid "As owner"
-msgstr "Sahip"
+msgstr "Sahip olarak"
 
 #: templates/tenants/platform_admin/dashboard.html:330
-#, fuzzy
-#| msgid "Admin"
 msgid "As admin"
-msgstr "Yönetici"
+msgstr "Yönetici olarak"
 
 #: templates/tenants/platform_admin/dashboard.html:333
 msgid "Create admin user"
 msgstr "Yönetici kullanıcı oluştur"
 
-#: templates/tenants/platform_admin/dashboard.html:339
-msgid "Deactivate"
-msgstr "Devre dışı bırak"
-
 #: templates/tenants/platform_admin/dashboard.html:341
 #: users/templates/users/client_profile_detail.html:29
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
-#: users/templates/users/user_management_list.html:164
-#: users/templates/users/user_management_list.html:248
+#: users/templates/users/user_management_list.html:198
+#: users/templates/users/user_management_list.html:283
+#: users/templates/users/user_management_list.html:419
+#: users/templates/users/user_management_list.html:496
 msgid "Activate"
 msgstr "Etkinleştir"
 
@@ -5325,29 +6626,21 @@ msgid "Delete forever"
 msgstr "Kalıcı sil"
 
 #: templates/tenants/platform_admin/dashboard.html:357
-#, fuzzy
-#| msgid "No tenants yet. Use 'Provision new tenant' above to get started."
 msgid "No tenants yet. Provision one above to get started."
-msgstr ""
-"Henüz tenant yok. Başlamak için yukarıdaki 'Yeni tenant oluştur' seçeneğini "
-"kullanın."
+msgstr "Henüz tenant yok. Başlamak için yukarıdan bir tane oluşturun."
 
 #: templates/tenants/platform_admin/impersonation_error.html:7
-#, fuzzy
-#| msgid "Operation number"
 msgid "Impersonation error"
-msgstr "İşletme numarası"
+msgstr "Kimliğe bürünme hatası"
 
 #: templates/tenants/platform_admin/impersonation_error.html:18
 msgid "Impersonation could not be started"
-msgstr ""
+msgstr "Kimliğe bürünme başlatılamadı"
 
 #: templates/tenants/platform_admin/impersonation_error.html:20
-#: theme/templates/base.html:70
-#, fuzzy
-#| msgid "Platform admin"
+#: theme/templates/base.html:71
 msgid "Return to platform admin"
-msgstr "Platform yöneticisi"
+msgstr "Platform yönetimine dön"
 
 #: templates/tenants/platform_admin/login.html:148
 msgid "Sign in to manage tenants and open each tenant app from the dashboard."
@@ -5390,8 +6683,6 @@ msgstr ""
 "devre dışı kalır."
 
 #: templates/tenants/platform_admin/setup.html:59
-#, fuzzy
-#| msgid "Create an account"
 msgid "Create account"
 msgstr "Hesap oluştur"
 
@@ -5441,25 +6732,16 @@ msgstr "Kullanıcı Adı"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:77
 #: tenants/forms.py:158 tenants/forms.py:190 tenants/forms.py:219
-#: users/forms.py:41 users/forms.py:174 users/forms.py:327
+#: users/forms.py:41 users/forms.py:175 users/forms.py:332
 #: users/templates/users/account_profile.html:45
 #: users/templates/users/client_profile_detail.html:80
-#: users/templates/users/user_management_list.html:94
+#: users/templates/users/user_management_list.html:214
 msgid "Email"
 msgstr "E-posta"
 
-#: templates/tenants/platform_admin/tenant_superuser.html:78 users/forms.py:155
-#: users/templates/users/account_profile.html:41
-#: users/templates/users/client_profile_detail.html:42
-#: users/templates/users/user_management_list.html:92
-msgid "Role"
-msgstr ""
-
 #: templates/tenants/platform_admin/tenant_superuser.html:80
-#, fuzzy
-#| msgid "Django Admin"
 msgid "Django admin"
-msgstr "Django Yönetici"
+msgstr "Django yönetici"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:89
 #: templates/tenants/platform_admin/tenant_superuser.html:90
@@ -5498,8 +6780,8 @@ msgstr ""
 
 #: templates/tenants/tenant_company_settings.html:4
 #: templates/tenants/tenant_company_settings.html:26
-#: users/templates/users/dashboard.html:487
-#: users/templates/users/dashboard.html:492
+#: users/templates/users/dashboard.html:508
+#: users/templates/users/dashboard.html:513
 msgid "Company settings"
 msgstr "Şirket ayarları"
 
@@ -5557,65 +6839,85 @@ msgid "Admin"
 msgstr "Yönetici"
 
 #: tenants/dashboard_services.py:318
-#, fuzzy
-#| msgid "Event reactivated."
 msgid "Tenant is deactivated."
-msgstr "Olay yeniden etkinleştirildi."
+msgstr "Tenant devre dışı."
 
 #: tenants/dashboard_services.py:320
 msgid "Primary domain is missing."
-msgstr ""
+msgstr "Birincil alan adı eksik."
 
 #: tenants/dashboard_services.py:322
-#, fuzzy
-#| msgid "No active sessions."
 msgid "No active tenant users."
-msgstr "Aktif oturum yok."
+msgstr "Aktif tenant kullanıcısı yok."
 
 #: tenants/dashboard_services.py:324
 msgid "No owner/admin access user exists."
-msgstr ""
+msgstr "Sahip veya yönetici erişimli kullanıcı yok."
 
 #: tenants/dashboard_services.py:326
-#, fuzzy
-#| msgid "No yearly reports configured"
 msgid "No service packages configured."
-msgstr "Yıllık rapor yapılandırması yok"
+msgstr "Yapılandırılmış hizmet paketi yok."
 
 #: tenants/dashboard_services.py:328
 msgid "No tenant activity yet."
-msgstr ""
+msgstr "Henüz kiracı etkinliği yok."
 
 #: tenants/dashboard_services.py:330
-#, fuzzy
-#| msgid "%(count)s batch weight logged in the last 7 days."
-#| msgid_plural "%(count)s batch weights logged in the last 7 days."
 msgid "No activity in the last 30 days."
-msgstr "Son 7 günde %(count)s toplu ağırlık kaydedildi."
+msgstr "Son 30 günde etkinlik yok."
 
 #: tenants/dashboard_services.py:333
 msgid "Data issue"
-msgstr ""
+msgstr "Veri sorunu"
 
 #: tenants/dashboard_services.py:335
-#: users/templates/users/user_management_list.html:52
-#: users/templates/users/user_management_list.html:72
-#: users/templates/users/user_management_list.html:137
-#: users/templates/users/user_management_list.html:223
-#, fuzzy
-#| msgid "active"
+#: users/templates/users/user_management_list.html:66
+#: users/templates/users/user_management_list.html:143
+#: users/templates/users/user_management_list.html:262
+#: users/templates/users/user_management_list.html:379
+#: users/templates/users/user_management_list.html:475
 msgid "Inactive"
-msgstr "aktif"
+msgstr "Pasif"
 
 #: tenants/dashboard_services.py:341
 msgid "Needs setup"
-msgstr ""
+msgstr "Kurulum gerekli"
 
 #: tenants/dashboard_services.py:343
-#, fuzzy
-#| msgid "Action"
 msgid "Attention"
-msgstr "İşlem"
+msgstr "Dikkat"
+
+#: tenants/email_index.py:44
+msgid "Enter a valid phone number including country code."
+msgstr "Ülke kodu dahil geçerli bir telefon numarası girin."
+
+#: tenants/email_index.py:47
+msgid "Enter a valid phone number."
+msgstr "Geçerli bir telefon numarası girin."
+
+#: tenants/email_index.py:49
+msgid "Phone number is too long."
+msgstr "Telefon numarası çok uzun."
+
+#: tenants/email_index.py:53
+msgid ""
+"Turkish numbers must include 10 digits after +90 (for example +905551112233)."
+msgstr ""
+"Türkiye numaraları +90 ülke kodundan sonra 10 hane içermelidir (örnek: "
+"+905551112233)."
+
+#: tenants/email_index.py:59
+msgid ""
+"US/Canada numbers must include 10 digits after +1 (for example +12025551234)."
+msgstr ""
+"ABD ve Kanada numaraları +1 ülke kodundan sonra 10 hane içermelidir (örnek: "
+"+12025551234)."
+
+#: tenants/email_index.py:62
+msgid "Only +90 (Turkey) and +1 (USA/Canada) are supported for this field."
+msgstr ""
+"Bu alan için yalnızca +90 (Türkiye) ve +1 (ABD/Kanada) ülke kodları "
+"desteklenir."
 
 #: tenants/forms.py:19
 msgid "Remove current logo"
@@ -5629,7 +6931,7 @@ msgstr "Mevcut dosya"
 msgid "Replace with"
 msgstr "Şununla değiştir"
 
-#: tenants/forms.py:31 users/forms.py:46 users/forms.py:179 users/forms.py:334
+#: tenants/forms.py:31 users/forms.py:46 users/forms.py:180 users/forms.py:339
 msgid "Area code"
 msgstr "Alan kodu"
 
@@ -5674,7 +6976,7 @@ msgstr "Özel alan adı"
 msgid "Leave blank to auto-generate {schema}.{base_domain}."
 msgstr "{schema}.{base_domain} otomatik oluşturulsun diye boş bırakın."
 
-#: tenants/forms.py:135 tenants/models.py:100
+#: tenants/forms.py:135 tenants/models.py:102
 msgid "Contact email"
 msgstr "İletişim e-postası"
 
@@ -5719,8 +7021,6 @@ msgstr ""
 "önekli adreslerde)."
 
 #: tenants/forms.py:194 users/templates/users/client_profile_detail.html:37
-#: users/templates/users/user_management_list.html:93
-#: users/templates/users/user_management_list.html:193
 msgid "Account type"
 msgstr "Hesap türü"
 
@@ -5742,13 +7042,8 @@ msgid "İşletme onay no"
 msgstr "İşletme onay no"
 
 #: tenants/forms.py:249
-#, fuzzy
-#| msgid ""
-#| "Government approval number; same value as ISLETME ONAY NO on printed "
-#| "labels."
 msgid "Government approval number on labels (ISLETME ONAY NO)."
-msgstr ""
-"Resmi onay numarası; basılı etiketlerdeki İŞLETME ONAY NO ile aynı değer."
+msgstr "Etiketlerdeki resmî onay numarası (İŞLETME ONAY NO)."
 
 #: tenants/forms.py:254 tenants/models.py:82
 msgid "Vergi dairesi / işletme no (VD)"
@@ -5789,42 +7084,42 @@ msgid "Tax office / operation number (e.g. ÇKALE VD line on labels)."
 msgstr "Vergi dairesi / işletme numarası (ör. etiketlerdeki ÇKALE VD satırı)."
 
 #: tenants/models.py:89
-#, fuzzy
-#| msgid "Tenant registration"
 msgid "Company registration province"
-msgstr "Tenant kaydı"
+msgstr "Şirket kayıt ili"
 
-#: tenants/models.py:90
+#: tenants/models.py:91
 msgid ""
 "Turkish province (plaka) where the company is registered; drives the VD "
 "prefix on printed labels."
 msgstr ""
+"Şirketin kayıtlı olduğu Türk ili (plaka); basılan etiketlerdeki VD önekini "
+"belirler."
 
-#: tenants/models.py:97
+#: tenants/models.py:99
 msgid "Logo"
 msgstr "Logo"
 
-#: tenants/models.py:98
+#: tenants/models.py:100
 msgid "Optional branding image in the app header."
 msgstr "Uygulama üst çubuğunda isteğe bağlı marka görseli."
 
-#: tenants/models.py:101
+#: tenants/models.py:103
 msgid "Contact phone"
 msgstr "İletişim telefonu"
 
-#: tenants/models.py:107
+#: tenants/models.py:109
 msgid "Printer Turkish mode"
 msgstr "Yazıcı Türkçe modu"
 
-#: tenants/models.py:108
+#: tenants/models.py:110
 msgid "unicode, ascii, or codepage1254 for label printers."
 msgstr "Etiket yazıcıları için unicode, ascii veya codepage1254."
 
-#: tenants/models.py:110
+#: tenants/models.py:112
 msgid "Timezone"
 msgstr "Saat dilimi"
 
-#: tenants/models.py:111
+#: tenants/models.py:113
 msgid "Language code"
 msgstr "Dil kodu"
 
@@ -5843,7 +7138,7 @@ msgstr "\"%(schema)s\" tenantı %(domain)s adresinde oluşturuldu."
 
 #: tenants/views.py:241
 msgid "Target user no longer exists or is inactive."
-msgstr ""
+msgstr "Hedef kullanıcı artık yok veya etkin değil."
 
 #: tenants/views.py:286
 #, python-format
@@ -5936,32 +7231,15 @@ msgstr "Kurulum zaten tamamlandı. Lütfen giriş yapın."
 msgid "Account created. Please sign in."
 msgstr "Hesap oluşturuldu. Lütfen giriş yapın."
 
-#: theme/templates/base.html:24
+#: theme/templates/base.html:25
 msgid "Company logo"
 msgstr "Şirket logosu"
 
-#: theme/templates/base.html:41 users/templates/users/account_profile.html:4
-#: users/templates/users/account_profile.html:28
-msgid "My Account"
-msgstr "Hesabım"
-
-#: theme/templates/base.html:44
-msgid "Logout"
-msgstr "Çıkış"
-
-#: theme/templates/base.html:47
-#: users/templates/users/client_profile_form.html:122
-#: users/templates/users/login.html:7
-msgid "Login"
-msgstr "Giriş"
-
-#: theme/templates/base.html:61
-#, fuzzy
-#| msgid "Session Active"
+#: theme/templates/base.html:62
 msgid "Impersonation Active"
-msgstr "Oturum Aktif"
+msgstr "Kullanıcı taklidi etkin"
 
-#: theme/templates/base.html:63
+#: theme/templates/base.html:64
 #, python-format
 msgid ""
 "\n"
@@ -5969,121 +7247,107 @@ msgid ""
 "platform admin %(actor)s.\n"
 "                                "
 msgstr ""
+"\n"
+"                                    Platform yöneticisi %(actor)s "
+"aracılığıyla %(username)s (%(role)s) olarak oturum açıldı.\n"
+"                                "
 
-#: theme/templates/base.html:75
+#: theme/templates/base.html:76
 msgid "Exit impersonation"
-msgstr ""
+msgstr "Kimliğe bürünmeyi sonlandır"
 
-#: users/forms.py:54 users/forms.py:187 users/forms.py:370
-#: users/templates/users/client_profile_form.html:95
+#: users/forms.py:54 users/forms.py:188 users/forms.py:375
+#: users/templates/users/client_profile_form.html:110
 #: users/templates/users/client_profile_register.html:84
 msgid "Phone number"
 msgstr "Telefon numarası"
 
-#: users/forms.py:55 users/forms.py:188 users/forms.py:328 users/forms.py:371
+#: users/forms.py:55 users/forms.py:189 users/forms.py:333 users/forms.py:376
 #: users/templates/users/staff_user_form.html:82
 msgid "At least one of email or phone is required."
-msgstr ""
+msgstr "E-posta veya telefonun en az biri gereklidir."
 
-#: users/forms.py:58 users/forms.py:243
-#, fuzzy
-#| msgid "Password"
+#: users/forms.py:58 users/forms.py:245
 msgid "New password"
-msgstr "Şifre"
+msgstr "Yeni şifre"
 
 #: users/forms.py:61
 msgid "Leave blank to keep the current password."
-msgstr ""
+msgstr "Mevcut parolayı korumak için boş bırakın."
 
-#: users/forms.py:64 users/forms.py:247
-#, fuzzy
-#| msgid "Confirm password"
+#: users/forms.py:64 users/forms.py:249
 msgid "Confirm new password"
-msgstr "Şifreyi onayla"
+msgstr "Yeni şifreyi onayla"
 
 #: users/forms.py:88
 msgid "Leave blank to assign a random password."
-msgstr ""
+msgstr "Rastgele bir parola atamak için boş bırakın."
 
 #: users/forms.py:101
-#, fuzzy
-#| msgid "A user with this username already exists in this tenant."
 msgid "A user with that username already exists."
-msgstr "Bu tenantta bu kullanıcı adına sahip bir kullanıcı zaten var."
+msgstr "Bu kullanıcı adına sahip bir kullanıcı zaten var."
 
-#: users/forms.py:112 users/forms.py:209 users/forms.py:396
-#, fuzzy
-#| msgid "A user with this email already exists in this tenant."
+#: users/forms.py:112 users/forms.py:210 users/forms.py:401
 msgid "A user with that email already exists in this tenant."
-msgstr "Bu tenantta bu e-posta ile bir kullanıcı zaten var."
+msgstr "Bu e-posta ile bir kullanıcı bu kiracıda zaten var."
 
-#: users/forms.py:126 users/forms.py:223 users/forms.py:427
-#, fuzzy
-#| msgid "A user with this username already exists in this tenant."
+#: users/forms.py:127 users/forms.py:225 users/forms.py:437
 msgid "A user with that phone number already exists in this tenant."
-msgstr "Bu tenantta bu kullanıcı adına sahip bir kullanıcı zaten var."
+msgstr "Bu telefon numarasına sahip bir kullanıcı bu kiracıda zaten var."
 
-#: users/forms.py:136 users/forms.py:233 users/forms.py:320 users/forms.py:416
+#: users/forms.py:137 users/forms.py:235 users/forms.py:325 users/forms.py:421
 msgid "At least one of email or phone number is required."
-msgstr ""
+msgstr "E-posta veya telefon numarasının en az biri gereklidir."
 
-#: users/forms.py:143 users/forms.py:148 users/forms.py:272
-#, fuzzy
-#| msgid "Passwords do not match."
+#: users/forms.py:144 users/forms.py:149 users/forms.py:274
 msgid "The two password fields don't match."
-msgstr "Parolalar eşleşmiyor."
+msgstr "İki şifre alanı eşleşmiyor."
 
-#: users/forms.py:145 users/forms.py:150
+#: users/forms.py:146 users/forms.py:151
 msgid "Password must be at least 8 characters."
-msgstr ""
+msgstr "Parola en az 8 karakter olmalıdır."
 
-#: users/forms.py:169
-#, fuzzy
-#| msgid "Could not find animal from this QR code."
+#: users/forms.py:170
 msgid "You cannot assign that role from this screen."
-msgstr "Bu QR koddan hayvan bulunamadı."
+msgstr "Bu ekrandan bu rolü atayamazsınız."
 
-#: users/forms.py:239
-#, fuzzy
-#| msgid "Current product"
+#: users/forms.py:241
 msgid "Current password"
-msgstr "Mevcut ürün"
+msgstr "Mevcut şifre"
 
-#: users/forms.py:262 users/views.py:229
+#: users/forms.py:264 users/views.py:229
 msgid "Your current password was entered incorrectly."
-msgstr ""
+msgstr "Mevcut parolanız hatalı girildi."
 
-#: users/forms.py:435
-#, fuzzy
-#| msgid "An account with that email already exists."
+#: users/forms.py:445
 msgid "A client profile with that phone number already exists."
-msgstr "Bu e-posta ile bir hesap zaten mevcut."
+msgstr "Bu telefon numarasına sahip bir müşteri profili zaten var."
 
-#: users/forms.py:460
+#: users/forms.py:470
 msgid "Company name is required for enterprise accounts."
-msgstr ""
+msgstr "Kurumsal hesaplar için şirket adı gereklidir."
 
-#: users/forms.py:462
+#: users/forms.py:472
 msgid "Tax ID is required for enterprise accounts."
 msgstr "Kurumsal hesaplar için vergi numarası zorunludur."
 
-#: users/forms.py:464
+#: users/forms.py:474
 msgid "Contact person is required for enterprise accounts."
 msgstr "Kurumsal hesaplar için iletişim kişisi zorunludur."
 
-#: users/forms.py:466
+#: users/forms.py:476
 msgid "Address is required for enterprise accounts."
 msgstr "Kurumsal hesaplar için adres zorunludur."
 
-#: users/forms.py:469
+#: users/forms.py:479
 msgid "Contact person is required for individual accounts."
 msgstr "Bireysel hesaplar için iletişim kişisi zorunludur."
 
-#: users/forms.py:471
+#: users/forms.py:481
 msgid "Address is required for individual accounts."
 msgstr "Bireysel hesaplar için adres zorunludur."
 
-#: users/forms.py:474
+#: users/forms.py:484
 msgid "Name is required for walk-in accounts."
 msgstr "Perakende (walk-in) hesaplar için ad zorunludur."
 
@@ -6108,6 +7372,11 @@ msgid ""
 msgstr ""
 "Bu müşteri için tercih edilen varış müşterisi. Yeni siparişlerde otomatik "
 "doldurulur."
+
+#: users/templates/users/account_profile.html:4
+#: users/templates/users/account_profile.html:28
+msgid "My Account"
+msgstr "Hesabım"
 
 #: users/templates/users/account_profile.html:29
 msgid "Update your contact details and change your password."
@@ -6214,7 +7483,7 @@ msgstr "Kayıtlı"
 #: users/templates/users/client_profile_form.html:42
 #: users/templates/users/client_profile_list.html:18
 #: users/templates/users/client_profile_list.html:218
-#: users/templates/users/user_management_list.html:17
+#: users/templates/users/user_management_list.html:20
 msgid "Add client"
 msgstr "Müşteri ekle"
 
@@ -6223,13 +7492,21 @@ msgstr "Müşteri ekle"
 msgid "Edit client"
 msgstr "Müşteriyi düzenle"
 
-#: users/templates/users/client_profile_form.html:63
-#: users/templates/users/user_management_list.html:151
-#: users/templates/users/user_management_list.html:236
+#: users/templates/users/client_profile_form.html:54
+msgid "Please fix the following before saving:"
+msgstr "Kaydetmeden önce lütfen aşağıdakileri düzeltin:"
+
+#: users/templates/users/client_profile_form.html:78
+#: users/templates/users/user_management_list.html:185
+#: users/templates/users/user_management_list.html:407
 msgid "Profile"
 msgstr "Profil"
 
-#: users/templates/users/client_profile_form.html:125
+#: users/templates/users/client_profile_form.html:137
+msgid "Login"
+msgstr "Giriş"
+
+#: users/templates/users/client_profile_form.html:140
 msgid ""
 "If the phone number already belongs to a registered account, this form will "
 "create only the client profile and link matching walk-in orders by phone."
@@ -6237,14 +7514,14 @@ msgstr ""
 "Telefon numarası zaten kayıtlı bir hesaba aitse, bu form yalnızca müşteri "
 "profilini oluşturur ve telefonla eşleşen perakende siparişleri bağlar."
 
-#: users/templates/users/client_profile_form.html:140
+#: users/templates/users/client_profile_form.html:155
 msgid ""
 "Use email or phone. Client phone is synced from the profile section above."
 msgstr ""
 "E-posta veya telefon kullanın. Müşteri telefonu yukarıdaki profil bölümünden "
 "senkronize edilir."
 
-#: users/templates/users/client_profile_form.html:174
+#: users/templates/users/client_profile_form.html:189
 msgid ""
 "This profile has no client login yet. Save the walk-in details now and "
 "promote it to a full client account later."
@@ -6252,16 +7529,17 @@ msgstr ""
 "Bu profilde henüz müşteri girişi yok. Perakende bilgilerini şimdi kaydedin; "
 "daha sonra tam müşteri hesabına yükseltebilirsiniz."
 
-#: users/templates/users/client_profile_form.html:180
+#: users/templates/users/client_profile_form.html:195
 msgid "Create client"
 msgstr "Müşteri oluştur"
 
-#: users/templates/users/client_profile_form.html:180
+#: users/templates/users/client_profile_form.html:195
 #: users/templates/users/staff_user_form.html:124
 msgid "Save changes"
 msgstr "Değişiklikleri kaydet"
 
 #: users/templates/users/client_profile_list.html:4
+#: users/templates/users/user_management_list.html:43
 msgid "Registered clients"
 msgstr "Kayıtlı müşteriler"
 
@@ -6273,11 +7551,12 @@ msgstr ""
 "açın."
 
 #: users/templates/users/client_profile_list.html:27
+#: users/templates/users/user_management_list.html:52
 msgid "Status filters"
 msgstr "Durum filtreleri"
 
 #: users/templates/users/client_profile_list.html:31
-#: users/templates/users/user_management_list.html:44 users/views.py:1225
+#: users/templates/users/user_management_list.html:56 users/views.py:1280
 msgid "All"
 msgstr "Tümü"
 
@@ -6341,201 +7620,171 @@ msgstr "Müşteri hesabınız hazır"
 msgid "Save these credentials now. They will not be shown again."
 msgstr "Bu kimlik bilgilerini şimdi kaydedin; bir daha gösterilmeyecek."
 
-#: users/templates/users/dashboard.html:9
-#, python-format
-msgid "Welcome, %(username)s!"
-msgstr "Hoş geldin, %(username)s!"
-
 #: users/templates/users/dashboard.html:25
 msgid "System Administrator"
 msgstr "Sistem Yöneticisi"
 
 #: users/templates/users/dashboard.html:62
-#: users/templates/users/user_management_list.html:91
+#: users/templates/users/user_management_list.html:212
 msgid "User"
 msgstr "Kullanıcı"
 
-#: users/templates/users/dashboard.html:66
-msgid "This is your dashboard. Here are the actions you can perform."
-msgstr "Bu sizin ana sayfanız. Gerçekleştirebileceğiniz işlemler burada."
-
-#: users/templates/users/dashboard.html:81
+#: users/templates/users/dashboard.html:80
 msgid "Reception Management"
 msgstr "Kabul Yönetimi"
 
-#: users/templates/users/dashboard.html:97
+#: users/templates/users/dashboard.html:96
 msgid "Create slaughter order for new or existing clients"
 msgstr "Yeni veya mevcut müşteriler için kesim siparişi oluşturun"
 
-#: users/templates/users/dashboard.html:117
+#: users/templates/users/dashboard.html:116
 msgid "All Orders"
 msgstr "Tüm Kesimler"
 
-#: users/templates/users/dashboard.html:119
+#: users/templates/users/dashboard.html:118
 msgid "View and manage all slaughter orders"
 msgstr "Tüm kesim siparişlerini görüntüleyin ve yönetin"
 
-#: users/templates/users/dashboard.html:122
-#: users/templates/users/dashboard.html:218
+#: users/templates/users/dashboard.html:121
 msgid "View Orders"
 msgstr "Siparişleri Görüntüle"
 
-#: users/templates/users/dashboard.html:197
+#: users/templates/users/dashboard.html:139
 msgid "Client Portal"
 msgstr "Müşteri Portalı"
 
-#: users/templates/users/dashboard.html:212
-msgid "My Orders"
-msgstr "Siparişlerim"
+#: users/templates/users/dashboard.html:141
+msgid "Preview the client-facing order tracking portal"
+msgstr "Müşteriye dönük sipariş takip portalını önizleyin"
 
-#: users/templates/users/dashboard.html:214
-msgid "Track your order status and progress"
-msgstr "Sipariş durumunuzu ve ilerlemesini takip edin"
+#: users/templates/users/dashboard.html:144
+msgid "Open Portal"
+msgstr "Portalı aç"
 
-#: users/templates/users/dashboard.html:234
-msgid "History"
-msgstr "Geçmiş"
-
-#: users/templates/users/dashboard.html:236
-msgid "View past orders and invoices"
-msgstr "Geçmiş siparişleri ve faturaları görüntüleyin"
-
-#: users/templates/users/dashboard.html:240
-msgid "Order History"
-msgstr "Sipariş Geçmişi"
-
-#: users/templates/users/dashboard.html:257
-msgid "Documents"
-msgstr "Belgeler"
-
-#: users/templates/users/dashboard.html:259
-msgid "Download certificates and reports"
-msgstr "Sertifikaları ve raporları indirin"
-
-#: users/templates/users/dashboard.html:263
-msgid "View Documents"
-msgstr "Belgeleri Görüntüle"
-
-#: users/templates/users/dashboard.html:279
+#: users/templates/users/dashboard.html:300
 msgid "Processing & Operations"
 msgstr "İşleme ve Operasyonlar"
 
-#: users/templates/users/dashboard.html:296
+#: users/templates/users/dashboard.html:317
 msgid "Processing overview and workflow status"
 msgstr "İşleme genel bakışı ve iş akışı durumu"
 
-#: users/templates/users/dashboard.html:299
+#: users/templates/users/dashboard.html:320
 msgid "View Dashboard"
 msgstr "Paneli Görüntüle"
 
-#: users/templates/users/dashboard.html:318
+#: users/templates/users/dashboard.html:339
 msgid "Manage animal disassembly and cuts"
 msgstr "Hayvan parçalama ve kesimlerini yönet"
 
-#: users/templates/users/dashboard.html:337
+#: users/templates/users/dashboard.html:358
 msgid "Inventory"
 msgstr "Envanter"
 
-#: users/templates/users/dashboard.html:339
+#: users/templates/users/dashboard.html:360
 msgid "Stock levels and storage"
 msgstr "Stok seviyeleri ve depolama"
 
-#: users/templates/users/dashboard.html:343
+#: users/templates/users/dashboard.html:364
 msgid "View Inventory"
 msgstr "Envanteri Görüntüle"
 
-#: users/templates/users/dashboard.html:362
-msgid "Create and print custom hot carcass labels"
-msgstr "Özel sıcak karkas etiketleri oluşturun ve yazdırın"
-
 #: users/templates/users/dashboard.html:383
+msgid "Animal and custom labels, plus Edge print queue"
+msgstr "Hayvan ve özel etiketler ile Kenar yazdırma kuyruğu"
+
+#: users/templates/users/dashboard.html:386
+msgid "Open Labels"
+msgstr "Etiketleri aç"
+
+#: users/templates/users/dashboard.html:404
 msgid "Management & Reporting"
 msgstr "Yönetim ve Raporlama"
 
-#: users/templates/users/dashboard.html:398
+#: users/templates/users/dashboard.html:419
 msgid "Analytics"
 msgstr "Analitik"
 
-#: users/templates/users/dashboard.html:400
+#: users/templates/users/dashboard.html:421
 msgid "Performance metrics and KPIs"
 msgstr "Performans metrikleri ve KPI'lar"
 
-#: users/templates/users/dashboard.html:404
+#: users/templates/users/dashboard.html:425
 msgid "View Analytics"
 msgstr "Analitikleri Görüntüle"
 
-#: users/templates/users/dashboard.html:421
+#: users/templates/users/dashboard.html:442
 msgid "Finance"
 msgstr "Finans"
 
-#: users/templates/users/dashboard.html:423
+#: users/templates/users/dashboard.html:444
 msgid "Revenue and cost analysis"
 msgstr "Gelir ve maliyet analizi"
 
-#: users/templates/users/dashboard.html:427
+#: users/templates/users/dashboard.html:448
 msgid "Financial Reports"
 msgstr "Finansal Raporlar"
 
-#: users/templates/users/dashboard.html:446
+#: users/templates/users/dashboard.html:467
 msgid "Generate daily slaughter reports"
 msgstr "Günlük kesim raporları oluşturun"
 
-#: users/templates/users/dashboard.html:449
+#: users/templates/users/dashboard.html:470
 msgid "Generate Reports"
 msgstr "Rapor Oluştur"
 
-#: users/templates/users/dashboard.html:468
+#: users/templates/users/dashboard.html:489
 msgid "System Administration"
 msgstr "Sistem Yönetimi"
 
-#: users/templates/users/dashboard.html:489
+#: users/templates/users/dashboard.html:510
 msgid "Company name, İşletme onay no, label printer mode"
 msgstr "Şirket adı, işletme onay no, etiket yazıcı modu"
 
-#: users/templates/users/dashboard.html:512
+#: users/templates/users/dashboard.html:533
 msgid "User management"
 msgstr "Kullanıcı yönetimi"
 
-#: users/templates/users/dashboard.html:514
-#: users/templates/users/user_management_list.html:11
+#: users/templates/users/dashboard.html:535
+#: users/templates/users/user_management_list.html:13
 msgid "Manage staff roles, client accounts, and contact identifiers."
 msgstr ""
 "Personel rolleri, müşteri hesapları ve iletişim tanımlayıcılarını yönetin."
 
-#: users/templates/users/dashboard.html:517
+#: users/templates/users/dashboard.html:538
 msgid "Manage users"
 msgstr "Kullanıcıları yönet"
 
-#: users/templates/users/dashboard.html:534
-#: users/templates/users/dashboard.html:540
+#: users/templates/users/dashboard.html:555
+#: users/templates/users/dashboard.html:561
 msgid "Maintenance"
 msgstr "Bakım"
 
-#: users/templates/users/dashboard.html:536
+#: users/templates/users/dashboard.html:557
 msgid "Database backup and system health"
 msgstr "Veritabanı yedekleme ve sistem sağlığı"
 
-#: users/templates/users/dashboard.html:559
+#: users/templates/users/dashboard.html:580
 msgid "Manage Site -> Edge -> Printer topology and edge logs"
 msgstr "Site -> Kenar -> Yazıcı topolojisini ve kenar günlüklerini yönetin"
 
-#: users/templates/users/dashboard.html:562
+#: users/templates/users/dashboard.html:583
 msgid "Open Edge Console"
 msgstr "Kenar Konsolunu Aç"
 
-#: users/templates/users/dashboard.html:579
+#: users/templates/users/dashboard.html:600
 msgid "Search Clients"
 msgstr "Müşteri Ara"
 
-#: users/templates/users/dashboard.html:587
+#: users/templates/users/dashboard.html:608
 msgid " Type client name to search..."
 msgstr "Aramak için müşteri adını yazın..."
 
-#: users/templates/users/dashboard.html:645
+#: users/templates/users/dashboard.html:666
 msgid "Selected client"
 msgstr "Seçili müşteri"
 
-#: users/templates/users/dashboard.html:654
+#: users/templates/users/dashboard.html:675
 msgid "Error searching clients"
 msgstr "Müşteri aranırken hata oluştu"
 
@@ -6594,22 +7843,6 @@ msgstr "Mezbahane Yönetim Sistemini kullandığınız için teşekkür ederiz."
 msgid "Log back in"
 msgstr "Tekrar giriş yap"
 
-#: users/templates/users/login.html:12
-msgid "Sign in to your account"
-msgstr "Hesabınıza giriş yapın"
-
-#: users/templates/users/login.html:31
-msgid "Username, email, or phone"
-msgstr "Kullanıcı adı, e-posta veya telefon"
-
-#: users/templates/users/login.html:54
-msgid "Need an account?"
-msgstr "Hesaba mı ihtiyacınız var?"
-
-#: users/templates/users/login.html:54
-msgid "Contact your administrator."
-msgstr "Yöneticinizle iletişime geçin."
-
 #: users/templates/users/register.html:5 users/templates/users/register.html:41
 msgid "Register"
 msgstr "Kayıt Ol"
@@ -6627,7 +7860,7 @@ msgstr "Giriş yapın."
 msgid "Edit user"
 msgstr "Kullanıcıyı düzenle"
 
-#: users/templates/users/staff_user_form.html:32 users/views.py:1118
+#: users/templates/users/staff_user_form.html:32 users/views.py:1168
 msgid "Back to users"
 msgstr "Kullanıcılara dön"
 
@@ -6647,49 +7880,92 @@ msgstr ""
 "Aşağıdaki kullanıcı adı buna göre otomatik doldurulur; farklı bir giriş adı "
 "gerekiyorsa değiştirin."
 
-#: users/templates/users/user_management_list.html:23
+#: users/templates/users/user_management_list.html:26
 msgid "Add operator"
 msgstr "Operatör ekle"
 
-#: users/templates/users/user_management_list.html:29
+#: users/templates/users/user_management_list.html:32
 msgid "Add manager"
 msgstr "Müdür ekle"
 
-#: users/templates/users/user_management_list.html:35
+#: users/templates/users/user_management_list.html:38
 msgid "Add admin"
 msgstr "Yönetici ekle"
 
-#: users/templates/users/user_management_list.html:60
-msgid "Search username, email, phone, client name…"
-msgstr "Kullanıcı adı, e-posta, telefon, müşteri adı ara…"
+#: users/templates/users/user_management_list.html:71
+#: users/templates/users/user_management_list.html:73
+msgid "Search users"
+msgstr "Kullanıcı ara"
 
-#: users/templates/users/user_management_list.html:77
-msgid "Apply filters"
-msgstr "Filtreleri uygula"
+#: users/templates/users/user_management_list.html:78
+msgid "Search name, email, phone, client name…"
+msgstr "Ad, e-posta, telefon, müşteri adı ara…"
 
-#: users/templates/users/user_management_list.html:178
+#: users/templates/users/user_management_list.html:107
+#, python-format
+msgid "Showing %(start)s–%(end)s of %(total)s users."
+msgstr "Toplam %(total)s kullanıcıdan %(start)s–%(end)s arası gösteriliyor."
+
+#: users/templates/users/user_management_list.html:109
+#, python-format
+msgid "Showing %(total)s user."
+msgid_plural "Showing %(total)s users."
+msgstr[0] "%(total)s kullanıcı gösteriliyor."
+msgstr[1] "%(total)s kullanıcı gösteriliyor."
+
+#: users/templates/users/user_management_list.html:112
+msgid "visible on this page (live filter)"
+msgstr "bu sayfada görünür (canlı filtre)"
+
+#: users/templates/users/user_management_list.html:172
+msgid "Email:"
+msgstr "E-posta:"
+
+#: users/templates/users/user_management_list.html:296
+msgid "User pagination"
+msgstr "Kullanıcı sayfalandırması"
+
+#: users/templates/users/user_management_list.html:298
+#: users/templates/users/user_management_list.html:511
+#, python-format
+msgid "Page %(page)s of %(pages)s"
+msgstr "Sayfa %(page)s / %(pages)s"
+
+#: users/templates/users/user_management_list.html:336
 msgid "No users found"
 msgstr "Kullanıcı bulunamadı"
 
-#: users/templates/users/user_management_list.html:179
+#: users/templates/users/user_management_list.html:337
 msgid "Adjust your filters or create a new user account."
 msgstr "Filtrelerinizi ayarlayın veya yeni bir kullanıcı hesabı oluşturun."
 
-#: users/templates/users/user_management_list.html:186
+#: users/templates/users/user_management_list.html:346
 msgid "Client accounts"
 msgstr "Müşteri hesapları"
 
-#: users/templates/users/user_management_list.html:191
+#: users/templates/users/user_management_list.html:433
 msgid "Company / Name"
 msgstr "Şirket / Ad"
 
-#: users/templates/users/user_management_list.html:192
+#: users/templates/users/user_management_list.html:434
 msgid "Client type"
 msgstr "Müşteri tipi"
 
-#: users/templates/users/user_management_list.html:194
+#: users/templates/users/user_management_list.html:435
 msgid "Contact"
 msgstr "İletişim"
+
+#: users/templates/users/user_management_list.html:509
+msgid "Client pagination"
+msgstr "Müşteri sayfalandırması"
+
+#: users/templates/users/user_management_list.html:549
+msgid "No matches on this page"
+msgstr "Bu sayfada eşleşme yok"
+
+#: users/templates/users/user_management_list.html:550
+msgid "Clear the search box or try different keywords."
+msgstr "Arama kutusunu temizleyin veya farklı anahtar kelimeler deneyin."
 
 #: users/views.py:218
 msgid "Your contact details were updated."
@@ -6716,17 +7992,15 @@ msgstr ""
 msgid "Profile (no login)"
 msgstr "Profil (giriş yok)"
 
-#: users/views.py:1003
+#: users/views.py:1009
 msgid "Client profile created and linked to the existing registered account."
-msgstr ""
-"Müşteri profili oluşturuldu ve mevcut kayıtlı hesaba bağlandı."
-
-#: users/views.py:1008
-msgid "Client profile created and linked to the existing walk-in record."
-msgstr ""
-"Müşteri profili oluşturuldu ve mevcut perakende kaydına bağlandı."
+msgstr "Müşteri profili oluşturuldu ve mevcut kayıtlı hesaba bağlandı."
 
 #: users/views.py:1014
+msgid "Client profile created and linked to the existing walk-in record."
+msgstr "Müşteri profili oluşturuldu ve mevcut perakende kaydına bağlandı."
+
+#: users/views.py:1020
 msgid ""
 "Client profile created without creating a second login for this registered "
 "phone number."
@@ -6734,12 +8008,12 @@ msgstr ""
 "Bu kayıtlı telefon numarası için ikinci bir giriş oluşturulmadan müşteri "
 "profili oluşturuldu."
 
-#: users/views.py:1018 users/views.py:1059 users/views.py:1073
-#: users/views.py:1095
+#: users/views.py:1024 users/views.py:1065 users/views.py:1079
+#: users/views.py:1136
 msgid "Matching walk-in orders were linked by phone number."
 msgstr "Eşleşen perakende siparişler telefon numarasıyla bağlandı."
 
-#: users/views.py:1051 users/views.py:1065
+#: users/views.py:1057 users/views.py:1071
 #, python-format
 msgid ""
 "Client created. Temporary password: %(pwd)s — copy it now; the user can "
@@ -6748,23 +8022,34 @@ msgstr ""
 "Müşteri oluşturuldu. Geçici şifre: %(pwd)s — şimdi kopyalayın; kullanıcı "
 "daha sonra değiştirebilir."
 
-#: users/views.py:1057 users/views.py:1071
+#: users/views.py:1063 users/views.py:1077
 msgid "Client created."
 msgstr "Müşteri oluşturuldu."
 
-#: users/views.py:1091
-msgid "Walk-in prospect updated."
-msgstr "Perakende müşteri kaydı güncellendi."
+#: users/views.py:1121
+#, python-format
+msgid "%(name)s promoted to %(account_type)s client account."
+msgstr "%(name)s, %(account_type)s müşteri hesabına yükseltildi."
 
-#: users/views.py:1093
-msgid "Client updated."
-msgstr "Müşteri güncellendi."
+#: users/views.py:1127
+#, python-format
+msgid "Walk-in prospect %(name)s updated."
+msgstr "Perakende adayı %(name)s güncellendi."
 
-#: users/views.py:1129
+#: users/views.py:1132
+#, python-format
+msgid "%(name)s updated as %(account_type)s client."
+msgstr "%(name)s, %(account_type)s müşteri olarak güncellendi."
+
+#: users/views.py:1147
+msgid "Please correct the errors below and save again."
+msgstr "Lütfen aşağıdaki hataları düzeltip yeniden kaydedin."
+
+#: users/views.py:1179
 msgid "You cannot create that role from this screen."
 msgstr "Bu rol bu ekrandan oluşturulamaz."
 
-#: users/views.py:1155
+#: users/views.py:1205
 #, python-format
 msgid ""
 "User created. Temporary password: %(pwd)s — copy it now; the user can change "
@@ -6773,29 +8058,149 @@ msgstr ""
 "Kullanıcı oluşturuldu. Geçici şifre: %(pwd)s — şimdi kopyalayın; kullanıcı "
 "daha sonra değiştirebilir."
 
-#: users/views.py:1159
+#: users/views.py:1209
 msgid "User created."
 msgstr "Kullanıcı oluşturuldu."
 
-#: users/views.py:1170
+#: users/views.py:1220
 msgid "User updated."
 msgstr "Kullanıcı güncellendi."
 
-#: users/views.py:1430
+#: users/views.py:1523
 msgid "This account cannot be managed from the client list."
 msgstr "Bu hesap müşteri listesinden yönetilemez."
 
-#: users/views.py:1458
+#: users/views.py:1551
 msgid "This client is already active."
 msgstr "Bu müşteri zaten aktif."
 
-#: users/views.py:1461
+#: users/views.py:1554
 msgid "Client activated and login enabled."
 msgstr "Müşteri etkinleştirildi ve giriş açıldı."
 
-#: users/views.py:1475
+#: users/views.py:1568
 msgid "Client archived and login disabled."
 msgstr "Müşteri arşivlendi ve giriş kapatıldı."
+
+#~ msgid "PRN Format"
+#~ msgstr "PRN Formatı"
+
+#~ msgid "TSC Programming Language for direct printer output"
+#~ msgstr "Direkt yazıcı çıktısı için TSC Programlama Dili"
+
+#~ msgid "Download PRN"
+#~ msgstr "PRN İndir"
+
+#~ msgid "BAT Format"
+#~ msgstr "BAT Formatı"
+
+#~ msgid "Windows batch file for easy label printing"
+#~ msgstr "Kolay etiket yazdırma için Windows toplu işlem dosyası"
+
+#~ msgid "Download BAT"
+#~ msgstr "BAT İndir"
+
+#~ msgid "PDF Format"
+#~ msgstr "PDF Formatı"
+
+#~ msgid "Portable Document Format for viewing and printing"
+#~ msgstr "Görüntüleme ve yazdırma için Taşınabilir Belge Formatı"
+
+#~ msgid ""
+#~ "PRN label and BAT file generated successfully! You can now download and "
+#~ "print the label."
+#~ msgstr ""
+#~ "PRN etiketi ve BAT dosyası başarıyla oluşturuldu! Artık etiketi "
+#~ "indirebilir ve yazdırabilirsiniz."
+
+#~ msgid ""
+#~ "Custom label created successfully! You can now download and print the "
+#~ "label."
+#~ msgstr ""
+#~ "Özel etiket başarıyla oluşturuldu! Artık etiketi indirebilir ve "
+#~ "yazdırabilirsiniz."
+
+#~ msgid "Label Types Available:"
+#~ msgstr "Mevcut Etiket Türleri:"
+
+#~ msgid "PRN Format: Direct printer commands for TSC label printers"
+#~ msgstr "PRN Formatı: TSC etiket yazıcıları için direkt yazıcı komutları"
+
+#~ msgid "BAT Format: Windows batch file for easy printing"
+#~ msgstr "BAT Formatı: Kolay yazdırma için Windows toplu işlem dosyası"
+
+#~ msgid "PDF Format: Printable document for any printer"
+#~ msgstr "PDF Formatı: Herhangi bir yazıcı için yazdırılabilir belge"
+
+#~ msgid ""
+#~ "Browse infrastructure as site -> edge -> printer and review edge logs."
+#~ msgstr ""
+#~ "Site -> kenar -> yazıcı olarak altyapıyı gezin ve kenar günlüklerini "
+#~ "inceleyin."
+
+#~ msgid "Topology Selector"
+#~ msgstr "Topoloji Seçici"
+
+#~ msgid "Device ID"
+#~ msgstr "Cihaz ID"
+
+#~ msgid "Last heartbeat"
+#~ msgstr "Son sinyal"
+
+#~ msgid "Select an edge to list printers."
+#~ msgstr "Yazıcıları listelemek için bir kenar seçin."
+
+#~ msgid "Logout"
+#~ msgstr "Çıkış"
+
+#, python-format
+#~ msgid "Welcome, %(username)s!"
+#~ msgstr "Hoş geldin, %(username)s!"
+
+#~ msgid "This is your dashboard. Here are the actions you can perform."
+#~ msgstr "Bu sizin ana sayfanız. Gerçekleştirebileceğiniz işlemler burada."
+
+#~ msgid "Track your order status and progress"
+#~ msgstr "Sipariş durumunuzu ve ilerlemesini takip edin"
+
+#~ msgid "History"
+#~ msgstr "Geçmiş"
+
+#~ msgid "View past orders and invoices"
+#~ msgstr "Geçmiş siparişleri ve faturaları görüntüleyin"
+
+#~ msgid "Order History"
+#~ msgstr "Sipariş Geçmişi"
+
+#~ msgid "Documents"
+#~ msgstr "Belgeler"
+
+#~ msgid "Download certificates and reports"
+#~ msgstr "Sertifikaları ve raporları indirin"
+
+#~ msgid "View Documents"
+#~ msgstr "Belgeleri Görüntüle"
+
+#~ msgid "Create and print custom hot carcass labels"
+#~ msgstr "Özel sıcak karkas etiketleri oluşturun ve yazdırın"
+
+#~ msgid "Sign in to your account"
+#~ msgstr "Hesabınıza giriş yapın"
+
+#~ msgid "Username, email, or phone"
+#~ msgstr "Kullanıcı adı, e-posta veya telefon"
+
+#~ msgid "Need an account?"
+#~ msgstr "Hesaba mı ihtiyacınız var?"
+
+#~ msgid "Contact your administrator."
+#~ msgstr "Yöneticinizle iletişime geçin."
+
+#~ msgid "Apply filters"
+#~ msgstr "Filtreleri uygula"
+
+#~ msgid "Client updated."
+#~ msgstr "Müşteri güncellendi."
 
 #~ msgid "Search Registered Client"
 #~ msgstr "Kayıtlı Müşteri Ara"
@@ -6823,10 +8228,8 @@ msgstr "Müşteri arşivlendi ve giriş kapatıldı."
 #~ "Onay verildiğinde tenant şeması, alan adı ve Django admin erişimi olmayan "
 #~ "bir OWNER kullanıcısı oluşturulur."
 
-#, fuzzy
-#~| msgid "Create admin user"
 #~ msgid "Admin user"
-#~ msgstr "Yönetici kullanıcı oluştur"
+#~ msgstr "Yönetici kullanıcı"
 
 #, python-format
 #~ msgid "Type schema name %(schema)s to confirm deletion"

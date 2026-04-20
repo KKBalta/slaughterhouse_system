@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 
-from tenants.email_index import normalize_email, normalize_phone
+from tenants.email_index import normalize_email, normalize_phone, validate_normalized_phone_length
 
 from .models import ClientProfile, User
 from .services import phone_lookup_candidates
@@ -119,6 +119,7 @@ class ClientUserCredentialsForm(forms.Form):
         )
         if not phone_number:
             return ""
+        validate_normalized_phone_length(phone_number)
         qs = User.objects.filter(phone_number__in=phone_lookup_candidates(phone_number))
         if self.user_instance and getattr(self.user_instance, "pk", None):
             qs = qs.exclude(pk=self.user_instance.pk)
@@ -216,6 +217,7 @@ class SelfServiceContactForm(forms.Form):
         )
         if not phone_number:
             return ""
+        validate_normalized_phone_length(phone_number)
         qs = User.objects.filter(phone_number__in=phone_lookup_candidates(phone_number))
         if self.user_instance and getattr(self.user_instance, "pk", None):
             qs = qs.exclude(pk=self.user_instance.pk)
@@ -308,7 +310,10 @@ class UserRegistrationForm(UserCreationForm):
         return normalize_email(self.cleaned_data.get("email"))
 
     def clean_phone_number(self):
-        return normalize_phone(self.cleaned_data.get("phone_number"))
+        phone = normalize_phone(self.cleaned_data.get("phone_number"))
+        if phone:
+            validate_normalized_phone_length(phone)
+        return phone
 
     def clean(self):
         cleaned_data = super().clean()
@@ -417,22 +422,27 @@ class ClientProfileRegisterForm(forms.ModelForm):
 
         phone_number = cleaned_data.get("phone_number") or ""
         if phone_number:
-            phone_candidates = phone_lookup_candidates(phone_number)
-            qs = User.objects.filter(phone_number__in=phone_candidates)
-            linked_user = getattr(getattr(self, "instance", None), "user", None)
-            if linked_user and getattr(linked_user, "pk", None):
-                qs = qs.exclude(pk=linked_user.pk)
-            self.registered_phone_user = qs.first()
-            if self.registered_phone_user is not None and not self.allow_existing_phone_user:
-                self.add_error("phone_number", _("A user with that phone number already exists in this tenant."))
+            try:
+                validate_normalized_phone_length(phone_number)
+            except forms.ValidationError as exc:
+                self.add_error("phone_number", exc)
+            else:
+                phone_candidates = phone_lookup_candidates(phone_number)
+                qs = User.objects.filter(phone_number__in=phone_candidates)
+                linked_user = getattr(getattr(self, "instance", None), "user", None)
+                if linked_user and getattr(linked_user, "pk", None):
+                    qs = qs.exclude(pk=linked_user.pk)
+                self.registered_phone_user = qs.first()
+                if self.registered_phone_user is not None and not self.allow_existing_phone_user:
+                    self.add_error("phone_number", _("A user with that phone number already exists in this tenant."))
 
-            if self.registered_phone_user is None or self.allow_existing_phone_user:
-                profile_qs = ClientProfile.objects.filter(phone_number__in=phone_candidates)
-                inst = getattr(self, "instance", None)
-                if inst and getattr(inst, "pk", None):
-                    profile_qs = profile_qs.exclude(pk=inst.pk)
-                if profile_qs.exists():
-                    self.add_error("phone_number", _("A client profile with that phone number already exists."))
+                if self.registered_phone_user is None or self.allow_existing_phone_user:
+                    profile_qs = ClientProfile.objects.filter(phone_number__in=phone_candidates)
+                    inst = getattr(self, "instance", None)
+                    if inst and getattr(inst, "pk", None):
+                        profile_qs = profile_qs.exclude(pk=inst.pk)
+                    if profile_qs.exists():
+                        self.add_error("phone_number", _("A client profile with that phone number already exists."))
 
         # ModelForm may supply TextChoices members or plain strings depending on Django version.
         account_type = cleaned_data.get("account_type")
