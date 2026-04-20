@@ -1,7 +1,7 @@
 import uuid
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.generic import DetailView, ListView
 
 from reception.models import SlaughterOrder
@@ -73,7 +73,7 @@ class ClientOrderListView(LoginRequiredMixin, ListView):
         if client_pk and _is_staff(self.request.user):
             try:
                 context["selected_client"] = ClientProfile.objects.get(pk=client_pk)
-            except (ClientProfile.DoesNotExist, ValueError):
+            except (ClientProfile.DoesNotExist, ValueError, ValidationError):
                 pass
         return context
 
