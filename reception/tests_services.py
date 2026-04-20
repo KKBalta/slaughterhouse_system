@@ -554,7 +554,9 @@ class TestReceptionServices:
             assert animal.slaughter_order == order
 
     def test_create_batch_animals_same_day_prefix_continues_sequence_across_orders(self, reception_state, make_order):
-        same_day = timezone.now()
+        # Pin to a midday timestamp so `+ timedelta(hours=6)` stays within the same
+        # local date regardless of the wall-clock hour when the suite runs.
+        same_day = timezone.now().replace(hour=6, minute=0, second=0, microsecond=0)
         morning_order = make_order()
         afternoon_order = make_order()
 
