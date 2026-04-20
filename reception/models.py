@@ -59,45 +59,35 @@ class SlaughterOrder(BaseModel):
         """
         Auto-generate unique order number if not provided.
 
-        NOTE: For production use, always use create_slaughter_order() service function
-        which handles order number generation atomically with proper database locking
-        and retry logic.
-
-        This method is kept for backward compatibility (admin panel, direct model creation)
-        but uses retry logic to handle race conditions when generating order numbers.
-
-        BUG FIX HISTORY:
-        - (2026-01-08): Moved order number generation to service layer with select_for_update()
-          to prevent race conditions in high-concurrency scenarios
-        - (2026-02-27): order_datetime can be date or datetime; service layer handles both
-        - (2026-03-02): Added retry logic with IntegrityError handling for edge cases where
-          select_for_update() cannot lock rows (e.g., first order of the day)
+        For production code paths use create_slaughter_order() in services. This
+        method remains for admin / direct ORM use and retries only on the
+        slaughter_order_no unique-violation so unrelated IntegrityErrors surface.
         """
         from django.db import IntegrityError, transaction
 
-        if not self.slaughter_order_no:
-            from .services import MAX_ORDER_CREATION_RETRIES, generate_order_number
-
-            last_exception = None
-            for _attempt in range(MAX_ORDER_CREATION_RETRIES):
-                try:
-                    with transaction.atomic():
-                        self.slaughter_order_no = generate_order_number(self.order_datetime)
-                        super().save(*args, **kwargs)
-                    return  # Success - exit the method
-                except IntegrityError as e:
-                    # Duplicate key - another thread created an order with this number
-                    # Clear the order number and retry
-                    self.slaughter_order_no = None
-                    last_exception = e
-                    continue
-
-            # Exhausted retries
-            raise IntegrityError(
-                f"Failed to save order after {MAX_ORDER_CREATION_RETRIES} attempts. Last error: {last_exception}"
-            )
-        else:
+        if self.slaughter_order_no:
             super().save(*args, **kwargs)
+            return
+
+        from .services import MAX_ORDER_CREATION_RETRIES, _is_slaughter_order_no_unique_violation, generate_order_number
+
+        last_exception = None
+        for _attempt in range(MAX_ORDER_CREATION_RETRIES):
+            try:
+                with transaction.atomic():
+                    self.slaughter_order_no = generate_order_number(self.order_datetime)
+                    super().save(*args, **kwargs)
+                return
+            except IntegrityError as e:
+                if not _is_slaughter_order_no_unique_violation(e):
+                    raise
+                self.slaughter_order_no = None
+                last_exception = e
+                continue
+
+        raise IntegrityError(
+            f"Failed to save order after {MAX_ORDER_CREATION_RETRIES} attempts. Last error: {last_exception}"
+        )
 
     def __str__(self):
         client_display = self.client.company_name if self.client else self.client_name

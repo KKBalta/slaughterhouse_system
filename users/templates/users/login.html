@@ -4,18 +4,17 @@
 
 {% block navbar %}{% endblock navbar %}
 
-{% block title %}{% trans "Login" %} - {{ block.super }}{% endblock %}
+{% block title %}Giriş - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto">
     <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-8">
-      {% trans "Sign in to your account" %}
+        Hesabınıza giriş yapın
     </h2>
 
     <form method="post" class="space-y-6">
         {% csrf_token %}
-        
-        {# Preserve the 'next' parameter for redirect after login #}
+
         {% if request.GET.next %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
         {% endif %}
@@ -28,7 +27,7 @@
 
         <div>
             <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                {% trans "Username, email, or phone" %}
+                Kullanıcı adı, e-posta veya telefon
             </label>
             <div class="mt-1">
                 {% render_field form.username class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
@@ -37,7 +36,7 @@
 
         <div>
             <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                {% trans "Password" %}
+                Şifre
             </label>
             <div class="mt-1">
                 {% render_field form.password class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
@@ -46,12 +45,12 @@
 
         <div>
             <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                {% trans "Sign in" %}
+                Giriş yap
             </button>
         </div>
     </form>
     <p class="mt-4 text-center text-sm">
-        {% trans "Need an account?" %} <span class="font-medium text-gray-600">{% trans "Contact your administrator." %}</span>
+        Hesabınız yok mu? <span class="font-medium text-gray-600">Yöneticinizle iletişime geçin.</span>
     </p>
 </div>
 {% endblock %}

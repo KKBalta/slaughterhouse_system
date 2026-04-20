@@ -188,24 +188,17 @@ def generate_order_number(order_datetime=None) -> str:
     """
     Generates a unique order number for a given date.
 
-    IMPORTANT: This function must be called within a transaction.atomic() context
-    that also includes the order creation. The caller is responsible for ensuring
-    proper transaction boundaries to prevent race conditions.
-
-    The function uses select_for_update() to lock existing orders for the date.
-    This prevents race conditions when there are existing orders, but when no
-    orders exist for the date, the caller must handle potential IntegrityError
-    with retry logic.
+    Must be called inside a transaction.atomic() block that also performs the
+    insert. On PostgreSQL a transaction-scoped advisory lock keyed by the date
+    serializes allocation even when no rows exist yet for that date, which
+    select_for_update() alone cannot do. On other backends the function falls
+    back to select_for_update() and relies on caller retry.
 
     Args:
         order_datetime: The datetime for the order. If None, uses current time.
 
     Returns:
         A unique order number string in format: ORD-YYYYMMDD-NNNN
-
-    Raises:
-        ValidationError: If order number generation fails
-        RuntimeError: If called outside an atomic transaction block
     """
     from django.db import connection
 
@@ -222,12 +215,13 @@ def generate_order_number(order_datetime=None) -> str:
         order_date = timezone.now().date()
     date_str = order_date.strftime("%Y%m%d")
 
-    # Use select_for_update() to lock all orders for this date.
-    # This prevents race conditions when multiple threads try to generate
-    # order numbers simultaneously. The lock is held until the transaction
-    # commits (which should include the order creation in the caller).
-    # NOTE: When no orders exist for the date, select_for_update() locks nothing,
-    # so the caller must handle IntegrityError with retry logic.
+    # On PostgreSQL, take a transaction-scoped advisory lock keyed by the date.
+    # This closes the race window when no rows exist yet for the date, which
+    # select_for_update() cannot cover. The lock is released at COMMIT/ROLLBACK.
+    if connection.vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", [f"ord-{date_str}"])
+
     last_order = (
         SlaughterOrder.objects.filter(slaughter_order_no__startswith=f"ORD-{date_str}")
         .select_for_update()
@@ -236,26 +230,15 @@ def generate_order_number(order_datetime=None) -> str:
     )
 
     if last_order:
-        # Extract the number from the last order
         try:
             last_num = int(last_order.slaughter_order_no.split("-")[-1])
             count = last_num + 1
         except (ValueError, IndexError):
-            # Fallback if order number format is unexpected
-            # Count existing orders for this date
             count = SlaughterOrder.objects.filter(order_datetime__date=order_date).count() + 1
     else:
         count = 1
 
-    order_number = f"ORD-{date_str}-{count:04d}"
-
-    # Double-check uniqueness (defense in depth)
-    if SlaughterOrder.objects.filter(slaughter_order_no=order_number).exists():
-        # If somehow a duplicate exists, increment and try again
-        count += 1
-        order_number = f"ORD-{date_str}-{count:04d}"
-
-    return order_number
+    return f"ORD-{date_str}-{count:04d}"
 
 
 def create_slaughter_order(
