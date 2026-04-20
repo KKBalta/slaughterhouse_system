@@ -113,7 +113,7 @@ class TestDisassembly:
         assert label.label_type == "cut"
         assert label.animal == animal
         assert len(label.prn_content) > 0
-        assert len(label.bat_content) > 0
+        assert label.bat_content == ""
         assert label.pdf_file
         assert "RIBEYE" in label.prn_content
         assert "3.5" in label.prn_content

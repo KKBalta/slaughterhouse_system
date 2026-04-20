@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Labels" %}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 max-w-7xl mx-auto">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{% trans "Labels" %}</h1>
+            <p class="text-gray-600 mt-1">{% trans "Print queue first, then all carcass and custom labels (newest first)." %}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'labeling:custom_label_create' %}"
+               class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors text-sm font-medium">
+                {% trans "New custom label" %}
+            </a>
+            {% if can_manage_edge %}
+            <a href="{% url 'scales:edge_management' %}"
+               class="inline-flex items-center justify-center rounded-md border-2 border-blue-600 bg-white py-2 px-4 text-sm font-medium text-blue-800 no-underline shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                {% trans "Edge management" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <nav class="mb-8 flex flex-wrap gap-2 text-sm" aria-label="{% trans 'Labels sections' %}">
+        <a href="#print-queue" class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">{% trans "Print queue" %}</a>
+        <a href="#all-labels" class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">{% trans "All labels" %}</a>
+    </nav>
+
+    {% if label_site and not edge_dispatch_available %}
+    <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        {% trans "No active Edge printer is configured for the default label site. Print-to-Edge actions may be unavailable until a printer is set up." %}
+    </div>
+    {% endif %}
+
+    <!-- Print queue (first) -->
+    <section id="print-queue" class="scroll-mt-6 mb-12">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">{% trans "Edge print queue" %}</h2>
+                <p class="text-sm text-gray-600">{% trans "Pending jobs, jobs at the printer (dispatched ACK), and latest print confirmations (completed ACK)." %}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-semibold text-gray-900">{% trans "Pending" %}</h3>
+                    <span class="text-sm text-gray-500">{{ pending_print_job_total }}</span>
+                </div>
+                {% if pending_print_jobs %}
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Queued" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Item" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            {% for job in pending_print_jobs %}
+                            <tr>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.print_date|date:"M d, H:i" }}</td>
+                                <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                                <td class="px-3 py-2 font-mono text-xs text-gray-700">
+                                    {% if job.item_id %}{{ job.item_type|default:"—" }} · {{ job.item_id }}{% else %}—{% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <form method="post"
+                                          action="{% url 'labeling:cancel_pending_print_job' job.pk %}"
+                                          class="inline"
+                                          onsubmit="return confirm('{% trans "Remove this job from the print queue? The Edge will not print it." %}');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}#print-queue">
+                                        <button type="submit"
+                                                class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs font-medium border border-red-200">
+                                            {% trans "Remove" %}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if pending_print_job_total > pending_print_jobs|length %}
+                <p class="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-white">{% trans "Showing first" %} {{ pending_print_jobs|length }} {% trans "of" %} {{ pending_print_job_total }}</p>
+                {% endif %}
+                {% else %}
+                <p class="px-4 py-6 text-sm text-gray-500 text-center bg-white">{% trans "No pending jobs." %}</p>
+                {% endif %}
+            </div>
+
+            <div class="rounded-lg border border-gray-200 overflow-hidden bg-white">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{% trans "Dispatched" %}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">{% trans "Edge acknowledged pickup; printing or waiting for the printer." %}</p>
+                    </div>
+                    <span class="text-sm text-gray-500 shrink-0">{{ dispatched_print_job_total }}</span>
+                </div>
+                {% if dispatched_print_jobs %}
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Dispatched ACK" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Edge" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printer" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Attempts" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Item" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            {% for job in dispatched_print_jobs %}
+                            <tr>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{% if job.edge_received_at %}{{ job.edge_received_at|date:"M d, H:i" }}{% else %}—{% endif %}</td>
+                                <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                                <td class="px-3 py-2 text-gray-700">
+                                    {% if job.claimed_by_edge %}
+                                        {{ job.claimed_by_edge.name|default:job.claimed_by_edge.pk }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 text-gray-700 text-xs">
+                                    {% if job.target_printer %}
+                                        {{ job.target_printer.display_name|default:job.target_printer.local_printer_id }}
+                                        <span class="block text-gray-400 font-mono">{{ job.target_printer.host }}:{{ job.target_printer.port }}</span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.attempts }}</td>
+                                <td class="px-3 py-2 font-mono text-xs text-gray-700">
+                                    {% if job.item_id %}{{ job.item_type|default:"—" }} · {{ job.item_id }}{% else %}—{% endif %}
+                                </td>
+                            </tr>
+                            {% if job.error_text %}
+                            <tr class="bg-amber-50/80">
+                                <td colspan="7" class="px-3 py-1.5 text-xs text-amber-900">{{ job.error_text|truncatechars:120 }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if dispatched_print_job_total > dispatched_print_jobs|length %}
+                <p class="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-white">{% trans "Showing first" %} {{ dispatched_print_jobs|length }} {% trans "of" %} {{ dispatched_print_job_total }}</p>
+                {% endif %}
+                {% else %}
+                <p class="px-4 py-6 text-sm text-gray-500 text-center bg-white">{% trans "No dispatched jobs." %}</p>
+                {% endif %}
+
+                <div class="border-t border-gray-200 bg-gray-50 px-4 py-3 flex justify-between items-center gap-2">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-sm">{% trans "Printed (Edge ACK)" %}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">{% trans "Latest successful print confirmations from the Edge." %}</p>
+                    </div>
+                    <span class="text-sm text-gray-500 shrink-0">{{ completed_print_job_total }}</span>
+                </div>
+                {% if completed_print_jobs %}
+                <div class="overflow-x-auto max-h-72 overflow-y-auto border-t border-gray-100">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printed ACK" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Site" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Role" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Printer" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Attempts" %}</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Item" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            {% for job in completed_print_jobs %}
+                            <tr class="bg-green-50/40">
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-800 font-medium">{{ job.printed_at|date:"M d, H:i" }}</td>
+                                <td class="px-3 py-2 text-gray-900">{{ job.site.name }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ job.target_role|default:"—" }}</td>
+                                <td class="px-3 py-2 text-gray-700 text-xs">
+                                    {% if job.target_printer %}
+                                        {{ job.target_printer.display_name|default:job.target_printer.local_printer_id }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ job.attempts }}</td>
+                                <td class="px-3 py-2 font-mono text-xs text-gray-700">
+                                    {% if job.item_id %}{{ job.item_type|default:"—" }} · {{ job.item_id }}{% else %}—{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if completed_print_job_total > completed_print_jobs|length %}
+                <p class="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-white">{% trans "Showing first" %} {{ completed_print_jobs|length }} {% trans "of" %} {{ completed_print_job_total }}</p>
+                {% endif %}
+                {% else %}
+                <p class="px-4 py-4 text-sm text-gray-500 text-center bg-white border-t border-gray-100">{% trans "No completed Edge prints yet." %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Merged labels table -->
+    <section id="all-labels" class="scroll-mt-6">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">{% trans "All labels" %}</h2>
+                <p class="text-sm text-gray-600">
+                    {% blocktrans with animal=animal_label_total custom=custom_label_total %}{{ animal }} from animals · {{ custom }} custom · sorted by created date{% endblocktrans %}
+                </p>
+            </div>
+            {% if page_obj.paginator.count %}
+            <p class="text-sm text-gray-500 text-right sm:text-left">
+                {% if page_obj.paginator.num_pages > 1 %}
+                {% blocktrans with page=page_obj.number pages=page_obj.paginator.num_pages start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Page {{ page }} of {{ pages }} · {{ start }}–{{ end }} of {{ total }}{% endblocktrans %}
+                {% else %}
+                {% blocktrans count total=page_obj.paginator.count %}{{ total }} row{% plural %}{{ total }} rows{% endblocktrans %}
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+
+        {% if page_obj.paginator.count == 0 %}
+        <div class="rounded-lg border border-gray-200 p-8 text-center bg-white">
+            <p class="text-gray-500 text-sm mb-4">{% trans "No labels yet." %}</p>
+            <a href="{% url 'labeling:custom_label_create' %}" class="inline-block bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-sm font-medium">{% trans "Create custom label" %}</a>
+        </div>
+        {% else %}
+        <div class="rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Created" %}</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Source" %}</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Code" %}</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Summary" %}</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for row in label_rows %}
+                        {% if row.kind == "animal" %}
+                        {% with label=row.label %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ label.print_date|date:"M d, Y H:i" }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{% trans "Carcass / animal" %}</span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-900">{{ label.label_code }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-800">
+                                <span class="font-medium">{{ label.get_label_type_display }}</span>
+                                · <a href="{% url 'processing:animal_detail' label.animal_id %}" class="text-blue-600 hover:text-blue-800">{{ label.animal.identification_tag }}</a>
+                                {% if label.cut %}· {{ label.cut.get_cut_name_display }}{% endif %}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                <div class="flex flex-wrap gap-1">
+                                    {% if label.pdf_file %}
+                                    <a href="{% url 'labeling:download_animal_label' label.pk 'pdf' %}" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded text-xs">PDF</a>
+                                    {% endif %}
+                                    <a href="{% url 'labeling:animal_label_detail' label.pk %}" class="text-gray-700 hover:text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">{% trans "View" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% else %}
+                        {% with label=row.label %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ label.print_date|date:"M d, Y H:i" }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">{% trans "Custom" %}</span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-900">{{ label.label_code }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-800">
+                                {{ label.kupe_no }} · {{ label.get_cinsi_display }} · {{ label.uretici|truncatewords:4 }} · {{ label.weight }} kg
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                <div class="flex flex-wrap gap-1">
+                                    {% if label.pdf_file %}
+                                    <a href="{% url 'labeling:download_custom_label' label.pk 'pdf' %}" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded text-xs">PDF</a>
+                                    {% endif %}
+                                    <a href="{% url 'labeling:custom_label_detail' label.pk %}" class="text-gray-700 hover:text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">{% trans "View" %}</a>
+                                    <form method="post" action="{% url 'labeling:delete_custom_label' label.pk %}" class="inline" onsubmit="return confirm('{% trans "Are you sure you want to delete this label?" %}')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded text-xs">{% trans "Delete" %}</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" aria-label="{% trans 'Label list pagination' %}">
+            <p class="text-sm text-gray-600">
+                {% blocktrans with page=page_obj.number pages=page_obj.paginator.num_pages %}{{ page }} / {{ pages }}{% endblocktrans %}
+            </p>
+            <div class="flex flex-wrap gap-2">
+                {% if page_obj.has_previous %}
+                <a href="{% url 'labeling:label_app' %}?page={{ page_obj.previous_page_number }}#all-labels"
+                   class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                    {% trans "Previous" %}
+                </a>
+                {% else %}
+                <span class="inline-flex justify-center rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">{% trans "Previous" %}</span>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="{% url 'labeling:label_app' %}?page={{ page_obj.next_page_number }}#all-labels"
+                   class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                    {% trans "Next" %}
+                </a>
+                {% else %}
+                <span class="inline-flex justify-center rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">{% trans "Next" %}</span>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -5,14 +5,23 @@ Tests cover label template and print job functionality.
 """
 
 import uuid
+from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 
-from labeling.models import AnimalLabel, LabelTemplate, PrintJob
-from labeling.services import archive_destination_sensitive_order_labels
+from labeling.models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
+from labeling.services import (
+    archive_destination_sensitive_order_labels,
+    cancel_pending_edge_print_job,
+    enqueue_print_job,
+    printers_for_role,
+    resolve_target_role,
+)
 from processing.models import DisassemblyCut
+from scales.models import EdgeDevice, Printer, Site
 
 User = get_user_model()
 
@@ -67,6 +76,254 @@ def test_create_print_job():
     assert job.status == "pending"
     assert job.item_type == "carcass"
     assert job.item_id == item_id
+
+
+def test_cancel_pending_edge_print_job():
+    site = Site.objects.create(name="Cancel Site", address="")
+    job = PrintJob.objects.create(
+        site=site,
+        status="pending",
+        dispatch_mode="edge",
+        prn_content="p",
+        target_role="carcass",
+    )
+    assert cancel_pending_edge_print_job(job) is True
+    job.refresh_from_db()
+    assert job.status == "cancelled"
+    assert "queue" in job.error_text.lower()
+
+
+def test_cancel_pending_edge_print_job_noop_when_not_pending():
+    site = Site.objects.create(name="Cancel Site 2", address="")
+    job = PrintJob.objects.create(
+        site=site,
+        status="dispatched",
+        dispatch_mode="edge",
+        prn_content="p",
+    )
+    assert cancel_pending_edge_print_job(job) is False
+    job.refresh_from_db()
+    assert job.status == "dispatched"
+
+
+def test_enqueue_print_job_edge_minimal():
+    site = Site.objects.create(name="Enqueue Site", address="")
+    job = enqueue_print_job(site=site, prn_content="TSPL", target_role="carcass")
+    assert job.status == "pending"
+    assert job.dispatch_mode == "edge"
+    assert job.site_id == site.id
+    assert job.target_role == "carcass"
+    assert job.item_id is None
+    assert job.item_type == ""
+
+
+def test_enqueue_print_job_maps_animal_label_type_to_role(admin_user, animal_factory):
+    site = Site.objects.create(name="S", address="")
+    animal = animal_factory()
+    label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="final",
+        printed_by=admin_user,
+        prn_content="P",
+        bat_content="B",
+    )
+    job = enqueue_print_job(site=site, prn_content="X", animal_label=label)
+    assert job.target_role == "meat_cut"
+    assert job.item_id == animal.id
+    assert job.item_type == "meat_cut"
+
+
+def test_enqueue_print_job_custom_label_sets_animal_item_type(admin_user):
+    site = Site.objects.create(name="S2", address="")
+    custom = CustomLabel.objects.create(
+        uretici="U",
+        kupe_no="K1",
+        kesim_tarihi=date(2026, 1, 1),
+        stt=date(2026, 1, 11),
+        cinsi="SIGIR",
+        weight="12.5",
+        printed_by=admin_user,
+        prn_content="C",
+        bat_content="C",
+    )
+    job = enqueue_print_job(site=site, prn_content="Y", custom_label=custom)
+    assert job.item_type == "animal"
+    assert job.item_id == custom.id
+    assert job.target_role == "carcass"
+
+
+def test_enqueue_print_job_explicit_target_role_overrides_label_type(admin_user, animal_factory):
+    site = Site.objects.create(name="S-override", address="")
+    animal = animal_factory()
+    label = AnimalLabel.objects.create(
+        animal=animal,
+        label_type="final",
+        printed_by=admin_user,
+        prn_content="P",
+        bat_content="B",
+    )
+    job = enqueue_print_job(site=site, prn_content="Z", animal_label=label, target_role="offal")
+    assert job.target_role == "offal"
+    assert job.item_type == "offal"
+
+
+def test_resolve_target_role_hot_and_cold_carcass():
+    for lt in ("hot_carcass", "cold_carcass"):
+        assert resolve_target_role(animal_label=SimpleNamespace(label_type=lt)) == "carcass"
+
+
+def test_resolve_target_role_final_and_cut():
+    for lt in ("final", "cut"):
+        assert resolve_target_role(animal_label=SimpleNamespace(label_type=lt)) == "meat_cut"
+
+
+def test_resolve_target_role_unknown_label_type_defaults_carcass():
+    assert resolve_target_role(animal_label=SimpleNamespace(label_type="unknown_x")) == "carcass"
+
+
+def test_resolve_target_role_custom_label():
+    assert resolve_target_role(custom_label=SimpleNamespace()) == "carcass"
+
+
+def test_resolve_target_role_explicit_beats_auto():
+    assert (
+        resolve_target_role(
+            animal_label=SimpleNamespace(label_type="final"),
+            target_role="offal",
+        )
+        == "offal"
+    )
+
+
+def test_printers_for_role_filters_site_role_active_enabled_orders_by_priority():
+    site = Site.objects.create(name="PF Role Site", address="")
+    edge = EdgeDevice.objects.create(site=site, name="E-pf", is_active=True)
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="m1",
+        host="10.0.0.1",
+        port=9100,
+        role="meat_cut",
+        priority=50,
+        enabled=True,
+        is_active=True,
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c2",
+        host="10.0.0.2",
+        port=9100,
+        role="carcass",
+        priority=200,
+        enabled=True,
+        is_active=True,
+        display_name="B",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c1",
+        host="10.0.0.3",
+        port=9100,
+        role="carcass",
+        priority=100,
+        enabled=True,
+        is_active=True,
+        display_name="A",
+    )
+    Printer.objects.create(
+        edge=edge,
+        site=site,
+        local_printer_id="c3",
+        host="10.0.0.4",
+        port=9100,
+        role="carcass",
+        priority=10,
+        enabled=False,
+        is_active=True,
+    )
+    qs = printers_for_role(site, "carcass")
+    assert list(qs.values_list("local_printer_id", flat=True)) == ["c1", "c2"]
+
+
+def test_printjob_admin_reenqueue_failed_bumps_edge_cache_per_site(mocker, admin_user):
+    from django.contrib.admin.sites import AdminSite
+    from django.contrib.messages.storage.fallback import FallbackStorage
+    from django.test import RequestFactory
+
+    from labeling.admin import PrintJobAdmin
+
+    site_a = Site.objects.create(name="Reenqueue A", address="")
+    site_b = Site.objects.create(name="Reenqueue B", address="")
+    j1 = PrintJob.objects.create(
+        site=site_a,
+        status="failed",
+        dispatch_mode="edge",
+        prn_content="p",
+        attempts=3,
+        error_text="e",
+    )
+    PrintJob.objects.create(
+        site=site_a,
+        status="failed",
+        dispatch_mode="edge",
+        prn_content="q",
+    )
+    PrintJob.objects.create(
+        site=site_b,
+        status="failed",
+        dispatch_mode="edge",
+        prn_content="r",
+    )
+    bump = mocker.patch("scales.api_views._bump_edge_print_jobs_version")
+
+    factory = RequestFactory()
+    request = factory.post("/admin/")
+    request.user = admin_user
+    request.session = {}
+    request._messages = FallbackStorage(request)
+
+    modeladmin = PrintJobAdmin(PrintJob, AdminSite())
+    qs = PrintJob.objects.filter(pk__in=PrintJob.objects.filter(site__in=[site_a, site_b]).values_list("pk", flat=True))
+    modeladmin.reenqueue_failed_jobs(request, qs)
+
+    assert bump.call_count == 2
+    bump.assert_any_call(site_a.id)
+    bump.assert_any_call(site_b.id)
+    for job in PrintJob.objects.filter(site__in=[site_a, site_b]):
+        assert job.status == "pending"
+        assert job.attempts == 0
+        assert job.error_text == ""
+
+
+def test_printjob_admin_reenqueue_does_not_bump_for_legacy_dispatch(mocker, admin_user):
+    from django.contrib.admin.sites import AdminSite
+    from django.contrib.messages.storage.fallback import FallbackStorage
+    from django.test import RequestFactory
+
+    from labeling.admin import PrintJobAdmin
+
+    site = Site.objects.create(name="Legacy site", address="")
+    PrintJob.objects.create(
+        site=site,
+        status="failed",
+        dispatch_mode="legacy_bat",
+        prn_content="p",
+    )
+    bump = mocker.patch("scales.api_views._bump_edge_print_jobs_version")
+
+    factory = RequestFactory()
+    request = factory.post("/admin/")
+    request.user = admin_user
+    request.session = {}
+    request._messages = FallbackStorage(request)
+
+    modeladmin = PrintJobAdmin(PrintJob, AdminSite())
+    modeladmin.reenqueue_failed_jobs(request, PrintJob.objects.all())
+
+    bump.assert_not_called()
 
 
 def test_print_job_status_transitions():

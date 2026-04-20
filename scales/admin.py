@@ -4,9 +4,11 @@ from .models import (
     DisassemblySession,
     EdgeActivityLog,
     EdgeDevice,
+    EdgeSetupCode,
     OfflineBatchAck,
     OrphanedBatch,
     PLUItem,
+    Printer,
     ScaleDevice,
     Site,
     WeighingEvent,
@@ -19,12 +21,81 @@ class SiteAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+class PrinterInline(admin.TabularInline):
+    model = Printer
+    extra = 0
+    readonly_fields = ("status", "last_seen_at", "last_error", "warnings", "version")
+    fields = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "priority",
+        "enabled",
+        "status",
+        "last_seen_at",
+        "last_error",
+        "warnings",
+    )
+    show_change_link = True
+
+
+@admin.register(EdgeSetupCode)
+class EdgeSetupCodeAdmin(admin.ModelAdmin):
+    list_display = [
+        "code",
+        "site",
+        "edge_name",
+        "expires_at",
+        "used_at",
+        "printers_count",
+        "created_at",
+    ]
+    list_filter = ["site", "used_at"]
+    search_fields = ["code", "edge_name"]
+    readonly_fields = ["code", "used_at", "used_by_edge"]
+
+    @admin.display(description="Printers")
+    def printers_count(self, obj):
+        return len(obj.printers_config or [])
+
+
 @admin.register(EdgeDevice)
 class EdgeDeviceAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "site", "is_online", "last_seen_at", "version")
     list_filter = ("is_online", "site")
     search_fields = ("name",)
     raw_id_fields = ("site",)
+    inlines = (PrinterInline,)
+
+
+@admin.register(Printer)
+class PrinterAdmin(admin.ModelAdmin):
+    list_display = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "status",
+        "warnings",
+        "priority",
+        "enabled",
+        "last_seen_at",
+    )
+    list_filter = ("role", "status", "enabled", "site")
+    search_fields = ("local_printer_id", "display_name", "host")
+    readonly_fields = (
+        "status",
+        "last_seen_at",
+        "last_error",
+        "warnings",
+        "version",
+        "edge",
+        "site",
+    )
+    ordering = ("site", "role", "priority")
 
 
 @admin.register(ScaleDevice)

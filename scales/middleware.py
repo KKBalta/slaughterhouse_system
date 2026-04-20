@@ -22,6 +22,9 @@ def require_edge_id(view_func):
 
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
+        if getattr(request, "edge_device", None) is not None:
+            return view_func(request, *args, **kwargs)
+
         edge_id = request.headers.get("X-Edge-Id") or request.META.get("HTTP_X_EDGE_ID")
         if not edge_id:
             return JsonResponse(

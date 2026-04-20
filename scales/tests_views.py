@@ -4,15 +4,18 @@ edge management, orphaned batches; and pure helpers is_edge_online, is_device_on
 """
 
 from datetime import timedelta
+from urllib.parse import urlencode
 
 import pytest
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
+from labeling.models import PrintJob
+from labeling.services import enqueue_print_job
 from processing.models import Animal, WeightLog
 from reception.models import ServicePackage, SlaughterOrder
-from scales.models import DisassemblySession, EdgeDevice, OrphanedBatch, ScaleDevice, Site, WeighingEvent
+from scales.models import DisassemblySession, EdgeDevice, OrphanedBatch, Printer, ScaleDevice, Site, WeighingEvent
 from scales.views import _age_seconds, is_device_online, is_edge_online
 from users.models import ClientProfile, User
 
@@ -171,6 +174,18 @@ def scale_device(db, edge_device):
 
 
 @pytest.fixture
+def label_printer(db, site, edge_device):
+    return Printer.objects.create(
+        edge=edge_device,
+        site=site,
+        local_printer_id="carcass-01",
+        host="192.168.1.50",
+        port=9100,
+        role="carcass",
+    )
+
+
+@pytest.fixture
 def eligible_animal(db, site):
     user = User.objects.create_user(
         username="c",
@@ -224,9 +239,16 @@ class TestScalesDashboardView:
         assert "edges" in resp.context
         assert "active_sessions" in resp.context
         assert "pending_batches" in resp.context
+        assert resp.context["can_manage_tenant_ops"] is True
         assert list(resp.context["sites"]) == [site]
         assert list(resp.context["edges"]) == [edge_device]
         assert resp.context["pending_batches"] == 0
+
+    def test_dashboard_operator_cannot_manage_tenant_ops(self, client, operator_user, site, edge_device):
+        client.force_login(operator_user)
+        resp = client.get(reverse("scales:dashboard"))
+        assert resp.status_code == 200
+        assert resp.context["can_manage_tenant_ops"] is False
 
 
 # ---------- SessionListView ----------
@@ -423,8 +445,20 @@ class TestEdgeManagementView:
         assert resp.status_code == 200
         assert "sites" in resp.context
         assert "edges" in resp.context
-        assert "printers" in resp.context
-        assert "recent_logs" in resp.context
+        assert "scale_devices" in resp.context
+        assert "label_printers" in resp.context
+        assert "log_page" in resp.context
+        assert "pending_print_job_total" in resp.context
+        assert "pending_print_jobs_preview" in resp.context
+        assert "dispatched_print_job_total" in resp.context
+        assert "dispatched_print_jobs_preview" in resp.context
+
+    def test_edge_management_pending_print_queue_in_context(self, auth_client, site, edge_device):
+        enqueue_print_job(site=site, prn_content="TSPL", target_role="carcass")
+        resp = auth_client.get(reverse("scales:edge_management"))
+        assert resp.status_code == 200
+        assert resp.context["pending_print_job_total"] == 1
+        assert len(resp.context["pending_print_jobs_preview"]) == 1
 
     def test_edge_management_filter_by_site(self, auth_client, site, edge_device):
         resp = auth_client.get(
@@ -434,6 +468,165 @@ class TestEdgeManagementView:
         assert resp.status_code == 200
         assert len(resp.context["edges"]) >= 1
         assert resp.context["selected_site_id"] == str(site.id)
+
+
+@pytest.mark.django_db
+class TestEdgePrepareRelinkView:
+    def test_prepare_relink_requires_admin(self, db, operator_user, client, edge_device):
+        client.force_login(operator_user)
+        resp = client.post(reverse("scales:edge_prepare_relink", kwargs={"pk": edge_device.pk}))
+        assert resp.status_code == 403
+        edge_device.refresh_from_db()
+        assert edge_device.is_active is True
+
+    def test_prepare_relink_blocked_with_open_session(self, auth_client, edge_device, active_session):
+        resp = auth_client.post(reverse("scales:edge_prepare_relink", kwargs={"pk": edge_device.pk}), follow=True)
+        assert resp.status_code == 200
+        edge_device.refresh_from_db()
+        assert edge_device.is_active is True
+
+    def test_prepare_relink_soft_deletes_edge_and_redirects_to_create(self, auth_client, site, edge_device):
+        edge_device.name = "Line A"
+        edge_device.save()
+        url = reverse("scales:edge_prepare_relink", kwargs={"pk": edge_device.pk})
+        resp = auth_client.post(url, follow=False)
+        assert resp.status_code == 302
+        loc = resp["Location"]
+        assert reverse("scales:edge_setup_code_create") in loc
+        assert f"site_id={site.id}" in loc
+        assert "relink=1" in loc
+        assert "edge_name=" in loc
+        edge_device.refresh_from_db()
+        assert edge_device.is_active is False
+
+    def test_setup_code_create_relink_query_shows_banner(self, auth_client, site):
+        q = {"site_id": str(site.id), "edge_name": "Kiosk", "relink": "1"}
+        resp = auth_client.get(f"{reverse('scales:edge_setup_code_create')}?{urlencode(q)}")
+        assert resp.status_code == 200
+        assert resp.context["relink_hint"] is True
+        assert resp.context["initial_site_id"] == str(site.id)
+        assert resp.context["initial_edge_name"] == "Kiosk"
+
+    def test_prepare_relink_cancels_all_pending_print_jobs(self, auth_client, site, edge_device, label_printer):
+        enqueue_print_job(site=site, prn_content="A", target_role="carcass")
+        enqueue_print_job(
+            site=site,
+            prn_content="B",
+            target_role="carcass",
+            target_printer=label_printer,
+        )
+        assert PrintJob.objects.filter(status="pending").count() == 2
+        auth_client.post(reverse("scales:edge_prepare_relink", kwargs={"pk": edge_device.pk}))
+        assert PrintJob.objects.filter(status="pending").count() == 0
+        assert PrintJob.objects.filter(status="cancelled").count() == 2
+
+    def test_edge_remove_cancels_only_printer_bound_pending_jobs(self, auth_client, site, edge_device, label_printer):
+        enqueue_print_job(site=site, prn_content="A", target_role="carcass")
+        enqueue_print_job(
+            site=site,
+            prn_content="B",
+            target_role="carcass",
+            target_printer=label_printer,
+        )
+        auth_client.post(
+            reverse("scales:edge_device_remove", kwargs={"pk": edge_device.pk}),
+            {"next": ""},
+        )
+        assert PrintJob.objects.filter(status="pending").count() == 1
+        assert PrintJob.objects.filter(status="cancelled").count() == 1
+        pending = PrintJob.objects.filter(status="pending").first()
+        assert pending.prn_content == "A"
+        assert pending.target_printer_id is None
+
+
+@pytest.mark.django_db
+class TestScalePrinterRemoveViews:
+    def test_scale_remove_requires_admin(self, db, operator_user, client, scale_device):
+        client.force_login(operator_user)
+        url = reverse("scales:scale_device_remove", kwargs={"pk": scale_device.pk})
+        resp = client.post(url)
+        assert resp.status_code == 403
+        scale_device.refresh_from_db()
+        assert scale_device.is_active is True
+
+    def test_printer_remove_requires_admin(self, db, operator_user, client, label_printer):
+        client.force_login(operator_user)
+        url = reverse("scales:printer_remove", kwargs={"pk": label_printer.pk})
+        resp = client.post(url)
+        assert resp.status_code == 403
+        label_printer.refresh_from_db()
+        assert label_printer.is_active is True
+
+    def test_scale_remove_blocked_with_active_session(self, auth_client, scale_device, active_session):
+        url = reverse("scales:scale_device_remove", kwargs={"pk": scale_device.pk})
+        resp = auth_client.post(url, {"next": f"site_id={scale_device.edge.site_id}"})
+        assert resp.status_code == 302
+        scale_device.refresh_from_db()
+        assert scale_device.is_active is True
+        assert "edge-management" in resp.url
+
+    def test_scale_remove_ok(self, auth_client, scale_device):
+        url = reverse("scales:scale_device_remove", kwargs={"pk": scale_device.pk})
+        qs = f"site_id={scale_device.edge.site_id}&edge_id={scale_device.edge_id}"
+        resp = auth_client.post(url, {"next": qs}, follow=False)
+        assert resp.status_code == 302
+        assert qs in resp["Location"]
+        scale_device.refresh_from_db()
+        assert scale_device.is_active is False
+
+    def test_printer_remove_ok(self, auth_client, label_printer):
+        url = reverse("scales:printer_remove", kwargs={"pk": label_printer.pk})
+        qs = f"site_id={label_printer.site_id}&edge_id={label_printer.edge_id}"
+        resp = auth_client.post(url, {"next": qs}, follow=False)
+        assert resp.status_code == 302
+        assert qs in resp["Location"]
+        label_printer.refresh_from_db()
+        assert label_printer.is_active is False
+        assert label_printer.enabled is False
+
+
+# ---------- Site management (admin only) ----------
+
+
+@pytest.mark.django_db
+class TestSiteManagementViews:
+    def test_site_list_requires_admin(self, db, operator_user, client):
+        client.force_login(operator_user)
+        resp = client.get(reverse("scales:site_list"))
+        assert resp.status_code == 403
+
+    def test_site_list_200_for_admin(self, auth_client, site):
+        resp = auth_client.get(reverse("scales:site_list"))
+        assert resp.status_code == 200
+        object_list = list(resp.context["sites"])
+        assert len(object_list) == 1
+        assert object_list[0].name == site.name
+        assert object_list[0].active_edge_count == 0
+
+    def test_site_create_and_edit(self, auth_client):
+        url = reverse("scales:site_create")
+        resp = auth_client.get(url)
+        assert resp.status_code == 200
+        resp = auth_client.post(url, {"name": "Plant B", "address": "Ankara"}, follow=True)
+        assert resp.status_code == 200
+        s = Site.objects.get(name="Plant B", is_active=True)
+        assert s.address == "Ankara"
+
+        edit = reverse("scales:site_edit", kwargs={"pk": s.pk})
+        resp = auth_client.post(edit, {"name": "Plant B2", "address": "Ankara"}, follow=True)
+        assert resp.status_code == 200
+        s.refresh_from_db()
+        assert s.name == "Plant B2"
+
+    def test_site_deactivate_blocked_with_edges(self, auth_client, site, edge_device):
+        resp = auth_client.post(reverse("scales:site_deactivate", kwargs={"pk": site.pk}), follow=True)
+        assert resp.status_code == 200
+        assert Site.objects.filter(pk=site.pk, is_active=True).exists()
+
+    def test_site_deactivate_without_edges(self, auth_client, site):
+        resp = auth_client.post(reverse("scales:site_deactivate", kwargs={"pk": site.pk}), follow=True)
+        assert resp.status_code == 200
+        assert not Site.objects.filter(pk=site.pk, is_active=True).exists()
 
 
 # ---------- EdgeBySiteJsonView, PrintersByEdgeJsonView ----------
@@ -462,6 +655,8 @@ class TestEdgeBySiteJsonView:
         assert len(data["edges"]) == 1
         assert data["edges"][0]["id"] == str(edge_device.id)
         assert "is_online" in data["edges"][0]
+        assert data["edges"][0]["in_flight_prints"] == 0
+        assert data["edges"][0]["print_worker_pulse"] is None
 
     def test_edge_by_site_json_empty_without_site_id(self, auth_client):
         resp = auth_client.get(reverse("scales:edge_by_site_json"))
@@ -478,15 +673,30 @@ class TestPrintersByEdgeJsonView:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert "printers" in data
-        assert len(data["printers"]) == 1
-        assert data["printers"][0]["device_id"] == scale_device.device_id
-        assert "is_online" in data["printers"][0]
+        assert "scale_devices" in data
+        assert "label_printers" in data
+        assert len(data["scale_devices"]) == 1
+        assert data["scale_devices"][0]["device_id"] == scale_device.device_id
+        assert "is_online" in data["scale_devices"][0]
+        assert data["printers"] == data["scale_devices"]
+
+    def test_printers_by_edge_json_site_id_lists_devices(self, auth_client, site, edge_device, scale_device):
+        resp = auth_client.get(
+            reverse("scales:printers_by_edge_json"),
+            {"site_id": str(site.id)},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["scale_devices"]) == 1
+        assert data["scale_devices"][0]["device_id"] == scale_device.device_id
 
     def test_printers_by_edge_json_empty_without_edge_id(self, auth_client):
         resp = auth_client.get(reverse("scales:printers_by_edge_json"))
         assert resp.status_code == 200
-        assert resp.json()["printers"] == []
+        body = resp.json()
+        assert body["printers"] == []
+        assert body["scale_devices"] == []
+        assert body["label_printers"] == []
 
 
 # ---------- OrphanedBatchListView ----------

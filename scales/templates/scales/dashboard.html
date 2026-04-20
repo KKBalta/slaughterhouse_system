@@ -40,8 +40,13 @@
         </ul>
     </div>
 
-    <p class="text-sm text-gray-500">
+    <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 text-sm text-gray-600">
         <a href="{% url 'scales:plu_list' %}" class="text-blue-600 hover:underline">{% trans "PLU catalog" %}</a>
-    </p>
+        {% if can_manage_tenant_ops %}
+        <span class="hidden sm:inline text-gray-300" aria-hidden="true">|</span>
+        <a href="{% url 'scales:site_list' %}" class="text-blue-600 hover:underline">{% trans "Sites" %}</a>
+        <a href="{% url 'scales:edge_management' %}" class="text-blue-600 hover:underline">{% trans "Edge Management" %}</a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

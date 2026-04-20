@@ -5,6 +5,12 @@ from . import views
 app_name = "labeling"
 
 urlpatterns = [
+    path("", views.LabelAppHomeView.as_view(), name="label_app"),
+    path(
+        "print-jobs/<uuid:pk>/cancel/",
+        views.CancelPendingPrintJobView.as_view(),
+        name="cancel_pending_print_job",
+    ),
     # Animal Label Management
     path("animals/<uuid:animal_id>/labels/", views.AnimalLabelListView.as_view(), name="animal_label_list"),
     path(
@@ -19,6 +25,7 @@ urlpatterns = [
     path("cuts/<uuid:cut_id>/generate-label/", views.GenerateCutLabelView.as_view(), name="generate_cut_label"),
     # Label Detail and Download
     path("labels/<uuid:pk>/", views.AnimalLabelDetailView.as_view(), name="animal_label_detail"),
+    path("labels/<uuid:pk>/print/", views.PrintAnimalLabelToEdgeView.as_view(), name="print_animal_label"),
     path(
         "labels/<uuid:label_id>/download/<str:format_type>/",
         views.DownloadAnimalLabelView.as_view(),
@@ -33,9 +40,10 @@ urlpatterns = [
     path("templates/", views.LabelTemplateListView.as_view(), name="label_template_list"),
     path("templates/<uuid:pk>/", views.LabelTemplateDetailView.as_view(), name="label_template_detail"),
     # Custom Labels
-    path("custom/", views.CustomLabelListView.as_view(), name="custom_label_list"),
+    path("custom/", views.CustomLabelListRedirectView.as_view(), name="custom_label_list"),
     path("custom/create/", views.CustomLabelCreateView.as_view(), name="custom_label_create"),
     path("custom/<uuid:pk>/", views.CustomLabelDetailView.as_view(), name="custom_label_detail"),
+    path("custom/<uuid:pk>/print/", views.PrintCustomLabelToEdgeView.as_view(), name="print_custom_label"),
     path(
         "custom/<uuid:pk>/download/<str:format_type>/",
         views.DownloadCustomLabelView.as_view(),

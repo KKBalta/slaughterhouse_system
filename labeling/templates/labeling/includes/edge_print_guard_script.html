@@ -1,0 +1,65 @@
+{% load i18n %}
+<script>
+(function () {
+    var COOLDOWN_MS = 4000;
+    var labelId = "{{ label.pk }}";
+    var storageKey = "edgePrintCooldown:" + labelId;
+    var form = document.querySelector('form[data-edge-print-form][data-label-id="' + labelId + '"]');
+    if (!form) return;
+    var btn = form.querySelector("[data-edge-print-btn]");
+    if (!btn) return;
+
+    var i18nPrint = btn.getAttribute("data-i18n-print") || "Print";
+    var i18nSending = btn.getAttribute("data-i18n-sending") || "Sending…";
+    var i18nWait = btn.getAttribute("data-i18n-wait") || "Please wait";
+
+    function setBusyGrey() {
+        btn.classList.remove("bg-blue-600", "hover:bg-blue-700");
+        btn.classList.add("bg-gray-400", "cursor-not-allowed");
+    }
+
+    function setReadyBlue() {
+        btn.classList.remove("bg-gray-400", "cursor-not-allowed");
+        btn.classList.add("bg-blue-600", "hover:bg-blue-700");
+    }
+
+    function runCooldownUntil(untilTs) {
+        var intervalId = null;
+        function tick() {
+            var left = Math.max(0, Math.ceil((untilTs - Date.now()) / 1000));
+            if (left <= 0) {
+                if (intervalId !== null) clearInterval(intervalId);
+                sessionStorage.removeItem(storageKey);
+                if (!btn.hasAttribute("data-edge-unavailable")) {
+                    btn.disabled = false;
+                    setReadyBlue();
+                    btn.textContent = i18nPrint;
+                }
+                return;
+            }
+            btn.disabled = true;
+            setBusyGrey();
+            btn.textContent = i18nWait + " (" + left + "s)";
+        }
+        tick();
+        intervalId = setInterval(tick, 300);
+    }
+
+    var until = parseInt(sessionStorage.getItem(storageKey) || "0", 10);
+    if (until > Date.now()) {
+        if (btn.hasAttribute("data-edge-unavailable")) {
+            sessionStorage.removeItem(storageKey);
+        } else {
+            runCooldownUntil(until);
+        }
+    }
+
+    form.addEventListener("submit", function () {
+        if (btn.disabled || btn.hasAttribute("data-edge-unavailable")) return;
+        sessionStorage.setItem(storageKey, String(Date.now() + COOLDOWN_MS));
+        btn.disabled = true;
+        setBusyGrey();
+        btn.innerHTML = '<span class="inline-flex items-center justify-center gap-2"><svg class="animate-spin h-4 w-4 shrink-0 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>' + i18nSending + "</span></span>";
+    });
+})();
+</script>

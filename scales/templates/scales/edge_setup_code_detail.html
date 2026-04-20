@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Edge Setup Code" %}{% endblock %}
+
+{% block extra_head %}
+{% if not setup_code.used_at %}
+<meta http-equiv="refresh" content="10">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="bg-green-50 border-b border-green-200 px-6 py-4">
+            <div class="flex items-center gap-3">
+                <svg class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <h1 class="text-xl font-bold text-green-900">{% trans "Edge Device Created" %}</h1>
+                    <p class="text-green-700">
+                        {{ setup_code.edge_name|default:setup_code.site.name }} &mdash; {{ setup_code.site.name }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-8 text-center border-b">
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                {% trans "Setup Code" %}
+            </p>
+            <div class="inline-block bg-gray-100 rounded-xl px-8 py-4 border-2 border-dashed border-gray-300">
+                <span class="text-4xl font-mono font-bold tracking-widest text-gray-900"
+                      id="setup-code">{{ setup_code.code }}</span>
+            </div>
+            <div class="mt-3">
+                <button type="button" onclick="navigator.clipboard.writeText('{{ setup_code.code }}')"
+                        class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    {% trans "Copy to clipboard" %}
+                </button>
+            </div>
+            {% if setup_code.used_at %}
+            <div class="mt-4 inline-flex items-center gap-2 bg-yellow-50 text-yellow-800 px-4 py-2 rounded-full text-sm">
+                {% trans "Already used" %} — {{ setup_code.used_at|date:"d M Y H:i" }}
+            </div>
+            {% else %}
+            <p class="mt-4 text-sm text-gray-500">
+                {% trans "Expires:" %} {{ setup_code.expires_at|date:"d M Y H:i" }}
+            </p>
+            {% endif %}
+        </div>
+
+        {% if not setup_code.used_at %}
+        <div class="px-6 py-4 border-b bg-slate-50">
+            <p class="text-sm text-slate-700 font-medium">{% trans "Waiting for Edge activation…" %}</p>
+            <p class="text-xs text-slate-500 mt-1">
+                {% trans "This page refreshes every 10 seconds. After the site operator enters the code on the Edge, you will see connection status here." %}
+            </p>
+        </div>
+        {% elif edge_connected %}
+            {% if edge_online %}
+            <div class="px-6 py-4 border-b bg-emerald-50 border-emerald-100">
+                <p class="text-sm font-semibold text-emerald-900">{% trans "Edge connected and online" %}</p>
+                <ul class="mt-2 text-sm text-emerald-800 space-y-1">
+                    <li><span class="font-medium">{% trans "Name" %}:</span> {{ edge_name|default:"—" }}</li>
+                    {% if edge_version %}<li><span class="font-medium">{% trans "Version" %}:</span> {{ edge_version }}</li>{% endif %}
+                    {% if edge_health %}<li><span class="font-medium">{% trans "Health" %}:</span> {{ edge_health }}</li>{% endif %}
+                    <li><span class="font-medium">{% trans "Active printers" %}:</span> {{ edge_printer_count }}</li>
+                    {% if edge_last_seen %}<li><span class="font-medium">{% trans "Last seen" %}:</span> {{ edge_last_seen|date:"d M Y H:i:s" }}</li>{% endif %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="px-6 py-4 border-b bg-amber-50 border-amber-100">
+                <p class="text-sm font-semibold text-amber-900">{% trans "Edge activated but currently offline" %}</p>
+                <p class="text-sm text-amber-800 mt-2">
+                    <span class="font-medium">{% trans "Name" %}:</span> {{ edge_name|default:"—" }}
+                </p>
+                {% if edge_last_seen %}
+                <p class="text-xs text-amber-700 mt-1">{% trans "Last seen" %}: {{ edge_last_seen|date:"d M Y H:i:s" }}</p>
+                {% else %}
+                <p class="text-xs text-amber-700 mt-1">{% trans "No heartbeat recorded yet." %}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% if setup_code.printers_config %}
+        <div class="px-6 py-4 border-b bg-blue-50">
+            <h3 class="text-sm font-semibold text-blue-900 mb-2">
+                {% trans "Pre-configured Printers" %} ({{ setup_code.printers_config|length }})
+            </h3>
+            <div class="space-y-1">
+                {% for printer in setup_code.printers_config %}
+                <div class="flex items-center gap-2 text-sm text-blue-800">
+                    <span class="inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
+                    <span class="font-medium">{{ printer.displayName|default:printer.localPrinterId }}</span>
+                    <span class="text-blue-600">({{ printer.role }})</span>
+                    <span class="text-blue-500">{{ printer.host }}:{{ printer.port }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="px-6 py-4 border-b bg-gray-50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">{% trans "Activation URL" %}</h3>
+            <div class="flex items-center gap-2">
+                <code class="bg-white px-3 py-1.5 rounded border text-sm font-mono text-gray-900">{{ activate_url }}</code>
+                <button type="button" onclick="navigator.clipboard.writeText('{{ activate_url }}')"
+                        class="text-sm text-blue-600 hover:text-blue-800">{% trans "Copy" %}</button>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+                {% trans "The Edge calls this single URL to activate. The server resolves the tenant from the setup code automatically." %}
+            </p>
+            <h3 class="text-sm font-semibold text-gray-700 mt-3 mb-1">{% trans "Cloud API URL (post-activation)" %}</h3>
+            <div class="flex items-center gap-2">
+                <code class="bg-white px-3 py-1.5 rounded border text-sm font-mono text-gray-900">{{ tenant_url }}</code>
+                <button type="button" onclick="navigator.clipboard.writeText('{{ tenant_url }}')"
+                        class="text-sm text-blue-600 hover:text-blue-800">{% trans "Copy" %}</button>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+                {% trans "After activation, the Edge uses this tenant-specific URL for all subsequent API calls (returned in config.baseUrl)." %}
+            </p>
+        </div>
+
+        <div class="px-6 py-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                {% trans "Setup Instructions" %}
+            </h2>
+            <p class="text-gray-600 mb-4">
+                {% trans "Send these instructions to the site operator:" %}
+            </p>
+            <ol class="space-y-4 text-gray-700">
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                    <div>
+                        <p class="font-medium">{% trans "Download CarniTrack Edge" %}</p>
+                        <div class="mt-2 flex gap-2">
+                            <a href="#" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                                {% trans "Windows (.exe)" %}
+                            </a>
+                            <a href="#" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md text-sm font-medium hover:bg-gray-700">
+                                {% trans "Linux" %}
+                            </a>
+                        </div>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                    <div>
+                        <p class="font-medium">{% trans "Extract and run the application" %}</p>
+                        <p class="text-sm text-gray-500">{% trans "On Windows: double-click carnitrack-edge.exe" %}</p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                    <div>
+                        <p class="font-medium">{% trans "Open browser" %}</p>
+                        <p class="text-sm text-gray-500">
+                            {% trans "Go to" %} <code class="bg-gray-100 px-2 py-0.5 rounded">http://localhost:3000</code>
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">4</span>
+                    <div>
+                        <p class="font-medium">{% trans "Enter the setup code" %}</p>
+                        <p class="text-sm text-gray-500">
+                            {% trans "Type or paste:" %}
+                            <code class="bg-gray-100 px-2 py-0.5 rounded font-bold">{{ setup_code.code }}</code>
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">5</span>
+                    <div>
+                        <p class="font-medium">{% trans "Verify printers are connected" %}</p>
+                        <p class="text-sm text-gray-500">
+                            {% trans "After activation, the Edge will auto-configure printers and test connectivity. Check the Edge dashboard for printer status." %}
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">6</span>
+                    <div>
+                        <p class="font-medium">{% trans "Install as a service (optional)" %}</p>
+                        <p class="text-sm text-gray-500">
+                            {% trans "Run install-service.bat as Administrator so it starts automatically on reboot." %}
+                        </p>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 border-t flex justify-between flex-wrap gap-3">
+            <a href="{% url 'scales:edge_management' %}"
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                {% trans "Back to Edge Management" %}
+            </a>
+            {% if not setup_code.used_at %}
+            <form method="post" action="{% url 'scales:edge_setup_code_revoke' pk=setup_code.pk %}"
+                  onsubmit="return confirm('{% filter escapejs %}{% trans "Are you sure you want to revoke this setup code?" %}{% endfilter %}');">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50">
+                    {% trans "Revoke Code" %}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

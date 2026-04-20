@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Add Edge Device" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-6 sm:px-0">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Add Edge Device" %}</h1>
+        <p class="mt-2 text-gray-600">
+            {% trans "Create a setup code for a new Edge device. The operator at the site will enter this code when they first run the Edge software." %}
+        </p>
+    </div>
+
+    {% if relink_hint %}
+    <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+        <p class="font-medium">{% trans "Re-linking after reinstall" %}</p>
+        <p class="mt-1 text-blue-900/90">
+            {% trans "The site and Edge name below match the device you just cleared. Generate a new setup code, then enter it in the fresh Edge app so it reconnects to this site." %}
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="bg-gradient-to-br from-slate-50 to-blue-50/80 border border-gray-200 rounded-xl p-5 sm:p-6 mb-6 shadow-sm">
+        <div class="flex items-start gap-3 mb-4">
+            <div class="rounded-lg bg-blue-600 text-white p-2.5 shrink-0" aria-hidden="true">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <h2 class="text-lg font-semibold text-gray-900">{% trans "Download CarniTrack Edge" %}</h2>
+                <p class="text-sm text-gray-600 mt-1">{% trans "Install on the PC at the site (near printers and scales). Then generate a setup code below and enter it in the app on first run." %}</p>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <a href="https://github.com/KKBalta/carnitrack-edge/releases/download/edge-latest/carnitrack-edge-windows-x64.exe"
+               class="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 min-h-[44px]"
+               target="_blank" rel="noopener noreferrer">
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                {% trans "Download for Windows" %}
+            </a>
+            <a href="https://github.com/KKBalta/carnitrack-edge/releases/download/edge-latest/carnitrack-edge-linux-x64"
+               class="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-900 text-sm font-medium hover:bg-gray-50 min-h-[44px]"
+               target="_blank" rel="noopener noreferrer">
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                {% trans "Download for Linux" %}
+            </a>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">{% trans "Latest builds: GitHub release edge-latest. Re-download after updates if your IT policy allows." %}</p>
+    </div>
+
+    <form method="post" class="space-y-6 bg-white shadow rounded-lg p-6">
+        {% csrf_token %}
+
+        <div>
+            <label for="site_id" class="block text-sm font-medium text-gray-700">
+                {% trans "Site" %} *
+            </label>
+            <select name="site_id" id="site_id" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="">{% trans "Select a site..." %}</option>
+                {% for site in sites %}
+                <option value="{{ site.id }}"{% if initial_site_id and site.id|stringformat:"s" == initial_site_id %} selected{% endif %}>{{ site.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="edge_name" class="block text-sm font-medium text-gray-700">
+                {% trans "Edge Device Name" %}
+            </label>
+            <input type="text" name="edge_name" id="edge_name"
+                   value="{{ initial_edge_name }}"
+                   placeholder="{% trans 'e.g., Main Facility Edge' %}"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <p class="mt-1 text-sm text-gray-500">
+                {% trans "Optional. If left empty, the site name will be used." %}
+            </p>
+        </div>
+
+        <div>
+            <label for="expiry_hours" class="block text-sm font-medium text-gray-700">
+                {% trans "Code Valid For" %}
+            </label>
+            <select name="expiry_hours" id="expiry_hours"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="24">24 {% trans "hours" %}</option>
+                <option value="48" selected>48 {% trans "hours" %}</option>
+                <option value="168">7 {% trans "days" %}</option>
+            </select>
+        </div>
+
+        <div class="border-t pt-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Printer Configuration" %}</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                {% trans "Configure printers for this Edge device. These will be auto-configured on the Edge when the setup code is used." %}
+            </p>
+
+            <div id="existing-printers-section" class="mb-4 hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {% trans "Select from existing printers at this site" %}
+                </label>
+                <div id="existing-printers-list" class="space-y-2">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {% trans "Add printers manually" %}
+                </label>
+                <div id="manual-printers" class="space-y-3">
+                    <div class="grid grid-cols-12 gap-2 items-end manual-printer-row">
+                        <div class="col-span-4">
+                            <label class="block text-xs text-gray-500">{% trans "IP Address" %}</label>
+                            <input type="text" name="manual_printer_host" placeholder="192.168.1.220"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-xs text-gray-500">{% trans "Role" %}</label>
+                            <select name="manual_printer_role"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="carcass">{% trans "Carcass" %}</option>
+                                <option value="meat_cut">{% trans "Meat Cut" %}</option>
+                                <option value="offal">{% trans "Offal" %}</option>
+                                <option value="by_product">{% trans "By-Product" %}</option>
+                                <option value="animal">{% trans "Animal" %}</option>
+                                <option value="generic" selected>{% trans "Generic" %}</option>
+                            </select>
+                        </div>
+                        <div class="col-span-4">
+                            <label class="block text-xs text-gray-500">{% trans "Display Name" %}</label>
+                            <input type="text" name="manual_printer_name" placeholder="{% trans 'Carcass Line' %}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div class="col-span-1">
+                            <button type="button" onclick="this.closest('.manual-printer-row').remove()"
+                                    class="text-red-400 hover:text-red-600 text-sm p-1"
+                                    aria-label="{% trans 'Remove printer row' %}">&times;</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="add-printer-btn"
+                        class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    + {% trans "Add another printer" %}
+                </button>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t pt-4">
+            <a href="{% url 'scales:edge_management' %}"
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                {% trans "Cancel" %}
+            </a>
+            <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+                {% trans "Generate Setup Code" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+{{ printers_json|json_script:"printers-data" }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const printerRowTemplate = document.querySelector(".manual-printer-row").outerHTML;
+    document.getElementById("add-printer-btn").addEventListener("click", function() {
+        const container = document.getElementById("manual-printers");
+        container.insertAdjacentHTML("beforeend", printerRowTemplate);
+        const newRow = container.lastElementChild;
+        newRow.querySelectorAll("input").forEach(function(el) { el.value = ""; });
+    });
+
+    function esc(str) {
+        var d = document.createElement("div");
+        d.textContent = String(str || "");
+        return d.innerHTML;
+    }
+
+    var siteSelect = document.getElementById("site_id");
+    var existingSection = document.getElementById("existing-printers-section");
+    var existingList = document.getElementById("existing-printers-list");
+    var printers = JSON.parse(document.getElementById("printers-data").textContent);
+
+    siteSelect.addEventListener("change", function() {
+        var siteId = this.value;
+        existingList.innerHTML = "";
+        if (!siteId) { existingSection.classList.add("hidden"); return; }
+        var sitePrinters = printers.filter(function(p) { return p.site_id === siteId; });
+        if (!sitePrinters.length) { existingSection.classList.add("hidden"); return; }
+        existingSection.classList.remove("hidden");
+        sitePrinters.forEach(function(p) {
+            existingList.insertAdjacentHTML("beforeend",
+                '<label class="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50">' +
+                '<input type="checkbox" name="printer_ids" value="' + esc(p.id) + '" class="rounded border-gray-300">' +
+                '<span class="text-sm">' + esc(p.display_name) + ' (' + esc(p.role) + ') — ' + esc(p.host) + ':' + esc(p.port) + '</span>' +
+                '</label>'
+            );
+        });
+    });
+
+    if (siteSelect.value) {
+        siteSelect.dispatchEvent(new Event("change"));
+    }
+});
+</script>
+{% endblock %}

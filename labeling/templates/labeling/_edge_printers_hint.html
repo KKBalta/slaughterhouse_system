@@ -1,0 +1,35 @@
+{% load i18n %}
+<div class="mt-4 pt-4 border-t border-gray-100">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{% trans "Target printer(s)" %}</p>
+    <p class="text-sm text-gray-700">
+        {% trans "Target role" %}:
+        <span class="font-medium text-gray-900">{{ target_role_display }}</span>
+    </p>
+    {% if target_role_printers %}
+    <ul class="mt-3 space-y-2">
+        {% for p in target_role_printers %}
+        <li class="flex flex-wrap items-center gap-2 text-sm {% if forloop.first %}rounded-md bg-slate-50 px-2 py-1.5 -mx-2 border border-slate-200/80{% endif %}">
+            {% if forloop.first %}
+            <span class="text-xs font-medium text-slate-600 shrink-0">{% trans "Preferred" %}</span>
+            {% endif %}
+            <span class="font-medium text-gray-900">{% firstof p.display_name p.local_printer_id %}</span>
+            {% if p.status == "online" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">{{ p.get_status_display }}</span>
+            {% elif p.status == "warning" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">{{ p.get_status_display }}{% if p.warnings %} ({{ p.warnings }}){% endif %}</span>
+            {% elif p.status == "error" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{{ p.get_status_display }}</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{{ p.get_status_display }}</span>
+            {% endif %}
+            <span class="text-gray-500 text-xs">{% trans "Priority" %} {{ p.priority }}</span>
+            <span class="text-gray-400 text-xs font-mono">{{ p.host }}:{{ p.port }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2 mt-2">
+        {% blocktrans with role=target_role_display %}No printer is assigned to role "{{ role }}". The job will wait on the edge until one is registered.{% endblocktrans %}
+    </p>
+    {% endif %}
+</div>

@@ -8,12 +8,14 @@ logger = logging.getLogger(__name__)
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import Paginator
 from django.db import models as db_models
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.generic import DetailView, ListView, TemplateView, View
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView, View
 
 # Queryset filter for animals eligible for disassembly (scale session + cuts page)
 DISASSEMBLY_ELIGIBLE_FILTER = Q(
@@ -28,19 +30,25 @@ DISASSEMBLY_ELIGIBLE_FILTER = Q(
 from django import forms
 from django.http import JsonResponse
 
+from labeling.models import PrintJob
 from processing.models import Animal
 from users.policies import can_manage_tenant_users
 
+from .api_views import _bump_edge_print_jobs_version
+from .forms import SiteForm
 from .models import (
     DisassemblySession,
     EdgeActivityLog,
     EdgeDevice,
+    EdgeSetupCode,
     OrphanedBatch,
     PLUItem,
+    Printer,
     ScaleDevice,
     Site,
     WeighingEvent,
 )
+from .print_worker_cache import get_edge_print_worker_pulse
 from .utils import (
     get_product_display_names,
     maybe_mark_event_animals_disassembled,
@@ -70,6 +78,15 @@ def is_device_online(device, timeout_seconds=None):
     return (timezone.now() - device.last_heartbeat_at) <= timedelta(seconds=timeout_seconds)
 
 
+def is_lan_printer_online(printer, timeout_seconds=None):
+    """True if label printer last_seen_at is within timeout_seconds (heartbeat / inventory)."""
+    if timeout_seconds is None:
+        timeout_seconds = DEFAULT_CONNECTIVITY_TIMEOUT_SECONDS
+    if not printer.last_seen_at:
+        return False
+    return (timezone.now() - printer.last_seen_at) <= timedelta(seconds=timeout_seconds)
+
+
 def _age_seconds(dt):
     """Seconds since dt; None if dt is None."""
     if dt is None:
@@ -90,6 +107,7 @@ class ScalesDashboardView(LoginRequiredMixin, TemplateView):
             is_active=True,
         ).select_related("device", "animal", "site")[:20]
         context["pending_batches"] = OrphanedBatch.objects.filter(status="pending", is_active=True).count()
+        context["can_manage_tenant_ops"] = can_manage_tenant_users(self.request.user)
         return context
 
 
@@ -110,44 +128,561 @@ class EdgeManagementView(LoginRequiredMixin, AdminOnlyMixin, TemplateView):
 
         sites = Site.objects.filter(is_active=True).order_by("name")
         selected_site = sites.filter(id=site_id).first() if site_id else None
-        edges = EdgeDevice.objects.filter(is_active=True).select_related("site").order_by("name", "created_at")
+        edges = (
+            EdgeDevice.objects.filter(is_active=True)
+            .select_related("site")
+            .annotate(
+                in_flight_prints=db_models.Count(
+                    "claimed_print_jobs",
+                    filter=Q(claimed_print_jobs__status="dispatched"),
+                )
+            )
+            .order_by("name", "created_at")
+        )
         if selected_site:
             edges = edges.filter(site=selected_site)
         selected_edge = edges.filter(id=edge_id).first() if edge_id else None
 
-        printers = ScaleDevice.objects.filter(is_active=True).select_related("edge", "edge__site").order_by("device_id")
+        scale_devices = (
+            ScaleDevice.objects.filter(is_active=True)
+            .select_related("edge", "edge__site")
+            .order_by("edge_id", "device_id")
+        )
+        label_printers = (
+            Printer.objects.filter(is_active=True)
+            .select_related("edge", "edge__site", "site")
+            .order_by("edge_id", "priority", "local_printer_id")
+        )
         if selected_edge:
-            printers = printers.filter(edge=selected_edge)
+            scale_devices = scale_devices.filter(edge=selected_edge)
+            label_printers = label_printers.filter(edge=selected_edge)
         elif selected_site:
-            printers = printers.filter(edge__site=selected_site)
+            scale_devices = scale_devices.filter(edge__site=selected_site)
+            label_printers = label_printers.filter(site=selected_site)
 
-        recent_logs = EdgeActivityLog.objects.select_related("site", "edge", "device").order_by("-created_at")
+        logs_qs = EdgeActivityLog.objects.select_related("site", "edge", "device").order_by("-created_at")
         if selected_site:
-            recent_logs = recent_logs.filter(site=selected_site)
+            logs_qs = logs_qs.filter(site=selected_site)
         if selected_edge:
-            recent_logs = recent_logs.filter(edge=selected_edge)
+            logs_qs = logs_qs.filter(edge=selected_edge)
 
         edges_list = list(edges[:100])
         for edge in edges_list:
             edge.is_online_computed = is_edge_online(edge)
             edge.last_seen_age_seconds = _age_seconds(edge.last_seen_at)
+            edge.print_worker_pulse = get_edge_print_worker_pulse(edge.id)
 
-        printers_list = list(printers[:100])
-        for printer in printers_list:
-            printer.is_online_computed = is_device_online(printer)
-            printer.last_heartbeat_age_seconds = _age_seconds(printer.last_heartbeat_at)
+        scale_devices_list = list(scale_devices[:100])
+        for device in scale_devices_list:
+            device.is_online_computed = is_device_online(device)
+            device.last_heartbeat_age_seconds = _age_seconds(device.last_heartbeat_at)
+
+        label_printers_list = list(label_printers[:100])
+        for lan_printer in label_printers_list:
+            lan_printer.is_online_computed = is_lan_printer_online(lan_printer)
+            lan_printer.last_seen_age_seconds = _age_seconds(lan_printer.last_seen_at)
+
+        log_paginator = Paginator(logs_qs, 25)
+        log_page = log_paginator.get_page(self.request.GET.get("page") or 1)
+
+        logs_params = self.request.GET.copy()
+        logs_params.pop("page", None)
+        logs_base_query = logs_params.urlencode()
+
+        pending_jobs_qs = (
+            PrintJob.objects.filter(
+                status="pending",
+                dispatch_mode="edge",
+                site__is_active=True,
+            )
+            .select_related("site")
+            .order_by("print_date")
+        )
+        if selected_site:
+            pending_jobs_qs = pending_jobs_qs.filter(site=selected_site)
+        pending_print_job_total = pending_jobs_qs.count()
+        pending_print_jobs_preview = list(pending_jobs_qs[:20])
+
+        dispatched_jobs_qs = (
+            PrintJob.objects.filter(
+                status="dispatched",
+                dispatch_mode="edge",
+                site__is_active=True,
+            )
+            .select_related("site", "claimed_by_edge")
+            .order_by("edge_received_at", "print_date")
+        )
+        if selected_site:
+            dispatched_jobs_qs = dispatched_jobs_qs.filter(site=selected_site)
+        dispatched_print_job_total = dispatched_jobs_qs.count()
+        dispatched_print_jobs_preview = list(dispatched_jobs_qs[:20])
 
         context.update(
             {
                 "sites": sites,
                 "edges": edges_list,
-                "printers": printers_list,
-                "recent_logs": recent_logs[:100],
+                "scale_devices": scale_devices_list,
+                "label_printers": label_printers_list,
+                "log_page": log_page,
+                "logs_base_query": logs_base_query,
                 "selected_site_id": str(selected_site.id) if selected_site else "",
                 "selected_edge_id": str(selected_edge.id) if selected_edge else "",
+                "pending_print_job_total": pending_print_job_total,
+                "pending_print_jobs_preview": pending_print_jobs_preview,
+                "dispatched_print_job_total": dispatched_print_job_total,
+                "dispatched_print_jobs_preview": dispatched_print_jobs_preview,
             }
         )
         return context
+
+
+class SiteListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
+    """List active sites (plants) for Edge and scale operations."""
+
+    model = Site
+    template_name = "scales/site_list.html"
+    context_object_name = "sites"
+
+    def get_queryset(self):
+        return (
+            Site.objects.filter(is_active=True)
+            .annotate(active_edge_count=db_models.Count("edges", filter=Q(edges__is_active=True)))
+            .order_by("name")
+        )
+
+
+class SiteCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
+    model = Site
+    form_class = SiteForm
+    template_name = "scales/site_form.html"
+
+    def get_success_url(self):
+        return reverse("scales:site_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Site “%(name)s” was created.") % {"name": form.instance.name})
+        return super().form_valid(form)
+
+
+class SiteUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
+    model = Site
+    form_class = SiteForm
+    template_name = "scales/site_form.html"
+
+    def get_queryset(self):
+        return Site.objects.filter(is_active=True)
+
+    def get_success_url(self):
+        return reverse("scales:site_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Site “%(name)s” was updated.") % {"name": form.instance.name})
+        return super().form_valid(form)
+
+
+class SiteDeactivateView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a site only when it has no active Edge devices."""
+
+    def post(self, request, pk):
+        site = get_object_or_404(Site, pk=pk, is_active=True)
+        if EdgeDevice.objects.filter(site=site, is_active=True).exists():
+            messages.error(
+                request,
+                _(
+                    "This site still has active Edge devices. Remove them from Edge Management "
+                    "before deactivating the site."
+                ),
+            )
+            return redirect("scales:site_list")
+        site.soft_delete()
+        messages.success(request, _("Site “%(name)s” was deactivated.") % {"name": site.name})
+        return redirect("scales:site_list")
+
+
+class EdgeSetupCodeListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
+    """List all setup codes with status indicators."""
+
+    model = EdgeSetupCode
+    template_name = "scales/edge_setup_code_list.html"
+    context_object_name = "setup_codes"
+    paginate_by = 25
+
+    def get_queryset(self):
+        return (
+            EdgeSetupCode.objects.filter(is_active=True).select_related("site", "used_by_edge").order_by("-created_at")
+        )
+
+
+class EdgeSetupCodeCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Handle the 'Add Edge Device' form submission."""
+
+    def get(self, request):
+        sites = Site.objects.filter(is_active=True).order_by("name")
+        printer_rows = list(
+            Printer.objects.filter(is_active=True, enabled=True)
+            .select_related("site", "edge")
+            .order_by("site__name", "role", "priority")
+            .values("id", "site_id", "display_name", "role", "host", "port")
+        )
+        for row in printer_rows:
+            row["id"] = str(row["id"])
+            row["site_id"] = str(row["site_id"])
+
+        prefill_site = (request.GET.get("site_id") or "").strip()
+        prefill_edge_name = (request.GET.get("edge_name") or "").strip()
+        relink_from_edge = request.GET.get("relink") == "1"
+        initial_site_id = ""
+        initial_edge_name = ""
+        relink_hint = False
+        if relink_from_edge and prefill_site and Site.objects.filter(id=prefill_site, is_active=True).exists():
+            initial_site_id = prefill_site
+            initial_edge_name = prefill_edge_name
+            relink_hint = True
+
+        return render(
+            request,
+            "scales/edge_setup_code_create.html",
+            {
+                "sites": sites,
+                "printers_json": printer_rows,
+                "initial_site_id": initial_site_id,
+                "initial_edge_name": initial_edge_name,
+                "relink_hint": relink_hint,
+            },
+        )
+
+    def post(self, request):
+        site_id = request.POST.get("site_id")
+        edge_name = (request.POST.get("edge_name") or "").strip()
+        try:
+            expiry_hours = int(request.POST.get("expiry_hours", 48))
+        except (TypeError, ValueError):
+            expiry_hours = 48
+        if expiry_hours < 1:
+            expiry_hours = 48
+
+        if not site_id:
+            messages.error(request, _("Please select a site."))
+            return redirect("scales:edge_setup_code_create")
+
+        try:
+            site = Site.objects.get(id=site_id, is_active=True)
+        except Site.DoesNotExist:
+            messages.error(request, _("Site not found."))
+            return redirect("scales:edge_setup_code_create")
+
+        printers_config = []
+        printer_ids = request.POST.getlist("printer_ids")
+        for pid in printer_ids:
+            try:
+                printer = Printer.objects.get(id=pid, site=site, is_active=True)
+                printers_config.append(
+                    {
+                        "localPrinterId": printer.local_printer_id,
+                        "displayName": printer.display_name,
+                        "role": printer.role,
+                        "transport": printer.transport,
+                        "host": printer.host,
+                        "port": printer.port,
+                        "model": printer.model,
+                        "priority": printer.priority,
+                    }
+                )
+            except (Printer.DoesNotExist, ValueError):
+                continue
+
+        manual_hosts = request.POST.getlist("manual_printer_host")
+        manual_roles = request.POST.getlist("manual_printer_role")
+        manual_names = request.POST.getlist("manual_printer_name")
+        for i, host in enumerate(manual_hosts):
+            host = host.strip()
+            if not host:
+                continue
+            role = manual_roles[i].strip() if i < len(manual_roles) else "generic"
+            name = manual_names[i].strip() if i < len(manual_names) else ""
+            printers_config.append(
+                {
+                    "localPrinterId": f"{role}-{i + 1:02d}",
+                    "displayName": name or f"{role.title()} Printer",
+                    "role": role,
+                    "transport": "tcp",
+                    "host": host,
+                    "port": 9100,
+                    "model": "",
+                    "priority": 100,
+                }
+            )
+
+        setup_code = EdgeSetupCode.objects.create(
+            site=site,
+            edge_name=edge_name,
+            printers_config=printers_config,
+            expires_at=timezone.now() + timedelta(hours=expiry_hours),
+        )
+
+        return redirect("scales:edge_setup_code_detail", pk=setup_code.pk)
+
+
+class EdgeSetupCodeDetailView(LoginRequiredMixin, AdminOnlyMixin, DetailView):
+    """Show the setup code + instructions after creation."""
+
+    model = EdgeSetupCode
+    template_name = "scales/edge_setup_code_detail.html"
+    context_object_name = "setup_code"
+
+    def get_queryset(self):
+        return EdgeSetupCode.objects.filter(is_active=True).select_related("site", "used_by_edge")
+
+    def get_context_data(self, **kwargs):
+        from django.conf import settings
+
+        from tenants.tenant_helpers import get_tenant_site_url
+
+        context = super().get_context_data(**kwargs)
+        tenant_url = get_tenant_site_url()
+        context["tenant_url"] = tenant_url
+
+        base_domain = getattr(settings, "TENANT_BASE_DOMAIN", "localhost")
+        if settings.DEBUG:
+            public_api_base = f"http://api.{base_domain}:8000"
+        else:
+            public_api_base = f"https://api.{base_domain}"
+        context["activate_url"] = f"{public_api_base}/api/v1/activate"
+
+        sc = self.object
+        if sc.used_by_edge_id:
+            edge = sc.used_by_edge
+            now = timezone.now()
+            context["edge_connected"] = True
+            context["edge_name"] = edge.name
+            context["edge_online"] = (
+                edge.is_online and edge.last_seen_at is not None and (now - edge.last_seen_at).total_seconds() < 120
+            )
+            context["edge_version"] = edge.version
+            context["edge_health"] = edge.health
+            context["edge_last_seen"] = edge.last_seen_at
+            context["edge_printer_count"] = edge.printers.filter(is_active=True).count()
+        else:
+            context["edge_connected"] = False
+        return context
+
+
+class EdgeSetupCodeRevokeView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Revoke (soft-delete) an unused setup code."""
+
+    def post(self, request, pk):
+        try:
+            setup_code = EdgeSetupCode.objects.get(pk=pk, is_active=True, used_at__isnull=True)
+        except EdgeSetupCode.DoesNotExist:
+            messages.error(request, _("Setup code not found or already used."))
+            return redirect("scales:edge_setup_code_list")
+
+        setup_code.soft_delete()
+        messages.success(request, _("Setup code revoked successfully."))
+        return redirect("scales:edge_setup_code_list")
+
+
+def _redirect_edge_management_preserve_filter(request):
+    """Return redirect to edge management, keeping ?site_id=&edge_id= when posted as `next`."""
+    qs = (request.POST.get("next") or "").strip()
+    if qs:
+        return redirect(f"{reverse('scales:edge_management')}?{qs}")
+    return redirect("scales:edge_management")
+
+
+def _cancel_pending_print_jobs_for_edge_printers(edge: EdgeDevice) -> int:
+    """
+    Cancel pending edge print jobs that targeted a printer on this Edge.
+
+    After soft-removing printers, those UUIDs no longer exist for inventory;
+    leaving jobs pending would make a new Edge (after relink) try to drain a
+    stale queue. Role-only jobs (no target_printer) are left for another Edge
+    at the same site, if any.
+    """
+    printer_pks = list(Printer.objects.filter(edge=edge, is_active=True).values_list("pk", flat=True))
+    if not printer_pks:
+        return 0
+    site_id = edge.site_id
+    n = PrintJob.objects.filter(
+        site_id=site_id,
+        status="pending",
+        dispatch_mode="edge",
+        target_printer_id__in=printer_pks,
+    ).update(
+        status="cancelled",
+        error_text=_("Target printer was removed with Edge; job cancelled."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(site_id)
+    return n
+
+
+def _cancel_all_pending_edge_print_jobs_for_site(site_id) -> int:
+    """Cancel every pending edge-dispatched job for a site (used when re-pairing after reinstall)."""
+    n = PrintJob.objects.filter(
+        site_id=site_id,
+        status="pending",
+        dispatch_mode="edge",
+    ).update(
+        status="cancelled",
+        error_text=_("Edge re-linked; pending queue cleared for this site."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(site_id)
+    return n
+
+
+def _release_dispatched_print_jobs_claimed_by_edge(edge: EdgeDevice) -> int:
+    """Cancel in-flight (dispatched) jobs claimed by this worker before removing the Edge."""
+    n = PrintJob.objects.filter(claimed_by_edge=edge, status="dispatched").update(
+        status="cancelled",
+        error_text=_("Edge removed or re-linked; in-flight print cleared."),
+        updated_at=timezone.now(),
+    )
+    if n:
+        _bump_edge_print_jobs_version(edge.site_id)
+    return n
+
+
+def _soft_remove_edge_device(edge: EdgeDevice) -> None:
+    """Soft-delete an edge and its active scales/printers (Remove and Re-link flows)."""
+    _release_dispatched_print_jobs_claimed_by_edge(edge)
+    ScaleDevice.objects.filter(edge=edge, is_active=True).update(is_active=False)
+    Printer.objects.filter(edge=edge, is_active=True).update(is_active=False, enabled=False)
+    edge.soft_delete()
+
+
+class EdgeDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete an Edge device and its related scale devices and printers."""
+
+    def post(self, request, pk):
+        try:
+            edge = EdgeDevice.objects.get(pk=pk, is_active=True)
+        except EdgeDevice.DoesNotExist:
+            messages.error(request, _("Edge device not found."))
+            return _redirect_edge_management_preserve_filter(request)
+
+        active_sessions = DisassemblySession.objects.filter(
+            device__edge=edge,
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).count()
+        if active_sessions > 0:
+            messages.error(
+                request,
+                _("Cannot remove this edge — it has %(count)s active session(s). Close them first.")
+                % {"count": active_sessions},
+            )
+            return _redirect_edge_management_preserve_filter(request)
+
+        display = edge.name or str(edge.id)[:8]
+        n_jobs = _cancel_pending_print_jobs_for_edge_printers(edge)
+        _soft_remove_edge_device(edge)
+
+        messages.success(
+            request,
+            _("Edge device '%(name)s' has been removed.") % {"name": display},
+        )
+        if n_jobs:
+            messages.info(
+                request,
+                _("Cancelled %(n)s print job(s) that targeted this Edge's printers.") % {"n": n_jobs},
+            )
+        return _redirect_edge_management_preserve_filter(request)
+
+
+class EdgePrepareRelinkView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """
+    Clear cloud registration for an Edge (e.g. app uninstalled / data wiped) and open
+    Add Edge Device with the same site and device name pre-filled so a new setup code
+    can reconnect the physical PC to the current site.
+    """
+
+    def post(self, request, pk):
+        try:
+            edge = EdgeDevice.objects.select_related("site").get(pk=pk, is_active=True)
+        except EdgeDevice.DoesNotExist:
+            messages.error(request, _("Edge device not found."))
+            return _redirect_edge_management_preserve_filter(request)
+
+        active_sessions = DisassemblySession.objects.filter(
+            device__edge=edge,
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).count()
+        if active_sessions > 0:
+            messages.error(
+                request,
+                _("Cannot re-link this edge — it has %(count)s active session(s). Close them first.")
+                % {"count": active_sessions},
+            )
+            return _redirect_edge_management_preserve_filter(request)
+
+        site = edge.site
+        edge_name = (edge.name or "").strip()
+        n_cleared = _cancel_all_pending_edge_print_jobs_for_site(site.id)
+        _soft_remove_edge_device(edge)
+
+        messages.success(
+            request,
+            _(
+                "Registration cleared for this Edge. %(n)s pending print job(s) for %(site)s were cancelled "
+                "so they will not all run at once after reinstall. Generate a new setup code on the next screen, "
+                "then enter it in a fresh Edge install."
+            )
+            % {"site": site.name, "n": n_cleared},
+        )
+        q = urlencode(
+            {
+                "site_id": str(site.id),
+                "edge_name": edge_name,
+                "relink": "1",
+            }
+        )
+        return redirect(f"{reverse('scales:edge_setup_code_create')}?{q}")
+
+
+class ScaleDeviceRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a single scale device (e.g. stale registration). Blocked if sessions are open."""
+
+    def post(self, request, pk):
+        device = get_object_or_404(ScaleDevice, pk=pk, is_active=True)
+        active_sessions = DisassemblySession.objects.filter(
+            device=device,
+            status__in=["pending", "active", "paused"],
+            is_active=True,
+        ).count()
+        if active_sessions > 0:
+            messages.error(
+                request,
+                _("Cannot remove this scale — it has %(count)s active session(s). Close them first.")
+                % {"count": active_sessions},
+            )
+            return _redirect_edge_management_preserve_filter(request)
+        tag = device.device_id
+        device.soft_delete()
+        messages.success(
+            request,
+            _("Scale “%(id)s” was removed from the dashboard.") % {"id": tag},
+        )
+        return _redirect_edge_management_preserve_filter(request)
+
+
+class PrinterRemoveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """Soft-delete a label printer row (e.g. removed from LAN). Edge inventory may recreate it later."""
+
+    def post(self, request, pk):
+        printer = get_object_or_404(Printer, pk=pk, is_active=True)
+        lid = printer.local_printer_id
+        printer.enabled = False
+        printer.soft_delete()
+        messages.success(
+            request,
+            _("Printer “%(id)s” was removed from the dashboard.") % {"id": lid},
+        )
+        return _redirect_edge_management_preserve_filter(request)
 
 
 class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
@@ -157,9 +692,19 @@ class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
             return JsonResponse({"edges": []})
         site = Site.objects.filter(id=site_id).first()
         site_name = site.name if site else ""
-        edges = EdgeDevice.objects.filter(site_id=site_id, is_active=True).order_by("name", "created_at")
+        edges = (
+            EdgeDevice.objects.filter(site_id=site_id, is_active=True)
+            .annotate(
+                in_flight_prints=db_models.Count(
+                    "claimed_print_jobs",
+                    filter=Q(claimed_print_jobs__status="dispatched"),
+                )
+            )
+            .order_by("name", "created_at")
+        )
         out = []
         for edge in edges:
+            pulse = get_edge_print_worker_pulse(edge.id)
             out.append(
                 {
                     "id": str(edge.id),
@@ -169,33 +714,75 @@ class EdgeBySiteJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
                     "last_seen_at": edge.last_seen_at.isoformat() if edge.last_seen_at else None,
                     "last_seen_age_seconds": _age_seconds(edge.last_seen_at),
                     "version": edge.version,
+                    "in_flight_prints": edge.in_flight_prints,
+                    "print_worker_pulse": pulse,
                 }
             )
         return JsonResponse({"edges": out})
 
 
 class PrintersByEdgeJsonView(LoginRequiredMixin, AdminOnlyMixin, View):
+    """JSON for edge management: LAN label printers (Printer) + scale devices (ScaleDevice)."""
+
     def get(self, request):
         edge_id = request.GET.get("edge_id")
-        if not edge_id:
-            return JsonResponse({"printers": []})
-        printers = ScaleDevice.objects.filter(edge_id=edge_id, is_active=True).order_by("device_id")
-        out = []
-        for printer in printers:
-            out.append(
+        site_id = request.GET.get("site_id")
+
+        if edge_id:
+            scales_qs = ScaleDevice.objects.filter(edge_id=edge_id, is_active=True).order_by("device_id")
+            labels_qs = Printer.objects.filter(edge_id=edge_id, is_active=True).order_by("priority", "local_printer_id")
+        elif site_id:
+            scales_qs = ScaleDevice.objects.filter(edge__site_id=site_id, is_active=True).order_by(
+                "edge_id", "device_id"
+            )
+            labels_qs = Printer.objects.filter(site_id=site_id, is_active=True).order_by(
+                "edge_id", "priority", "local_printer_id"
+            )
+        else:
+            return JsonResponse({"label_printers": [], "scale_devices": [], "printers": []})
+
+        scale_out = []
+        for device in scales_qs[:100]:
+            scale_out.append(
                 {
-                    "id": str(printer.id),
-                    "device_id": printer.device_id,
-                    "global_device_id": printer.global_device_id,
-                    "device_type": printer.device_type,
-                    "status": printer.status,
-                    "is_online": is_device_online(printer),
-                    "last_heartbeat_at": printer.last_heartbeat_at.isoformat() if printer.last_heartbeat_at else None,
-                    "last_heartbeat_age_seconds": _age_seconds(printer.last_heartbeat_at),
-                    "last_event_at": printer.last_event_at.isoformat() if printer.last_event_at else None,
+                    "id": str(device.id),
+                    "device_id": device.device_id,
+                    "global_device_id": device.global_device_id,
+                    "device_type": device.device_type,
+                    "status": device.status,
+                    "is_online": is_device_online(device),
+                    "last_heartbeat_at": device.last_heartbeat_at.isoformat() if device.last_heartbeat_at else None,
+                    "last_heartbeat_age_seconds": _age_seconds(device.last_heartbeat_at),
+                    "last_event_at": device.last_event_at.isoformat() if device.last_event_at else None,
                 }
             )
-        return JsonResponse({"printers": out})
+
+        label_out = []
+        for lan_printer in labels_qs[:100]:
+            label_out.append(
+                {
+                    "id": str(lan_printer.id),
+                    "local_printer_id": lan_printer.local_printer_id,
+                    "display_name": lan_printer.display_name or "",
+                    "role": lan_printer.role,
+                    "host": lan_printer.host,
+                    "port": lan_printer.port,
+                    "status": lan_printer.status,
+                    "warnings": lan_printer.warnings,
+                    "enabled": lan_printer.enabled,
+                    "is_online": is_lan_printer_online(lan_printer),
+                    "last_seen_at": lan_printer.last_seen_at.isoformat() if lan_printer.last_seen_at else None,
+                    "last_seen_age_seconds": _age_seconds(lan_printer.last_seen_at),
+                }
+            )
+
+        return JsonResponse(
+            {
+                "label_printers": label_out,
+                "scale_devices": scale_out,
+                "printers": scale_out,
+            }
+        )
 
 
 class SessionListViewModel:

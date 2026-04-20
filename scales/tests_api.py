@@ -10,7 +10,9 @@ import pytest
 from django.test import Client
 from django.utils import timezone
 
-from scales.models import DisassemblySession, EdgeDevice, OfflineBatchAck, ScaleDevice, Site, WeighingEvent
+from labeling.models import PrintJob
+from labeling.services import enqueue_print_job
+from scales.models import DisassemblySession, EdgeDevice, OfflineBatchAck, Printer, ScaleDevice, Site, WeighingEvent
 
 
 # Base path for edge API (no named URL in api_urls; mounted at api/v1/edge/)
@@ -49,6 +51,16 @@ def scale_device(db, edge_device):
 @pytest.fixture
 def api_client():
     return Client()
+
+
+@pytest.fixture
+def no_edge_rate_limit(monkeypatch):
+    """Edge API views use atomic_rate_incr; bypass limits in tests."""
+
+    def _noop_incr(_key, _window):
+        return 0
+
+    monkeypatch.setattr("tenants.redis_support.atomic_rate_incr", _noop_incr)
 
 
 # ---------- edge_register ----------
@@ -224,6 +236,199 @@ class TestEdgeSessions:
     def test_sessions_method_not_allowed(self, api_client, edge_device):
         resp = api_client.post(_edge_url("sessions"), HTTP_X_EDGE_ID=str(edge_device.id))
         assert resp.status_code == 405
+
+    def _make_session(self, edge_device, scale_device, status="active"):
+        from processing.models import Animal
+        from reception.models import ServicePackage, SlaughterOrder
+        from users.models import ClientProfile, User
+
+        user = User.objects.create_user(username=f"u-{uuid.uuid4()}", password="p", role=User.Role.CLIENT)
+        cp = ClientProfile.objects.create(
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="1",
+            address="a",
+        )
+        pkg = ServicePackage.objects.create(name=f"P-{uuid.uuid4().hex[:6]}", includes_disassembly=True)
+        order = SlaughterOrder.objects.create(
+            client=cp,
+            order_datetime=timezone.now(),
+            service_package=pkg,
+        )
+        animal = Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag=f"T-{uuid.uuid4().hex[:6]}",
+        )
+        animal.perform_slaughter()
+        animal.save()
+        animal.prepare_carcass()
+        animal.save()
+        session = DisassemblySession.objects.create(
+            site=edge_device.site,
+            device=scale_device,
+            animal=animal,
+            operator="op",
+            started_at=timezone.now(),
+            status=status,
+            is_active=True,
+        )
+        session.animals.set([animal])
+        return session
+
+    def test_sessions_cache_hit_skips_db_query(self, api_client, edge_device, scale_device, no_edge_rate_limit):
+        """
+        Second poll within TTL should serve the /sessions payload from cache
+        without re-querying DisassemblySession.
+        """
+        from django.core.cache import cache
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        self._make_session(edge_device, scale_device, status="active")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("sessions"),
+            {"device_ids": scale_device.device_id},
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert first.status_code == 200
+        first_etag = first["ETag"]
+
+        with CaptureQueriesContext(connection) as ctx:
+            second = api_client.get(
+                _edge_url("sessions"),
+                {"device_ids": scale_device.device_id},
+                HTTP_X_EDGE_ID=str(edge_device.id),
+            )
+        assert second.status_code == 200
+        assert second["ETag"] == first_etag
+        select_sql = " ".join(q["sql"].lower() for q in ctx.captured_queries)
+        assert "scales_disassemblysession" not in select_sql, (
+            f"Cache hit should not query disassemblysession, saw: {select_sql}"
+        )
+
+    def test_sessions_signal_bumps_version_on_close(self, api_client, edge_device, scale_device, no_edge_rate_limit):
+        """
+        Regression: session.save() after flipping status to 'completed' (the
+        close-session path at scales/views.py:1050) must invalidate the edge
+        sessions cache via the post_save signal, so the very next poll sees
+        the session drop off — not 2 seconds later.
+        """
+        from django.core.cache import cache
+
+        session = self._make_session(edge_device, scale_device, status="active")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("sessions"),
+            {"device_ids": scale_device.device_id},
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert first.status_code == 200
+        assert len(first.json()["sessions"]) == 1
+        first_etag = first["ETag"]
+
+        session.status = "completed"
+        session.is_active = False
+        session.save(update_fields=["status", "is_active", "updated_at"])
+
+        second = api_client.get(
+            _edge_url("sessions"),
+            {"device_ids": scale_device.device_id},
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != first_etag
+        assert second.json()["sessions"] == []
+
+    def test_sessions_signal_bumps_version_on_cancel(self, api_client, edge_device, scale_device, no_edge_rate_limit):
+        """
+        Regression: session.save() after flipping status to 'cancelled' (the
+        cancel-session path at scales/views.py:1067) must invalidate the edge
+        sessions cache so the operator-visible state change surfaces immediately.
+        """
+        from django.core.cache import cache
+
+        session = self._make_session(edge_device, scale_device, status="active")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("sessions"),
+            {"device_ids": scale_device.device_id},
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert len(first.json()["sessions"]) == 1
+        first_etag = first["ETag"]
+
+        session.status = "cancelled"
+        session.is_active = False
+        session.save(update_fields=["status", "is_active", "updated_at"])
+
+        second = api_client.get(
+            _edge_url("sessions"),
+            {"device_ids": scale_device.device_id},
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != first_etag
+        assert second.json()["sessions"] == []
+
+    def test_sessions_signal_ignores_session_without_device(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        An unbound DisassemblySession (no device) can't map to any edge's
+        cache key, so its save must be a no-op for the signal — no version
+        bump, no unnecessary cache churn.
+        """
+        from django.core.cache import cache
+
+        from processing.models import Animal
+        from reception.models import ServicePackage, SlaughterOrder
+        from users.models import ClientProfile, User
+
+        user = User.objects.create_user(username="u-unbound", password="p", role=User.Role.CLIENT)
+        cp = ClientProfile.objects.create(
+            user=user,
+            account_type=ClientProfile.AccountType.INDIVIDUAL,
+            phone_number="1",
+            address="a",
+        )
+        pkg = ServicePackage.objects.create(name="P-unbound", includes_disassembly=True)
+        order = SlaughterOrder.objects.create(
+            client=cp,
+            order_datetime=timezone.now(),
+            service_package=pkg,
+        )
+        animal = Animal.objects.create(
+            slaughter_order=order,
+            animal_type="cattle",
+            identification_tag="T-unbound",
+        )
+        animal.perform_slaughter()
+        animal.save()
+        animal.prepare_carcass()
+        animal.save()
+
+        cache.clear()
+        ver_key = f"edge_sessions_version:{edge_device.pk}"
+        assert cache.get(ver_key) in (None, 0)
+
+        # Create an unbound session (no device).
+        DisassemblySession.objects.create(
+            site=edge_device.site,
+            device=None,
+            animal=animal,
+            operator="op",
+            started_at=timezone.now(),
+            status="pending",
+            is_active=True,
+        )
+
+        # Signal short-circuits on device is None → no version key written.
+        assert cache.get(ver_key) in (None, 0)
 
 
 # ---------- edge_post_event ----------
@@ -555,3 +760,439 @@ class TestEdgeHeartbeat:
     def test_heartbeat_method_not_allowed(self, api_client, edge_device):
         resp = api_client.get(_edge_url("heartbeat"), HTTP_X_EDGE_ID=str(edge_device.id))
         assert resp.status_code == 405
+
+    def test_post_updates_printer_status_from_printers_payload(self, api_client, edge_device, no_edge_rate_limit):
+        Printer.objects.create(
+            edge=edge_device,
+            site=edge_device.site,
+            local_printer_id="carcass-01",
+            host="192.168.1.1",
+            role="carcass",
+        )
+        resp = api_client.post(
+            _edge_url("heartbeat"),
+            data=json.dumps(
+                {
+                    "version": "0.4.0",
+                    "devices": [],
+                    "printers": [
+                        {
+                            "localPrinterId": "carcass-01",
+                            "status": "online",
+                            "lastSeenAt": "2026-04-13T10:00:00Z",
+                            "lastError": "",
+                        }
+                    ],
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        p = Printer.objects.get(edge=edge_device, local_printer_id="carcass-01")
+        assert p.status == "online"
+        assert p.last_error == ""
+
+
+# ---------- edge print jobs & printer inventory ----------
+
+
+@pytest.mark.django_db
+class TestEdgePrintJobsAndInventory:
+    def test_pending_get_returns_jobs(self, api_client, edge_device, no_edge_rate_limit):
+        job = enqueue_print_job(
+            site=edge_device.site,
+            prn_content="SIZE 1 mm, 1 mm\r\nPRINT 1,1\r\n",
+            target_role="carcass",
+        )
+        resp = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["jobs"]) == 1
+        assert data["jobs"][0]["jobId"] == str(job.id)
+        assert data["jobs"][0]["targetRole"] == "carcass"
+        assert data["jobs"][0]["labelCount"] == 1
+        assert "prnContent" in data["jobs"][0]
+        edge_device.refresh_from_db()
+        assert edge_device.last_seen_at is not None
+
+    def test_pending_method_not_allowed(self, api_client, edge_device, no_edge_rate_limit):
+        resp = api_client.post(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 405
+
+    def test_pending_returns_etag_header(self, api_client, edge_device, no_edge_rate_limit):
+        enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        resp = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        assert resp["ETag"].startswith('"print-jobs-')
+
+    def test_pending_empty_queue_returns_etag_and_304_on_match(self, api_client, edge_device, no_edge_rate_limit):
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert first.status_code == 200
+        assert first.json() == {"jobs": []}
+        etag = first["ETag"]
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=etag,
+        )
+        assert second.status_code == 304
+        assert second["ETag"] == etag
+        assert second.content == b""
+
+    def test_pending_etag_changes_when_new_job_enqueued(self, api_client, edge_device, no_edge_rate_limit):
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        empty_etag = first["ETag"]
+        enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=empty_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != empty_etag
+        assert len(second.json()["jobs"]) == 1
+
+    def test_pending_etag_stable_across_polls_when_queue_unchanged(self, api_client, edge_device, no_edge_rate_limit):
+        enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        r1 = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        r2 = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert r1.status_code == 200 and r2.status_code == 200
+        assert r1["ETag"] == r2["ETag"]
+
+    def test_pending_cache_hit_skips_db_query(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        Second poll within the cache TTL should serve the payload from Redis
+        without re-querying PrintJob. Only the edge_device last_seen_at UPDATE
+        and the cache reads should remain.
+        """
+        from django.core.cache import cache
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert first.status_code == 200
+        first_etag = first["ETag"]
+
+        with CaptureQueriesContext(connection) as ctx:
+            second = api_client.get(
+                _edge_url("print-jobs/pending"),
+                HTTP_X_EDGE_ID=str(edge_device.id),
+            )
+        assert second.status_code == 200
+        assert second["ETag"] == first_etag
+        # The print-job SELECT must not appear on the cache-hit path.
+        select_sql = " ".join(q["sql"].lower() for q in ctx.captured_queries)
+        assert "labeling_printjob" not in select_sql, f"Cache hit should not query labeling_printjob, saw: {select_sql}"
+
+    def test_pending_cache_shared_across_edges_on_same_site(self, api_client, site, no_edge_rate_limit):
+        """
+        Two edges at the same site should share the per-site payload cache.
+        The second edge's poll (after the first primes the cache) should hit
+        the cache and not re-query PrintJob.
+        """
+        from django.core.cache import cache
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        edge_a = EdgeDevice.objects.create(site=site, name="Edge A", is_active=True, is_online=False)
+        edge_b = EdgeDevice.objects.create(site=site, name="Edge B", is_active=True, is_online=False)
+        enqueue_print_job(site=site, prn_content="X", target_role="carcass")
+        cache.clear()
+
+        # Edge A primes the cache.
+        api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_a.id),
+        )
+
+        # Edge B polls — should hit the cache, no labeling_printjob query.
+        with CaptureQueriesContext(connection) as ctx:
+            resp = api_client.get(
+                _edge_url("print-jobs/pending"),
+                HTTP_X_EDGE_ID=str(edge_b.id),
+            )
+        assert resp.status_code == 200
+        select_sql = " ".join(q["sql"].lower() for q in ctx.captured_queries)
+        assert "labeling_printjob" not in select_sql, f"Edge B should reuse site-scoped cache, saw query: {select_sql}"
+
+    def test_pending_signal_bumps_cache_version_on_save(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        PrintJob.save() (via the post_save signal in labeling/signals.py) must
+        bump the per-site cache version, so the next poll at that site
+        bypasses the stale cache entry even if TTL has not elapsed.
+        """
+        from django.core.cache import cache
+
+        enqueue_print_job(site=edge_device.site, prn_content="ORIG", target_role="carcass")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        first_etag = first["ETag"]
+
+        # Mutate a pending job — post_save signal should bump version.
+        job = PrintJob.objects.filter(site=edge_device.site, status="pending").first()
+        job.target_role = "organ"
+        job.save(update_fields=["target_role", "updated_at"])
+
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != first_etag
+        assert second.json()["jobs"][0]["targetRole"] == "organ"
+
+    def test_pending_ack_invalidates_cache(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        Acking a job (flipping status out of 'pending') must invalidate the
+        site cache via post_save so the next poll reflects the smaller queue.
+        """
+        from django.core.cache import cache
+
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        cache.clear()
+
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert len(first.json()["jobs"]) == 1
+        first_etag = first["ETag"]
+
+        # Ack → status flips to 'completed', signal bumps version.
+        ack = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "completed", "attempts": 1}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert ack.status_code == 200
+
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != first_etag
+        assert second.json()["jobs"] == []
+
+    def test_pending_local_dispatch_job_does_not_bump_cache(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        A PrintJob with dispatch_mode='local' is irrelevant to the edge poll.
+        Its save should not invalidate the edge cache for the site (no churn).
+        """
+        from django.core.cache import cache
+
+        # Prime cache with an empty pending queue.
+        cache.clear()
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert first.json() == {"jobs": []}
+        first_etag = first["ETag"]
+
+        # Create a local-dispatch job — signal should skip the bump.
+        PrintJob.objects.create(
+            site=edge_device.site,
+            prn_content="LOCAL",
+            dispatch_mode="local",
+            status="pending",
+        )
+
+        # Second poll with same ETag — cache still valid → 304.
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 304
+
+    def test_pending_etag_invalidates_on_pending_job_mutation(self, api_client, edge_device, no_edge_rate_limit):
+        """
+        Regression: a pending-job mutation (e.g. operator re-targets target_role
+        or edits prn_content before dispatch) must invalidate the edge's cached
+        ETag, or the edge will silently keep serving the old job.
+        BaseModel.updated_at (auto_now=True) fires on any .save(), which is what
+        _compute_print_jobs_etag hashes — this test guards that coupling.
+        """
+        import time
+
+        job = enqueue_print_job(site=edge_device.site, prn_content="ORIG", target_role="carcass")
+        first = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        first_etag = first["ETag"]
+
+        # sleep 1ms so auto_now produces a distinct microsecond timestamp
+        time.sleep(0.002)
+        job.target_role = "organ"
+        job.prn_content = "EDITED"
+        job.save(update_fields=["target_role", "prn_content", "updated_at"])
+
+        second = api_client.get(
+            _edge_url("print-jobs/pending"),
+            HTTP_X_EDGE_ID=str(edge_device.id),
+            HTTP_IF_NONE_MATCH=first_etag,
+        )
+        assert second.status_code == 200
+        assert second["ETag"] != first_etag
+        assert second.json()["jobs"][0]["targetRole"] == "organ"
+        assert second.json()["jobs"][0]["prnContent"] == "EDITED"
+
+    def test_ack_completed_sets_printed_at_idempotent(self, api_client, edge_device, no_edge_rate_limit):
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        body = {
+            "status": "completed",
+            "printedAt": "2026-04-13T10:00:14.789Z",
+            "attempts": 1,
+            "errorText": "",
+        }
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps(body),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        job.refresh_from_db()
+        assert job.status == "completed"
+        assert job.printed_at is not None
+        resp2 = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps(body),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp2.status_code == 200
+        assert resp2.json()["ok"] is True
+
+    def test_ack_dispatched_sets_edge_received_at(self, api_client, edge_device, no_edge_rate_limit):
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "dispatched", "attempts": 1}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        job.refresh_from_db()
+        assert job.status == "dispatched"
+        assert job.edge_received_at is not None
+        assert job.claimed_by_edge_id == edge_device.id
+
+    def test_ack_wrong_site_edge_returns_404(self, api_client, no_edge_rate_limit):
+        site_a = Site.objects.create(name="Site A", address="")
+        site_b = Site.objects.create(name="Site B", address="")
+        edge_b = EdgeDevice.objects.create(site=site_b, name="Edge B", is_active=True)
+        job = PrintJob.objects.create(
+            site=site_a,
+            item_type="carcass",
+            item_id=uuid.uuid4(),
+            prn_content="Z",
+            dispatch_mode="edge",
+            status="pending",
+            target_role="carcass",
+        )
+        resp = api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "completed"}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_b.id),
+        )
+        assert resp.status_code == 404
+
+    def test_printer_inventory_upsert(self, api_client, edge_device, no_edge_rate_limit):
+        resp = api_client.post(
+            _edge_url("printers/inventory"),
+            data=json.dumps(
+                {
+                    "printers": [
+                        {
+                            "localPrinterId": "carcass-01",
+                            "displayName": "Line1",
+                            "role": "carcass",
+                            "transport": "tcp",
+                            "host": "192.168.1.220",
+                            "port": 9100,
+                            "model": "TE210",
+                            "priority": 100,
+                            "version": "V7.02",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert len(data["printers"]) == 1
+        assert data["printers"][0]["localPrinterId"] == "carcass-01"
+        gid = data["printers"][0]["globalPrinterId"]
+        p = Printer.objects.get(id=uuid.UUID(gid))
+        assert p.host == "192.168.1.220"
+        assert p.site_id == edge_device.site_id
+
+    def test_ack_resolved_printer_sets_target_printer(self, api_client, edge_device, no_edge_rate_limit):
+        inv = api_client.post(
+            _edge_url("printers/inventory"),
+            data=json.dumps(
+                {
+                    "printers": [
+                        {
+                            "localPrinterId": "p1",
+                            "host": "192.168.1.2",
+                            "role": "carcass",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        printer_id = inv.json()["printers"][0]["globalPrinterId"]
+        job = enqueue_print_job(site=edge_device.site, prn_content="X", target_role="carcass")
+        api_client.post(
+            _edge_url(f"print-jobs/{job.id}/ack"),
+            data=json.dumps({"status": "completed", "resolvedPrinter": printer_id}),
+            content_type="application/json",
+            HTTP_X_EDGE_ID=str(edge_device.id),
+        )
+        job.refresh_from_db()
+        assert str(job.target_printer_id) == printer_id
