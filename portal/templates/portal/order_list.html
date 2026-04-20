@@ -88,11 +88,11 @@
         </p>
         <div class="flex gap-1">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}"
+            <a href="?page={{ page_obj.previous_page_number }}{% if is_staff_view and selected_client %}&client={{ selected_client.pk }}{% endif %}"
                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Önceki</a>
             {% endif %}
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}"
+            <a href="?page={{ page_obj.next_page_number }}{% if is_staff_view and selected_client %}&client={{ selected_client.pk }}{% endif %}"
                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Sonraki</a>
             {% endif %}
         </div>
