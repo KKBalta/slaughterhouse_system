@@ -118,8 +118,23 @@ class Client(TenantMixin):
         db_table = "tenants_client"
 
     def save(self, *args, **kwargs):
+        from django.conf import settings
+
         if not self.slug:
             self.slug = self.schema_name
+        # In non-multitenant environments (test settings, single-schema installs),
+        # django_tenants is not in INSTALLED_APPS, so its `migrate_schemas` command
+        # is not registered. TenantMixin.save() would still invoke it via
+        # create_schema() on PostgreSQL, which raises CommandError. Skip auto
+        # schema creation here; real tenants in multitenant mode are unaffected.
+        if not getattr(settings, "USE_MULTITENANT", True):
+            original = self.auto_create_schema
+            self.auto_create_schema = False
+            try:
+                super().save(*args, **kwargs)
+            finally:
+                self.auto_create_schema = original
+            return
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
