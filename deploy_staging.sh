@@ -11,6 +11,17 @@
 #   Update env.staging.yaml and re-run this script once you have the URL.
 set -euo pipefail
 
+# Repo root (this script lives at repository root)
+case "${BASH_SOURCE[0]}" in
+  /*) _SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")" ;;
+  *) _SCRIPT_DIR="$(dirname "$PWD/${BASH_SOURCE[0]}")" ;;
+esac
+REPO_ROOT="$(cd "$_SCRIPT_DIR" && pwd)"
+cd "$REPO_ROOT"
+
+echo "Building Tailwind CSS..."
+make tailwind-build
+
 STAGING_ENV_YAML="${1:-env.staging.yaml}"
 
 if [ ! -f "$STAGING_ENV_YAML" ]; then

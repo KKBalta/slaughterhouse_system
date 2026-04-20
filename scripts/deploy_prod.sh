@@ -7,6 +7,19 @@
 #   4. Docker daemon running
 set -euo pipefail
 
+# Resolve repo root (works when invoked as ./scripts/deploy_prod.sh or bash /abs/path/scripts/deploy_prod.sh)
+case "${BASH_SOURCE[0]}" in
+  /*) _SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")" ;;
+  *) _SCRIPT_DIR="$(dirname "$PWD/${BASH_SOURCE[0]}")" ;;
+esac
+SCRIPT_DIR="$(cd "$_SCRIPT_DIR" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+# Fail fast if Tailwind/PostCSS cannot build (matches Dockerfile build step).
+echo "Building Tailwind CSS..."
+make tailwind-build
+
 PROD_ENV_YAML="${1:-env.yaml}"
 
 if [ ! -f "$PROD_ENV_YAML" ]; then

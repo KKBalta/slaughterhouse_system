@@ -41,11 +41,9 @@ ENV USE_SQLITE=True
 ENV SECRET_KEY=dummy-build-secret
 ENV TENANT_BASE_DOMAIN=localhost
 
-# Install Tailwind dependencies (with better error handling)
-RUN python manage.py tailwind install --no-input 2>/dev/null || echo "Tailwind install skipped - theme app not configured"
-
-# Build Tailwind CSS (with better error handling)
-RUN python manage.py tailwind build --no-input 2>/dev/null || echo "Tailwind build skipped - using default styles"
+# Tailwind v4 + PostCSS — same as `make tailwind-build` (theme/static_src → theme/static/css/dist).
+# Must not fail silently: collectstatic would ship stale or missing CSS.
+RUN cd theme/static_src && npm ci && npm run build
 
 # Collect static files
 RUN python manage.py collectstatic --noinput --clear
