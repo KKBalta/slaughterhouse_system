@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{{ order.slaughter_order_no }} - Sipariş - {{ block.super }}{% endblock %}
+{% block title %}{{ order.slaughter_order_no }} - {% trans "Order" %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="mx-auto max-w-5xl px-4 py-8 sm:py-10">
@@ -12,7 +12,7 @@
         <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
         </svg>
-        <span>Personel önizleme modu — müşteriler yalnızca kendi siparişlerini görebilir.</span>
+        <span>{% trans "Staff preview mode — clients can only view their own orders." %}</span>
     </div>
     {% endif %}
 
@@ -22,18 +22,18 @@
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
-        Siparişlerim
+        {% trans "My Orders" %}
     </a>
 
     {# Hero header #}
     <div class="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Sipariş</p>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{% trans "Order" %}</p>
             <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{{ order.slaughter_order_no }}</h1>
             <p class="mt-2 text-sm text-slate-500">
                 {{ order.order_datetime|date:"d M Y, H:i" }}
                 <span class="mx-2 text-slate-300">·</span>
-                {{ animal_count }} hayvan
+                {% blocktrans count counter=animal_count %}{{ counter }} animal{% plural %}{{ counter }} animals{% endblocktrans %}
                 {% if order.service_package %}<span class="mx-2 text-slate-300">·</span> {{ order.service_package.name }}{% endif %}
             </p>
         </div>
@@ -67,11 +67,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                 </div>
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Sipariş Bilgisi</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Order Information" %}</p>
                 <p class="mt-1 text-lg font-bold text-slate-900">{{ order.slaughter_order_no }}</p>
                 <p class="mt-1 text-sm text-slate-500">{{ order.order_datetime|date:"d M Y" }}</p>
                 <p class="mt-3 text-xs text-slate-400">
-                    {{ animal_count }} hayvan{% if order.service_package %} · {{ order.service_package.name }}{% endif %}
+                    {% blocktrans count counter=animal_count %}{{ counter }} animal{% plural %}{{ counter }} animals{% endblocktrans %}{% if order.service_package %} · {{ order.service_package.name }}{% endif %}
                 </p>
             </div>
         </div>
@@ -93,7 +93,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                     </svg>
                 </div>
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Randıman</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Yield" %}</p>
                 {% if order_performance %}
                 <p class="mt-1 text-3xl font-bold tracking-tight
                     {% if order_performance >= 55 %}text-emerald-600
@@ -101,7 +101,7 @@
                     {% else %}text-red-600{% endif %}">
                     {{ order_performance }}<span class="text-xl">%</span>
                 </p>
-                <p class="mt-1 text-xs text-slate-500">sıcak karkas / canlı ağırlık</p>
+                <p class="mt-1 text-xs text-slate-500">{% trans "hot carcass / live weight" %}</p>
                 {% if total_live_kg %}
                 <p class="mt-2 inline-flex items-center gap-1.5 text-sm text-slate-600">
                     <span class="font-medium">{{ total_live_kg }} kg</span>
@@ -110,11 +110,13 @@
                 </p>
                 {% endif %}
                 {% if excluded_from_totals %}
-                <p class="mt-2 text-[11px] text-orange-500">{{ excluded_from_totals }} hayvan canlı ağırlık eksik, hesaba katılmadı</p>
+                <p class="mt-2 text-[11px] text-orange-500">
+                    {% blocktrans count counter=excluded_from_totals %}{{ counter }} animal has missing live weight and was excluded from totals{% plural %}{{ counter }} animals have missing live weight and were excluded from totals{% endblocktrans %}
+                </p>
                 {% endif %}
                 {% else %}
                 <p class="mt-1 text-3xl font-bold text-slate-300">—</p>
-                <p class="mt-1 text-xs text-slate-400">Henüz ağırlık girilmemiş</p>
+                <p class="mt-1 text-xs text-slate-400">{% trans "No weight entered yet" %}</p>
                 {% endif %}
             </div>
         </div>
@@ -128,22 +130,24 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                     </svg>
                 </div>
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toplam Ağırlık</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Total Weight" %}</p>
                 {% if total_carcass_kg %}
                 <p class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ total_carcass_kg }}<span class="text-base font-normal text-slate-400"> kg</span></p>
-                <p class="mt-1 text-xs text-slate-500">sıcak karkas ağırlığı</p>
+                <p class="mt-1 text-xs text-slate-500">{% trans "hot carcass weight" %}</p>
                 {% if total_live_kg %}
-                <p class="mt-2 text-sm text-slate-600">Canlı: <span class="font-medium">{{ total_live_kg }} kg</span></p>
+                <p class="mt-2 text-sm text-slate-600">{% trans "Live:" %} <span class="font-medium">{{ total_live_kg }} kg</span></p>
                 {% endif %}
                 {% if excluded_from_totals %}
-                <p class="mt-2 text-[11px] text-orange-500">{{ excluded_from_totals }} hayvan dahil edilmedi</p>
+                <p class="mt-2 text-[11px] text-orange-500">
+                    {% blocktrans count counter=excluded_from_totals %}{{ counter }} animal was excluded{% plural %}{{ counter }} animals were excluded{% endblocktrans %}
+                </p>
                 {% endif %}
                 {% elif total_live_kg %}
                 <p class="mt-1 text-3xl font-bold tracking-tight text-slate-900">{{ total_live_kg }}<span class="text-base font-normal text-slate-400"> kg</span></p>
-                <p class="mt-1 text-xs text-slate-500">canlı ağırlık (karkas bekleniyor)</p>
+                <p class="mt-1 text-xs text-slate-500">{% trans "live weight (carcass pending)" %}</p>
                 {% else %}
                 <p class="mt-1 text-3xl font-bold text-slate-300">—</p>
-                <p class="mt-1 text-xs text-slate-400">Henüz ağırlık girilmemiş</p>
+                <p class="mt-1 text-xs text-slate-400">{% trans "No weight entered yet" %}</p>
                 {% endif %}
             </div>
         </div>
@@ -153,19 +157,19 @@
     {% if animal_summaries %}
     <section>
         <div class="mb-3 flex items-baseline justify-between">
-            <h2 class="text-lg font-semibold tracking-tight text-slate-900">Hayvanlar</h2>
-            <p class="text-xs text-slate-400">Detayları görmek için kimlik etiketine tıklayın</p>
+            <h2 class="text-lg font-semibold tracking-tight text-slate-900">{% trans "Animals" %}</h2>
+            <p class="text-xs text-slate-400">{% trans "Click the identification tag to view details" %}</p>
         </div>
         <div class="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="bg-slate-50/70 border-b border-slate-200">
-                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hayvan</th>
-                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Canlı</th>
-                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Karkas</th>
-                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Randıman</th>
-                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Durum</th>
+                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{% trans "Animal" %}</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">{% trans "Live" %}</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">{% trans "Carcass" %}</th>
+                            <th class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">{% trans "Yield" %}</th>
+                            <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{% trans "Status" %}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -185,7 +189,7 @@
                                 {% if s.live_weight_missing %}
                                 <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 ring-1 ring-orange-200">
                                     <span class="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
-                                    eksik
+                                    {% trans "missing" %}
                                 </span>
                                 {% else %}
                                 <span class="text-slate-700">{{ s.live_weight }} <span class="text-xs text-slate-400">kg</span></span>
@@ -262,7 +266,7 @@
                 {# Kapatma butonu #}
                 <button type="button"
                         onclick="closeAnimalModal('modal-{{ animal.pk }}')"
-                        aria-label="Kapat"
+                        aria-label="{% trans 'Close' %}"
                         class="absolute right-4 top-4 rounded-full bg-white/80 p-2 text-slate-400 backdrop-blur transition-all hover:bg-white hover:text-slate-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/40">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
@@ -302,7 +306,7 @@
                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
-                    Canlı ağırlık girilmemiş
+                    {% trans "Live weight not entered" %}
                 </div>
                 {% endif %}
 
@@ -310,19 +314,19 @@
                 {% if s.live_weight or s.carcass_weight or s.performance %}
                 <div class="mt-5 grid grid-cols-3 gap-2.5 text-center">
                     <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
-                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Canlı</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Live" %}</p>
                         <p class="mt-1 text-lg font-bold tabular-nums text-slate-900">
                             {% if s.live_weight %}{{ s.live_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span>{% else %}<span class="text-slate-300">—</span>{% endif %}
                         </p>
                     </div>
                     <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
-                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Karkas</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Carcass" %}</p>
                         <p class="mt-1 text-lg font-bold tabular-nums text-slate-900">
                             {% if s.carcass_weight %}{{ s.carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span>{% else %}<span class="text-slate-300">—</span>{% endif %}
                         </p>
                     </div>
                     <div class="rounded-xl bg-white/80 px-3 py-3 backdrop-blur ring-1 ring-slate-200/70 shadow-sm">
-                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Randıman</p>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Yield" %}</p>
                         <p class="mt-1 text-lg font-bold tabular-nums
                             {% if s.performance >= 55 %}text-emerald-600
                             {% elif s.performance >= 45 %}text-amber-600
@@ -345,28 +349,28 @@
                         <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-500">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </span>
-                        <h4 class="text-sm font-semibold text-slate-900">Görseller</h4>
+                        <h4 class="text-sm font-semibold text-slate-900">{% trans "Images" %}</h4>
                     </div>
                     <div class="grid grid-cols-3 gap-2.5">
                         {% if animal.picture %}
                         <a href="{{ animal.picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
-                            <img src="{{ animal.picture.url }}" alt="Hayvan" loading="lazy"
+                            <img src="{{ animal.picture.url }}" alt="{% trans 'Animal' %}" loading="lazy"
                                  class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
-                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Hayvan</span>
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">{% trans "Animal" %}</span>
                         </a>
                         {% endif %}
                         {% if animal.passport_picture %}
                         <a href="{{ animal.passport_picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
-                            <img src="{{ animal.passport_picture.url }}" alt="Pasaport" loading="lazy"
+                            <img src="{{ animal.passport_picture.url }}" alt="{% trans 'Passport' %}" loading="lazy"
                                  class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
-                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Pasaport</span>
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">{% trans "Passport" %}</span>
                         </a>
                         {% endif %}
                         {% if animal.scale_receipt_picture %}
                         <a href="{{ animal.scale_receipt_picture.url }}" target="_blank" class="group relative block overflow-hidden rounded-xl ring-1 ring-slate-200 transition-all hover:ring-blue-400 hover:shadow-md">
-                            <img src="{{ animal.scale_receipt_picture.url }}" alt="Kantar fişi" loading="lazy"
+                            <img src="{{ animal.scale_receipt_picture.url }}" alt="{% trans 'Scale receipt' %}" loading="lazy"
                                  class="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-105">
-                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">Kantar fişi</span>
+                            <span class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-medium text-white">{% trans "Scale receipt" %}</span>
                         </a>
                         {% endif %}
                     </div>
@@ -379,16 +383,16 @@
                         <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </span>
-                        <h4 class="text-sm font-semibold text-slate-900">Tarihler</h4>
+                        <h4 class="text-sm font-semibold text-slate-900">{% trans "Dates" %}</h4>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Teslim alındı</p>
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Received" %}</p>
                             <p class="mt-1 text-sm font-semibold text-slate-900">{{ animal.received_date|date:"d M Y" }}</p>
                         </div>
                         {% if animal.slaughter_date %}
                         <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Kesim tarihi</p>
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Slaughter date" %}</p>
                             <p class="mt-1 text-sm font-semibold text-slate-900">{{ animal.slaughter_date|date:"d M Y" }}</p>
                         </div>
                         {% endif %}
@@ -404,24 +408,24 @@
                             <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-orange-50 text-orange-500">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4 M3 17l9 4 9-4"/></svg>
                             </span>
-                            <h4 class="text-sm font-semibold text-slate-900">Karkas</h4>
+                            <h4 class="text-sm font-semibold text-slate-900">{% trans "Carcass" %}</h4>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             {% if carcass.hot_carcass_weight %}
                             <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
-                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sıcak</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Hot" %}</p>
                                 <p class="mt-1 text-sm font-bold tabular-nums text-slate-900">{{ carcass.hot_carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span></p>
                             </div>
                             {% endif %}
                             {% if carcass.cold_carcass_weight %}
                             <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
-                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Soğuk</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Cold" %}</p>
                                 <p class="mt-1 text-sm font-bold tabular-nums text-slate-900">{{ carcass.cold_carcass_weight }}<span class="ml-0.5 text-xs font-normal text-slate-400">kg</span></p>
                             </div>
                             {% endif %}
                             {% if carcass.disposition %}
                             <div class="rounded-xl bg-slate-50/80 px-3.5 py-3 ring-1 ring-slate-100">
-                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Kullanım</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{% trans "Disposition" %}</p>
                                 <p class="mt-1 text-sm font-semibold text-slate-900">{{ carcass.get_disposition_display }}</p>
                             </div>
                             {% endif %}
@@ -434,16 +438,16 @@
                             <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-rose-50 text-rose-500">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121A3 3 0 1119.95 17.95l-2.829 2.828-4.243-4.242 1.243-2.415zM5 11l3 3-3 3-3-3 3-3z M11 5l3 3-3 3-3-3 3-3z"/></svg>
                             </span>
-                            <h4 class="text-sm font-semibold text-slate-900">Et Kesimleri</h4>
+                            <h4 class="text-sm font-semibold text-slate-900">{% trans "Meat Cuts" %}</h4>
                             <span class="ml-auto text-[11px] font-medium text-slate-400">{{ carcass.meat_cuts.all|length }}</span>
                         </div>
                         <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
                             <table class="min-w-full divide-y divide-slate-100 text-sm">
                                 <thead class="bg-slate-50/70">
                                     <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
-                                        <th class="px-3.5 py-2.5 text-left font-semibold">Kesim</th>
-                                        <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
-                                        <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                        <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Cut" %}</th>
+                                        <th class="px-3.5 py-2.5 text-right font-semibold">{% trans "Weight" %}</th>
+                                        <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Disposition" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -469,16 +473,16 @@
                         <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-purple-50 text-purple-500">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
                         </span>
-                        <h4 class="text-sm font-semibold text-slate-900">Sakatat</h4>
+                        <h4 class="text-sm font-semibold text-slate-900">{% trans "Offal" %}</h4>
                         <span class="ml-auto text-[11px] font-medium text-slate-400">{{ animal.offals.all|length }}</span>
                     </div>
                     <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
                         <table class="min-w-full divide-y divide-slate-100 text-sm">
                             <thead class="bg-slate-50/70">
                                 <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
-                                    <th class="px-3.5 py-2.5 text-left font-semibold">Tür</th>
-                                    <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
-                                    <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Type" %}</th>
+                                    <th class="px-3.5 py-2.5 text-right font-semibold">{% trans "Weight" %}</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Disposition" %}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
@@ -502,16 +506,16 @@
                         <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-teal-50 text-teal-500">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                         </span>
-                        <h4 class="text-sm font-semibold text-slate-900">Yan Ürünler</h4>
+                        <h4 class="text-sm font-semibold text-slate-900">{% trans "By-products" %}</h4>
                         <span class="ml-auto text-[11px] font-medium text-slate-400">{{ animal.by_products.all|length }}</span>
                     </div>
                     <div class="overflow-hidden rounded-xl ring-1 ring-slate-200/80">
                         <table class="min-w-full divide-y divide-slate-100 text-sm">
                             <thead class="bg-slate-50/70">
                                 <tr class="text-[10px] text-slate-500 uppercase tracking-wider">
-                                    <th class="px-3.5 py-2.5 text-left font-semibold">Tür</th>
-                                    <th class="px-3.5 py-2.5 text-right font-semibold">Ağırlık</th>
-                                    <th class="px-3.5 py-2.5 text-left font-semibold">Kullanım</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Type" %}</th>
+                                    <th class="px-3.5 py-2.5 text-right font-semibold">{% trans "Weight" %}</th>
+                                    <th class="px-3.5 py-2.5 text-left font-semibold">{% trans "Disposition" %}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
