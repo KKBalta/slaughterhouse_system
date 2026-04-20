@@ -56,7 +56,7 @@
                         <span class="text-sm text-gray-600">{{ order.order_datetime|date:"d M Y" }}</span>
                     </td>
                     <td class="px-4 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-600">{{ order.animals.count }}</span>
+                        <span class="text-sm text-gray-600">{{ order.animals.all|length }}</span>
                     </td>
                     <td class="px-4 py-4 whitespace-nowrap">
                         <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold

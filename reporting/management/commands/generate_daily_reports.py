@@ -107,7 +107,9 @@ class Command(BaseCommand):
             system_user = User.objects.get(username=options["system_user"])
         except User.DoesNotExist:
             self.stdout.write(
-                self.style.ERROR(f'{self._schema_label(current_schema)} System user "{options["system_user"]}" not found')
+                self.style.ERROR(
+                    f'{self._schema_label(current_schema)} System user "{options["system_user"]}" not found'
+                )
             )
             return
 
@@ -174,7 +176,9 @@ class Command(BaseCommand):
 
         except Report.DoesNotExist:
             self.stdout.write(
-                self.style.ERROR(f"{self._schema_label(current_schema)} Report definition not found for type: {report_type}")
+                self.style.ERROR(
+                    f"{self._schema_label(current_schema)} Report definition not found for type: {report_type}"
+                )
             )
         except Exception as e:
             self.stdout.write(

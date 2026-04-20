@@ -162,7 +162,6 @@ from .policies import (
     can_create_role,
     can_edit_user,
     can_manage_client_accounts,
-    can_manage_company_settings,
     can_manage_tenant_users,
     creatable_roles_for,
     visible_user_management_roles_for,
@@ -1387,7 +1386,8 @@ def tenant_user_list_view(request):
     count_all = qs.exclude(role=User.Role.WALKIN).count() + len(client_rows)
     status_counts = {
         "all": status_count_user_qs.count() + client_status_count_qs.count(),
-        "active": status_count_user_qs.filter(is_active=True).count() + client_status_count_qs.filter(is_active=True).count(),
+        "active": status_count_user_qs.filter(is_active=True).count()
+        + client_status_count_qs.filter(is_active=True).count(),
         "inactive": status_count_user_qs.filter(is_active=False).count()
         + client_status_count_qs.filter(is_active=False).count(),
     }

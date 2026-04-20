@@ -9,10 +9,10 @@ import uuid
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from processing.models import DisassemblyCut
 
 from labeling.models import AnimalLabel, LabelTemplate, PrintJob
 from labeling.services import archive_destination_sensitive_order_labels
+from processing.models import DisassemblyCut
 
 User = get_user_model()
 

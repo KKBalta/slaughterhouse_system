@@ -87,7 +87,9 @@ class Client(TenantMixin):
         choices=PROVINCE_CHOICES,
         default="17",
         verbose_name=_("Company registration province"),
-        help_text=_("Turkish province (plaka) where the company is registered; drives the VD prefix on printed labels."),
+        help_text=_(
+            "Turkish province (plaka) where the company is registered; drives the VD prefix on printed labels."
+        ),
     )
     logo = models.ImageField(
         upload_to=tenant_logo_upload_to,

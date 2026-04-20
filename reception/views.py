@@ -11,10 +11,10 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import UpdateView
-from tenants.email_index import normalize_phone
 
 from labeling.services import archive_destination_sensitive_order_labels
 from processing.models import Animal
+from tenants.email_index import normalize_phone
 from users.models import CLIENT_MANAGEMENT_ROLES, ClientProfile
 
 from .forms import AnimalForm, BatchAnimalForm, SlaughterOrderForm, SlaughterOrderUpdateForm
@@ -27,8 +27,8 @@ from .services import (
     create_batch_animals,
     create_slaughter_order,
     remove_animal_from_order,
-    update_order_destination,
     update_order_datetime,
+    update_order_destination,
     update_order_service_package,
 )
 
@@ -290,7 +290,9 @@ class SlaughterOrderUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-            order = SlaughterOrder.objects.select_related("service_package", "destination_client").get(pk=self.object.pk)
+            order = SlaughterOrder.objects.select_related("service_package", "destination_client").get(
+                pk=self.object.pk
+            )
             destination_changed = form.can_edit_destination and _destination_changed(
                 order,
                 destination=form.cleaned_data.get("destination"),

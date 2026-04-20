@@ -1199,9 +1199,7 @@ class TestTenantUserManagement:
         assert walkin_profile.tax_id == "1234567890"
 
     def test_editing_walkin_without_classification_keeps_role(self, client, auth_state):
-        walkin_user, walkin_profile = self._create_walkin_prospect(
-            username="walkin-stay", phone="+905550006633"
-        )
+        walkin_user, walkin_profile = self._create_walkin_prospect(username="walkin-stay", phone="+905550006633")
 
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
 
@@ -1232,9 +1230,7 @@ class TestTenantUserManagement:
     def test_walkin_promoted_via_tenant_user_edit_url(self, client, auth_state):
         # /tr/users/ points staff to tenant_user_edit for walk-in rows, so the
         # promotion must work through that URL too, not only client_profile_edit.
-        walkin_user, walkin_profile = self._create_walkin_prospect(
-            username="walkin-tenant-edit", phone="+905550006655"
-        )
+        walkin_user, walkin_profile = self._create_walkin_prospect(username="walkin-tenant-edit", phone="+905550006655")
 
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
 
@@ -1267,9 +1263,7 @@ class TestTenantUserManagement:
         assert any("Individual" in m and "promoted" in m.lower() for m in flashes), flashes
 
     def test_walkin_promotion_with_missing_required_fields_shows_error_feedback(self, client, auth_state):
-        walkin_user, walkin_profile = self._create_walkin_prospect(
-            username="walkin-validation", phone="+905550006688"
-        )
+        walkin_user, walkin_profile = self._create_walkin_prospect(username="walkin-validation", phone="+905550006688")
 
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
 
@@ -1303,9 +1297,7 @@ class TestTenantUserManagement:
         assert any(tag == "error" for tag, _ in flashes), flashes
 
     def test_walkin_edit_form_shows_credentials_section(self, client, auth_state):
-        walkin_user, walkin_profile = self._create_walkin_prospect(
-            username="walkin-form-render", phone="+905550006677"
-        )
+        walkin_user, walkin_profile = self._create_walkin_prospect(username="walkin-form-render", phone="+905550006677")
 
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
         response = client.get(reverse("tenant_user_edit", kwargs={"pk": walkin_user.pk}))
@@ -1317,9 +1309,7 @@ class TestTenantUserManagement:
         assert response.context["cred_form"]["username"].value() == walkin_user.username
 
     def test_promoted_walkin_appears_in_user_rows_not_client_rows(self, client, auth_state):
-        walkin_user, walkin_profile = self._create_walkin_prospect(
-            username="walkin-listing", phone="+905550006644"
-        )
+        walkin_user, walkin_profile = self._create_walkin_prospect(username="walkin-listing", phone="+905550006644")
 
         client.login(username=auth_state.manager_user.username, password="SecurePass123!")
 
@@ -1348,6 +1338,6 @@ class TestTenantUserManagement:
         assert any(row["user"].pk == walkin_user.pk for row in user_rows), (
             "Promoted walk-in should appear in the main users table"
         )
-        assert not any(
-            cr["profile"].pk == walkin_profile.pk for cr in client_rows
-        ), "Promoted walk-in should no longer appear under Client accounts"
+        assert not any(cr["profile"].pk == walkin_profile.pk for cr in client_rows), (
+            "Promoted walk-in should no longer appear under Client accounts"
+        )

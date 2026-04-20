@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.views.generic import DetailView, ListView
@@ -32,6 +34,10 @@ def _resolve_client_filter(request):
     if _is_staff(request.user):
         client_pk = request.GET.get("client")
         if client_pk:
+            try:
+                uuid.UUID(client_pk)
+            except (ValueError, AttributeError):
+                return {}
             return {"client__pk": client_pk}
         return {}  # staff with no filter sees all orders
     # CLIENT / WALKIN: always own orders only
@@ -45,10 +51,9 @@ class ClientOrderListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
         if request.user.is_authenticated:
             _check_portal_access(request.user)
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         filters = _resolve_client_filter(self.request)
@@ -79,10 +84,9 @@ class ClientOrderDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "order"
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
         if request.user.is_authenticated:
             _check_portal_access(request.user)
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         filters = _resolve_client_filter(self.request)
@@ -120,8 +124,8 @@ class ClientOrderDetailView(LoginRequiredMixin, DetailView):
         for animal in animals:
             logs = animal.individual_weight_logs.all()
             sorted_logs = sorted(logs, key=lambda x: x.log_date, reverse=True)
-            live_log = next((l for l in sorted_logs if l.weight_type == "live_weight"), None)
-            carcass_log = next((l for l in sorted_logs if l.weight_type == "hot_carcass_weight"), None)
+            live_log = next((log for log in sorted_logs if log.weight_type == "live_weight"), None)
+            carcass_log = next((log for log in sorted_logs if log.weight_type == "hot_carcass_weight"), None)
             live_w = float(live_log.weight) if live_log else None
             carcass_w = float(carcass_log.weight) if carcass_log else None
             live_weight_missing = live_w is None
@@ -129,13 +133,15 @@ class ClientOrderDetailView(LoginRequiredMixin, DetailView):
             if live_w and carcass_w and live_w > 0:
                 performance = round((carcass_w / live_w) * 100, 1)
 
-            animal_summaries.append({
-                "animal": animal,
-                "live_weight": live_w,
-                "carcass_weight": carcass_w,
-                "performance": performance,
-                "live_weight_missing": live_weight_missing,
-            })
+            animal_summaries.append(
+                {
+                    "animal": animal,
+                    "live_weight": live_w,
+                    "carcass_weight": carcass_w,
+                    "performance": performance,
+                    "live_weight_missing": live_weight_missing,
+                }
+            )
 
             # Only include in order totals when live weight is present
             if not live_weight_missing:
