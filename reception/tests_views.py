@@ -577,7 +577,7 @@ class TestClientSelection:
                 assert order.client_name == "Walk-in John"
                 assert order.client_phone == "+905551234567"
 
-    def test_walk_in_phone_required(self, authenticated_client, service_package_factory):
+    def test_walk_in_without_phone_creates_order(self, authenticated_client, service_package_factory):
         service = service_package_factory()
 
         response = authenticated_client.post(
@@ -590,14 +590,46 @@ class TestClientSelection:
             },
         )
 
-        assert response.status_code == 200
-        assert SlaughterOrder.objects.count() == 0
-        assert "client_phone" in response.context["form"].errors
+        assert response.status_code == 302
+        order = SlaughterOrder.objects.get()
+        assert order.client is None
+        assert order.client_name == "Walk-in John"
+        assert order.client_phone == ""
+        # No phone means no dedupe key; we must not create an orphan walk-in profile.
+        assert not ClientProfile.objects.filter(contact_person="Walk-in John").exists()
+        assert not User.objects.filter(role=User.Role.WALKIN).exists()
+
+    def test_walk_in_with_phone_normalizes_and_creates_prospect(
+        self, authenticated_client, service_package_factory
+    ):
+        service = service_package_factory()
+
+        response = authenticated_client.post(
+            reverse("reception:create_slaughter_order"),
+            {
+                "client_name": "Walk-in Jane",
+                "client_phone_area_code": "+90",
+                "client_phone": "5551234567",
+                "service_package": str(service.id),
+                "order_datetime": timezone.now().strftime("%Y-%m-%d %H:%M"),
+            },
+        )
+
+        assert response.status_code == 302
+        order = SlaughterOrder.objects.get()
+        assert order.client_name == "Walk-in Jane"
+        assert order.client_phone == "+905551234567"
+        assert order.client is not None
+        assert order.client.phone_number == "+905551234567"
+        assert order.client.account_type == ClientProfile.AccountType.UNCLASSIFIED
+        assert order.client.user is not None
+        assert order.client.user.role == User.Role.WALKIN
+        assert order.client.user.phone_number == "+905551234567"
 
 
 @pytest.mark.skipif(SKIP_VIEW_TESTS, reason=SKIP_REASON)
 class TestSlaughterOrderUpdateView:
-    def test_update_walk_in_phone_required(self, reception_admin_client, reception_service_package):
+    def test_update_walk_in_without_phone_allowed(self, reception_admin_client, reception_service_package):
         order = SlaughterOrder.objects.create(
             client_name="Walk-in John",
             client_phone="",
@@ -617,10 +649,10 @@ class TestSlaughterOrderUpdateView:
             },
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 302
         order.refresh_from_db()
+        assert order.client_name == "Walk-in John"
         assert order.client_phone == ""
-        assert "client_phone" in response.context["form"].errors
 
     def test_update_locks_client_but_allows_guarded_service_and_destination_changes_once_animals_exist(
         self,

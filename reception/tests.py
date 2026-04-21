@@ -121,7 +121,7 @@ class TestSlaughterOrderFormValidation:
         assert "service_package" in form.errors
         assert "service package" in str(form.errors["service_package"]).lower()
 
-    def test_walk_in_phone_required_for_create_form(self, reception_state):
+    def test_walk_in_phone_optional_for_create_form(self, reception_state):
         form = SlaughterOrderForm(
             data={
                 "client_name": "Walk-in Customer",
@@ -134,11 +134,10 @@ class TestSlaughterOrderFormValidation:
             }
         )
 
-        assert not form.is_valid()
-        assert "client_phone" in form.errors
-        assert "required" in str(form.errors["client_phone"]).lower()
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["client_phone"] == ""
 
-    def test_walk_in_phone_required_for_update_form(self, reception_state):
+    def test_walk_in_phone_optional_for_update_form(self, reception_state):
         order = SlaughterOrder.objects.create(
             client_name="Walk-in Customer",
             client_phone="",
@@ -158,9 +157,24 @@ class TestSlaughterOrderFormValidation:
             },
         )
 
-        assert not form.is_valid()
-        assert "client_phone" in form.errors
-        assert "required" in str(form.errors["client_phone"]).lower()
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["client_phone"] == ""
+
+    def test_walk_in_phone_normalized_when_provided(self, reception_state):
+        form = SlaughterOrderForm(
+            data={
+                "client_name": "Walk-in Customer",
+                "client_phone_area_code": "+90",
+                "client_phone": "555 123 45 67",
+                "destination_search": "",
+                "destination": "",
+                "service_package": str(reception_state["service_package"].id),
+                "order_datetime": "2026-04-01T12:00",
+            }
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["client_phone"] == "+905551234567"
 
     def test_walk_in_phone_rejects_too_short_turkish_number(self, reception_state):
         form = SlaughterOrderForm(

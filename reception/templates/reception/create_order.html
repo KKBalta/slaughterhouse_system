@@ -382,12 +382,6 @@
                 return [client.contact_info, client.phone].filter(Boolean).join(' • ');
             }
 
-            function syncWalkInPhoneRequirement() {
-                const requiresWalkInPhone = !clientId.value.trim() && clientNameField.value.trim().length > 0;
-                clientPhoneField.required = requiresWalkInPhone;
-                clientPhoneField.setAttribute('aria-required', requiresWalkInPhone ? 'true' : 'false');
-            }
-
             function renderSearchResults(resultsEl, clients, onSelect) {
                 resultsEl.innerHTML = '';
 
@@ -569,7 +563,6 @@
                         clientPhoneField.value = rawPhone.replace(/^\+/, '');
                     }
                     searchResults.classList.add('hidden');
-                    syncWalkInPhoneRequirement();
                     return;
                 }
 
@@ -591,7 +584,6 @@
                 // Clear walk-in client fields
                 clientNameField.value = '';
                 clientPhoneField.value = '';
-                syncWalkInPhoneRequirement();
                 maybeAutofillDestinationClient(client);
             }
 
@@ -601,7 +593,6 @@
                 selectedClient.classList.add('hidden');
                 searchResults.classList.add('hidden');
                 setSelectedDestination('');
-                syncWalkInPhoneRequirement();
             });
 
             if (destinationSearch) {
@@ -667,7 +658,6 @@
                     selectedClient.classList.add('hidden');
                     setSelectedDestination('');
                 }
-                syncWalkInPhoneRequirement();
             });
 
             clientPhoneField.addEventListener('input', function() {
@@ -677,7 +667,6 @@
                     selectedClient.classList.add('hidden');
                     setSelectedDestination('');
                 }
-                syncWalkInPhoneRequirement();
             });
 
             // Default order datetime to now (local) when empty — most orders are for today.
@@ -690,8 +679,6 @@
                     d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
                     'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
             }
-
-            syncWalkInPhoneRequirement();
         });
     </script>
 {% endblock %}

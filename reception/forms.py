@@ -78,7 +78,9 @@ class SlaughterOrderForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
-        help_text=_("Required for walk-in clients so this customer can be saved as a reusable prospect."),
+        help_text=_(
+            "Optional — leave blank if you're in a rush. Without a phone we cannot save this walk-in as a reusable client for future orders or follow-up."
+        ),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
@@ -161,13 +163,10 @@ class SlaughterOrderForm(forms.ModelForm):
         if client_id and client_name:
             raise forms.ValidationError(_("Please provide either a client from search or walk-in fields, not both."))
 
-        # Combine area code with phone number
-        area_code = cleaned_data.get("client_phone_area_code") or "+90"
+        # Phone is optional for walk-ins; validate format only when one is provided.
         phone = (cleaned_data.get("client_phone") or "").strip()
-        if client_name and not phone:
-            self.add_error("client_phone", _("Walk-in client phone is required."))
-            cleaned_data["client_phone"] = ""
-        elif phone:
+        if phone:
+            area_code = cleaned_data.get("client_phone_area_code") or "+90"
             try:
                 cleaned_data["client_phone"] = _normalize_walk_in_client_phone(area_code, phone)
             except forms.ValidationError as exc:
@@ -235,7 +234,9 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
         max_length=15,
         required=False,
         label=_("Walk-in Client Phone"),
-        help_text=_("Required for walk-in clients so this customer can be saved as a reusable prospect."),
+        help_text=_(
+            "Optional — leave blank if you're in a rush. Without a phone we cannot save this walk-in as a reusable client for future orders or follow-up."
+        ),
         widget=forms.TextInput(
             attrs={
                 "class": "flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white",
@@ -401,13 +402,10 @@ class SlaughterOrderUpdateForm(forms.ModelForm):
                     _("Please provide either a client from search or walk-in fields, not both.")
                 )
 
-            # Combine area code with phone number
-            area_code = cleaned_data.get("client_phone_area_code") or "+90"
+            # Phone is optional for walk-ins; validate format only when one is provided.
             phone = (cleaned_data.get("client_phone") or "").strip()
-            if client_name and not phone:
-                self.add_error("client_phone", _("Walk-in client phone is required."))
-                cleaned_data["client_phone"] = ""
-            elif phone:
+            if phone:
+                area_code = cleaned_data.get("client_phone_area_code") or "+90"
                 try:
                     cleaned_data["client_phone"] = _normalize_walk_in_client_phone(area_code, phone)
                 except forms.ValidationError as exc:
