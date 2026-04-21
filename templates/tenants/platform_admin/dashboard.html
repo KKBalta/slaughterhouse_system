@@ -330,6 +330,23 @@
                                                     <button type="submit" class="btn-secondary">{% trans "As admin" %}</button>
                                                 </form>
                                             {% endif %}
+                                            {% if row.staff_targets %}
+                                                <form class="inline" method="post" action="{% url 'tenant_impersonate_user' tenant.schema_name %}">
+                                                    {% csrf_token %}
+                                                    <select name="user_id" required>
+                                                        <option value="">{% trans "Pick staff user…" %}</option>
+                                                        {% for target in row.staff_targets %}
+                                                            <option value="{{ target.user_id }}">{{ target.username }} — {{ target.role|default:"—" }}{% if target.email %} · {{ target.email }}{% endif %}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <button type="submit" class="btn-secondary">{% trans "Impersonate staff" %}</button>
+                                                </form>
+                                            {% endif %}
+                                            <form class="inline" method="post" action="{% url 'tenant_impersonate_identifier' tenant.schema_name %}">
+                                                {% csrf_token %}
+                                                <input type="text" name="identifier" placeholder="{% trans 'Client email / phone / username' %}" autocomplete="off" required>
+                                                <button type="submit" class="btn-secondary">{% trans "Impersonate client" %}</button>
+                                            </form>
                                             <a class="btn-secondary" href="{% url 'tenant_create_superuser' tenant.schema_name %}">{% trans "Create admin user" %}</a>
                                         </div>
                                         <div class="delete-row">

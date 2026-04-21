@@ -22,6 +22,7 @@ from tenants.email_index import (
     build_tenant_api_base_url,
     build_tenant_web_app_base_url,
     get_tenant_public_host,
+    normalize_phone,
 )
 from tenants.models import Client, PlatformImpersonationEvent
 
@@ -102,6 +103,7 @@ class TenantDashboardRow:
     owner_target: TenantImpersonationTarget | None
     admin_target: TenantImpersonationTarget | None
     god_mode_target: TenantImpersonationTarget | None
+    staff_targets: tuple[TenantImpersonationTarget, ...] = ()
     attention_flags: tuple[str, ...] = ()
     query_error: str = ""
 
@@ -201,38 +203,76 @@ def _impersonation_priority(user) -> tuple[int, int, str, int]:
     return bucket, timestamp, getattr(user, "username", ""), getattr(user, "pk", 0)
 
 
-def _build_impersonation_targets(users: list) -> tuple[TenantImpersonationTarget | None, ...]:
+ROLE_TO_MODE = {
+    "OWNER": PlatformImpersonationEvent.Mode.OWNER.value,
+    "ADMIN": PlatformImpersonationEvent.Mode.ADMIN.value,
+    "MANAGER": PlatformImpersonationEvent.Mode.MANAGER.value,
+    "OPERATOR": PlatformImpersonationEvent.Mode.OPERATOR.value,
+    "CLIENT": PlatformImpersonationEvent.Mode.CLIENT.value,
+    "WALKIN": PlatformImpersonationEvent.Mode.WALKIN.value,
+}
+
+# Pinned to users.User.Role: the staff bucket (excludes CLIENT/WALKIN).
+# Update in lockstep if a new staff-level role lands on the User enum.
+STAFF_ROLES = frozenset({"OWNER", "ADMIN", "MANAGER", "OPERATOR"})
+
+VALID_IMPERSONATION_MODES = frozenset(PlatformImpersonationEvent.Mode.values)
+
+
+def _mode_for_role(role: str, *, is_superuser: bool = False) -> str:
+    mode = ROLE_TO_MODE.get((role or "").upper())
+    if mode:
+        return mode
+    return PlatformImpersonationEvent.Mode.ADMIN.value if is_superuser else PlatformImpersonationEvent.Mode.GOD_MODE.value
+
+
+def _as_target(user, *, mode: str | None = None, label: str | None = None) -> TenantImpersonationTarget | None:
+    if user is None:
+        return None
+    role = getattr(user, "role", "") or ""
+    is_superuser = bool(getattr(user, "is_superuser", False))
+    resolved_mode = mode or _mode_for_role(role, is_superuser=is_superuser)
+    return TenantImpersonationTarget(
+        mode=resolved_mode,
+        label=label or "",
+        user_id=user.pk,
+        username=user.username,
+        email=getattr(user, "email", "") or "",
+        role=role,
+        is_superuser=is_superuser,
+    )
+
+
+def _build_impersonation_targets(users: list) -> tuple[
+    tuple[TenantImpersonationTarget | None, TenantImpersonationTarget | None, TenantImpersonationTarget | None],
+    tuple[TenantImpersonationTarget, ...],
+]:
     active_users = [user for user in users if getattr(user, "is_active", False)]
     if not active_users:
-        return None, None, None
-
-    def as_target(mode: str, label: str, user) -> TenantImpersonationTarget | None:
-        if user is None:
-            return None
-        return TenantImpersonationTarget(
-            mode=mode,
-            label=label,
-            user_id=user.pk,
-            username=user.username,
-            email=getattr(user, "email", "") or "",
-            role=getattr(user, "role", "") or "",
-            is_superuser=bool(getattr(user, "is_superuser", False)),
-        )
+        return (None, None, None), ()
 
     ordered = sorted(active_users, key=_impersonation_priority)
     owner = next((user for user in ordered if user.role == "OWNER"), None)
     admin = next((user for user in ordered if getattr(user, "is_superuser", False) or user.role == "ADMIN"), None)
     god_mode = ordered[0]
-    return (
-        as_target("owner", _("Owner"), owner),
-        as_target("admin", _("Admin"), admin),
-        as_target("god_mode", _("God mode"), god_mode),
+    presets = (
+        _as_target(owner, mode="owner", label=_("Owner")),
+        _as_target(admin, mode="admin", label=_("Admin")),
+        _as_target(god_mode, mode="god_mode", label=_("God mode")),
     )
+    staff = tuple(
+        t for t in (_as_target(u) for u in ordered if (u.role or "").upper() in STAFF_ROLES) if t is not None
+    )
+    return presets, staff
 
 
 def _collect_tenant_snapshot(
     tenant: Client,
-) -> tuple[TenantOperationalSnapshot, tuple[TenantImpersonationTarget | None, ...]]:
+) -> tuple[
+    TenantOperationalSnapshot,
+    tuple[TenantImpersonationTarget | None, ...],
+    tuple[TenantImpersonationTarget, ...],
+]:
     User = get_user_model()
     since = timezone.now() - timedelta(days=7)
 
@@ -302,7 +342,8 @@ def _collect_tenant_snapshot(
         ),
         service_package_count=service_package_count,
     )
-    return snapshot, _build_impersonation_targets(users)
+    presets, staff = _build_impersonation_targets(users)
+    return snapshot, presets, staff
 
 
 def _build_health(
@@ -352,11 +393,12 @@ def build_tenant_dashboard_row(tenant: Client) -> TenantDashboardRow:
     admin_url = f"{app_url.rstrip('/')}/admin/"
 
     try:
-        stats, targets = _collect_tenant_snapshot(tenant)
+        stats, targets, staff_targets = _collect_tenant_snapshot(tenant)
         query_error = ""
     except DatabaseError as exc:
         stats = TenantOperationalSnapshot()
         targets = (None, None, None)
+        staff_targets = ()
         query_error = str(exc)
 
     health, flags = _build_health(tenant, primary_domain, stats, query_error=query_error)
@@ -374,6 +416,7 @@ def build_tenant_dashboard_row(tenant: Client) -> TenantDashboardRow:
         owner_target=owner_target,
         admin_target=admin_target,
         god_mode_target=god_mode_target,
+        staff_targets=staff_targets,
         attention_flags=flags[:3],
         query_error=query_error,
     )
@@ -404,22 +447,84 @@ def build_platform_dashboard_summary(
 
 def get_impersonation_target_for_mode(tenant: Client, mode: str) -> TenantImpersonationTarget:
     row = build_tenant_dashboard_row(tenant)
-    target_map = {
+    preset_map = {
         "owner": row.owner_target,
         "admin": row.admin_target,
         "god_mode": row.god_mode_target,
     }
-    target = target_map.get(mode)
+    if mode in preset_map:
+        target = preset_map[mode]
+        if target is None:
+            raise ValueError(f"No impersonation target available for mode={mode!r}")
+        return target
+    target = next((t for t in row.staff_targets if t.mode == mode), None)
     if target is None:
         raise ValueError(f"No impersonation target available for mode={mode!r}")
     return target
 
 
+def _fetch_active_tenant_user(tenant: Client, *, user_id: int | None = None, identifier: str | None = None):
+    User = get_user_model()
+    with tenant_context(tenant):
+        qs = User.objects.only("id", "username", "email", "role", "is_active", "is_superuser").filter(is_active=True)
+        if user_id is not None:
+            return qs.filter(pk=user_id).first()
+        needle = (identifier or "").strip()
+        if not needle:
+            return None
+        # Deterministic precedence: email → username → normalized phone.
+        user = qs.filter(email__iexact=needle).order_by("pk").first()
+        if user is not None:
+            return user
+        user = qs.filter(username__iexact=needle).order_by("pk").first()
+        if user is not None:
+            return user
+        normalized = normalize_phone(needle)
+        if normalized:
+            return qs.filter(phone_number=normalized).order_by("pk").first()
+        return None
+
+
 def start_platform_impersonation(request: HttpRequest, *, tenant: Client, platform_admin, mode: str):
-    if mode not in {"owner", "admin", "god_mode"}:
+    if mode not in VALID_IMPERSONATION_MODES:
         raise ValueError(f"Unsupported impersonation mode: {mode}")
 
     target = get_impersonation_target_for_mode(tenant, mode)
+    return _issue_impersonation_redirect(request, tenant=tenant, platform_admin=platform_admin, mode=mode, target=target)
+
+
+def start_platform_impersonation_for_user(
+    request: HttpRequest, *, tenant: Client, platform_admin, user_id: int
+):
+    user = _fetch_active_tenant_user(tenant, user_id=user_id)
+    target = _as_target(user)
+    if target is None:
+        raise ValueError("No active tenant user matched the selection.")
+    return _issue_impersonation_redirect(
+        request, tenant=tenant, platform_admin=platform_admin, mode=target.mode, target=target
+    )
+
+
+def start_platform_impersonation_for_identifier(
+    request: HttpRequest, *, tenant: Client, platform_admin, identifier: str
+):
+    user = _fetch_active_tenant_user(tenant, identifier=identifier)
+    target = _as_target(user)
+    if target is None:
+        raise ValueError("No active tenant user matched that email, phone, or username.")
+    return _issue_impersonation_redirect(
+        request, tenant=tenant, platform_admin=platform_admin, mode=target.mode, target=target
+    )
+
+
+def _issue_impersonation_redirect(
+    request: HttpRequest,
+    *,
+    tenant: Client,
+    platform_admin,
+    mode: str,
+    target: TenantImpersonationTarget,
+):
     with schema_context(get_public_schema_name()):
         event = PlatformImpersonationEvent.objects.create(
             platform_admin=platform_admin,

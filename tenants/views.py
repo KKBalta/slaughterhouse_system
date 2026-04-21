@@ -1,10 +1,12 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError
+from django.db import DatabaseError, IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -16,7 +18,11 @@ from tenants.dashboard_services import (
     build_platform_dashboard_summary,
     build_tenant_dashboard_row,
     start_platform_impersonation,
+    start_platform_impersonation_for_identifier,
+    start_platform_impersonation_for_user,
 )
+
+logger = logging.getLogger(__name__)
 from tenants.email_index import build_tenant_api_base_url
 from tenants.forms import (
     CreateTenantForm,
@@ -203,6 +209,76 @@ def tenant_impersonate(request, schema_name, mode):
         messages.error(request, " ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
         return redirect("platform_admin_dashboard")
     return redirect("platform_admin_dashboard")
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_impersonate_user(request, schema_name):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    tenant = get_object_or_404(Client, schema_name=schema_name)
+    raw_user_id = (request.POST.get("user_id") or "").strip()
+    try:
+        user_id = int(raw_user_id)
+    except (TypeError, ValueError):
+        messages.error(request, _("Select a user to impersonate."))
+        return redirect("platform_admin_dashboard")
+    try:
+        return start_platform_impersonation_for_user(
+            request,
+            tenant=tenant,
+            platform_admin=request.user,
+            user_id=user_id,
+        )
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+        return redirect("platform_admin_dashboard")
+    except ValueError:
+        logger.info("Impersonation by user_id not resolved: schema=%s user_id=%s", schema_name, user_id)
+        messages.error(request, _("Unable to impersonate the selected user."))
+        return redirect("platform_admin_dashboard")
+    except DatabaseError:
+        logger.exception("Impersonation by user_id failed (DB error): schema=%s user_id=%s", schema_name, user_id)
+        messages.error(request, _("Unable to reach the tenant right now. Try again."))
+        return redirect("platform_admin_dashboard")
+
+
+@require_POST
+@login_required(login_url="/platform-admin/login/")
+def tenant_impersonate_identifier(request, schema_name):
+    guard = _require_platform_admin(request)
+    if guard:
+        return guard
+    tenant = get_object_or_404(Client, schema_name=schema_name)
+    identifier = (request.POST.get("identifier") or "").strip()
+    if not identifier:
+        messages.error(request, _("Enter an email, phone, or username."))
+        return redirect("platform_admin_dashboard")
+    logger.info(
+        "Platform admin impersonation lookup: schema=%s admin=%s identifier=%s",
+        schema_name,
+        getattr(request.user, "email", ""),
+        identifier,
+    )
+    try:
+        return start_platform_impersonation_for_identifier(
+            request,
+            tenant=tenant,
+            platform_admin=request.user,
+            identifier=identifier,
+        )
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+        return redirect("platform_admin_dashboard")
+    except ValueError:
+        logger.info("Impersonation identifier unresolved: schema=%s", schema_name)
+        messages.error(request, _("No active user matched that email, phone, or username."))
+        return redirect("platform_admin_dashboard")
+    except DatabaseError:
+        logger.exception("Impersonation by identifier failed (DB error): schema=%s", schema_name)
+        messages.error(request, _("Unable to reach the tenant right now. Try again."))
+        return redirect("platform_admin_dashboard")
 
 
 def platform_admin_impersonation_consume(request):

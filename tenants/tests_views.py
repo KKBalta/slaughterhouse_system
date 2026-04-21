@@ -16,6 +16,8 @@ from tenants.views import (
     tenant_create_superuser,
     tenant_hard_delete,
     tenant_impersonate,
+    tenant_impersonate_identifier,
+    tenant_impersonate_user,
     tenant_registration_approve,
     tenant_registration_reject,
     toggle_tenant_active,
@@ -477,3 +479,171 @@ def test_tenant_company_settings_view_get_and_post(admin_user, mocker):
     assert tenant.registered_province_plaka == "06"
     assert tenant.contact_email == "info@example.com"
     assert tenant.contact_phone == "+905551112233"
+
+
+# --- Impersonation: view + service tests ---------------------------------
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_user_rejects_non_integer_user_id(platform_admin, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    mock_start = mocker.patch("tenants.views.start_platform_impersonation_for_user")
+    request = _request(
+        "post",
+        "/platform-admin/tenants/acme/impersonate-user/",
+        platform_admin,
+        {"user_id": "not-a-number"},
+    )
+
+    response = tenant_impersonate_user(request, tenant.schema_name)
+
+    assert response.status_code == 302
+    assert response.url == reverse("platform_admin_dashboard")
+    mock_start.assert_not_called()
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_user_handles_unresolved_user(platform_admin, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    mocker.patch(
+        "tenants.views.start_platform_impersonation_for_user",
+        side_effect=ValueError("No active tenant user matched the selection."),
+    )
+    request = _request(
+        "post",
+        "/platform-admin/tenants/acme/impersonate-user/",
+        platform_admin,
+        {"user_id": "999"},
+    )
+
+    response = tenant_impersonate_user(request, tenant.schema_name)
+
+    assert response.status_code == 302
+    assert response.url == reverse("platform_admin_dashboard")
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_user_requires_platform_admin(user_factory, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    mock_start = mocker.patch("tenants.views.start_platform_impersonation_for_user")
+    mocker.patch("tenants.views.logout")
+    non_admin = user_factory(role=User.Role.ADMIN)
+    request = _request(
+        "post",
+        "/platform-admin/tenants/acme/impersonate-user/",
+        non_admin,
+        {"user_id": "1"},
+    )
+
+    response = tenant_impersonate_user(request, tenant.schema_name)
+
+    assert response.status_code == 302
+    assert response.url == "/platform-admin/login/"
+    mock_start.assert_not_called()
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_identifier_rejects_empty_input(platform_admin, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    mock_start = mocker.patch("tenants.views.start_platform_impersonation_for_identifier")
+    request = _request(
+        "post",
+        "/platform-admin/tenants/acme/impersonate-lookup/",
+        platform_admin,
+        {"identifier": "   "},
+    )
+
+    response = tenant_impersonate_identifier(request, tenant.schema_name)
+
+    assert response.status_code == 302
+    assert response.url == reverse("platform_admin_dashboard")
+    mock_start.assert_not_called()
+
+
+@override_settings(ROOT_URLCONF="config.urls_public", USE_MULTITENANT=True, TENANT_BASE_DOMAIN="localhost")
+def test_tenant_impersonate_identifier_forwards_trimmed_value(platform_admin, mocker):
+    tenant = Client.objects.create(schema_name="acme", name="Acme")
+    redirect_response = HttpResponse(status=302)
+    redirect_response["Location"] = "http://acme.localhost:8000/api/v1/auth/session-bootstrap/?token=test"
+    mock_start = mocker.patch(
+        "tenants.views.start_platform_impersonation_for_identifier",
+        return_value=redirect_response,
+    )
+    request = _request(
+        "post",
+        "/platform-admin/tenants/acme/impersonate-lookup/",
+        platform_admin,
+        {"identifier": "  customer@example.com  "},
+    )
+
+    response = tenant_impersonate_identifier(request, tenant.schema_name)
+
+    assert response.status_code == 302
+    mock_start.assert_called_once_with(
+        request,
+        tenant=tenant,
+        platform_admin=platform_admin,
+        identifier="customer@example.com",
+    )
+
+
+def test_build_impersonation_targets_excludes_non_staff_from_staff_targets(user_factory):
+    from tenants.dashboard_services import _build_impersonation_targets
+
+    owner = user_factory(role=User.Role.OWNER, is_active=True)
+    manager = user_factory(role=User.Role.MANAGER, is_active=True)
+    client_user = user_factory(role=User.Role.CLIENT, is_active=True)
+    walkin = user_factory(role=User.Role.WALKIN, is_active=True)
+    inactive_admin = user_factory(role=User.Role.ADMIN, is_active=False)
+
+    _, staff_targets = _build_impersonation_targets([owner, manager, client_user, walkin, inactive_admin])
+
+    roles = {t.role for t in staff_targets}
+    assert "CLIENT" not in roles
+    assert "WALKIN" not in roles
+    assert roles <= {"OWNER", "ADMIN", "MANAGER", "OPERATOR"}
+    assert {t.user_id for t in staff_targets} == {owner.pk, manager.pk}
+
+
+def test_as_target_derives_client_mode_for_client_role(user_factory):
+    from tenants.dashboard_services import _as_target
+
+    client_user = user_factory(role=User.Role.CLIENT, is_active=True)
+
+    target = _as_target(client_user)
+
+    assert target is not None
+    assert target.mode == "client"
+    assert target.role == "CLIENT"
+    assert target.user_id == client_user.pk
+
+
+def test_fetch_active_tenant_user_normalizes_phone_needle(user_factory, mocker):
+    from tenants.dashboard_services import _fetch_active_tenant_user
+
+    tenant = Client.objects.create(schema_name="acme-phone", name="Acme Phone")
+    client_user = user_factory(
+        role=User.Role.WALKIN,
+        is_active=True,
+        phone_number="+905551234567",
+    )
+    mocker.patch("tenants.dashboard_services.tenant_context", return_value=nullcontext())
+
+    found = _fetch_active_tenant_user(tenant, identifier="05551234567")
+
+    assert found is not None
+    assert found.pk == client_user.pk
+
+
+def test_fetch_active_tenant_user_returns_none_for_inactive_user(user_factory, mocker):
+    from tenants.dashboard_services import _fetch_active_tenant_user
+
+    tenant = Client.objects.create(schema_name="acme-inactive", name="Acme Inactive")
+    inactive = user_factory(role=User.Role.CLIENT, is_active=False, email="gone@example.com")
+    mocker.patch("tenants.dashboard_services.tenant_context", return_value=nullcontext())
+
+    found = _fetch_active_tenant_user(tenant, user_id=inactive.pk)
+    assert found is None
+
+    found_by_email = _fetch_active_tenant_user(tenant, identifier="gone@example.com")
+    assert found_by_email is None

@@ -387,6 +387,10 @@ class PlatformImpersonationEvent(models.Model):
     class Mode(models.TextChoices):
         OWNER = "owner", "Owner"
         ADMIN = "admin", "Admin"
+        MANAGER = "manager", "Manager"
+        OPERATOR = "operator", "Operator"
+        CLIENT = "client", "Client"
+        WALKIN = "walkin", "Walk-in"
         GOD_MODE = "god_mode", "God mode"
 
     class EndReason(models.TextChoices):
