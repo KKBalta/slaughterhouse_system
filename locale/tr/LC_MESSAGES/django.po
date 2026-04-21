@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: POMET Slaughterhouse System\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-21 01:48+0300\n"
+"POT-Creation-Date: 2026-04-21 06:29+0300\n"
 "PO-Revision-Date: 2026-04-21 01:45+0300\n"
 "Last-Translator: POMET Team\n"
 "Language-Team: Turkish\n"
@@ -763,7 +763,7 @@ msgstr "Öğe"
 #: scales/templates/scales/edge_setup_code_create.html:125
 #: templates/tenants/platform_admin/tenant_superuser.html:78 users/forms.py:156
 #: users/templates/users/account_profile.html:41
-#: users/templates/users/client_profile_detail.html:42
+#: users/templates/users/client_profile_detail.html:43
 #: users/templates/users/user_management_list.html:213
 msgid "Role"
 msgstr "Rol"
@@ -3257,7 +3257,7 @@ msgstr "Etiket"
 #: scales/templates/scales/session_detail.html:174
 #: scales/templates/scales/session_detail.html:185
 #: scales/templates/scales/site_list.html:51
-#: users/templates/users/client_profile_detail.html:23
+#: users/templates/users/client_profile_detail.html:24
 #: users/templates/users/client_profile_list.html:108
 #: users/templates/users/client_profile_list.html:175
 #: users/templates/users/user_management_list.html:128
@@ -4468,7 +4468,7 @@ msgid "Generated Reports"
 msgstr "Oluşturulan Raporlar"
 
 #: reporting/templates/reporting/report_list.html:14
-#: users/templates/users/client_profile_detail.html:25
+#: users/templates/users/client_profile_detail.html:26
 #: users/templates/users/client_profile_list.html:113
 #: users/templates/users/client_profile_list.html:180
 #: users/templates/users/user_management_list.html:191
@@ -4637,7 +4637,7 @@ msgstr "Site adı"
 
 #: scales/forms.py:21 scales/templates/scales/edge_management.html:257
 #: scales/templates/scales/site_list.html:36 templates/public/setup.html:96
-#: tenants/forms.py:241 users/templates/users/client_profile_detail.html:65
+#: tenants/forms.py:241 users/templates/users/client_profile_detail.html:66
 msgid "Address"
 msgstr "Adres"
 
@@ -6180,7 +6180,7 @@ msgstr "Ticari unvan (kayıtlı)"
 
 #: templates/public/setup.html:104 tenants/forms.py:244
 #: users/templates/users/account_profile.html:49
-#: users/templates/users/client_profile_detail.html:47
+#: users/templates/users/client_profile_detail.html:48
 #: users/templates/users/client_profile_list.html:136
 #: users/templates/users/user_management_list.html:215
 #: users/templates/users/user_management_list.html:436
@@ -6481,7 +6481,7 @@ msgid "Pending Tenant Registrations"
 msgstr "Bekleyen tenant kayıtları"
 
 #: templates/tenants/platform_admin/dashboard.html:168
-#: users/templates/users/client_profile_detail.html:52
+#: users/templates/users/client_profile_detail.html:53
 msgid "Company"
 msgstr "Şirket"
 
@@ -6611,7 +6611,7 @@ msgid "Create admin user"
 msgstr "Yönetici kullanıcı oluştur"
 
 #: templates/tenants/platform_admin/dashboard.html:341
-#: users/templates/users/client_profile_detail.html:29
+#: users/templates/users/client_profile_detail.html:30
 #: users/templates/users/client_profile_list.html:120
 #: users/templates/users/client_profile_list.html:187
 #: users/templates/users/user_management_list.html:198
@@ -6724,7 +6724,7 @@ msgstr "Bu tenanttaki kullanıcılar"
 #: templates/tenants/platform_admin/tenant_superuser.html:76
 #: tenants/forms.py:187 users/forms.py:40
 #: users/templates/users/account_profile.html:37
-#: users/templates/users/client_profile_detail.html:76
+#: users/templates/users/client_profile_detail.html:77
 #: users/templates/users/client_profile_list.html:137
 #: users/templates/users/client_register_done.html:16
 msgid "Username"
@@ -6734,7 +6734,7 @@ msgstr "Kullanıcı Adı"
 #: tenants/forms.py:158 tenants/forms.py:190 tenants/forms.py:219
 #: users/forms.py:41 users/forms.py:175 users/forms.py:332
 #: users/templates/users/account_profile.html:45
-#: users/templates/users/client_profile_detail.html:80
+#: users/templates/users/client_profile_detail.html:81
 #: users/templates/users/user_management_list.html:214
 msgid "Email"
 msgstr "E-posta"
@@ -6745,15 +6745,15 @@ msgstr "Django yönetici"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:89
 #: templates/tenants/platform_admin/tenant_superuser.html:90
-#: users/templates/users/client_profile_detail.html:85
-#: users/templates/users/client_profile_detail.html:90
+#: users/templates/users/client_profile_detail.html:86
+#: users/templates/users/client_profile_detail.html:91
 msgid "Yes"
 msgstr "Evet"
 
 #: templates/tenants/platform_admin/tenant_superuser.html:89
 #: templates/tenants/platform_admin/tenant_superuser.html:90
-#: users/templates/users/client_profile_detail.html:85
-#: users/templates/users/client_profile_detail.html:90
+#: users/templates/users/client_profile_detail.html:86
+#: users/templates/users/client_profile_detail.html:91
 msgid "No"
 msgstr "Hayır"
 
@@ -7020,7 +7020,7 @@ msgstr ""
 "Tenant sitesinde bununla veya e-postanızla giriş yapın (/tr/login/ vb. dil "
 "önekli adreslerde)."
 
-#: tenants/forms.py:194 users/templates/users/client_profile_detail.html:37
+#: tenants/forms.py:194 users/templates/users/client_profile_detail.html:38
 msgid "Account type"
 msgstr "Hesap türü"
 
@@ -7454,27 +7454,31 @@ msgstr "Arşivlendi"
 msgid "List"
 msgstr "Liste"
 
-#: users/templates/users/client_profile_detail.html:56
+#: users/templates/users/client_profile_detail.html:23
+msgid "Order history"
+msgstr "Sipariş geçmişi"
+
+#: users/templates/users/client_profile_detail.html:57
 msgid "Tax ID"
 msgstr "Vergi numarası"
 
-#: users/templates/users/client_profile_detail.html:61
+#: users/templates/users/client_profile_detail.html:62
 msgid "Contact person"
 msgstr "İletişim kişisi"
 
-#: users/templates/users/client_profile_detail.html:69
+#: users/templates/users/client_profile_detail.html:70
 msgid "Default destination"
 msgstr "Varsayılan varış yeri"
 
-#: users/templates/users/client_profile_detail.html:84
+#: users/templates/users/client_profile_detail.html:85
 msgid "Login active"
 msgstr "Giriş etkin"
 
-#: users/templates/users/client_profile_detail.html:89
+#: users/templates/users/client_profile_detail.html:90
 msgid "Profile active"
 msgstr "Profil etkin"
 
-#: users/templates/users/client_profile_detail.html:93
+#: users/templates/users/client_profile_detail.html:94
 #: users/templates/users/client_profile_list.html:138
 msgid "Registered"
 msgstr "Kayıtlı"
@@ -8168,9 +8172,6 @@ msgstr "Müşteri arşivlendi ve giriş kapatıldı."
 
 #~ msgid "View past orders and invoices"
 #~ msgstr "Geçmiş siparişleri ve faturaları görüntüleyin"
-
-#~ msgid "Order History"
-#~ msgstr "Sipariş Geçmişi"
 
 #~ msgid "Documents"
 #~ msgstr "Belgeler"

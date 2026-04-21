@@ -1028,6 +1028,36 @@ def _render_client_account_form(request, *, user: User | None = None, profile: C
 
                     cd = cred_form.cleaned_data
                     password, password_generated = _password_for_create(cd)
+                    if profile is not None:
+                        created_user = User.objects.create_user(
+                            username=cd["username"],
+                            password=password,
+                            role=User.Role.CLIENT,
+                            email=cd.get("email") or "",
+                            phone_number=profile_phone,
+                        )
+                        profile_instance.user = created_user
+                        saved_profile = _save_client_profile(profile_instance, profile_form.cleaned_data)
+                        linked_orders = link_walk_in_orders_to_client_profile(
+                            profile=saved_profile, phone_number=profile_phone
+                        )
+                        if password_generated:
+                            messages.success(
+                                request,
+                                _(
+                                    "Client login added. Temporary password: %(pwd)s — copy it now; "
+                                    "the user can change it later."
+                                )
+                                % {"pwd": password},
+                            )
+                        else:
+                            messages.success(request, _("Client login added to existing profile."))
+                        if linked_orders:
+                            messages.success(request, _("Matching walk-in orders were linked by phone number."))
+                        if saved_profile.pk and not next_url:
+                            return redirect("client_profile_detail", pk=saved_profile.pk)
+                        return _redirect_next_or(request, "tenant_user_list")
+
                     created_user = create_user_with_profile(
                         cd["username"],
                         password,

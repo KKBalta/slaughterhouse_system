@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.utils import translation
 
 from labeling.models import AnimalLabel, CustomLabel, LabelTemplate, PrintJob
 from labeling.services import (
@@ -87,7 +88,8 @@ def test_cancel_pending_edge_print_job():
         prn_content="p",
         target_role="carcass",
     )
-    assert cancel_pending_edge_print_job(job) is True
+    with translation.override("en"):
+        assert cancel_pending_edge_print_job(job) is True
     job.refresh_from_db()
     assert job.status == "cancelled"
     assert "queue" in job.error_text.lower()

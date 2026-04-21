@@ -20,6 +20,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{% url 'client_profile_list' %}" class="text-sm font-medium text-gray-600 hover:text-gray-900">{% trans "List" %}</a>
+            <a href="{% url 'portal:order_list' %}?client={{ profile.pk }}" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-gray-700 hover:bg-gray-800">{% trans "Order history" %}</a>
             <a href="{% url 'client_profile_edit' profile.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{% trans "Edit" %}</a>
             {% if profile.is_active %}
             <a href="{% url 'client_profile_delete' profile.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">{% trans "Archive" %}</a>
