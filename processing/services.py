@@ -491,7 +491,7 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
         "total_weight": float(total_weight),
         "total_animals": total_animals,
         "average_weight": float(overall_average_weight),
-        "individual_logs_created": animals.count(),
+        "individual_logs_created": len(needs_log),
         "animals_transitioned_to_carcass_ready": animals_transitioned,
     }
 
