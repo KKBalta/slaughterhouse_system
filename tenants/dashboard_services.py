@@ -223,7 +223,9 @@ def _mode_for_role(role: str, *, is_superuser: bool = False) -> str:
     mode = ROLE_TO_MODE.get((role or "").upper())
     if mode:
         return mode
-    return PlatformImpersonationEvent.Mode.ADMIN.value if is_superuser else PlatformImpersonationEvent.Mode.GOD_MODE.value
+    return (
+        PlatformImpersonationEvent.Mode.ADMIN.value if is_superuser else PlatformImpersonationEvent.Mode.GOD_MODE.value
+    )
 
 
 def _as_target(user, *, mode: str | None = None, label: str | None = None) -> TenantImpersonationTarget | None:
@@ -243,7 +245,9 @@ def _as_target(user, *, mode: str | None = None, label: str | None = None) -> Te
     )
 
 
-def _build_impersonation_targets(users: list) -> tuple[
+def _build_impersonation_targets(
+    users: list,
+) -> tuple[
     tuple[TenantImpersonationTarget | None, TenantImpersonationTarget | None, TenantImpersonationTarget | None],
     tuple[TenantImpersonationTarget, ...],
 ]:
@@ -260,9 +264,7 @@ def _build_impersonation_targets(users: list) -> tuple[
         _as_target(admin, mode="admin", label=_("Admin")),
         _as_target(god_mode, mode="god_mode", label=_("God mode")),
     )
-    staff = tuple(
-        t for t in (_as_target(u) for u in ordered if (u.role or "").upper() in STAFF_ROLES) if t is not None
-    )
+    staff = tuple(t for t in (_as_target(u) for u in ordered if (u.role or "").upper() in STAFF_ROLES) if t is not None)
     return presets, staff
 
 
@@ -499,12 +501,12 @@ def start_platform_impersonation(request: HttpRequest, *, tenant: Client, platfo
         raise ValueError(f"Unsupported impersonation mode: {mode}")
 
     target = get_impersonation_target_for_mode(tenant, mode)
-    return _issue_impersonation_redirect(request, tenant=tenant, platform_admin=platform_admin, mode=mode, target=target)
+    return _issue_impersonation_redirect(
+        request, tenant=tenant, platform_admin=platform_admin, mode=mode, target=target
+    )
 
 
-def start_platform_impersonation_for_user(
-    request: HttpRequest, *, tenant: Client, platform_admin, user_id: int
-):
+def start_platform_impersonation_for_user(request: HttpRequest, *, tenant: Client, platform_admin, user_id: int):
     user = _fetch_active_tenant_user(tenant, user_id=user_id)
     target = _as_target(user)
     if target is None:

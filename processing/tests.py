@@ -463,9 +463,7 @@ class TestBaseAnimalDetails:
             (BeefDetails, "beef"),
         ],
     )
-    def test_concrete_details_inherit_common_fields(
-        self, processing_test_context, model, animal_type
-    ):
+    def test_concrete_details_inherit_common_fields(self, processing_test_context, model, animal_type):
         assert issubclass(model, BaseAnimalDetails)
 
         animal = Animal.objects.create(

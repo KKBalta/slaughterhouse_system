@@ -19,6 +19,7 @@ def validate_image_upload(image):
         raise ValidationError(_("Only JPEG and PNG images are allowed."))
     return image
 
+
 from .models import (
     Animal,
     BeefDetails,

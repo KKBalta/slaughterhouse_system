@@ -599,9 +599,7 @@ class TestClientSelection:
         assert not ClientProfile.objects.filter(contact_person="Walk-in John").exists()
         assert not User.objects.filter(role=User.Role.WALKIN).exists()
 
-    def test_walk_in_with_phone_normalizes_and_creates_prospect(
-        self, authenticated_client, service_package_factory
-    ):
+    def test_walk_in_with_phone_normalizes_and_creates_prospect(self, authenticated_client, service_package_factory):
         service = service_package_factory()
 
         response = authenticated_client.post(
