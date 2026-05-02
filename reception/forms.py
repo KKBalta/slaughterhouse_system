@@ -488,6 +488,16 @@ class AnimalForm(forms.ModelForm):
         self.fields["picture"].required = False
         self.fields["passport_picture"].required = False
 
+    def clean_picture(self):
+        from processing.forms import validate_image_upload
+
+        return validate_image_upload(self.cleaned_data.get("picture"))
+
+    def clean_passport_picture(self):
+        from processing.forms import validate_image_upload
+
+        return validate_image_upload(self.cleaned_data.get("passport_picture"))
+
 
 class BatchAnimalForm(forms.Form):
     """Form for creating multiple animals at once with automatic tag generation"""

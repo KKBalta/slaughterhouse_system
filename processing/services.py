@@ -444,26 +444,42 @@ def _create_individual_weight_logs_from_batches(slaughter_order: SlaughterOrder,
     is_hot_carcass_weight = _get_weight_type_key(weight_type) == "hot_carcass_weight"
     animals = get_weight_logging_animals(slaughter_order, individual_weight_type)
 
-    animals_transitioned = 0
-
-    for animal in animals:
-        # Check if individual weight log already exists
-        existing_individual_log = WeightLog.objects.filter(
-            animal=animal,
+    # Single query: which animals already have an individual log of this type
+    animal_ids = [a.id for a in animals]
+    already_logged_ids = set(
+        WeightLog.objects.filter(
+            animal_id__in=animal_ids,
             weight_type=individual_weight_type,
             is_group_weight=False,
-        ).first()
+        ).values_list("animal_id", flat=True)
+    )
 
-        if not existing_individual_log:
-            WeightLog.objects.create(
-                animal=animal, weight=overall_average_weight, weight_type=individual_weight_type, is_group_weight=False
+    needs_log = [a for a in animals if a.id not in already_logged_ids]
+
+    WeightLog.objects.bulk_create(
+        [
+            WeightLog(
+                animal=a,
+                weight=overall_average_weight,
+                weight_type=individual_weight_type,
+                is_group_weight=False,
             )
+            for a in needs_log
+        ]
+    )
 
-            # Auto-transition to carcass_ready when hot carcass weight is logged
-            if is_hot_carcass_weight and animal.status == "slaughtered":
-                animal.prepare_carcass()
-                animal.save()
-                animals_transitioned += 1
+    transitioned = []
+    if is_hot_carcass_weight:
+        for a in needs_log:
+            if a.status == "slaughtered":
+                # FSM transition mutates a.status in memory; no post_transition
+                # listeners exist in this project (verified), so bulk_update is safe.
+                a.prepare_carcass()
+                transitioned.append(a)
+        if transitioned:
+            Animal.objects.bulk_update(transitioned, ["status"])
+
+    animals_transitioned = len(transitioned)
 
     # Update order status if any animals were transitioned
     if animals_transitioned > 0:

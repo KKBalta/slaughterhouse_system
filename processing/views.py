@@ -1,3 +1,4 @@
+import logging
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -6,7 +7,7 @@ from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
@@ -16,6 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, ListView, TemplateView, View
+from django_fsm import TransitionNotAllowed
 
 from reception.models import SlaughterOrder
 
@@ -39,6 +41,8 @@ from .services import (
     log_leather_weight,
     mark_animal_slaughtered,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
@@ -65,17 +69,25 @@ class ProcessingDashboardView(LoginRequiredMixin, TemplateView):
         # Recent orders with animals ready for processing
         recent_orders = (
             SlaughterOrder.objects.filter(animals__status__in=["received", "slaughtered", "carcass_ready"])
+            .select_related("client")
             .distinct()
             .order_by("-order_datetime")[:10]
         )
 
         # Animals by status for quick actions
-        received_animals = Animal.objects.filter(status="received").order_by("received_date")[:10]
-        slaughtered_animals = Animal.objects.filter(status="slaughtered").order_by("-slaughter_date")[:10]
+        received_animals = (
+            Animal.objects.filter(status="received").select_related("slaughter_order").order_by("received_date")[:10]
+        )
+        slaughtered_animals = (
+            Animal.objects.filter(status="slaughtered")
+            .select_related("slaughter_order")
+            .order_by("-slaughter_date")[:10]
+        )
 
         # Orders ready for batch slaughter
         orders_ready_for_slaughter = (
             SlaughterOrder.objects.filter(animals__status="received")
+            .select_related("client")
             .annotate(received_count=Count("animals", filter=Q(animals__status="received")))
             .filter(received_count__gt=0)
             .order_by("-order_datetime")[:10]
@@ -338,8 +350,9 @@ class AnimalListView(LoginRequiredMixin, ListView):
                             related_object = getattr(animal, detail_attr)
                             # If we get the object without exception, it exists
                             alert_info["missing_details"] = False
-                        except Exception:
-                            # If there's any exception accessing it, it doesn't exist
+                        except ObjectDoesNotExist:
+                            # OneToOne reverse access raises RelatedObjectDoesNotExist
+                            # (subclass of ObjectDoesNotExist) when no detail row exists.
                             alert_info["missing_details"] = True
                     else:
                         # If the attribute itself doesn't exist
@@ -687,6 +700,8 @@ class QuickProcessView(LoginRequiredMixin, View):
                 label = create_animal_label(animal=animal, label_type="hot_carcass", user=request.user)
                 return redirect("labeling:animal_label_detail", pk=label.pk)
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Label generation failed for animal %s", animal.pk)
                 messages.error(request, _("Label generation failed: %(error)s") % {"error": str(e)})
 
         # If user clicked "Save & Next", redirect to next animal
@@ -707,6 +722,8 @@ class MarkAnimalSlaughteredView(LoginRequiredMixin, View):
             mark_animal_slaughtered(animal)
             messages.success(request, _("Animal %(tag)s marked as slaughtered.") % {"tag": animal.identification_tag})
         except Exception as e:
+            # View boundary: log traceback, show user-friendly message.
+            logger.exception("mark_animal_slaughtered failed for animal %s", animal.pk)
             messages.error(request, _("Error marking animal as slaughtered: %(error)s") % {"error": str(e)})
 
         return redirect("processing:animal_detail", pk=animal.pk)
@@ -758,6 +775,8 @@ class AnimalWeightLogView(LoginRequiredMixin, View):
                             },
                         )
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Weight log failed")
                 messages.error(request, _("Error logging weight: %(error)s") % {"error": str(e)})
         else:
             # Display form errors
@@ -837,7 +856,9 @@ class BatchSlaughterView(LoginRequiredMixin, TemplateView):
             try:
                 mark_animal_slaughtered(animal)
                 success_count += 1
-            except Exception as e:
+            except Exception:
+                # Per-animal failure in a batch: log and continue with the rest.
+                logger.exception("Batch slaughter: failed for animal %s", animal.pk)
                 error_count += 1
 
         if success_count > 0:
@@ -1038,6 +1059,8 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                     )
 
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Batch weight log failed")
                 messages.error(request, _("Error logging batch weight: %(error)s") % {"error": str(e)})
         else:
             self._add_form_errors_to_messages(request, form)
@@ -1090,6 +1113,8 @@ class BatchWeightLogView(LoginRequiredMixin, TemplateView):
                     )
 
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Batch weight update failed")
                 messages.error(request, _("Error updating batch weight: %(error)s") % {"error": str(e)})
         else:
             self._add_form_errors_to_messages(request, form)
@@ -1209,6 +1234,8 @@ class LeatherWeightLogView(LoginRequiredMixin, View):
                     % {"weight": leather_weight, "tag": animal.identification_tag},
                 )
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Leather weight log failed")
                 messages.error(request, _("Error logging leather weight: %(error)s") % {"error": str(e)})
         else:
             # Display form errors
@@ -1272,6 +1299,8 @@ class AnimalSearchDebugView(View):
             )
 
         except Exception as e:
+            # JSON endpoint: log traceback, return error payload to caller.
+            logger.exception("Animal search endpoint failed")
             return JsonResponse({"debug": f"error: {str(e)}", "animals": [], "error": str(e)})
 
 
@@ -1718,12 +1747,10 @@ class AddDisassemblyCutView(LoginRequiredMixin, View):
                         if readiness["can_proceed"]:
                             animal.perform_disassembly()
                             animal.save()
-                    except Exception as e:
-                        # Log the error but don't fail the cut addition
-                        import logging
-
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Failed to transition animal {animal.pk} to disassembled: {e}")
+                    except TransitionNotAllowed as e:
+                        # FSM guard rejected the transition — log and continue;
+                        # cut addition itself already succeeded above.
+                        logger.warning("Failed to transition animal %s to disassembled: %s", animal.pk, e)
 
                 cut_display = cut.get_cut_name_display()
                 if animal.is_boneless_disassembly():
@@ -1738,6 +1765,8 @@ class AddDisassemblyCutView(LoginRequiredMixin, View):
                         % {"cut": cut_display, "weight": cut.weight_kg},
                     )
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Cut save failed")
                 messages.error(request, _("Error saving cut: %(error)s") % {"error": str(e)})
         else:
             for field, errors in form.errors.items():
@@ -1790,6 +1819,8 @@ class EditDisassemblyCutView(LoginRequiredMixin, View):
                 messages.success(request, _("Cut updated successfully."))
                 return redirect("processing:disassembly_detail", pk=animal.pk)
             except Exception as e:
+                # View boundary: log traceback, show user-friendly message.
+                logger.exception("Cut update failed")
                 messages.error(request, _("Error updating cut: %(error)s") % {"error": str(e)})
         else:
             for field, errors in form.errors.items():

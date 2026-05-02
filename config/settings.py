@@ -303,6 +303,11 @@ elif config("USE_LOCAL_POSTGRES", default=False, cast=bool):
     }
 
 elif config("USE_SQLITE", default=False, cast=bool):
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "USE_SQLITE=True is not allowed when DEBUG=False. "
+            "Set USE_CLOUD_SQL=True or USE_LOCAL_POSTGRES=True for production."
+        )
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",

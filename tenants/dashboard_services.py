@@ -480,8 +480,17 @@ def _fetch_active_tenant_user(tenant: Client, *, user_id: int | None = None, ide
         if user is not None:
             return user
         normalized = normalize_phone(needle)
+        candidates: list[str] = []
         if normalized:
-            return qs.filter(phone_number=normalized).order_by("pk").first()
+            candidates.append(normalized)
+            # Turkish local form: 0XXXXXXXXXX (11 digits) is stored as +90XXXXXXXXXX.
+            digits = normalized.lstrip("+")
+            if len(digits) == 11 and digits.startswith("0"):
+                candidates.append(f"+90{digits[1:]}")
+        for candidate in candidates:
+            user = qs.filter(phone_number=candidate).order_by("pk").first()
+            if user is not None:
+                return user
         return None
 
 

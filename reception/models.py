@@ -93,3 +93,9 @@ class SlaughterOrder(BaseModel):
         client_display = self.client.company_name if self.client else self.client_name
         order_date = self.order_datetime.date() if hasattr(self.order_datetime, "date") else self.order_datetime
         return f"Order {self.slaughter_order_no} for {client_display} on {order_date}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["order_datetime"]),
+            models.Index(fields=["status", "order_datetime"]),
+        ]

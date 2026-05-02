@@ -267,6 +267,13 @@ class Animal(BaseModel):
     def __str__(self):
         return f"{self.get_animal_type_display()} - {self.identification_tag}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "received_date"]),
+            models.Index(fields=["identification_tag"]),
+            models.Index(fields=["slaughter_order", "status"]),
+        ]
+
 
 SCORE_CHOICES = (
     (0.0, _("Not Usable")),
@@ -588,6 +595,11 @@ class WeightLog(BaseModel):
                 | models.Q(is_group_weight=True, group_quantity__isnull=False, group_total_weight__isnull=False),
                 name="group_weight_consistency",
             ),
+        ]
+        indexes = [
+            models.Index(fields=["log_date"]),
+            models.Index(fields=["weight_type", "log_date"]),
+            models.Index(fields=["animal", "weight_type"]),
         ]
 
 

@@ -4,6 +4,21 @@ from django.utils.translation import gettext_lazy as _
 
 from scales.utils import get_embedded_plu_map
 
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png"}
+
+
+def validate_image_upload(image):
+    """Reject images larger than 5 MB or outside JPEG/PNG. Pass-through if None."""
+    if not image:
+        return image
+    if image.size > MAX_IMAGE_SIZE:
+        raise ValidationError(_("File too large (max 5 MB)."))
+    content_type = getattr(image, "content_type", None)
+    if content_type and content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+        raise ValidationError(_("Only JPEG and PNG images are allowed."))
+    return image
+
 from .models import (
     Animal,
     BeefDetails,
@@ -269,7 +284,7 @@ class ScaleReceiptUploadForm(forms.ModelForm):
         }
 
     def clean_scale_receipt_picture(self):
-        image = self.cleaned_data.get("scale_receipt_picture")
+        image = validate_image_upload(self.cleaned_data.get("scale_receipt_picture"))
         if image and hasattr(self.instance, "scale_receipt_picture") and self.instance.scale_receipt_picture:
             self.instance.scale_receipt_picture.delete(save=False)
         return image
