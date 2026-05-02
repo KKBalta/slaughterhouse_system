@@ -38,7 +38,6 @@ ENV ALLOWED_HOSTS=localhost
 ENV CSRF_TRUSTED_ORIGINS=https://localhost
 ENV USE_CLOUD_SQL=False
 ENV USE_SQLITE=True
-ENV BUILD_PHASE=True
 ENV SECRET_KEY=dummy-build-secret
 ENV TENANT_BASE_DOMAIN=localhost
 
@@ -46,8 +45,10 @@ ENV TENANT_BASE_DOMAIN=localhost
 # Must not fail silently: collectstatic would ship stale or missing CSS.
 RUN cd theme/static_src && npm ci && npm run build
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear
+# Collect static files. BUILD_PHASE is inline (not ENV) so it does NOT persist
+# into the runtime image — production runtime never sees it, keeping the SQLite
+# safety guard in config/settings.py intact.
+RUN BUILD_PHASE=True python manage.py collectstatic --noinput --clear
 
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser \
