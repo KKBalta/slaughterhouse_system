@@ -15,7 +15,6 @@ from .models import (
     WeightLog,
 )
 
-
 # Pin field order on every detail inline. The shared sakatat_status/bowels_status
 # fields now come from BaseAnimalDetails (abstract base), so without an explicit
 # `fields` tuple Django would render them before the species-specific `breed`,
