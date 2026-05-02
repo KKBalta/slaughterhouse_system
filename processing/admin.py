@@ -16,51 +16,67 @@ from .models import (
 )
 
 
+# Pin field order on every detail inline. The shared sakatat_status/bowels_status
+# fields now come from BaseAnimalDetails (abstract base), so without an explicit
+# `fields` tuple Django would render them before the species-specific `breed`,
+# changing admin form layout. Pinning preserves the pre-refactor order.
+_DETAILS_FIELDS_WITH_BREED = ("breed", "sakatat_status", "bowels_status")
+_DETAILS_FIELDS_NO_BREED = ("sakatat_status", "bowels_status")
+
+
 class CattleDetailsInline(admin.StackedInline):
     model = CattleDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Cattle Details")
 
 
 class SheepDetailsInline(admin.StackedInline):
     model = SheepDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Sheep Details")
 
 
 class GoatDetailsInline(admin.StackedInline):
     model = GoatDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Goat Details")
 
 
 class LambDetailsInline(admin.StackedInline):
     model = LambDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_NO_BREED
     verbose_name_plural = _("Lamb Details")
 
 
 class OglakDetailsInline(admin.StackedInline):
     model = OglakDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_NO_BREED
     verbose_name_plural = _("Oglak Details")
 
 
 class CalfDetailsInline(admin.StackedInline):
     model = CalfDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Calf Details")
 
 
 class HeiferDetailsInline(admin.StackedInline):
     model = HeiferDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Heifer Details")
 
 
 class BeefDetailsInline(admin.StackedInline):
     model = BeefDetails
     can_delete = False
+    fields = _DETAILS_FIELDS_WITH_BREED
     verbose_name_plural = _("Beef Details")
 
 
