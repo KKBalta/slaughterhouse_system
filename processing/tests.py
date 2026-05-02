@@ -459,7 +459,11 @@ class TestBaseAnimalDetails:
         [
             (CattleDetails, "cattle"),
             (SheepDetails, "sheep"),
+            (GoatDetails, "goat"),
             (LambDetails, "lamb"),
+            (OglakDetails, "oglak"),
+            (CalfDetails, "calf"),
+            (HeiferDetails, "heifer"),
             (BeefDetails, "beef"),
         ],
     )

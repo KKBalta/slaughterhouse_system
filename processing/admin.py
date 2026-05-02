@@ -234,12 +234,20 @@ class WeightLogAdmin(admin.ModelAdmin):
 
 
 # Register individual detail models for direct access
+# Pin edit-form field order on standalone Detail admin pages too.
+# Same reason as the inlines above: the inherited score fields would
+# otherwise render before animal/breed.
+_DETAILS_ADMIN_FIELDS_WITH_BREED = ("animal", "breed", "sakatat_status", "bowels_status")
+_DETAILS_ADMIN_FIELDS_NO_BREED = ("animal", "sakatat_status", "bowels_status")
+
+
 @admin.register(CattleDetails)
 class CattleDetailsAdmin(admin.ModelAdmin):
     list_display = ("animal", "breed", "sakatat_status", "bowels_status")
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
 
 
 @admin.register(SheepDetails)
@@ -248,6 +256,7 @@ class SheepDetailsAdmin(admin.ModelAdmin):
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
 
 
 @admin.register(GoatDetails)
@@ -256,6 +265,7 @@ class GoatDetailsAdmin(admin.ModelAdmin):
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
 
 
 @admin.register(LambDetails)
@@ -264,6 +274,7 @@ class LambDetailsAdmin(admin.ModelAdmin):
     list_filter = ("sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag",)
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_NO_BREED
 
 
 @admin.register(OglakDetails)
@@ -272,6 +283,7 @@ class OglakDetailsAdmin(admin.ModelAdmin):
     list_filter = ("sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag",)
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_NO_BREED
 
 
 @admin.register(CalfDetails)
@@ -280,6 +292,7 @@ class CalfDetailsAdmin(admin.ModelAdmin):
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
 
 
 @admin.register(HeiferDetails)
@@ -288,6 +301,7 @@ class HeiferDetailsAdmin(admin.ModelAdmin):
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
 
 
 @admin.register(BeefDetails)
@@ -296,3 +310,4 @@ class BeefDetailsAdmin(admin.ModelAdmin):
     list_filter = ("breed", "sakatat_status", "bowels_status")
     search_fields = ("animal__identification_tag", "breed")
     raw_id_fields = ("animal",)
+    fields = _DETAILS_ADMIN_FIELDS_WITH_BREED
