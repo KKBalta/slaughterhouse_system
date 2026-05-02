@@ -10,7 +10,19 @@ from django.utils import timezone
 from reception.models import ServicePackage, SlaughterOrder
 from users.models import ClientProfile
 
-from .models import Animal, CalfDetails, CattleDetails, GoatDetails, HeiferDetails, LambDetails, OglakDetails, WeightLog
+from .models import (
+    Animal,
+    BaseAnimalDetails,
+    BeefDetails,
+    CalfDetails,
+    CattleDetails,
+    GoatDetails,
+    HeiferDetails,
+    LambDetails,
+    OglakDetails,
+    SheepDetails,
+    WeightLog,
+)
 
 User = get_user_model()
 
@@ -429,3 +441,55 @@ class TestProcessingModel:
         expected_average = Decimal("275.75") / 2
         actual_average = cleaned_data["total_weight"] / cleaned_data["animal_count"]
         assert actual_average == expected_average
+
+
+class TestBaseAnimalDetails:
+    """Lock in the abstract BaseAnimalDetails base behaviour.
+
+    Each concrete *Details model must inherit from BaseAnimalDetails and
+    transparently expose the shared `sakatat_status` and `bowels_status`
+    fields with the same defaults.
+    """
+
+    def test_base_is_abstract(self):
+        assert BaseAnimalDetails._meta.abstract is True
+
+    @pytest.mark.parametrize(
+        "model,animal_type",
+        [
+            (CattleDetails, "cattle"),
+            (SheepDetails, "sheep"),
+            (GoatDetails, "goat"),
+            (LambDetails, "lamb"),
+            (OglakDetails, "oglak"),
+            (CalfDetails, "calf"),
+            (HeiferDetails, "heifer"),
+            (BeefDetails, "beef"),
+        ],
+    )
+    def test_concrete_details_inherit_common_fields(self, processing_test_context, model, animal_type):
+        assert issubclass(model, BaseAnimalDetails)
+
+        animal = Animal.objects.create(
+            slaughter_order=processing_test_context["order"],
+            animal_type=animal_type,
+        )
+        details = model.objects.create(
+            animal=animal,
+            sakatat_status=Decimal("0.5"),
+            bowels_status=Decimal("1.0"),
+        )
+
+        reloaded = model.objects.get(pk=details.pk)
+        assert reloaded.sakatat_status == Decimal("0.5")
+        assert reloaded.bowels_status == Decimal("1.0")
+
+    def test_default_values_match(self, processing_test_context):
+        animal = Animal.objects.create(
+            slaughter_order=processing_test_context["order"],
+            animal_type="cattle",
+        )
+        details = CattleDetails.objects.create(animal=animal)
+        # Default for both shared fields is 0.5.
+        assert details.sakatat_status == Decimal("0.5")
+        assert details.bowels_status == Decimal("0.5")

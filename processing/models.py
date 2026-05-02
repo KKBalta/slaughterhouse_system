@@ -282,7 +282,36 @@ SCORE_CHOICES = (
 )
 
 
-class CattleDetails(BaseModel):
+class BaseAnimalDetails(BaseModel):
+    """Abstract base for per-species animal detail models.
+
+    Holds the fields common to every *Details model. The `animal`
+    OneToOneField stays on each concrete model because its
+    related_name and limit_choices_to are species-specific. The
+    `breed` field also stays concrete because some species
+    (lamb, oglak) do not carry it.
+    """
+
+    sakatat_status = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        choices=SCORE_CHOICES,
+        default=0.5,
+        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
+    )
+    bowels_status = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        choices=SCORE_CHOICES,
+        default=0.5,
+        help_text=_("Score reflecting the usability of the bowels."),
+    )
+
+    class Meta:
+        abstract = True
+
+
+class CattleDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -291,27 +320,13 @@ class CattleDetails(BaseModel):
         help_text=_("The associated cattle animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the cattle."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
     # Removed leather_weight_kg from here
 
     def __str__(self):
         return _("Details for Cattle: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class SheepDetails(BaseModel):
+class SheepDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -320,27 +335,13 @@ class SheepDetails(BaseModel):
         help_text=_("The associated sheep animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the sheep."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
     # Removed leather_weight_kg from here
 
     def __str__(self):
         return _("Details for Sheep: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class GoatDetails(BaseModel):
+class GoatDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -349,26 +350,12 @@ class GoatDetails(BaseModel):
         help_text=_("The associated goat animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the goat."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Goat: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class LambDetails(BaseModel):
+class LambDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -376,26 +363,12 @@ class LambDetails(BaseModel):
         limit_choices_to={"animal_type": "lamb"},
         help_text=_("The associated lamb animal."),
     )
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Lamb: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class OglakDetails(BaseModel):
+class OglakDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -403,27 +376,13 @@ class OglakDetails(BaseModel):
         limit_choices_to={"animal_type": "oglak"},
         help_text=_("The associated oglak animal."),
     )
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Oglak: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
 # New Animal Detail Models
-class CalfDetails(BaseModel):
+class CalfDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -432,26 +391,12 @@ class CalfDetails(BaseModel):
         help_text=_("The associated calf animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the calf."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Calf: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class HeiferDetails(BaseModel):
+class HeiferDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -460,26 +405,12 @@ class HeiferDetails(BaseModel):
         help_text=_("The associated heifer animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the heifer."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Heifer: %(tag)s") % {"tag": self.animal.identification_tag}
 
 
-class BeefDetails(BaseModel):
+class BeefDetails(BaseAnimalDetails):
     animal = models.OneToOneField(
         Animal,
         on_delete=models.CASCADE,
@@ -488,20 +419,6 @@ class BeefDetails(BaseModel):
         help_text=_("The associated beef animal."),
     )
     breed = models.CharField(max_length=100, blank=True, help_text=_("Breed of the beef."))
-    sakatat_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the sakatat (internal organs)."),
-    )
-    bowels_status = models.DecimalField(
-        max_digits=2,
-        decimal_places=1,
-        choices=SCORE_CHOICES,
-        default=0.5,
-        help_text=_("Score reflecting the usability of the bowels."),
-    )
 
     def __str__(self):
         return _("Details for Beef: %(tag)s") % {"tag": self.animal.identification_tag}
