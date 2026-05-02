@@ -303,7 +303,10 @@ elif config("USE_LOCAL_POSTGRES", default=False, cast=bool):
     }
 
 elif config("USE_SQLITE", default=False, cast=bool):
-    if not DEBUG:
+    # SQLite is allowed in DEBUG (dev) and during Docker image build (collectstatic
+    # only loads settings, no real queries). Set BUILD_PHASE=True in the Dockerfile
+    # to opt into the build-time bypass; production runtime never sets it.
+    if not DEBUG and not config("BUILD_PHASE", default=False, cast=bool):
         raise ImproperlyConfigured(
             "USE_SQLITE=True is not allowed when DEBUG=False. "
             "Set USE_CLOUD_SQL=True or USE_LOCAL_POSTGRES=True for production."
