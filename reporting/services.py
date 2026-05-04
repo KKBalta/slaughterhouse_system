@@ -357,10 +357,25 @@ class ExcelReportGenerator:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
         from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.page import PageMargins
 
         wb = Workbook()
         ws = wb.active
         ws.title = "Daily Slaughter Report"
+
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        # openpyxl margins are in INCHES — convert from cm (1 cm = 0.3937 in)
+        ws.page_margins = PageMargins(
+            top=0.787,     # 2 cm
+            bottom=0.0,    # 0 cm
+            left=0.157,    # 0.4 cm
+            right=0.157,   # 0.4 cm
+            header=0.512,  # 1.3 cm
+            footer=0.512,  # 1.3 cm
+        )
+        ws.print_options.horizontalCentered = False
+        ws.print_options.verticalCentered = False
 
         # Title
         date_str = self.report_data.get("date", self.report_data.get("start_date", ""))
@@ -395,7 +410,10 @@ class ExcelReportGenerator:
             cell.font = header_font
             cell.fill = header_fill
             cell.border = thin_border
-            cell.alignment = Alignment(horizontal="center")
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        wrap_alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+        center_wrap = Alignment(horizontal="center", vertical="top", wrap_text=True)
 
         # Write data
         row = 4
@@ -413,7 +431,14 @@ class ExcelReportGenerator:
 
             # Apply borders to data rows
             for col in range(1, 11):  # Updated to 11 for 10 columns
-                ws.cell(row=row, column=col).border = thin_border
+                c = ws.cell(row=row, column=col)
+                c.border = thin_border
+                if col in (1, 5, 9, 10):
+                    c.alignment = wrap_alignment
+                elif col in (6, 7):
+                    c.alignment = center_wrap
+                else:
+                    c.alignment = Alignment(horizontal="center", vertical="center")
 
             row += 1
 
@@ -455,25 +480,29 @@ class ExcelReportGenerator:
 
             summary_row += 1
 
-        # Auto-adjust column widths with a larger cap and explicit width for ID column.
-        # Cell.value can be None or non-string; catch TypeError/AttributeError for column-width logic only.
+        # Column widths: openpyxl uses character units (~ max chars visible at Calibri 11).
+        # Apply per-column min/max so print layout stays readable without huge empty columns.
+        min_widths = {1: 14, 2: 8, 3: 12, 4: 14, 5: 22, 6: 12, 7: 12, 8: 10, 9: 22, 10: 28}
+        max_widths = {1: 36, 2: 12, 3: 18, 4: 16, 5: 40, 6: 16, 7: 16, 8: 12, 9: 40, 10: 50}
+
         for column in ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
+            col_idx = column[0].column
             for cell in column:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except (TypeError, AttributeError):
                     pass
-            adjusted_width = min(max_length + 2, 30)
+            adjusted_width = min(max_length + 2, max_widths.get(col_idx, 30))
+            adjusted_width = max(adjusted_width, min_widths.get(col_idx, 8))
             ws.column_dimensions[column_letter].width = adjusted_width
 
-        # Column 5 is HAYVAN KİMLİK NO explicitly widen for long tags (moved due to removed column)
-        try:
-            ws.column_dimensions[get_column_letter(5)].width = max(ws.column_dimensions[get_column_letter(5)].width, 25)
-        except (TypeError, AttributeError, KeyError):
-            ws.column_dimensions[get_column_letter(5)].width = 25
+        # Slightly taller default row for wrapped text rows (Excel still auto-grows on open in many apps)
+        ws.row_dimensions[3].height = 28
+        for r in range(4, row):
+            ws.row_dimensions[r].height = 22
 
         return wb
 
