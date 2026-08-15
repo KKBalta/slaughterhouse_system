@@ -5,6 +5,152 @@
 
 {% block content %}
     <div class="min-h-screen bg-gray-50 py-8">
+        <!-- ================================================================= -->
+        <!-- Live Operations & Quality panels (Ideas 1 + 2 from the doc)       -->
+        <!-- ================================================================= -->
+        <div class="max-w-6xl mx-auto mb-8 space-y-6">
+            <!-- LIVE OPS PANEL -->
+            <section id="opsPanel" class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">{% trans "Live Operations" %}</h2>
+                        <p class="text-xs text-gray-500">
+                            <span id="opsUpdatedAt">{% trans "Loading…" %}</span>
+                            · {% trans "auto-refresh every 30 s" %}
+                        </p>
+                    </div>
+                    <button type="button" id="opsRefreshBtn"
+                            class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100">
+                        {% trans "Refresh" %}
+                    </button>
+                </div>
+
+                <!-- Today tiles -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                    <div class="bg-blue-50 rounded-md p-3">
+                        <div class="text-xs font-medium text-blue-700 uppercase">{% trans "Received today" %}</div>
+                        <div id="todayReceived" class="text-2xl font-bold text-blue-900">—</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-md p-3">
+                        <div class="text-xs font-medium text-emerald-700 uppercase">{% trans "Slaughtered today" %}</div>
+                        <div id="todaySlaughtered" class="text-2xl font-bold text-emerald-900">—</div>
+                    </div>
+                    <div class="bg-amber-50 rounded-md p-3">
+                        <div class="text-xs font-medium text-amber-700 uppercase">{% trans "Delivered today" %}</div>
+                        <div id="todayDelivered" class="text-2xl font-bold text-amber-900">—</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-md p-3">
+                        <div class="text-xs font-medium text-gray-700 uppercase">{% trans "Open WIP" %}</div>
+                        <div id="wipTotal" class="text-2xl font-bold text-gray-900">—</div>
+                    </div>
+                </div>
+
+                <!-- WIP by status -->
+                <div class="mb-5">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "WIP by status" %}</h3>
+                    <div id="wipGrid" class="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                        <!-- filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Bottleneck + oldest WIP -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Bottleneck (last 24 h)" %}</h3>
+                        <div id="bottleneckBanner" class="hidden mb-2 px-2 py-1 bg-red-50 text-red-700 text-xs rounded"></div>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-500">
+                                    <th class="text-left font-medium">{% trans "Stage" %}</th>
+                                    <th class="text-right font-medium">{% trans "n" %}</th>
+                                    <th class="text-right font-medium">{% trans "p50" %}</th>
+                                    <th class="text-right font-medium">{% trans "p90" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bottleneckRows" class="text-gray-800"></tbody>
+                        </table>
+                    </div>
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Oldest WIP (hours in status)" %}</h3>
+                        <table class="w-full text-xs">
+                            <tbody id="oldestWipRows" class="text-gray-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Yield trend + device health -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Dressing % — last 14 days" %}</h3>
+                        <svg id="yieldSpark" viewBox="0 0 300 60" class="w-full h-16"></svg>
+                        <div id="yieldSparkInfo" class="text-xs text-gray-500 mt-1">—</div>
+                    </div>
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Scale / Edge health" %}</h3>
+                        <div id="scaleHealth" class="text-sm text-gray-800">—</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUALITY & LOSS PANEL -->
+            <section id="qualityPanel" class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">{% trans "Quality & Loss" %}</h2>
+                        <p class="text-xs text-gray-500">
+                            {% trans "90-day baselines · outliers in last 7 days · σ ≥" %}
+                            <span id="qualitySigma">2.0</span>
+                        </p>
+                    </div>
+                    <button type="button" id="qualityRefreshBtn"
+                            class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100">
+                        {% trans "Refresh" %}
+                    </button>
+                </div>
+
+                <div id="qualityBanner"
+                     class="hidden mb-4 px-3 py-2 rounded bg-red-50 border border-red-200 text-sm text-red-800">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Baselines (90 d)" %}</h3>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-500">
+                                    <th class="text-left font-medium">{% trans "Type" %}</th>
+                                    <th class="text-right font-medium">{% trans "n" %}</th>
+                                    <th class="text-right font-medium">{% trans "Yield % (μ±σ)" %}</th>
+                                    <th class="text-right font-medium">{% trans "Shrink % (μ±σ)" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="baselineRows" class="text-gray-800"></tbody>
+                        </table>
+                    </div>
+                    <div class="border border-gray-200 rounded-md p-3">
+                        <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Client scorecard (last 7 d)" %}</h3>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-500">
+                                    <th class="text-left font-medium">{% trans "Client" %}</th>
+                                    <th class="text-right font-medium">{% trans "n" %}</th>
+                                    <th class="text-right font-medium">{% trans "Yield %" %}</th>
+                                    <th class="text-right font-medium">{% trans "Shrink %" %}</th>
+                                    <th class="text-right font-medium">{% trans "Cond. %" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientScorecardRows" class="text-gray-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-5 border border-gray-200 rounded-md p-3">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Flagged animals (outliers)" %}</h3>
+                    <div id="outliersList" class="text-xs text-gray-800 space-y-1 max-h-64 overflow-auto">—</div>
+                </div>
+            </section>
+        </div>
+
         <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <!-- Header -->
             <div class="text-center mb-8">
@@ -20,7 +166,23 @@
             <!-- Form -->
             <form method="post" id="reportForm" class="space-y-6">
                 {% csrf_token %}
-                
+
+                <!-- Report Type -->
+                <div>
+                    <label for="report_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Report Type" %}
+                    </label>
+                    <select id="report_type" name="report_type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900">
+                        <option value="daily_slaughter">{% trans "Daily Slaughter Report" %}</option>
+                        <option value="cold_shrinkage">{% trans "Cold Shrinkage Analysis (Fire)" %}</option>
+                        <option value="cut_yield_analysis">{% trans "Disassembly Cut Yield" %}</option>
+                        <option value="pipeline_time_analysis">{% trans "Pipeline Time Analysis" %}</option>
+                        <option value="byproduct_offal_summary">{% trans "Byproduct & Offal Summary" %}</option>
+                        <option value="client_activity_summary">{% trans "Client Activity Summary" %}</option>
+                    </select>
+                </div>
+
                 <!-- Date Range -->
                 <div>
                     <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
@@ -81,19 +243,23 @@
             <div class="mt-8 pt-6 border-t border-gray-200">
                 <h3 class="text-sm font-medium text-gray-700 mb-3">{% trans "Quick Actions" %}</h3>
                 <div class="space-y-2">
-                    <button onclick="setToday()" 
+                    <button type="button" onclick="setLast7Days()" 
+                            class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                        {% trans "Last 7 days" %}
+                    </button>
+                    <button type="button" onclick="setToday()" 
                             class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
                         {% trans "Today's Report" %}
                     </button>
-                    <button onclick="setYesterday()" 
+                    <button type="button" onclick="setYesterday()" 
                             class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
                         {% trans "Yesterday's Report" %}
                     </button>
-                    <button onclick="setThisWeek()" 
+                    <button type="button" onclick="setThisWeek()" 
                             class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
                         {% trans "This Week" %}
                     </button>
-                    <button onclick="setThisMonth()" 
+                    <button type="button" onclick="setThisMonth()" 
                             class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
                         {% trans "This Month" %}
                     </button>
@@ -119,15 +285,21 @@
     </div>
 
     <script>
-        // Set default dates
+        // Default: rolling last 7 days inclusive (end = today, start = today - 6)
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            
-            document.getElementById('end_date').value = today.toISOString().split('T')[0];
-            document.getElementById('start_date').value = yesterday.toISOString().split('T')[0];
+            setLast7Days(false);
         });
+
+        function setLast7Days(runGenerate) {
+            const today = new Date();
+            const start = new Date(today);
+            start.setDate(start.getDate() - 6);
+            document.getElementById('end_date').value = today.toISOString().split('T')[0];
+            document.getElementById('start_date').value = start.toISOString().split('T')[0];
+            if (runGenerate !== false) {
+                generateReport();
+            }
+        }
 
         // Quick action functions
         function setToday() {
@@ -189,7 +361,7 @@
             // Submit form
             const formData = new FormData(document.getElementById('reportForm'));
             
-            fetch('/reporting/generate/', {
+            fetch('{% url "generate_report" %}', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -207,7 +379,8 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `report_${startDate}_to_${endDate}.${outputFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+                const reportType = document.getElementById('report_type').value;
+            a.download = `${reportType}_${startDate}_to_${endDate}.${outputFormat === 'excel' ? 'xlsx' : 'pdf'}`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -228,5 +401,221 @@
             e.preventDefault();
             generateReport();
         });
+
+        /* =============================================================
+           Live Ops + Quality panels
+           ============================================================= */
+        const OPS_URL = '{% url "api_ops_kpis" %}';
+        const QUALITY_URL = '{% url "api_quality_insight" %}';
+
+        function fmtNum(n) {
+            if (n === null || n === undefined) return '—';
+            return typeof n === 'number' ? n.toLocaleString() : n;
+        }
+        function fmtPct(n) {
+            if (n === null || n === undefined) return '—';
+            return n.toFixed ? n.toFixed(2) + ' %' : n + ' %';
+        }
+        function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+        function renderOps(data) {
+            const t = data.today || {};
+            setText('todayReceived', fmtNum(t.received));
+            setText('todaySlaughtered', fmtNum(t.slaughtered));
+            setText('todayDelivered', fmtNum(t.delivered));
+
+            const wip = data.wip_snapshot || {};
+            setText('wipTotal', fmtNum(wip.total_open));
+            const wipGrid = document.getElementById('wipGrid');
+            wipGrid.innerHTML = '';
+            ['received','slaughtered','carcass_ready','disassembled','packaged'].forEach(s => {
+                wipGrid.insertAdjacentHTML('beforeend',
+                    `<div class="bg-gray-50 rounded p-2">
+                        <div class="text-gray-500 text-xs uppercase">${s.replace('_',' ')}</div>
+                        <div class="text-lg font-bold">${fmtNum(wip[s] ?? 0)}</div>
+                    </div>`);
+            });
+
+            const b = data.bottleneck || {};
+            const banner = document.getElementById('bottleneckBanner');
+            if (b.worst_stage_label) {
+                banner.textContent = 'Slowest stage: ' + b.worst_stage_label;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+            const rows = document.getElementById('bottleneckRows');
+            rows.innerHTML = '';
+            [
+                ['Intake → slaughter (h)', b.intake_to_slaughter_hours],
+                ['Disassembly (min)', b.disassembly_session_minutes],
+                ['Carcass-ready dwell (h)', b.carcass_ready_dwell_hours],
+            ].forEach(([label, s]) => {
+                s = s || {};
+                rows.insertAdjacentHTML('beforeend',
+                    `<tr class="border-t border-gray-100">
+                        <td class="py-1">${label}</td>
+                        <td class="py-1 text-right">${fmtNum(s.n)}</td>
+                        <td class="py-1 text-right">${s.p50 ?? '—'}</td>
+                        <td class="py-1 text-right font-semibold">${s.p90 ?? '—'}</td>
+                    </tr>`);
+            });
+
+            const oldest = data.oldest_wip || {};
+            const oldRows = document.getElementById('oldestWipRows');
+            oldRows.innerHTML = '';
+            Object.entries(oldest).forEach(([status, info]) => {
+                if (!info) {
+                    oldRows.insertAdjacentHTML('beforeend',
+                        `<tr class="border-t border-gray-100"><td class="py-1">${status}</td><td class="py-1 text-right text-gray-400">—</td></tr>`);
+                    return;
+                }
+                const cls = info.hours_in_status > 24 ? 'text-red-700 font-semibold' : '';
+                oldRows.insertAdjacentHTML('beforeend',
+                    `<tr class="border-t border-gray-100">
+                        <td class="py-1">${status} <span class="text-gray-500">${info.animal_type}${info.identification_tag ? ' · ' + info.identification_tag : ''}</span></td>
+                        <td class="py-1 text-right ${cls}">${info.hours_in_status} h</td>
+                    </tr>`);
+            });
+
+            renderSparkline(data.yield_trend || []);
+
+            const h = data.scale_health || {};
+            const healthEl = document.getElementById('scaleHealth');
+            if (!h.available) {
+                healthEl.textContent = 'No scales configured.';
+            } else {
+                const badge = (count, color) => `<span class="inline-block px-2 py-0.5 rounded bg-${color}-50 text-${color}-700 text-xs">${count}</span>`;
+                const statusPills = Object.entries(h.scale_status || {})
+                    .map(([k, v]) => `<span class="text-xs mr-2">${k}: <b>${v}</b></span>`)
+                    .join('');
+                healthEl.innerHTML = `
+                    <div>Scales: <b>${h.scale_total}</b> &nbsp; Edges: <b>${h.edges_online}</b>/<b>${h.edges_total}</b> online</div>
+                    <div class="mt-1">${statusPills || '—'}</div>
+                    <div class="mt-1 text-xs">Offline-like: ${badge(h.scale_offline_like, (h.scale_offline_like>0?'red':'gray'))}
+                        &nbsp; Pending orphan batches: ${badge(h.pending_orphan_batches, (h.pending_orphan_batches>0?'red':'gray'))}</div>`;
+            }
+
+            setText('opsUpdatedAt', 'Updated ' + new Date(data.generated_at).toLocaleTimeString());
+        }
+
+        function renderSparkline(points) {
+            const svg = document.getElementById('yieldSpark');
+            if (!svg) return;
+            svg.innerHTML = '';
+            const vals = points.map(p => p.mean_pct).filter(v => v !== null && v !== undefined);
+            const info = document.getElementById('yieldSparkInfo');
+            if (!vals.length) {
+                info.textContent = 'No yield samples in last 14 days.';
+                return;
+            }
+            const W = 300, H = 60, pad = 4;
+            const min = Math.min(...vals), max = Math.max(...vals);
+            const span = max - min || 1;
+            const step = (W - 2*pad) / Math.max(points.length - 1, 1);
+            let d = '';
+            points.forEach((p, i) => {
+                if (p.mean_pct == null) return;
+                const x = pad + i * step;
+                const y = H - pad - ((p.mean_pct - min) / span) * (H - 2*pad);
+                d += (d ? ' L ' : 'M ') + x.toFixed(1) + ' ' + y.toFixed(1);
+            });
+            svg.insertAdjacentHTML('beforeend',
+                `<path d="${d}" fill="none" stroke="#2563eb" stroke-width="2"/>`);
+            const last = points[points.length - 1];
+            info.textContent = `min ${min.toFixed(1)} %  ·  max ${max.toFixed(1)} %  ·  latest ${last && last.mean_pct != null ? last.mean_pct.toFixed(2)+' %' : '—'}`;
+        }
+
+        function renderQuality(data) {
+            const base = (data.baselines && data.baselines.yield_pct_by_type) || {};
+            const shrink = (data.baselines && data.baselines.shrinkage_pct_by_type) || {};
+            const bRows = document.getElementById('baselineRows');
+            bRows.innerHTML = '';
+            const types = new Set([...Object.keys(base), ...Object.keys(shrink)]);
+            if (!types.size) {
+                bRows.innerHTML = `<tr><td colspan="4" class="py-2 text-gray-400">No baseline samples yet.</td></tr>`;
+            }
+            types.forEach(t => {
+                const y = base[t], s = shrink[t];
+                bRows.insertAdjacentHTML('beforeend',
+                    `<tr class="border-t border-gray-100">
+                        <td class="py-1">${t}</td>
+                        <td class="py-1 text-right">${y ? y.n : (s ? s.n : '—')}</td>
+                        <td class="py-1 text-right">${y ? y.mean_pct+' ± '+y.stdev_pct : '—'}</td>
+                        <td class="py-1 text-right">${s ? s.mean_pct+' ± '+s.stdev_pct : '—'}</td>
+                    </tr>`);
+            });
+
+            const cRows = document.getElementById('clientScorecardRows');
+            cRows.innerHTML = '';
+            const scorecard = data.client_scorecard || [];
+            if (!scorecard.length) {
+                cRows.innerHTML = `<tr><td colspan="5" class="py-2 text-gray-400">No client activity in range.</td></tr>`;
+            }
+            scorecard.slice(0, 10).forEach(r => {
+                const condCls = (r.condemnation_rate_pct || 0) > 10 ? 'text-red-700 font-semibold' : '';
+                cRows.insertAdjacentHTML('beforeend',
+                    `<tr class="border-t border-gray-100">
+                        <td class="py-1 truncate max-w-[14ch]" title="${r.client_name}">${r.client_name}</td>
+                        <td class="py-1 text-right">${r.headcount}</td>
+                        <td class="py-1 text-right">${r.mean_yield_pct ?? '—'}</td>
+                        <td class="py-1 text-right">${r.mean_shrinkage_pct ?? '—'}</td>
+                        <td class="py-1 text-right ${condCls}">${r.condemnation_rate_pct ?? '—'}</td>
+                    </tr>`);
+            });
+
+            const list = document.getElementById('outliersList');
+            list.innerHTML = '';
+            const outliers = data.outliers || [];
+            if (!outliers.length) {
+                list.innerHTML = '<div class="text-gray-400">No outliers flagged in the current range.</div>';
+            }
+            outliers.forEach(o => {
+                const reasonsTxt = o.reasons.map(r =>
+                    `${r.metric.replace('_pct','')}=${r.value}% (μ ${r.baseline_mean}, z=${r.z})`
+                ).join(' · ');
+                list.insertAdjacentHTML('beforeend',
+                    `<div class="border-b border-gray-100 pb-1">
+                        <span class="font-medium">${o.animal_type}${o.identification_tag ? ' ' + o.identification_tag : ''}</span>
+                        <span class="text-gray-500">· ${o.client_name} · ${o.slaughter_date}</span>
+                        <div class="text-red-700">${reasonsTxt}</div>
+                    </div>`);
+            });
+
+            const banner = document.getElementById('qualityBanner');
+            if (outliers.length) {
+                banner.textContent = outliers.length + ' animals flagged as outliers in the current window.';
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+            setText('qualitySigma', data.sigma_threshold ?? 2.0);
+        }
+
+        async function fetchJson(url) {
+            const r = await fetch(url, { credentials: 'same-origin' });
+            if (!r.ok) throw new Error(`${url} → ${r.status}`);
+            return r.json();
+        }
+
+        async function refreshOps() {
+            try { renderOps(await fetchJson(OPS_URL)); }
+            catch (e) { setText('opsUpdatedAt', 'Error: ' + e.message); }
+        }
+        async function refreshQuality() {
+            try { renderQuality(await fetchJson(QUALITY_URL)); }
+            catch (e) {
+                const banner = document.getElementById('qualityBanner');
+                banner.textContent = 'Error: ' + e.message;
+                banner.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('opsRefreshBtn').addEventListener('click', refreshOps);
+        document.getElementById('qualityRefreshBtn').addEventListener('click', refreshQuality);
+
+        refreshOps();
+        refreshQuality();
+        setInterval(refreshOps, 30_000);
     </script>
 {% endblock %}

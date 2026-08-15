@@ -14,10 +14,10 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from users.views import manager_or_admin_required
+from users.views import client_required, manager_or_admin_required
 
 from .models import GeneratedReport
-from .services import ExcelReportGenerator, PDFReportGenerator, ReportDataAggregator
+from .services import ExcelReportGenerator, OperationsInsightService, PDFReportGenerator, ReportDataAggregator
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,55 @@ logger = logging.getLogger(__name__)
 def report_dashboard(request):
     """Simple dashboard for report generation"""
     return render(request, "reporting/simple_dashboard.html")
+
+
+@login_required
+@manager_or_admin_required
+@require_http_methods(["GET"])
+def api_ops_kpis(request):
+    """JSON feed for the live Ops panel on /reporting/ (Idea 1)."""
+    try:
+        data = OperationsInsightService().get_live_ops_kpis()
+        return JsonResponse(data)
+    except Exception:
+        logger.exception("api_ops_kpis failed")
+        return JsonResponse({"error": "ops_kpis_failed"}, status=500)
+
+
+@login_required
+@manager_or_admin_required
+@require_http_methods(["GET"])
+def api_quality_insight(request):
+    """JSON feed for the Quality & Loss panel on /reporting/ (Idea 2)."""
+    from datetime import datetime as dt
+
+    def _parse_date(s):
+        if not s:
+            return None
+        try:
+            return dt.strptime(s, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+    try:
+        window_days = int(request.GET.get("window_days", 90))
+    except (TypeError, ValueError):
+        window_days = 90
+    try:
+        sigma = float(request.GET.get("sigma", 2.0))
+    except (TypeError, ValueError):
+        sigma = 2.0
+    start = _parse_date(request.GET.get("start"))
+    end = _parse_date(request.GET.get("end"))
+
+    try:
+        data = OperationsInsightService().get_quality_insight(
+            window_days=window_days, start=start, end=end, sigma=sigma
+        )
+        return JsonResponse(data)
+    except Exception:
+        logger.exception("api_quality_insight failed")
+        return JsonResponse({"error": "quality_insight_failed"}, status=500)
 
 
 @login_required
@@ -45,14 +94,17 @@ def generate_report(request):
             start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
 
+            report_type = request.POST.get("report_type", "daily_slaughter")
+
             # Generate report data
-            aggregator = ReportDataAggregator(start_date_obj, end_date_obj)
+            aggregator = ReportDataAggregator(start_date_obj, end_date_obj, filters={"report_type": report_type})
             report_data = aggregator.get_all_data()
 
             logger.debug(
-                "Report data for %s to %s: daily_data count=%s, summary=%s",
+                "Report data for %s to %s: report_type=%s, daily_data count=%s, summary=%s",
                 start_date,
                 end_date,
+                report_type,
                 len(report_data.get("daily_data", [])),
                 report_data.get("summary", {}),
             )
@@ -60,47 +112,49 @@ def generate_report(request):
                 logger.debug("No data found for the selected date range - generating empty report")
 
             if output_format == "excel":
-                # Generate Excel report
                 try:
                     excel_generator = ExcelReportGenerator(report_data)
-                    workbook = excel_generator.generate_daily_slaughter_excel()
+                    _excel_dispatch = {
+                        "daily_slaughter": excel_generator.generate_daily_slaughter_excel,
+                        "cold_shrinkage": excel_generator.generate_cold_shrinkage_excel,
+                        "cut_yield_analysis": excel_generator.generate_cut_yield_excel,
+                        "pipeline_time_analysis": excel_generator.generate_pipeline_time_excel,
+                        "byproduct_offal_summary": excel_generator.generate_byproduct_offal_excel,
+                        "client_activity_summary": excel_generator.generate_client_activity_excel,
+                    }
+                    generate_fn = _excel_dispatch.get(report_type, excel_generator.generate_daily_slaughter_excel)
+                    workbook = generate_fn()
 
-                    # Save to temporary file
                     import tempfile
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
                         workbook.save(tmp_file.name)
-
-                        # Read file and return as response
                         with open(tmp_file.name, "rb") as f:
                             response = HttpResponse(
                                 f.read(),
                                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             )
                             response["Content-Disposition"] = (
-                                f'attachment; filename="report_{start_date}_to_{end_date}.xlsx"'
+                                f'attachment; filename="{report_type}_{start_date}_to_{end_date}.xlsx"'
                             )
-
-                        # Clean up
                         os.unlink(tmp_file.name)
                         return response
                 except Exception:
                     logger.exception("Excel generation failed")
                     return HttpResponse("An error occurred processing your request.", status=500)
             elif output_format == "pdf":
-                # Generate PDF report
                 try:
                     pdf_generator = PDFReportGenerator(report_data)
-                    pdf_path = pdf_generator.generate_daily_slaughter_pdf()
-
-                    # Read file and return as response
+                    _pdf_dispatch = {
+                        "daily_slaughter": pdf_generator.generate_daily_slaughter_pdf,
+                    }
+                    pdf_fn = _pdf_dispatch.get(report_type, pdf_generator.generate_daily_slaughter_pdf)
+                    pdf_path = pdf_fn()
                     with open(pdf_path, "rb") as f:
                         response = HttpResponse(f.read(), content_type="application/pdf")
                         response["Content-Disposition"] = (
-                            f'attachment; filename="report_{start_date}_to_{end_date}.pdf"'
+                            f'attachment; filename="{report_type}_{start_date}_to_{end_date}.pdf"'
                         )
-
-                    # Clean up
                     os.unlink(pdf_path)
                     return response
                 except Exception:
@@ -248,3 +302,79 @@ def report_list(request):
     reports = GeneratedReport.objects.select_related("report_definition", "generated_by").order_by("-generated_at")
     context = {"reports": reports}
     return render(request, "reporting/report_list.html", context)
+
+
+@login_required
+@client_required
+def client_report_portal(request):
+    """Customer portal — date picker for client-scoped order receipts."""
+    return render(request, "reporting/client_portal.html")
+
+
+@login_required
+@client_required
+def client_generate_report(request):
+    """Generate a report scoped to the authenticated client's own orders."""
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    client_profile = getattr(request.user, "client_profile", None)
+    if not client_profile:
+        return HttpResponse("No client profile associated with this account.", status=403)
+
+    try:
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
+        output_format = request.POST.get("output_format", "pdf")
+
+        from datetime import datetime
+
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+        aggregator = ReportDataAggregator(
+            start_date_obj, end_date_obj, filters={"report_type": "client_order_receipt"}
+        )
+        report_data = aggregator.get_all_data()
+        report_data["client_orders"] = aggregator.get_client_order_data(client_profile.id)
+
+        if output_format == "excel":
+            try:
+                excel_generator = ExcelReportGenerator(report_data)
+                workbook = excel_generator.generate_client_order_receipt_excel()
+
+                import tempfile
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
+                    workbook.save(tmp_file.name)
+                    with open(tmp_file.name, "rb") as f:
+                        response = HttpResponse(
+                            f.read(),
+                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        )
+                        response["Content-Disposition"] = (
+                            f'attachment; filename="kesim_raporu_{start_date}_to_{end_date}.xlsx"'
+                        )
+                    os.unlink(tmp_file.name)
+                    return response
+            except Exception:
+                logger.exception("Client Excel generation failed")
+                return HttpResponse("An error occurred processing your request.", status=500)
+        else:
+            try:
+                pdf_generator = PDFReportGenerator(report_data)
+                pdf_path = pdf_generator.generate_client_order_receipt_pdf()
+                with open(pdf_path, "rb") as f:
+                    response = HttpResponse(f.read(), content_type="application/pdf")
+                    response["Content-Disposition"] = (
+                        f'attachment; filename="kesim_raporu_{start_date}_to_{end_date}.pdf"'
+                    )
+                os.unlink(pdf_path)
+                return response
+            except Exception:
+                logger.exception("Client PDF generation failed")
+                return HttpResponse("An error occurred processing your request.", status=500)
+
+    except Exception:
+        logger.exception("Client report generation failed")
+        return HttpResponse("An error occurred processing your request.", status=500)

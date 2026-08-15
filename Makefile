@@ -46,7 +46,7 @@ LOCALE_ARGS := $(foreach loc,$(LOCALES),-l $(loc))
 # Tenant schema for create_tenant_superuser (must match Client.schema_name, e.g. dev for dev.localhost)
 SCHEMA ?= dev
 
-.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging migrate-prod import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump prod-dump staging-restore-backup makemessages compilemessages messages
+.PHONY: help dev staging production-local prod-deploy staging-deploy proxy proxy-v2 proxy-staging migrate-dev migrate-staging migrate-prod import-prod-dev import-prod-staging db-setup-dev db-fix-dev-ownership pip-install tailwind-build install-deps tenant-superuser-dev redis-shell test test-cov staging-dump prod-dump staging-restore-backup makemessages compilemessages messages check-local
 
 help:
 	@echo "CarniTrack Makefile"
@@ -59,6 +59,7 @@ help:
 	@echo "  make messages           makemessages + compilemessages (same LOCALES)"
 	@echo "  make test               Run pytest (pass extra args with TEST_ARGS='...')"
 	@echo "  make test-cov           Run pytest with coverage gate ($(COVERAGE_MIN)%)"
+	@echo "  make check-local        Verify .venv, .env.dev, Tailwind output, Postgres (see docs/LOCAL_DEVELOPMENT_FULL_STACK.md)"
 	@echo ""
 	@echo "  make dev                Django runserver — local Postgres ($(DEV_ENV))"
 	@echo "  make staging            Django runserver — GCP Cloud SQL staging via proxy ($(STAGING_ENV))"
@@ -98,6 +99,9 @@ help:
 	@echo "  make proxy PROXY_PORT=5435 CLOUDSQL_INSTANCE=project:region:instance"
 	@echo "  make test TEST_ARGS='processing/'"
 	@echo "  make test TEST_ARGS='-m \"integration or not slow\" -q'"
+
+check-local:
+	@bash scripts/verify_local_dev.sh
 
 dev:
 	@if [ ! -f "$(DEV_ENV)" ]; then echo "Missing $(DEV_ENV) — run: cp env/examples/.env.dev.example .env.dev"; exit 1; fi

@@ -867,6 +867,14 @@ client_account_required = user_passes_test(can_manage_client_accounts, login_url
 user_management_required = user_passes_test(can_access_user_management, login_url="/login/")
 
 
+def is_client(user):
+    """Check if user has CLIENT role"""
+    return user.is_authenticated and user.role == user.Role.CLIENT
+
+
+client_required = user_passes_test(is_client, login_url="/login/")
+
+
 def _get_safe_next_url(request) -> str:
     from django.utils.http import url_has_allowed_host_and_scheme
 

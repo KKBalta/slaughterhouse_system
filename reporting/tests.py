@@ -227,7 +227,14 @@ class TestReportDataAggregator:
         assert "total_animals" in all_data
         assert "total_hot_carcass_weight" in all_data
         assert "total_leather_weight" in all_data
+        assert "status_breakdown_slaughter_period" in all_data
+        assert "wip_intake_by_received_date" in all_data
+        assert "yield_stats" in all_data
+        assert "by_client" in all_data
+        assert "by_animal_type" in all_data
         assert all_data["total_animals"] == 2
+        assert isinstance(all_data["yield_stats"], dict)
+        assert "sample_count" in all_data["yield_stats"]
 
     def test_get_daily_slaughter_data_applies_animal_type_filters(self):
         """Test report filters narrow the queryset."""
@@ -362,6 +369,39 @@ class TestReportDataAggregator:
         assert result[0]["hot_carcass_weight"] == 25.0
         assert result[0]["leather_weight"] == 4.0
 
+    def test_status_breakdown_includes_non_carcass_animals(self):
+        """Animals slaughtered in range but not yet carcass_ready appear in status breakdown, not in daily rows."""
+        slaughter_dt = timezone.make_aware(datetime.combine(self.test_date, datetime.min.time()))
+        Animal.objects.create(
+            slaughter_order=self.slaughter_order,
+            animal_type="beef",
+            identification_tag="WIP-SLAUGHTER",
+            received_date=slaughter_dt,
+            slaughter_date=slaughter_dt,
+            status="slaughtered",
+        )
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        breakdown = aggregator.get_status_breakdown_slaughter_period()
+        assert breakdown.get("slaughtered", 0) >= 1
+        assert breakdown.get("carcass_ready", 0) >= 2
+
+    def test_yield_stats_from_daily_data(self):
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        daily = aggregator.get_daily_slaughter_data()
+        ys = ReportDataAggregator._compute_yield_stats(daily)
+        assert ys["sample_count"] >= 1
+        assert ys["mean_yield_pct"] is not None
+        assert ys["median_yield_pct"] is not None
+
+    def test_date_range_multi_day(self):
+        """Aggregator accepts multi-day ranges without error."""
+        start = self.test_date
+        end = self.test_date
+        aggregator = ReportDataAggregator(start, end)
+        data = aggregator.get_all_data()
+        assert data["start_date"] == start.strftime("%Y-%m-%d")
+        assert data["end_date"] == end.strftime("%Y-%m-%d")
+
 
 class TestExcelReportGenerator:
     """Test the ExcelReportGenerator service"""
@@ -406,6 +446,10 @@ class TestExcelReportGenerator:
         workbook = generator.generate_daily_slaughter_excel()
 
         assert workbook is not None
+        assert len(workbook.sheetnames) == 2
+        assert workbook.sheetnames[1] == "Operational KPIs"
+
+        # Check worksheet
         ws = workbook.active
         assert ws.title == "Daily Slaughter Report"
         assert ws["A1"].value == "GÜNLÜK KESİM RAPORU - 2024-01-15"
@@ -979,7 +1023,7 @@ class TestReportingViews:
         assert response.status_code == 200
         assert response["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         assert response.content == b"excel-bytes"
-        assert response["Content-Disposition"] == 'attachment; filename="report_2026-03-01_to_2026-03-02.xlsx"'
+        assert response["Content-Disposition"] == 'attachment; filename="daily_slaughter_2026-03-01_to_2026-03-02.xlsx"'
 
     @patch("reporting.views.ExcelReportGenerator")
     @patch("reporting.views.ReportDataAggregator")
@@ -1023,7 +1067,7 @@ class TestReportingViews:
         assert response.status_code == 200
         assert response["Content-Type"] == "application/pdf"
         assert response.content == b"%PDF-test"
-        assert response["Content-Disposition"] == 'attachment; filename="report_2026-03-01_to_2026-03-02.pdf"'
+        assert response["Content-Disposition"] == 'attachment; filename="daily_slaughter_2026-03-01_to_2026-03-02.pdf"'
         assert not pdf_path.exists()
 
     @patch("reporting.views.PDFReportGenerator")

@@ -38,7 +38,11 @@
                     {% include 'components/language_switcher.html' %}
 
                     {% if user.is_authenticated %}
-                        <a href="{% url 'dashboard' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">Ana Sayfa</a>
+                        {% if user.role == "CLIENT" %}
+                            <a href="{% url 'client_report_portal' %}" class="inline-flex flex-1 justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 sm:flex-none">Raporlarım</a>
+                        {% else %}
+                            <a href="{% url 'dashboard' %}" class="inline-flex flex-1 justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 sm:flex-none">Ana Sayfa</a>
+                        {% endif %}
                         <a href="{% url 'account_profile' %}" class="inline-flex flex-1 justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 sm:flex-none">Hesabım</a>
                         <form action="{% url 'logout' %}" method="post" class="flex-1 sm:flex-none">
                             {% csrf_token %}

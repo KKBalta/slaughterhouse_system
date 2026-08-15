@@ -12,7 +12,9 @@ Django 5 application for slaughterhouse operations: reception, processing, inven
 
 ## Development quickstart
 
-From a fresh clone, set up Python and frontend assets first. Install dependencies with the same `python3` you use to run Django (user-level or system `pip` is fine).
+For a **full checklist** of every local component (Postgres, Tailwind, optional staging/GCS), see [docs/LOCAL_DEVELOPMENT_FULL_STACK.md](docs/LOCAL_DEVELOPMENT_FULL_STACK.md). To quickly verify `.venv`, `.env.dev`, built CSS, and Postgres: `make check-local`.
+
+From a fresh clone, set up Python and frontend assets first. Install dependencies with the same `python3` you use to run Django (user-level or system `pip` is fine). The Makefile prefers `.venv/bin/python` when `.venv` exists (you do not need to activate the venv for `make` targets).
 
 **1. pip and Tailwind (one command)**
 
