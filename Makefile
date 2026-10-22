@@ -53,7 +53,7 @@ help:
 	@echo ""
 	@echo "  make install-deps       First-time setup: pip install -r requirements.txt + Tailwind build ($(TAILWIND_DIR))"
 	@echo "  make pip-install        pip install -r requirements.txt ($(PYTHON))"
-	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci && npm run build"
+	@echo "  make tailwind-build     cd $(TAILWIND_DIR) && npm ci --no-audit --no-fund && npm run build"
 	@echo "  make makemessages       Extract translatable strings → locale/*/LC_MESSAGES/django.po ($(LOCALES))"
 	@echo "  make compilemessages    Compile .po → .mo ($(LOCALES))"
 	@echo "  make messages           makemessages + compilemessages (same LOCALES)"
@@ -182,7 +182,7 @@ pip-install:
 	$(PYTHON) -m pip install -r requirements.txt
 
 tailwind-build:
-	cd $(TAILWIND_DIR) && npm ci && npm run build
+	cd $(TAILWIND_DIR) && npm ci --no-audit --no-fund && npm run build
 
 makemessages:
 	$(MANAGE) makemessages $(LOCALE_ARGS)

@@ -43,7 +43,7 @@ ENV TENANT_BASE_DOMAIN=localhost
 
 # Tailwind v4 + PostCSS — same as `make tailwind-build` (theme/static_src → theme/static/css/dist).
 # Must not fail silently: collectstatic would ship stale or missing CSS.
-RUN cd theme/static_src && npm ci && npm run build
+RUN cd theme/static_src && npm ci --no-audit --no-fund && npm run build
 
 # Collect static files. BUILD_PHASE is inline (not ENV) so it does NOT persist
 # into the runtime image — production runtime never sees it, keeping the SQLite
