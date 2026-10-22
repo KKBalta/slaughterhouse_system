@@ -241,7 +241,15 @@ def test_public_schema_safe_model_backend_falls_back_to_phone(monkeypatch):
     assert result == user
 
 
-def test_atomic_rate_incr_returns_eval_result(monkeypatch):
+@pytest.fixture
+def _redis_cache_backend(settings):
+    settings.CACHES = {
+        **settings.CACHES,
+        "default": {**settings.CACHES["default"], "BACKEND": "django_redis.cache.RedisCache"},
+    }
+
+
+def test_atomic_rate_incr_returns_eval_result(monkeypatch, _redis_cache_backend):
     class _FakeConn:
         def eval(self, script, key_count, key, window):
             assert key_count == 1
@@ -256,7 +264,7 @@ def test_atomic_rate_incr_returns_eval_result(monkeypatch):
     assert atomic_rate_incr("rate:key", 30) == 7
 
 
-def test_atomic_rate_incr_fails_open(monkeypatch):
+def test_atomic_rate_incr_fails_open(monkeypatch, _redis_cache_backend):
     def _raise(_alias):
         raise RuntimeError("redis down")
 
@@ -265,6 +273,18 @@ def test_atomic_rate_incr_fails_open(monkeypatch):
     monkeypatch.setitem(sys.modules, "django_redis", fake_module)
 
     assert atomic_rate_incr("rate:key", 30) == 0
+
+
+def test_atomic_rate_incr_non_redis_counts_per_fixed_window(monkeypatch):
+    from django.core.cache import cache
+
+    cache.clear()
+    now = [1000.0]
+    monkeypatch.setattr("tenants.redis_support.time.time", lambda: now[0])
+
+    assert [atomic_rate_incr("rate:win", 60) for _ in range(3)] == [1, 2, 3]
+    now[0] += 60  # next bucket starts a fresh count
+    assert atomic_rate_incr("rate:win", 60) == 1
 
 
 def test_is_redis_reachable_returns_false_without_package(monkeypatch):
