@@ -179,3 +179,7 @@ backups/
 *.sql.gz
 *.sql.gz.part
 *.dump
+
+# Local agent/tool artifacts
+.claude/worktrees/
+.playwright-mcp/
