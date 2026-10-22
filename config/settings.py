@@ -46,6 +46,11 @@ def _cookie_samesite(value: str | None) -> str | None:
 USE_SQLITE = config("USE_SQLITE", default=False, cast=bool)
 USE_MULTITENANT = not USE_SQLITE
 
+# When False, cache + sessions are served from the database instead of Redis,
+# so the app has no Redis/Upstash dependency (see CACHES block below). Flip via
+# the USE_REDIS env var. Defined here because it conditionally adjusts SHARED_APPS.
+USE_REDIS = config("USE_REDIS", default=True, cast=bool)
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 
@@ -170,6 +175,13 @@ TENANT_APPS = [
     "reporting",
     "scales",
 ]
+
+# DB-backed sessions (USE_REDIS=False) use the django_session table on whatever
+# schema a request runs in. sessions is tenant-scoped above, so the public schema
+# would lack the table and any public-schema session write would 500. Add it to
+# SHARED_APPS too so `migrate_schemas --shared` creates django_session in public.
+if USE_MULTITENANT and not USE_REDIS and "django.contrib.sessions" not in SHARED_APPS:
+    SHARED_APPS = SHARED_APPS + ["django.contrib.sessions"]
 
 _LEGACY_INSTALLED_APPS = [
     "django.contrib.admin",
@@ -475,63 +487,86 @@ if USE_MULTITENANT:
     _TENANT_CACHE_KEY_FN = "django_tenants.cache.make_key"
     _TENANT_CACHE_REVERSE_KEY_FN = "django_tenants.cache.reverse_key"
 
-    from tenants.redis_support import is_redis_reachable
-
-    _redis_up = is_redis_reachable(REDIS_URL)
-
-    if _redis_up:
-        CACHES = {
-            "default": {
-                "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": REDIS_URL,
-                "OPTIONS": {
-                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                },
-                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
-                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            },
-            # Dedicated alias for sessions — decoupled from app cache so a cache
-            # flush or eviction spike never terminates active user sessions.
-            "sessions": {
-                "BACKEND": "django_redis.cache.RedisCache",
-                "LOCATION": REDIS_SESSION_URL,
-                "OPTIONS": {
-                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                    "IGNORE_EXCEPTIONS": True,  # let Redis outages degrade gracefully (logged-out) rather than 500
-                },
-                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
-                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            },
+    if not USE_REDIS:
+        # ---- Database-backed cache + sessions (no Redis / Upstash) ----
+        # A single DatabaseCache table lives in the public schema; the
+        # schema-prefixing KEY_FUNCTION keeps tenants isolated within it.
+        # One-time setup before serving traffic:
+        #   python manage.py createcachetable          # creates the table in public
+        #   python manage.py migrate_schemas --shared  # creates django_session in public
+        # Sessions are stored in each schema's django_session table (DB engine),
+        # NOT in the cache, so a cache flush never logs anyone out.
+        DB_CACHE_TABLE = config("DB_CACHE_TABLE", default="django_cache_table")
+        _DB_CACHE = {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": DB_CACHE_TABLE,
+            "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+            "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+            # One shared table holds app cache + per-tenant rate-limit buckets;
+            # the 300-row default would cull aggressively and evict useful
+            # entries. Raise the ceiling (overridable via env).
+            "OPTIONS": {"MAX_ENTRIES": config("DB_CACHE_MAX_ENTRIES", default=10000, cast=int)},
         }
-    elif REDIS_FALLBACK_TO_LOCMEM:
-        logging.getLogger(__name__).warning(
-            "Redis unreachable at %s — using LocMemCache for cache/sessions. "
-            "Sessions are not shared across processes (fine for runserver; do not use this mode "
-            "behind multi-worker Gunicorn). Start Redis or fix REDIS_URL.",
-            REDIS_URL,
-        )
-        CACHES = {
-            "default": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "carnitrack-mt-cache",
-                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
-                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            },
-            "sessions": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "carnitrack-mt-sessions",
-                "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
-                "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
-            },
-        }
+        CACHES = {"default": dict(_DB_CACHE), "sessions": dict(_DB_CACHE)}
+        SESSION_ENGINE = "django.contrib.sessions.backends.db"
     else:
-        raise ImproperlyConfigured(
-            f"Redis at {REDIS_URL} is unreachable and REDIS_FALLBACK_TO_LOCMEM=False. "
-            "Start Redis, set REDIS_URL, or enable REDIS_FALLBACK_TO_LOCMEM only for local debugging."
-        )
+        from tenants.redis_support import is_redis_reachable
 
-    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-    SESSION_CACHE_ALIAS = "sessions"
+        _redis_up = is_redis_reachable(REDIS_URL)
+
+        if _redis_up:
+            CACHES = {
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": REDIS_URL,
+                    "OPTIONS": {
+                        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                    },
+                    "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                    "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+                },
+                # Dedicated alias for sessions — decoupled from app cache so a cache
+                # flush or eviction spike never terminates active user sessions.
+                "sessions": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": REDIS_SESSION_URL,
+                    "OPTIONS": {
+                        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                        "IGNORE_EXCEPTIONS": True,  # let Redis outages degrade gracefully (logged-out) rather than 500
+                    },
+                    "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                    "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+                },
+            }
+        elif REDIS_FALLBACK_TO_LOCMEM:
+            logging.getLogger(__name__).warning(
+                "Redis unreachable at %s — using LocMemCache for cache/sessions. "
+                "Sessions are not shared across processes (fine for runserver; do not use this mode "
+                "behind multi-worker Gunicorn). Start Redis or fix REDIS_URL.",
+                REDIS_URL,
+            )
+            CACHES = {
+                "default": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "carnitrack-mt-cache",
+                    "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                    "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+                },
+                "sessions": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "carnitrack-mt-sessions",
+                    "KEY_FUNCTION": _TENANT_CACHE_KEY_FN,
+                    "REVERSE_KEY_FUNCTION": _TENANT_CACHE_REVERSE_KEY_FN,
+                },
+            }
+        else:
+            raise ImproperlyConfigured(
+                f"Redis at {REDIS_URL} is unreachable and REDIS_FALLBACK_TO_LOCMEM=False. "
+                "Start Redis, set REDIS_URL, or enable REDIS_FALLBACK_TO_LOCMEM only for local debugging."
+            )
+
+        SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+        SESSION_CACHE_ALIAS = "sessions"
 else:
     CACHES = {
         "default": {
