@@ -49,15 +49,15 @@ INSTALLED_APPS += ["django_rq"]
 
 RQ_QUEUES = {
     "default": {
-        "USE_REDIS_CACHE": "default",   # reuse existing django-redis connection
+        "USE_REDIS_CACHE": "default",  # reuse existing django-redis connection
     },
     "email": {
         "USE_REDIS_CACHE": "default",
-        "DEFAULT_TIMEOUT": 300,         # 5 min max per email job
+        "DEFAULT_TIMEOUT": 300,  # 5 min max per email job
     },
     "reports": {
         "USE_REDIS_CACHE": "default",
-        "DEFAULT_TIMEOUT": 600,         # 10 min max per report
+        "DEFAULT_TIMEOUT": 600,  # 10 min max per report
     },
 }
 ```
@@ -65,7 +65,7 @@ RQ_QUEUES = {
 ### URL wiring (`config/urls.py`)
 
 ```python
-path("django-rq/", include("django_rq.urls")),   # staff-only job dashboard
+(path("django-rq/", include("django_rq.urls")),)  # staff-only job dashboard
 ```
 
 Protect with `@staff_member_required` or restrict at the nginx/Cloud Run level.
@@ -104,6 +104,7 @@ thread.start()
 Replace with:
 ```python
 import django_rq
+
 queue = django_rq.get_queue("reports")
 job = queue.enqueue(generate_report_task, start_date, end_date, tenant_schema)
 return JsonResponse({"job_id": job.id, "status": "queued"})
@@ -113,6 +114,7 @@ Add a `reporting/tasks.py`:
 ```python
 def generate_report_task(start_date, end_date, tenant_schema):
     from django_tenants.utils import schema_context
+
     with schema_context(tenant_schema):
         # existing report generation logic
         ...
@@ -123,14 +125,17 @@ Add a status endpoint:
 # GET /reporting/jobs/<job_id>/
 def report_job_status(request, job_id):
     import django_rq
+
     job = django_rq.get_queue("reports").fetch_job(job_id)
     if not job:
         return JsonResponse({"status": "not_found"}, status=404)
-    return JsonResponse({
-        "status": job.get_status(),   # queued | started | finished | failed
-        "result": job.result if job.is_finished else None,
-        "error": str(job.exc_info) if job.is_failed else None,
-    })
+    return JsonResponse(
+        {
+            "status": job.get_status(),  # queued | started | finished | failed
+            "result": job.result if job.is_finished else None,
+            "error": str(job.exc_info) if job.is_failed else None,
+        }
+    )
 ```
 
 ---
@@ -178,34 +183,42 @@ send history are isolated in their own schema.
 ```python
 # email_marketing/models.py
 
+
 class EmailContact(BaseModel):
     """A recipient in a tenant's contact list."""
+
     email = models.EmailField()
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
     is_subscribed = models.BooleanField(default=True)
     unsubscribed_at = models.DateTimeField(null=True, blank=True)
-    tags = models.JSONField(default=list)   # e.g. ["client", "vip", "cold_storage"]
+    tags = models.JSONField(default=list)  # e.g. ["client", "vip", "cold_storage"]
 
     class Meta:
-        unique_together = [("email",)]      # per-tenant schema, so no cross-tenant clash
+        unique_together = [("email",)]  # per-tenant schema, so no cross-tenant clash
 
 
 class EmailCampaign(BaseModel):
     """A bulk email send to a set of contacts."""
+
     name = models.CharField(max_length=200)
     subject = models.CharField(max_length=500)
     body_html = models.TextField()
     body_text = models.TextField(blank=True)
     status = models.CharField(
         max_length=20,
-        choices=[("draft","Draft"),("scheduled","Scheduled"),
-                 ("sending","Sending"),("sent","Sent"),("failed","Failed")],
+        choices=[
+            ("draft", "Draft"),
+            ("scheduled", "Scheduled"),
+            ("sending", "Sending"),
+            ("sent", "Sent"),
+            ("failed", "Failed"),
+        ],
         default="draft",
     )
     scheduled_at = models.DateTimeField(null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
-    recipient_tags = models.JSONField(default=list)   # send to contacts with these tags
+    recipient_tags = models.JSONField(default=list)  # send to contacts with these tags
     total_recipients = models.IntegerField(default=0)
     sent_count = models.IntegerField(default=0)
     failed_count = models.IntegerField(default=0)
@@ -213,9 +226,10 @@ class EmailCampaign(BaseModel):
 
 class EmailSendLog(BaseModel):
     """Per-recipient send record for tracking opens/bounces."""
+
     campaign = models.ForeignKey(EmailCampaign, on_delete=models.CASCADE, related_name="send_logs")
     contact = models.ForeignKey(EmailContact, on_delete=models.SET_NULL, null=True)
-    email = models.EmailField()             # snapshot at send time
+    email = models.EmailField()  # snapshot at send time
     status = models.CharField(max_length=20, default="queued")
     provider_message_id = models.CharField(max_length=200, blank=True)
     opened_at = models.DateTimeField(null=True, blank=True)
@@ -230,9 +244,11 @@ class EmailSendLog(BaseModel):
 ```python
 # email_marketing/tasks.py
 
+
 def send_campaign(campaign_id: int, tenant_schema: str) -> None:
     """RQ task: send a campaign to all matching contacts in batches."""
     from django_tenants.utils import schema_context
+
     with schema_context(tenant_schema):
         campaign = EmailCampaign.objects.get(pk=campaign_id)
         campaign.status = "sending"
@@ -240,7 +256,7 @@ def send_campaign(campaign_id: int, tenant_schema: str) -> None:
 
         contacts = EmailContact.objects.filter(
             is_subscribed=True,
-            tags__overlap=campaign.recipient_tags,   # PostgreSQL array overlap
+            tags__overlap=campaign.recipient_tags,  # PostgreSQL array overlap
         )
 
         # Send in batches of 500 to avoid provider rate limits

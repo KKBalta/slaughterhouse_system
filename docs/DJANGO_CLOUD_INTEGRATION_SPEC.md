@@ -503,6 +503,7 @@ from django.db import models
 
 class Site(models.Model):
     """Multi-tenant: Different butcher shops/plants"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     name = models.CharField(max_length=200)
     address = models.TextField(blank=True)
@@ -515,8 +516,9 @@ class Site(models.Model):
 
 class EdgeDevice(models.Model):
     """Edge computers registered with Cloud"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='edges')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="edges")
     name = models.CharField(max_length=200, blank=True)
     is_online = models.BooleanField(default=False)
     last_seen_at = models.DateTimeField(null=True)
@@ -529,20 +531,21 @@ class EdgeDevice(models.Model):
 
 class ScaleDevice(models.Model):
     """DP-401 scales connected to Edges"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name='scales')
+    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name="scales")
     device_id = models.CharField(max_length=50)  # "SCALE-01" (local to site)
     global_device_id = models.CharField(max_length=100, unique=True)  # "SITE01-SCALE-01"
     name = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=200, blank=True)
-    device_type = models.CharField(max_length=50, default='disassembly')  # disassembly | retail | receiving
+    device_type = models.CharField(max_length=50, default="disassembly")  # disassembly | retail | receiving
     is_active = models.BooleanField(default=True)
-    status = models.CharField(max_length=50, default='unknown')  # online | idle | stale | disconnected | unknown
+    status = models.CharField(max_length=50, default="unknown")  # online | idle | stale | disconnected | unknown
     last_heartbeat_at = models.DateTimeField(null=True)
     last_event_at = models.DateTimeField(null=True)
 
     class Meta:
-        unique_together = ['edge', 'device_id']
+        unique_together = ["edge", "device_id"]
 
     def __str__(self):
         return f"{self.device_id} @ {self.edge.name or self.edge.id}"
@@ -550,20 +553,21 @@ class ScaleDevice(models.Model):
 
 class Animal(models.Model):
     """Animal/carcass registry"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='animals')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="animals")
     tag_number = models.CharField(max_length=50)
     species = models.CharField(max_length=50)  # Dana, Kuzu, Koyun, Sigir
     breed = models.CharField(max_length=100, blank=True)
     carcass_weight_kg = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     arrival_date = models.DateField(null=True)
     slaughter_date = models.DateField(null=True)
-    status = models.CharField(max_length=50, default='registered')  # registered | processing | completed
+    status = models.CharField(max_length=50, default="registered")  # registered | processing | completed
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['site', 'tag_number']
+        unique_together = ["site", "tag_number"]
 
     def __str__(self):
         return f"{self.tag_number} ({self.species})"
@@ -571,20 +575,21 @@ class Animal(models.Model):
 
 class DisassemblySession(models.Model):
     """Session linking scale events to an animal — SOURCE OF TRUTH"""
+
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-        ('auto_closed', 'Auto-closed'),
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+        ("auto_closed", "Auto-closed"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='sessions')
-    animal = models.ForeignKey(Animal, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions')
-    device = models.ForeignKey(ScaleDevice, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="sessions")
+    animal = models.ForeignKey(Animal, on_delete=models.SET_NULL, null=True, blank=True, related_name="sessions")
+    device = models.ForeignKey(ScaleDevice, on_delete=models.SET_NULL, null=True, blank=True, related_name="sessions")
     operator = models.CharField(max_length=100)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="pending")
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True, blank=True)
     last_event_at = models.DateTimeField(null=True, blank=True)
@@ -600,20 +605,14 @@ class DisassemblySession(models.Model):
 
 class WeighingEvent(models.Model):
     """Individual weighing/print events from scales"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='events')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="events")
     session = models.ForeignKey(
-        DisassemblySession, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='events'
+        DisassemblySession, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
     )
-    device = models.ForeignKey(
-        ScaleDevice, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='events'
-    )
-    animal = models.ForeignKey(
-        Animal, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='events'
-    )
+    device = models.ForeignKey(ScaleDevice, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
+    animal = models.ForeignKey(Animal, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
 
     # Event data
     plu_code = models.CharField(max_length=20)
@@ -632,11 +631,11 @@ class WeighingEvent(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['site', 'scale_timestamp']),
-            models.Index(fields=['session']),
-            models.Index(fields=['animal']),
-            models.Index(fields=['offline_batch_id']),
-            models.Index(fields=['edge_event_id']),
+            models.Index(fields=["site", "scale_timestamp"]),
+            models.Index(fields=["session"]),
+            models.Index(fields=["animal"]),
+            models.Index(fields=["offline_batch_id"]),
+            models.Index(fields=["edge_event_id"]),
         ]
 
     def __str__(self):
@@ -645,25 +644,25 @@ class WeighingEvent(models.Model):
 
 class OrphanedBatch(models.Model):
     """Batches of events captured while Edge was offline, pending reconciliation"""
+
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('reconciled', 'Reconciled'),
-        ('ignored', 'Ignored'),
+        ("pending", "Pending"),
+        ("reconciled", "Reconciled"),
+        ("ignored", "Ignored"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='orphaned_batches')
-    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name='orphaned_batches')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="orphaned_batches")
+    edge = models.ForeignKey(EdgeDevice, on_delete=models.CASCADE, related_name="orphaned_batches")
     device = models.ForeignKey(ScaleDevice, on_delete=models.SET_NULL, null=True, blank=True)
     batch_id = models.CharField(max_length=100, unique=True)  # offlineBatchId from Edge
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True, blank=True)
     event_count = models.IntegerField(default=0)
     total_weight_grams = models.IntegerField(default=0)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="pending")
     reconciled_to_session = models.ForeignKey(
-        DisassemblySession, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='reconciled_batches'
+        DisassemblySession, on_delete=models.SET_NULL, null=True, blank=True, related_name="reconciled_batches"
     )
     reconciled_at = models.DateTimeField(null=True, blank=True)
     reconciled_by = models.CharField(max_length=100, blank=True)
@@ -674,21 +673,22 @@ class OrphanedBatch(models.Model):
 
 class PLUItem(models.Model):
     """Master product catalog"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='plu_items')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="plu_items")
     plu_code = models.CharField(max_length=20)
     name = models.CharField(max_length=100)
     name_turkish = models.CharField(max_length=16)  # 16-char limit for scale label
     barcode = models.CharField(max_length=50)
     price_cents = models.IntegerField()  # kuruş (e.g., 15000 = 150.00 TL)
-    unit_type = models.CharField(max_length=10, default='kg')  # kg | piece
+    unit_type = models.CharField(max_length=10, default="kg")  # kg | piece
     tare_grams = models.IntegerField(default=0)
     category = models.CharField(max_length=100)  # Dana, Kuzu, Sakatat
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['site', 'plu_code']
+        unique_together = ["site", "plu_code"]
 
     def __str__(self):
         return f"{self.plu_code} - {self.name}"
@@ -706,25 +706,24 @@ urlpatterns = [
     # ═══════════════════════════════════════════════════════════════════
     # EDGE API — Called by Edge service (server-to-server, no CORS needed)
     # ═══════════════════════════════════════════════════════════════════
-    path('api/v1/edge/register', views.edge_register, name='edge-register'),
-    path('api/v1/edge/sessions', views.edge_sessions, name='edge-sessions'),
-    path('api/v1/edge/events', views.edge_post_event, name='edge-post-event'),
-    path('api/v1/edge/events/batch', views.edge_post_event_batch, name='edge-post-event-batch'),
-    path('api/v1/edge/offline-batches/ack', views.edge_offline_batch_ack, name='edge-offline-batch-ack'),
-    path('api/v1/edge/config', views.edge_config, name='edge-config'),
-    path('api/v1/edge/devices/status', views.edge_device_status, name='edge-device-status'),
-
+    path("api/v1/edge/register", views.edge_register, name="edge-register"),
+    path("api/v1/edge/sessions", views.edge_sessions, name="edge-sessions"),
+    path("api/v1/edge/events", views.edge_post_event, name="edge-post-event"),
+    path("api/v1/edge/events/batch", views.edge_post_event_batch, name="edge-post-event-batch"),
+    path("api/v1/edge/offline-batches/ack", views.edge_offline_batch_ack, name="edge-offline-batch-ack"),
+    path("api/v1/edge/config", views.edge_config, name="edge-config"),
+    path("api/v1/edge/devices/status", views.edge_device_status, name="edge-device-status"),
     # ═══════════════════════════════════════════════════════════════════
     # PHONE APP API — Called by mobile app (CORS required)
     # ═══════════════════════════════════════════════════════════════════
-    path('api/v1/auth/login/', views.auth_login, name='auth-login'),
-    path('api/v1/sessions/', views.SessionListCreateView.as_view(), name='session-list-create'),
-    path('api/v1/sessions/<uuid:pk>/', views.SessionDetailView.as_view(), name='session-detail'),
-    path('api/v1/events/', views.EventListView.as_view(), name='event-list'),
-    path('api/v1/animals/', views.AnimalListView.as_view(), name='animal-list'),
-    path('api/v1/devices/', views.DeviceListView.as_view(), name='device-list'),
-    path('api/v1/orphaned-batches/', views.OrphanedBatchListView.as_view(), name='orphaned-batch-list'),
-    path('api/v1/orphaned-batches/<uuid:pk>/reconcile/', views.reconcile_batch, name='reconcile-batch'),
+    path("api/v1/auth/login/", views.auth_login, name="auth-login"),
+    path("api/v1/sessions/", views.SessionListCreateView.as_view(), name="session-list-create"),
+    path("api/v1/sessions/<uuid:pk>/", views.SessionDetailView.as_view(), name="session-detail"),
+    path("api/v1/events/", views.EventListView.as_view(), name="event-list"),
+    path("api/v1/animals/", views.AnimalListView.as_view(), name="animal-list"),
+    path("api/v1/devices/", views.DeviceListView.as_view(), name="device-list"),
+    path("api/v1/orphaned-batches/", views.OrphanedBatchListView.as_view(), name="orphaned-batch-list"),
+    path("api/v1/orphaned-batches/<uuid:pk>/reconcile/", views.reconcile_batch, name="reconcile-batch"),
 ]
 ```
 

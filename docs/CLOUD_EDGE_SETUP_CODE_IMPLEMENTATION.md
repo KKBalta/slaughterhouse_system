@@ -71,13 +71,10 @@ class EdgeSetupCode(BaseModel):
     Short-lived activation code for Edge device provisioning.
     Generated from Cloud dashboard, consumed by Edge's first-run wizard via POST /edge/activate.
     """
+
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="setup_codes")
     code = models.CharField(max_length=16, unique=True, default=generate_setup_code)
-    edge_name = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Pre-configured name for the Edge device."
-    )
+    edge_name = models.CharField(max_length=200, blank=True, help_text="Pre-configured name for the Edge device.")
     printers_config = models.JSONField(
         default=list,
         blank=True,
@@ -88,9 +85,7 @@ class EdgeSetupCode(BaseModel):
             "Returned in the /activate response so the Edge auto-configures printers."
         ),
     )
-    expires_at = models.DateTimeField(
-        help_text="Code expires after this time (default 48 hours from creation)."
-    )
+    expires_at = models.DateTimeField(help_text="Code expires after this time (default 48 hours from creation).")
     used_at = models.DateTimeField(null=True, blank=True)
     used_by_edge = models.ForeignKey(
         EdgeDevice,
@@ -109,6 +104,7 @@ class EdgeSetupCode(BaseModel):
     def is_valid(self):
         """True if code is not expired and not yet used."""
         from django.utils import timezone
+
         return self.used_at is None and self.expires_at > timezone.now()
 
     def __str__(self):
@@ -138,7 +134,7 @@ python manage.py migrate_schemas
 Add one line:
 
 ```python
-path("activate", api_views.edge_activate, name="edge-activate"),
+(path("activate", api_views.edge_activate, name="edge-activate"),)
 ```
 
 **File:** `scales/api_views.py`
@@ -182,10 +178,7 @@ def edge_activate(request):
     with transaction.atomic():
         try:
             setup_code = (
-                EdgeSetupCode.objects
-                .select_for_update()
-                .select_related("site")
-                .get(code=code_raw, is_active=True)
+                EdgeSetupCode.objects.select_for_update().select_related("site").get(code=code_raw, is_active=True)
             )
         except EdgeSetupCode.DoesNotExist:
             return JsonResponse(
@@ -241,16 +234,18 @@ def edge_activate(request):
     printers_config = setup_code.printers_config or []
     printers_out = []
     for p in printers_config:
-        printers_out.append({
-            "localPrinterId": p.get("localPrinterId", ""),
-            "displayName": p.get("displayName", ""),
-            "role": p.get("role", "generic"),
-            "transport": p.get("transport", "tcp"),
-            "host": p.get("host", ""),
-            "port": p.get("port", 9100),
-            "model": p.get("model", ""),
-            "priority": p.get("priority", 100),
-        })
+        printers_out.append(
+            {
+                "localPrinterId": p.get("localPrinterId", ""),
+                "displayName": p.get("displayName", ""),
+                "role": p.get("role", "generic"),
+                "transport": p.get("transport", "tcp"),
+                "host": p.get("host", ""),
+                "port": p.get("port", 9100),
+                "model": p.get("model", ""),
+                "priority": p.get("priority", 100),
+            }
+        )
 
     return JsonResponse(
         {
@@ -285,10 +280,20 @@ def edge_activate(request):
 Add these routes:
 
 ```python
-path("edge-management/setup-codes/", views.EdgeSetupCodeListView.as_view(), name="edge_setup_code_list"),
-path("edge-management/setup-codes/create/", views.EdgeSetupCodeCreateView.as_view(), name="edge_setup_code_create"),
-path("edge-management/setup-codes/<uuid:pk>/", views.EdgeSetupCodeDetailView.as_view(), name="edge_setup_code_detail"),
-path("edge-management/setup-codes/<uuid:pk>/revoke/", views.EdgeSetupCodeRevokeView.as_view(), name="edge_setup_code_revoke"),
+(path("edge-management/setup-codes/", views.EdgeSetupCodeListView.as_view(), name="edge_setup_code_list"),)
+(path("edge-management/setup-codes/create/", views.EdgeSetupCodeCreateView.as_view(), name="edge_setup_code_create"),)
+(
+    path(
+        "edge-management/setup-codes/<uuid:pk>/", views.EdgeSetupCodeDetailView.as_view(), name="edge_setup_code_detail"
+    ),
+)
+(
+    path(
+        "edge-management/setup-codes/<uuid:pk>/revoke/",
+        views.EdgeSetupCodeRevokeView.as_view(),
+        name="edge_setup_code_revoke",
+    ),
+)
 ```
 
 ### 3b. Add the views
@@ -302,6 +307,7 @@ from .models import EdgeSetupCode, Printer
 
 class EdgeSetupCodeListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
     """List all setup codes with status indicators."""
+
     model = EdgeSetupCode
     template_name = "scales/edge_setup_code_list.html"
     context_object_name = "setup_codes"
@@ -309,10 +315,7 @@ class EdgeSetupCodeListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
 
     def get_queryset(self):
         return (
-            EdgeSetupCode.objects
-            .filter(is_active=True)
-            .select_related("site", "used_by_edge")
-            .order_by("-created_at")
+            EdgeSetupCode.objects.filter(is_active=True).select_related("site", "used_by_edge").order_by("-created_at")
         )
 
 
@@ -322,15 +325,18 @@ class EdgeSetupCodeCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
     def get(self, request):
         sites = Site.objects.filter(is_active=True).order_by("name")
         printers = (
-            Printer.objects
-            .filter(is_active=True, enabled=True)
+            Printer.objects.filter(is_active=True, enabled=True)
             .select_related("site", "edge")
             .order_by("site__name", "role", "priority")
         )
-        return render(request, "scales/edge_setup_code_create.html", {
-            "sites": sites,
-            "printers": printers,
-        })
+        return render(
+            request,
+            "scales/edge_setup_code_create.html",
+            {
+                "sites": sites,
+                "printers": printers,
+            },
+        )
 
     def post(self, request):
         site_id = request.POST.get("site_id")
@@ -353,16 +359,18 @@ class EdgeSetupCodeCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
         for pid in printer_ids:
             try:
                 printer = Printer.objects.get(id=pid, site=site, is_active=True)
-                printers_config.append({
-                    "localPrinterId": printer.local_printer_id,
-                    "displayName": printer.display_name,
-                    "role": printer.role,
-                    "transport": printer.transport,
-                    "host": printer.host,
-                    "port": printer.port,
-                    "model": printer.model,
-                    "priority": printer.priority,
-                })
+                printers_config.append(
+                    {
+                        "localPrinterId": printer.local_printer_id,
+                        "displayName": printer.display_name,
+                        "role": printer.role,
+                        "transport": printer.transport,
+                        "host": printer.host,
+                        "port": printer.port,
+                        "model": printer.model,
+                        "priority": printer.priority,
+                    }
+                )
             except Printer.DoesNotExist:
                 continue
 
@@ -376,16 +384,18 @@ class EdgeSetupCodeCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
                 continue
             role = manual_roles[i].strip() if i < len(manual_roles) else "generic"
             name = manual_names[i].strip() if i < len(manual_names) else ""
-            printers_config.append({
-                "localPrinterId": f"{role}-{i+1:02d}",
-                "displayName": name or f"{role.title()} Printer",
-                "role": role,
-                "transport": "tcp",
-                "host": host,
-                "port": 9100,
-                "model": "",
-                "priority": 100,
-            })
+            printers_config.append(
+                {
+                    "localPrinterId": f"{role}-{i + 1:02d}",
+                    "displayName": name or f"{role.title()} Printer",
+                    "role": role,
+                    "transport": "tcp",
+                    "host": host,
+                    "port": 9100,
+                    "model": "",
+                    "priority": 100,
+                }
+            )
 
         setup_code = EdgeSetupCode.objects.create(
             site=site,
@@ -409,6 +419,7 @@ class EdgeSetupCodeDetailView(LoginRequiredMixin, AdminOnlyMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         from tenants.tenant_helpers import get_tenant_site_url
+
         context = super().get_context_data(**kwargs)
         context["tenant_url"] = get_tenant_site_url()
         context["activate_url"] = f"{get_tenant_site_url()}/api/v1/edge/activate"
@@ -877,6 +888,7 @@ Find the page header / title area and add these buttons nearby:
 
 ```python
 from .models import EdgeSetupCode
+
 
 @admin.register(EdgeSetupCode)
 class EdgeSetupCodeAdmin(admin.ModelAdmin):

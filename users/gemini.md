@@ -58,19 +58,21 @@ RBAC defines who can do what in the system. Permissions are centrally managed, i
 ROLE_PERMISSIONS = {
     "ADMIN": ["*"],  # full access
     "MANAGER": [
-        "reception.add_slaughterorder", "reception.change_slaughterorder",
-        "processing.view_animal", "processing.change_animal",
-        "inventory.view_carcass", "inventory.change_carcass",
-        "reporting.view_reports"
+        "reception.add_slaughterorder",
+        "reception.change_slaughterorder",
+        "processing.view_animal",
+        "processing.change_animal",
+        "inventory.view_carcass",
+        "inventory.change_carcass",
+        "reporting.view_reports",
     ],
     "OPERATOR": [
         "reception.add_slaughterorder",
-        "processing.change_animal", "processing.add_weightlog",
-        "labeling.print_label"
+        "processing.change_animal",
+        "processing.add_weightlog",
+        "labeling.print_label",
     ],
-    "CLIENT": [
-        "portal.view_own_orders"
-    ],
+    "CLIENT": ["portal.view_own_orders"],
 }
 ```
 

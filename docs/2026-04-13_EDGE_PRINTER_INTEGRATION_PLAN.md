@@ -156,8 +156,7 @@ class Printer(BaseModel):
     )
     local_printer_id = models.CharField(
         max_length=64,
-        help_text="Stable local identifier chosen by the operator (e.g. 'carcass-01'). "
-                  "Unique within one edge.",
+        help_text="Stable local identifier chosen by the operator (e.g. 'carcass-01'). Unique within one edge.",
     )
     display_name = models.CharField(max_length=200, blank=True)
     role = models.CharField(
@@ -165,7 +164,7 @@ class Printer(BaseModel):
         choices=ROLE_CHOICES,
         default="generic",
         help_text="Routing role for print jobs. Jobs with target_role=X go to any online "
-                  "Printer with role=X at the job's site.",
+        "Printer with role=X at the job's site.",
     )
     transport = models.CharField(max_length=16, choices=TRANSPORT_CHOICES, default="tcp")
     host = models.CharField(max_length=64, help_text="IPv4 address on the site LAN.")
@@ -174,8 +173,7 @@ class Printer(BaseModel):
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="unknown")
     priority = models.PositiveSmallIntegerField(
         default=100,
-        help_text="Lower value = preferred when multiple printers match a role. "
-                  "Use for primary/backup setups.",
+        help_text="Lower value = preferred when multiple printers match a role. Use for primary/backup setups.",
     )
     enabled = models.BooleanField(default=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
@@ -219,7 +217,8 @@ site = models.ForeignKey(
     "scales.Site",
     on_delete=models.CASCADE,
     related_name="print_jobs",
-    null=True, blank=True,   # nullable for backwards compat with existing rows
+    null=True,
+    blank=True,  # nullable for backwards compat with existing rows
     help_text="Which site's edge should dispatch this job. Required for edge-dispatched jobs.",
 )
 
@@ -227,7 +226,8 @@ target_printer = models.ForeignKey(
     "scales.Printer",
     on_delete=models.SET_NULL,
     related_name="print_jobs",
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="Optional explicit printer. If set, overrides target_role.",
 )
 
@@ -235,13 +235,13 @@ target_role = models.CharField(
     max_length=32,
     blank=True,
     help_text="Routing role: 'carcass'|'meat_cut'|'offal'|'by_product'|'animal'. "
-              "Edge picks any online printer with this role at the job's site.",
+    "Edge picks any online printer with this role at the job's site.",
 )
 
 prn_content = models.TextField(
     blank=True,
     help_text="TSPL bytes to send to the printer. Copied from AnimalLabel.prn_content "
-              "(or equivalent) at enqueue time so the edge never has to resolve an FK.",
+    "(or equivalent) at enqueue time so the edge never has to resolve an FK.",
 )
 
 # Status tracking (existing `status` field stays; new values added)
@@ -323,11 +323,10 @@ def edge_pending_print_jobs(request):
     request.edge_device.save(update_fields=["last_seen_at", "updated_at"])
 
     from labeling.models import PrintJob
-    qs = (PrintJob.objects
-          .filter(site=request.edge_site,
-                  status="pending",
-                  dispatch_mode="edge")
-          .order_by("print_date")[:50])
+
+    qs = PrintJob.objects.filter(site=request.edge_site, status="pending", dispatch_mode="edge").order_by("print_date")[
+        :50
+    ]
 
     jobs = [
         {
@@ -385,6 +384,7 @@ def edge_ack_print_job(request, job_id):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
     from labeling.models import PrintJob
+
     try:
         job = PrintJob.objects.get(id=job_id, site=request.edge_site)
     except PrintJob.DoesNotExist:
@@ -515,10 +515,12 @@ def edge_printer_inventory(request):
                     "enabled": True,
                 },
             )
-            results.append({
-                "localPrinterId": local_id,
-                "globalPrinterId": str(printer.id),
-            })
+            results.append(
+                {
+                    "localPrinterId": local_id,
+                    "globalPrinterId": str(printer.id),
+                }
+            )
 
     _log_edge_activity(
         action="printer_inventory",
@@ -628,10 +630,10 @@ Callers from `labeling/views.py` — wherever the existing code generates a `.pr
 ```python
 if request.POST.get("dispatch") == "edge":
     enqueue_print_job(
-        site=request.user.tenant_site,   # or however site is resolved for the request
+        site=request.user.tenant_site,  # or however site is resolved for the request
         target_role="carcass",
         prn_content=animal_label.prn_content,
-        label_template=animal_label.template,   # if applicable
+        label_template=animal_label.template,  # if applicable
         item_type="animal",
         item_id=animal_label.id,
         printed_by=request.user,
@@ -685,9 +687,9 @@ Add to `scales/api_urls.py`:
 ```python
 urlpatterns = [
     # existing entries...
-    path("print-jobs/pending",   api_views.edge_pending_print_jobs,   name="edge-pending-print-jobs"),
+    path("print-jobs/pending", api_views.edge_pending_print_jobs, name="edge-pending-print-jobs"),
     path("print-jobs/<uuid:job_id>/ack", api_views.edge_ack_print_job, name="edge-ack-print-job"),
-    path("printers/inventory",   api_views.edge_printer_inventory,    name="edge-printer-inventory"),
+    path("printers/inventory", api_views.edge_printer_inventory, name="edge-printer-inventory"),
 ]
 ```
 

@@ -153,6 +153,7 @@ Make sure these signals are connected in `scales/apps.py`:
 ```python
 class ScalesConfig(AppConfig):
     ...
+
     def ready(self):
         import scales.signals  # noqa: F401
 ```
@@ -286,7 +287,7 @@ Add the include **before** the catch-all redirect:
 # (no new imports needed, just use include)
 
 # Add this line BEFORE the re_path catch-all:
-path("api/v1/edge/", include("tenants.public_edge_urls")),
+(path("api/v1/edge/", include("tenants.public_edge_urls")),)
 ```
 
 The updated urlpatterns should look like:
@@ -296,7 +297,7 @@ urlpatterns = [
     path("api/v1/auth/", include("users.api_urls")),
     path("api/v1/tenant-registration/", include("tenants.api_urls")),
     path("api/v1/activate", public_edge_activate, name="public-edge-activate"),
-    path("api/v1/edge/", include("tenants.public_edge_urls")),   # <-- NEW
+    path("api/v1/edge/", include("tenants.public_edge_urls")),  # <-- NEW
     path("", public_landing, name="public_landing"),
     # ... rest unchanged ...
     re_path(r"^.+$", RedirectView.as_view(pattern_name="public_landing", permanent=False)),

@@ -708,7 +708,19 @@ class PDFReportGenerator:
             # Create table with better column widths for Turkish headers
             # Increased identification tag (HAYVAN KIMLIK NO) column width for long values
             # 27.7cm total = landscape A4 minus 1cm margins
-            col_widths = [4 * cm, 1.5 * cm, 1.5 * cm, 2.5 * cm, 4 * cm, 2 * cm, 2 * cm, 1.5 * cm, 4 * cm, 2.5 * cm, 2.2 * cm]
+            col_widths = [
+                4 * cm,
+                1.5 * cm,
+                1.5 * cm,
+                2.5 * cm,
+                4 * cm,
+                2 * cm,
+                2 * cm,
+                1.5 * cm,
+                4 * cm,
+                2.5 * cm,
+                2.2 * cm,
+            ]
             table = Table(table_data, colWidths=col_widths, repeatRows=1)
 
             # Enhanced table styling

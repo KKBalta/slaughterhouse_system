@@ -64,42 +64,43 @@ Previously duplicated settings block has been removed. Single configuration in `
 ```python
 # Current (RISKY - silent fallback):
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 # Then overridden by env vars (which you're using correctly)
 
 # Better (fail fast):
 DATABASES = {}
-if config('USE_CLOUD_SQL', default=False, cast=bool):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': f'/cloudsql/{config("CLOUD_SQL_CONNECTION_NAME")}',
-        'PORT': '',
+if config("USE_CLOUD_SQL", default=False, cast=bool):
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": f"/cloudsql/{config('CLOUD_SQL_CONNECTION_NAME')}",
+        "PORT": "",
     }
-elif config('USE_LOCAL_POSTGRES', default=False, cast=bool):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='carnitrack_local'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5433'),
+elif config("USE_LOCAL_POSTGRES", default=False, cast=bool):
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("DB_NAME", default="carnitrack_local"),
+        "USER": config("DB_USER", default="postgres"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST", default="localhost"),
+        "PORT": config("DB_PORT", default="5433"),
     }
 else:
     # Only allow SQLite in DEBUG mode for development
     if DEBUG:
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        DATABASES["default"] = {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     else:
         from django.core.exceptions import ImproperlyConfigured
+
         raise ImproperlyConfigured(
             "Database configuration required. Set USE_CLOUD_SQL or USE_LOCAL_POSTGRES in production."
         )
@@ -122,11 +123,13 @@ Order numbers are generated in `generate_order_number()` with `select_for_update
 ```python
 # processing/models.py - Animal
 status = FSMField(..., db_index=True)
+
+
 class Meta:
     indexes = [
-        models.Index(fields=['status', 'received_date']),
-        models.Index(fields=['identification_tag']),
-        models.Index(fields=['slaughter_order', 'status']),
+        models.Index(fields=["status", "received_date"]),
+        models.Index(fields=["identification_tag"]),
+        models.Index(fields=["slaughter_order", "status"]),
     ]
 ```
 
@@ -138,7 +141,7 @@ class Meta:
 ```python
 LANGUAGE_COOKIE_SECURE = not DEBUG
 LANGUAGE_COOKIE_HTTPONLY = True
-LANGUAGE_COOKIE_SAMESITE = 'Lax'
+LANGUAGE_COOKIE_SAMESITE = "Lax"
 ```
 
 ---
@@ -156,11 +159,13 @@ LANGUAGE_COOKIE_SAMESITE = 'Lax'
 **Fix:**
 ```python
 # processing/views.py - ProcessingDashboardView
-recent_orders = SlaughterOrder.objects.filter(
-    animals__status__in=['received', 'slaughtered', 'carcass_ready']
-).select_related('client', 'client__user', 'service_package').prefetch_related(
-    'animals'
-).distinct().order_by('-order_datetime')[:10]
+recent_orders = (
+    SlaughterOrder.objects.filter(animals__status__in=["received", "slaughtered", "carcass_ready"])
+    .select_related("client", "client__user", "service_package")
+    .prefetch_related("animals")
+    .distinct()
+    .order_by("-order_datetime")[:10]
+)
 ```
 
 ### 7. **No Query Result Limits**
@@ -218,10 +223,10 @@ from django.core.validators import FileExtensionValidator
 picture = models.ImageField(
     upload_to=animal_picture_upload_path,
     validators=[
-        FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png']),
+        FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"]),
         # Add custom validator for file size
     ],
-    help_text="Picture of the animal (max 5MB)"
+    help_text="Picture of the animal (max 5MB)",
 )
 ```
 
@@ -260,9 +265,10 @@ except DatabaseError as e:
 class BaseAnimalDetails(BaseModel):
     class Meta:
         abstract = True
-    
+
     sakatat_status = models.DecimalField(...)
     bowels_status = models.DecimalField(...)
+
 
 class CattleDetails(BaseAnimalDetails):
     animal = models.OneToOneField(Animal, ...)
@@ -291,15 +297,16 @@ class CattleDetails(BaseAnimalDetails):
 ```python
 # Current approach does multiple queries
 # Better: Use single query with annotations
-orders_ready_for_weighing = SlaughterOrder.objects.filter(
-    animals__status__in=['slaughtered', 'carcass_ready']
-).annotate(
-    total_animals=Count('animals'),
-    weighed_count=Count('animals__individual_weight_logs', 
-        filter=Q(animals__individual_weight_logs__weight_type='hot_carcass_weight')
+orders_ready_for_weighing = (
+    SlaughterOrder.objects.filter(animals__status__in=["slaughtered", "carcass_ready"])
+    .annotate(
+        total_animals=Count("animals"),
+        weighed_count=Count(
+            "animals__individual_weight_logs",
+            filter=Q(animals__individual_weight_logs__weight_type="hot_carcass_weight"),
+        ),
     )
-).filter(
-    weighed_count__lt=F('total_animals')
+    .filter(weighed_count__lt=F("total_animals"))
 )
 ```
 

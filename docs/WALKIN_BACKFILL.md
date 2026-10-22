@@ -26,6 +26,7 @@ Walk-in orders that still have no linked client:
 
 ```python
 from reception.models import SlaughterOrder
+
 SlaughterOrder.objects.filter(
     client__isnull=True,
 ).exclude(client_name="").exclude(client_phone="").count()

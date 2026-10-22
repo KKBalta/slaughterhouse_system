@@ -71,18 +71,18 @@ class Printer(BaseModel):
     """
 
     ROLE_CHOICES = [
-        ("carcass",    "Carcass"),
-        ("meat_cut",   "Meat Cut"),
-        ("offal",      "Offal"),
+        ("carcass", "Carcass"),
+        ("meat_cut", "Meat Cut"),
+        ("offal", "Offal"),
         ("by_product", "By-Product"),
-        ("animal",     "Animal"),
-        ("generic",    "Generic"),
+        ("animal", "Animal"),
+        ("generic", "Generic"),
     ]
     STATUS_CHOICES = [
         ("unknown", "Unknown"),
-        ("online",  "Online"),
+        ("online", "Online"),
         ("offline", "Offline"),
-        ("error",   "Error"),
+        ("error", "Error"),
     ]
 
     edge = models.ForeignKey(
@@ -137,6 +137,7 @@ class Printer(BaseModel):
         # Invariant: site must match edge.site
         if self.edge_id and self.site_id and self.site_id != self.edge.site_id:
             from django.core.exceptions import ValidationError
+
             raise ValidationError("Printer.site must match Printer.edge.site")
 
     def save(self, *args, **kwargs):
@@ -165,7 +166,8 @@ item_id = models.UUIDField(help_text="The ID of the specific inventory item bein
 
 # AFTER (migration required)
 item_id = models.UUIDField(
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="The ID of the specific inventory item being labeled.",
 )
 ```
@@ -181,7 +183,8 @@ site = models.ForeignKey(
     "scales.Site",
     on_delete=models.CASCADE,
     related_name="print_jobs",
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="Which site's edge dispatches this job. Required for edge dispatch.",
 )
 
@@ -189,7 +192,8 @@ target_printer = models.ForeignKey(
     "scales.Printer",
     on_delete=models.SET_NULL,
     related_name="print_jobs",
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="Optional explicit printer override. If set, wins over target_role.",
 )
 
@@ -197,20 +201,20 @@ target_role = models.CharField(
     max_length=32,
     blank=True,
     help_text="Role-based routing: 'carcass'|'meat_cut'|'offal'|'by_product'|'animal'. "
-              "Edge picks the best available Printer with this role at the job's site.",
+    "Edge picks the best available Printer with this role at the job's site.",
 )
 
 prn_content = models.TextField(
     blank=True,
     help_text="TSPL bytes copied from AnimalLabel.prn_content at enqueue time. "
-              "Returned inline in the edge poll response as a UTF-8 JSON string. "
-              "Edge re-encodes to Windows-1254 before TCP send.",
+    "Returned inline in the edge poll response as a UTF-8 JSON string. "
+    "Edge re-encodes to Windows-1254 before TCP send.",
 )
 
 dispatch_mode = models.CharField(
     max_length=16,
     choices=[
-        ("edge",       "Edge dispatch (TCP → printer)"),
+        ("edge", "Edge dispatch (TCP → printer)"),
         ("legacy_bat", "Legacy .bat file download"),
     ],
     default="edge",
@@ -222,11 +226,13 @@ max_attempts = models.PositiveSmallIntegerField(default=8)
 error_text = models.CharField(max_length=500, blank=True)
 
 edge_received_at = models.DateTimeField(
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="When edge first picked up this job (set on first 'dispatched' ack).",
 )
 printed_at = models.DateTimeField(
-    null=True, blank=True,
+    null=True,
+    blank=True,
     help_text="When edge confirmed successful print (set on 'completed' ack).",
 )
 ```
@@ -235,11 +241,11 @@ printed_at = models.DateTimeField(
 
 ```python
 STATUS_CHOICES = (
-    ("pending",    "Pending"),     # waiting for edge to pick up
+    ("pending", "Pending"),  # waiting for edge to pick up
     ("dispatched", "Dispatched"),  # NEW: edge has picked up, print in progress
-    ("completed",  "Completed"),   # edge confirmed print success
-    ("failed",     "Failed"),      # all attempts exhausted
-    ("cancelled",  "Cancelled"),   # NEW: user cancelled before dispatch
+    ("completed", "Completed"),  # edge confirmed print success
+    ("failed", "Failed"),  # all attempts exhausted
+    ("cancelled", "Cancelled"),  # NEW: user cancelled before dispatch
 )
 ```
 
@@ -261,10 +267,10 @@ This mapping lives at the call site in `enqueue_print_job()`:
 
 ```python
 _LABEL_TYPE_TO_ROLE = {
-    "hot_carcass":  "carcass",
+    "hot_carcass": "carcass",
     "cold_carcass": "carcass",
-    "final":        "meat_cut",
-    "cut":          "meat_cut",
+    "final": "meat_cut",
+    "cut": "meat_cut",
 }
 ```
 
@@ -274,10 +280,10 @@ _LABEL_TYPE_TO_ROLE = {
 
 ```python
 _LABEL_TYPE_TO_ROLE = {
-    "hot_carcass":  "carcass",
+    "hot_carcass": "carcass",
     "cold_carcass": "carcass",
-    "final":        "meat_cut",
-    "cut":          "meat_cut",
+    "final": "meat_cut",
+    "cut": "meat_cut",
 }
 
 
@@ -344,7 +350,8 @@ site = request.edge_site
 
 # From a user-facing web view:
 from scales.models import Site
-site = Site.objects.first()   # single-site tenants (Phase 1B)
+
+site = Site.objects.first()  # single-site tenants (Phase 1B)
 # Phase 3: let user pick from Site.objects.filter(edges__isnull=False)
 ```
 
@@ -357,8 +364,9 @@ Add these three functions. Import `Printer` at the top of the file alongside exi
 ### 5a. `GET /api/v1/edge/print-jobs/pending`
 
 ```python
-_PRINT_JOBS_PENDING_RL_WINDOW = 60   # seconds
-_PRINT_JOBS_PENDING_RL_LIMIT  = 60   # 60 req/min
+_PRINT_JOBS_PENDING_RL_WINDOW = 60  # seconds
+_PRINT_JOBS_PENDING_RL_LIMIT = 60  # 60 req/min
+
 
 @csrf_exempt
 @require_edge_id
@@ -371,35 +379,33 @@ def edge_pending_print_jobs(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
     from tenants.redis_support import atomic_rate_incr
-    if atomic_rate_incr(
-        f"edge_rl:print_jobs_pending:{request.edge_device.id}",
-        _PRINT_JOBS_PENDING_RL_WINDOW
-    ) > _PRINT_JOBS_PENDING_RL_LIMIT:
+
+    if (
+        atomic_rate_incr(f"edge_rl:print_jobs_pending:{request.edge_device.id}", _PRINT_JOBS_PENDING_RL_WINDOW)
+        > _PRINT_JOBS_PENDING_RL_LIMIT
+    ):
         return JsonResponse({"error": "rate limit exceeded"}, status=429)
 
     request.edge_device.last_seen_at = timezone.now()
     request.edge_device.save(update_fields=["last_seen_at", "updated_at"])
 
     from labeling.models import PrintJob
-    qs = (
-        PrintJob.objects
-        .filter(
-            site=request.edge_site,
-            status="pending",
-            dispatch_mode="edge",
-        )
-        .order_by("print_date")[:50]
-    )
+
+    qs = PrintJob.objects.filter(
+        site=request.edge_site,
+        status="pending",
+        dispatch_mode="edge",
+    ).order_by("print_date")[:50]
 
     jobs = [
         {
-            "jobId":          str(j.id),
-            "targetRole":     j.target_role or None,
-            "targetPrinter":  str(j.target_printer_id) if j.target_printer_id else None,
-            "prnContent":     j.prn_content,
-            "labelCount":     1,           # all current templates use PRINT 1,1
-            "attempts":       j.attempts,
-            "createdAt":      j.print_date.isoformat(),
+            "jobId": str(j.id),
+            "targetRole": j.target_role or None,
+            "targetPrinter": str(j.target_printer_id) if j.target_printer_id else None,
+            "prnContent": j.prn_content,
+            "labelCount": 1,  # all current templates use PRINT 1,1
+            "attempts": j.attempts,
+            "createdAt": j.print_date.isoformat(),
         }
         for j in qs
     ]
@@ -419,7 +425,8 @@ def edge_pending_print_jobs(request):
 
 ```python
 _PRINT_JOB_ACK_RL_WINDOW = 60
-_PRINT_JOB_ACK_RL_LIMIT  = 120   # higher — a burst of retries is normal
+_PRINT_JOB_ACK_RL_LIMIT = 120  # higher — a burst of retries is normal
+
 
 @csrf_exempt
 @require_edge_id
@@ -433,13 +440,15 @@ def edge_ack_print_job(request, job_id):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
     from tenants.redis_support import atomic_rate_incr
-    if atomic_rate_incr(
-        f"edge_rl:print_job_ack:{request.edge_device.id}",
-        _PRINT_JOB_ACK_RL_WINDOW
-    ) > _PRINT_JOB_ACK_RL_LIMIT:
+
+    if (
+        atomic_rate_incr(f"edge_rl:print_job_ack:{request.edge_device.id}", _PRINT_JOB_ACK_RL_WINDOW)
+        > _PRINT_JOB_ACK_RL_LIMIT
+    ):
         return JsonResponse({"error": "rate limit exceeded"}, status=429)
 
     from labeling.models import PrintJob
+
     try:
         job = PrintJob.objects.get(id=job_id, site=request.edge_site)
     except PrintJob.DoesNotExist:
@@ -451,8 +460,8 @@ def edge_ack_print_job(request, job_id):
         return JsonResponse({"error": "status must be dispatched|completed|failed"}, status=400)
 
     update_fields = ["status", "attempts", "error_text", "updated_at"]
-    job.status     = status
-    job.attempts   = int(body.get("attempts") or job.attempts)
+    job.status = status
+    job.attempts = int(body.get("attempts") or job.attempts)
     job.error_text = (body.get("errorText") or "")[:500]
 
     # Resolve the printer UUID from the edge's global_printer_id
@@ -498,7 +507,8 @@ def edge_ack_print_job(request, job_id):
 
 ```python
 _PRINTER_INVENTORY_RL_WINDOW = 60
-_PRINTER_INVENTORY_RL_LIMIT  = 10   # startup/config-change only
+_PRINTER_INVENTORY_RL_LIMIT = 10  # startup/config-change only
+
 
 @csrf_exempt
 @require_edge_id
@@ -513,14 +523,15 @@ def edge_printer_inventory(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
     from tenants.redis_support import atomic_rate_incr
-    if atomic_rate_incr(
-        f"edge_rl:printer_inventory:{request.edge_device.id}",
-        _PRINTER_INVENTORY_RL_WINDOW
-    ) > _PRINTER_INVENTORY_RL_LIMIT:
+
+    if (
+        atomic_rate_incr(f"edge_rl:printer_inventory:{request.edge_device.id}", _PRINTER_INVENTORY_RL_WINDOW)
+        > _PRINTER_INVENTORY_RL_LIMIT
+    ):
         return JsonResponse({"error": "rate limit exceeded"}, status=429)
 
-    body   = request.json_body
-    items  = body.get("printers") or []
+    body = request.json_body
+    items = body.get("printers") or []
     if not isinstance(items, list):
         return JsonResponse({"error": "printers must be a list"}, status=400)
 
@@ -528,7 +539,7 @@ def edge_printer_inventory(request):
     with transaction.atomic():
         for item in items:
             local_id = (item.get("localPrinterId") or "").strip()
-            host     = (item.get("host") or "").strip()
+            host = (item.get("host") or "").strip()
             if not local_id or not host:
                 continue
 
@@ -536,22 +547,24 @@ def edge_printer_inventory(request):
                 edge=request.edge_device,
                 local_printer_id=local_id,
                 defaults={
-                    "site":         request.edge_site,
+                    "site": request.edge_site,
                     "display_name": (item.get("displayName") or "")[:200],
-                    "role":         (item.get("role") or "generic").strip(),
-                    "transport":    (item.get("transport") or "tcp").strip(),
-                    "host":         host,
-                    "port":         int(item.get("port") or 9100),
-                    "model":        (item.get("model") or "")[:64],
-                    "priority":     int(item.get("priority") or 100),
-                    "version":      (item.get("version") or "")[:64],
-                    "enabled":      True,
+                    "role": (item.get("role") or "generic").strip(),
+                    "transport": (item.get("transport") or "tcp").strip(),
+                    "host": host,
+                    "port": int(item.get("port") or 9100),
+                    "model": (item.get("model") or "")[:64],
+                    "priority": int(item.get("priority") or 100),
+                    "version": (item.get("version") or "")[:64],
+                    "enabled": True,
                 },
             )
-            results.append({
-                "localPrinterId":  local_id,
-                "globalPrinterId": str(printer.id),
-            })
+            results.append(
+                {
+                    "localPrinterId": local_id,
+                    "globalPrinterId": str(printer.id),
+                }
+            )
 
     _log_edge_activity(
         action="printer_inventory",
@@ -579,9 +592,9 @@ Find the existing `edge_heartbeat` view in `scales/api_views.py`. After the exis
 # --- printers[] heartbeat update (additive, backwards-compatible) ---
 printers_payload = body.get("printers") or []
 for item in printers_payload:
-    local_id   = (item.get("localPrinterId") or "").strip()
+    local_id = (item.get("localPrinterId") or "").strip()
     status_val = (item.get("status") or "unknown").strip()
-    last_seen  = _parse_iso(item.get("lastSeenAt")) or timezone.now()
+    last_seen = _parse_iso(item.get("lastSeenAt")) or timezone.now()
     last_error = (item.get("lastError") or "")[:255]
 
     if not local_id:
@@ -612,19 +625,18 @@ from . import api_views
 
 urlpatterns = [
     # --- existing entries ---
-    path("register",                                 api_views.edge_register,               name="edge-register"),
-    path("sessions",                                 api_views.edge_sessions,               name="edge-sessions"),
-    path("events",                                   api_views.edge_post_event,             name="edge-post-event"),
-    path("events/batch",                             api_views.edge_post_event_batch,       name="edge-post-event-batch"),
-    path("offline-batches/ack",                      api_views.edge_offline_batch_ack,      name="edge-offline-batch-ack"),
-    path("config",                                   api_views.edge_config,                 name="edge-config"),
-    path("devices/status",                           api_views.edge_device_status,          name="edge-device-status"),
-    path("heartbeat",                                api_views.edge_heartbeat,              name="edge-heartbeat"),
-
+    path("register", api_views.edge_register, name="edge-register"),
+    path("sessions", api_views.edge_sessions, name="edge-sessions"),
+    path("events", api_views.edge_post_event, name="edge-post-event"),
+    path("events/batch", api_views.edge_post_event_batch, name="edge-post-event-batch"),
+    path("offline-batches/ack", api_views.edge_offline_batch_ack, name="edge-offline-batch-ack"),
+    path("config", api_views.edge_config, name="edge-config"),
+    path("devices/status", api_views.edge_device_status, name="edge-device-status"),
+    path("heartbeat", api_views.edge_heartbeat, name="edge-heartbeat"),
     # --- NEW: printer module (Phase 1B) ---
-    path("print-jobs/pending",                       api_views.edge_pending_print_jobs,     name="edge-pending-print-jobs"),
-    path("print-jobs/<uuid:job_id>/ack",             api_views.edge_ack_print_job,          name="edge-ack-print-job"),
-    path("printers/inventory",                       api_views.edge_printer_inventory,      name="edge-printer-inventory"),
+    path("print-jobs/pending", api_views.edge_pending_print_jobs, name="edge-pending-print-jobs"),
+    path("print-jobs/<uuid:job_id>/ack", api_views.edge_ack_print_job, name="edge-ack-print-job"),
+    path("printers/inventory", api_views.edge_printer_inventory, name="edge-printer-inventory"),
 ]
 ```
 
@@ -637,28 +649,54 @@ No changes to `config/urls.py` — the `/api/v1/edge/` prefix is already mounted
 ```python
 from .models import Printer
 
+
 class PrinterInline(admin.TabularInline):
     model = Printer
     extra = 0
     readonly_fields = ("status", "last_seen_at", "last_error", "version")
-    fields = ("local_printer_id", "display_name", "role", "host", "port",
-              "priority", "enabled", "status", "last_seen_at", "last_error")
+    fields = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "priority",
+        "enabled",
+        "status",
+        "last_seen_at",
+        "last_error",
+    )
     show_change_link = True
 
 
 # Add inline to existing EdgeDeviceAdmin:
 class EdgeDeviceAdmin(admin.ModelAdmin):
-    inlines = [PrinterInline, ...]   # add to existing inlines list
+    inlines = [PrinterInline, ...]  # add to existing inlines list
 
 
 @admin.register(Printer)
 class PrinterAdmin(admin.ModelAdmin):
-    list_display  = ("local_printer_id", "display_name", "role", "host",
-                     "port", "status", "priority", "enabled", "last_seen_at")
-    list_filter   = ("role", "status", "enabled", "site")
+    list_display = (
+        "local_printer_id",
+        "display_name",
+        "role",
+        "host",
+        "port",
+        "status",
+        "priority",
+        "enabled",
+        "last_seen_at",
+    )
+    list_filter = ("role", "status", "enabled", "site")
     search_fields = ("local_printer_id", "display_name", "host")
-    readonly_fields = ("status", "last_seen_at", "last_error", "version",
-                       "edge", "site")  # edge-owned fields are read-only
+    readonly_fields = (
+        "status",
+        "last_seen_at",
+        "last_error",
+        "version",
+        "edge",
+        "site",
+    )  # edge-owned fields are read-only
     ordering = ("site", "role", "priority")
 ```
 
@@ -669,20 +707,26 @@ Extend existing `PrintJobAdmin`:
 ```python
 @admin.register(PrintJob)
 class PrintJobAdmin(admin.ModelAdmin):
-    list_display  = ("id", "item_type", "status", "dispatch_mode",
-                     "target_role", "site", "attempts", "print_date", "printed_at")
-    list_filter   = ("status", "dispatch_mode", "target_role", "site")
+    list_display = (
+        "id",
+        "item_type",
+        "status",
+        "dispatch_mode",
+        "target_role",
+        "site",
+        "attempts",
+        "print_date",
+        "printed_at",
+    )
+    list_filter = ("status", "dispatch_mode", "target_role", "site")
     search_fields = ("id", "item_type", "error_text")
-    readonly_fields = ("print_date", "edge_received_at", "printed_at",
-                       "attempts", "error_text", "prn_content")
+    readonly_fields = ("print_date", "edge_received_at", "printed_at", "attempts", "error_text", "prn_content")
 
     actions = ["reenqueue_failed_jobs"]
 
     @admin.action(description="Re-enqueue selected failed jobs")
     def reenqueue_failed_jobs(self, request, queryset):
-        updated = queryset.filter(status="failed").update(
-            status="pending", attempts=0, error_text=""
-        )
+        updated = queryset.filter(status="failed").update(status="pending", attempts=0, error_text="")
         self.message_user(request, f"{updated} job(s) re-enqueued.")
 ```
 

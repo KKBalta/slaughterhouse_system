@@ -240,10 +240,10 @@ polling:
 ```python
 # config/settings.py
 IOT_SCALE_CONFIG = {
-    'API_KEY': config('IOT_SCALE_API_KEY'),
-    'ALLOWED_SCALE_IDS': config('IOT_SCALE_IDS', cast=Csv()),
-    'WEIGHT_STABLE_THRESHOLD': 0.1,  # kg
-    'WEIGHT_STABLE_DURATION': 0.5,  # seconds
+    "API_KEY": config("IOT_SCALE_API_KEY"),
+    "ALLOWED_SCALE_IDS": config("IOT_SCALE_IDS", cast=Csv()),
+    "WEIGHT_STABLE_THRESHOLD": 0.1,  # kg
+    "WEIGHT_STABLE_DURATION": 0.5,  # seconds
 }
 ```
 
