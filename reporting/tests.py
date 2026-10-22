@@ -351,6 +351,16 @@ class TestReportDataAggregator:
         result = aggregator._aggregate_identical_records(daily_data)
         assert len(result) == 2
 
+    def test_aggregate_identical_records_splits_small_animals_by_slaughter_date(self):
+        """Same small-animal record on different slaughter days stays as separate rows."""
+        aggregator = ReportDataAggregator(self.test_date, self.test_date)
+        day1 = self._make_aggregation_record(animal_type="KUZU")
+        day2 = self._make_aggregation_record(animal_type="KUZU")
+        day1["slaughter_date"] = "15.01.2024"
+        day2["slaughter_date"] = "16.01.2024"
+        result = aggregator._aggregate_identical_records([day1, day2, dict(day1)])
+        assert sorted((r["slaughter_date"], r["quantity"]) for r in result) == [("15.01.2024", 2), ("16.01.2024", 1)]
+
     def test_aggregate_identical_records_single_record_unchanged(self):
         """Single record is returned unchanged; weights not multiplied when quantity is 1."""
         aggregator = ReportDataAggregator(self.test_date, self.test_date)
@@ -381,6 +391,7 @@ class TestExcelReportGenerator:
                     "leather_weight": 25.0,
                     "destination": "Test Destination",
                     "description": "",
+                    "slaughter_date": "15.01.2024",
                 }
             ],
             "summary": {
@@ -410,7 +421,7 @@ class TestExcelReportGenerator:
         assert ws.title == "Daily Slaughter Report"
         assert ws["A1"].value == "GÜNLÜK KESİM RAPORU - 2024-01-15"
         headers = [
-            "FİRMA ÜNVANI",
+            "ALINAN MÜŞTERİ",
             "ADET",
             "CİNSİ",
             "SICAK KARKAS",
@@ -418,8 +429,9 @@ class TestExcelReportGenerator:
             "SAKATAT",
             "BAĞIRSAK",
             "DERİ",
-            "ALINAN MÜŞTERİ",
+            "FİRMA ÜNVANI",
             "AÇIKLAMA",
+            "KESİM TARİHİ",
         ]
         for i, header in enumerate(headers, 1):
             assert ws.cell(row=3, column=i).value == header
@@ -433,6 +445,7 @@ class TestExcelReportGenerator:
         assert ws.cell(row=4, column=7).value == "SAĞLAM"
         assert ws.cell(row=4, column=8).value == 25.0
         assert ws.cell(row=4, column=9).value == "Test Client"
+        assert ws.cell(row=4, column=11).value == "15.01.2024"
         assert ws.cell(row=4, column=10).value == ""
 
         summary_start_row = 7

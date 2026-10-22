@@ -102,6 +102,12 @@ class ReportDataAggregator:
                 {
                     # For small animals, do not include the ear tag in outputs (leave blank)
                     "identification_tag": "" if is_small_animal else (animal.identification_tag or ""),
+                    # Day only (tenant tz) so same-day small animals still aggregate into one row
+                    "slaughter_date": (
+                        timezone.localtime(animal.slaughter_date, tenant_tz).strftime("%d.%m.%Y")
+                        if animal.slaughter_date
+                        else ""
+                    ),
                     "client_name": client_name,
                     "quantity": 1,  # Individual animal
                     "animal_type": turkish_type,
@@ -307,6 +313,7 @@ class ReportDataAggregator:
                     record["sakatat_weight"],
                     record["destination"],
                     record["description"],
+                    record.get("slaughter_date", ""),
                 )
             else:
                 key = (
@@ -321,6 +328,7 @@ class ReportDataAggregator:
                     record["sakatat_weight"],
                     record["destination"],
                     record["description"],
+                    record.get("slaughter_date", ""),
                 )
 
             if key in grouped_records:
@@ -366,11 +374,11 @@ class ExcelReportGenerator:
         date_str = self.report_data.get("date", self.report_data.get("start_date", ""))
         ws["A1"] = f"GÜNLÜK KESİM RAPORU - {date_str}"
         ws["A1"].font = Font(bold=True, size=14)
-        ws.merge_cells("A1:J1")  # Updated to J1 for 10 columns
+        ws.merge_cells("A1:K1")
 
         # Main table headers
         headers = [
-            "FİRMA ÜNVANI",
+            "ALINAN MÜŞTERİ",
             "ADET",
             "CİNSİ",
             "SICAK KARKAS",
@@ -378,8 +386,9 @@ class ExcelReportGenerator:
             "SAKATAT",
             "BAĞIRSAK",
             "DERİ",
-            "ALINAN MÜŞTERİ",
+            "FİRMA ÜNVANI",
             "AÇIKLAMA",
+            "KESİM TARİHİ",
         ]
 
         # Style for headers
@@ -400,7 +409,7 @@ class ExcelReportGenerator:
         # Write data
         row = 4
         for item in self.report_data["daily_data"]:
-            ws.cell(row=row, column=1, value=item["destination"])  # ALINAN MÜŞTERİ (first column)
+            ws.cell(row=row, column=1, value=item["destination"])  # ALINAN MÜŞTERİ
             ws.cell(row=row, column=2, value=float(item["quantity"]))
             ws.cell(row=row, column=3, value=item["animal_type"])
             ws.cell(row=row, column=4, value=float(item["hot_carcass_weight"]))  # SICAK KARKAS
@@ -408,11 +417,12 @@ class ExcelReportGenerator:
             ws.cell(row=row, column=6, value=item["offal_status"])
             ws.cell(row=row, column=7, value=item["bowels_status"])
             ws.cell(row=row, column=8, value=float(item["leather_weight"]))
-            ws.cell(row=row, column=9, value=item["client_name"])  # FİRMA ÜNVANI (before last column)
+            ws.cell(row=row, column=9, value=item["client_name"])  # FİRMA ÜNVANI
             ws.cell(row=row, column=10, value=item["description"])
+            ws.cell(row=row, column=11, value=item.get("slaughter_date", ""))
 
             # Apply borders to data rows
-            for col in range(1, 11):  # Updated to 11 for 10 columns
+            for col in range(1, 12):
                 ws.cell(row=row, column=col).border = thin_border
 
             row += 1
@@ -669,6 +679,7 @@ class PDFReportGenerator:
                 "DERI",
                 "FIRMA UNVANI",
                 "ACIKLAMA",
+                "KESIM TARIHI",
             ]
 
             # Prepare table data with text wrapping
@@ -690,12 +701,14 @@ class PDFReportGenerator:
                     f"{float(item.get('leather_weight', 0)):.1f}",
                     client_name,
                     description,
+                    item.get("slaughter_date", ""),
                 ]
                 table_data.append(row)
 
             # Create table with better column widths for Turkish headers
             # Increased identification tag (HAYVAN KIMLIK NO) column width for long values
-            col_widths = [4 * cm, 1.5 * cm, 1.5 * cm, 2.5 * cm, 4 * cm, 2 * cm, 2 * cm, 1.5 * cm, 4 * cm, 2.5 * cm]
+            # 27.7cm total = landscape A4 minus 1cm margins
+            col_widths = [4 * cm, 1.5 * cm, 1.5 * cm, 2.5 * cm, 4 * cm, 2 * cm, 2 * cm, 1.5 * cm, 4 * cm, 2.5 * cm, 2.2 * cm]
             table = Table(table_data, colWidths=col_widths, repeatRows=1)
 
             # Enhanced table styling
